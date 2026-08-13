@@ -1,0 +1,4 @@
+# Supply the separately approved private Terraform state bucket at init time.
+# Never commit the real bucket name or a populated backend file.
+bucket = "REPLACE_WITH_APPROVED_PRIVATE_STATE_BUCKET"
+prefix = "marathoner/creator-radar-events-development"

@@ -12,6 +12,21 @@ dist
 dist-ssr
 *.local
 
+# Terraform working data and local state must never enter the repository.
+**/.terraform/*
+*.tfstate
+*.tfstate.*
+*.tfplan
+*.tfvars
+!*.tfvars.example
+*.tfbackend
+!*.tfbackend.example
+crash.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
