@@ -53,6 +53,8 @@ uses typed repositories backed by Cloud Firestore.
 | `src/firebaseConfig.ts` | Identifies the Firebase web project used by the client. |
 | `src/**/*.test.ts(x)` | Keeps unit and component tests beside the code they verify. |
 | `src/test/` | Contains shared test setup and environment-level tests. |
+| `server/creatorRadarEvents/` | Contains an inert server-only development attribution publisher; it is excluded from the browser graph and has no deployed runtime. |
+| `infrastructure/creator-radar-events-development/` | Declares the unapplied, keyless development caller identity with no source-project roles. |
 | `src/styles/` | Contains global and application-shell styles. Feature-specific styles remain beside their components. |
 | `vite.config.ts` | Configures React, production assets, and the GitHub Pages base path. |
 
@@ -70,6 +72,8 @@ The shared training domain model is documented in
 [`docs/architecture/training-domain-model.md`](docs/architecture/training-domain-model.md).
 Cross-feature behavior is documented in
 [`docs/architecture/training-feature-integration.md`](docs/architecture/training-feature-integration.md).
+The development/test-only Creator Radar boundary is documented in
+[`docs/architecture/creator-radar-event-publisher.md`](docs/architecture/creator-radar-event-publisher.md).
 
 ## Current data limitations
 
