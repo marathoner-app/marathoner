@@ -5,6 +5,7 @@
 - **Product owner and current implementer:** Kevin Tulloch
 - **Target:** Open the founding cohort on January 15, 2027
 - **Master tracker:** [GitHub issue #104](https://github.com/marathoner-app/marathoner/issues/104)
+- **Active remediation:** [Committee remediation sprint](committee-remediation-sprint.md)
 
 ## Outcome
 
@@ -16,6 +17,14 @@ changes.
 
 The date is the target for opening the founding cohort. It is not a promise of
 public launch, completed cohort validation, or an Android external release.
+
+The September 2026 committee review found that the target remains conditional
+on methodology authority, executable issue decomposition, client data
+integrity, operational readiness, and participant evidence. The
+[committee remediation sprint](committee-remediation-sprint.md) is the
+canonical backlog for closing those gaps. Existing commitments remain active
+until a focused product decision changes them; conflicts are tracked rather
+than silently overridden.
 
 ## Product commitments
 

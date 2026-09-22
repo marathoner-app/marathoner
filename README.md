@@ -27,10 +27,13 @@ being built next.
 The canonical [zero-to-beta plan](docs/zero-to-beta-plan.md) defines the product
 commitments, delivery waves, monthly evidence gates, safety boundary, and solo
 working model. [GitHub issue #104](https://github.com/marathoner-app/marathoner/issues/104)
-is its live execution tracker. The [product vision](docs/product-vision.md)
-describes the larger destination, and the
-[founding cohort plan](docs/founding-cohort-plan.md) describes recruitment and
-validation.
+is its live execution tracker. The
+[committee remediation sprint](docs/committee-remediation-sprint.md) records
+the prioritized work and evidence required to resolve the September 2026
+product, investor, architecture, delivery, and operations review. The
+[product vision](docs/product-vision.md) describes the larger destination, and
+the [founding cohort plan](docs/founding-cohort-plan.md) describes recruitment
+and validation.
 
 ## Technology
 
