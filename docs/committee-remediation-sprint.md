@@ -5,7 +5,7 @@
 - **Owner:** Kevin Tulloch
 - **Review scope:** The Marathoner product repository, excluding Creator Radar
 - **Parent tracker:** [GitHub issue #104](https://github.com/marathoner-app/marathoner/issues/104)
-- **Current delivery slice:** [GitHub issue #55](https://github.com/marathoner-app/marathoner/issues/55)
+- **Current delivery slice:** [GitHub issue #113](https://github.com/marathoner-app/marathoner/issues/113)
 - **Related plans:** [Zero-to-beta plan](zero-to-beta-plan.md),
   [product vision](product-vision.md), and
   [founding cohort plan](founding-cohort-plan.md)
@@ -134,7 +134,7 @@ unrelated implementation issues.
 
 1. **Publish this remediation register and repository navigation.**
    - Owner: Kevin Tulloch
-   - Issue: #55
+   - Issue: #113
    - Evidence: merged document, working links, successful repository checks.
 2. **Ratify the narrowed beta contract.**
    - Owner: Kevin Tulloch
