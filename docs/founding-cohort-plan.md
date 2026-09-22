@@ -1,10 +1,11 @@
 # Founding cohort recruitment and validation plan
 
 - **Status:** Draft
-- **Last updated:** July 23, 2026
+- **Last updated:** September 22, 2026
 - **Product owner:** Kevin Tulloch
 - **Related issue:** [#35](https://github.com/marathoner-app/marathoner/issues/35)
-- **Related milestone:** [Mobile External Beta](https://github.com/marathoner-app/marathoner/milestone/2)
+- **Related milestone:** [06 Founding Cohort](https://github.com/marathoner-app/marathoner/milestone/2)
+- **Delivery plan:** [Marathoner zero-to-beta plan](zero-to-beta-plan.md)
 
 ## Purpose
 
@@ -61,7 +62,7 @@ have not been tested.
 
 ## Readiness before recruitment
 
-Participant invitations should not begin until the team can:
+Participant invitations should not begin until Marathoner can:
 
 - explain exactly what the beta includes and excludes;
 - provide a usable mobile experience for the supported beta platforms;
@@ -69,11 +70,25 @@ Participant invitations should not begin until the team can:
 - support account and data deletion requests;
 - collect consent for the information required by the beta;
 - respond to participant questions and product failures;
-- provide reviewed escalation guidance for pain or unusual discomfort; and
+- provide conservative authored escalation guidance for pain or unusual
+  discomfort; and
 - explain how feedback and training data will be used.
 
-Qualified experts must review production training rules and safety guidance
-before external participants are asked to rely on them.
+The beta may identify some methodology and guidance as experimental and not yet
+expert reviewed, but a disclaimer is not the safety system. Before invitations
+open, Marathoner must use conservative authored boundaries, avoid medical or
+guaranteed-outcome claims, explain material recommendations, support participant
+withdrawal, and provide a process for pausing recruitment or disabling unsafe
+guidance. Qualified review of training methodology and safety guidance remains
+required before broad public launch.
+
+## Supported beta clients
+
+- iOS is required and is expected to use external TestFlight distribution.
+- The responsive web application remains available for planning, history,
+  configuration, and detailed analysis.
+- Android external distribution is not required for the founding cohort and
+  has no committed date.
 
 ## Recruitment sequence
 
@@ -136,12 +151,18 @@ appropriate agreement and participant consent.
 Relevant spaces may include first-marathon and beginner-running communities on
 Reddit, Facebook, Discord, and race-specific group chats.
 
-The team should contribute useful information, follow each community's rules,
-and obtain moderator permission before recruiting. The message should invite
-people to shape a focused first-marathon system rather than ask for anonymous
-app downloads.
+Marathoner outreach should contribute useful information, follow each
+community's rules, and obtain moderator permission before recruiting. The
+message should invite people to shape a focused first-marathon system rather
+than ask for anonymous app downloads.
 
-### 6. Founder-led content
+### 6. Creator research and founder-led content
+
+Creator Radar may be used to identify relevant creators, communities, and
+trusted connectors for thoughtful outreach. It is a research and recruitment
+input, not a dependency of the Marathoner product or a substitute for consent.
+Production attribution and automated outreach remain outside the beta critical
+path.
 
 Public content should use the founder's real training experience to answer
 specific beginner questions. Potential topics include:
@@ -254,7 +275,7 @@ After the four-week and eight-week reviews, choose one of three paths:
 - **Pause:** Trust, safety, product value, or support capacity is inadequate.
   Stop recruitment until the underlying problem is resolved.
 
-The team should not increase paid acquisition merely to compensate for weak
+The owner should not increase paid acquisition merely to compensate for weak
 activation or retention.
 
 ## Activities to defer
@@ -296,7 +317,6 @@ their name.
 
 - What is the responsible maximum size for the first supported cohort?
 - Which qualified experts will review the training rules and safety guidance?
-- Which beta platforms will participants be required to use?
 - What private tool will manage outreach, consent, and interview notes?
 - Which local clubs, stores, and races are appropriate first partners?
 - What evidence should permit the first paid acquisition experiment?
