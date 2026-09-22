@@ -1,7 +1,9 @@
 # Marathoner product vision
 
-**Status:** Draft  
-**Last updated:** July 22, 2026  
+**Status:** Active direction
+
+**Last updated:** September 22, 2026
+
 **Product owner:** Kevin Tulloch
 
 ## Purpose
@@ -138,9 +140,11 @@ logging remains a supported baseline even after integrations exist.
 
 ### Mobile usability from the beginning
 
-The responsive web application is a first-class mobile experience, not a
-desktop product that happens to shrink. Native applications can follow after
-the product model is validated.
+The responsive web application remains a first-class experience rather than a
+disposable prototype. A native iOS daily companion is required for the founding
+beta. The recommended implementation is a shared Expo and React Native mobile
+application, subject to the architecture decision in issue #83. Android
+external release is valuable but does not block that beta.
 
 ### Graduation is success
 
@@ -310,14 +314,17 @@ history, configuration, and detailed analysis. Mobile web emphasizes today's
 workout, quick logging, effort feedback, shoes, guidance, and adjustment
 approvals.
 
-The January 2027 beta should be comfortable to use on a phone and should be
-installable as a Progressive Web App when practical.
+The January 2027 web experience should remain comfortable to use on a phone. A
+Progressive Web App may be useful, but it is not a substitute for the required
+iOS beta and is not a beta gate.
 
 ### Native mobile applications
 
-Native iOS and Android applications are planned after the beta validates the
-daily workflows and domain model. They become the long-term daily companion,
-but they are not required for the first external beta.
+An iOS application is required for the founding beta and becomes the daily
+companion for today's workout, logging, feedback, guidance, and adjustment
+approval. The proposed Expo and React Native approach allows one mobile core to
+support iOS first while retaining an Android-capable path. Android external
+distribution has no committed beta date and cannot delay the iOS cohort.
 
 ### Shared backend
 
@@ -341,40 +348,40 @@ Dates after Foundation are targets and may change as the product is validated.
 
 ### Foundation: July 22 to July 31, 2026
 
-Establish the development workflow, connect the initial training-data foundation,
-complete the GitHub organization migration, and prepare to onboard the first
-collaborator.
+Establish the development workflow, connect the initial training-data
+foundation, and complete the GitHub organization migration.
 
 Foundation scope does not expand to include the plan engine, native
 applications, or integrations.
 
-### Product core: August to October 2026
+### Solo delivery and mobile foundation: October 2026
 
-- persistent runner profiles and training data;
-- onboarding and race feasibility;
-- manual activity history;
-- training phases and approved domain models; and
-- a responsive mobile web foundation.
+- one canonical beta contract and solo delivery workflow;
+- an approved mobile architecture decision;
+- preservation of the responsive web application; and
+- authentication plus a shared-record round trip on a physical iPhone.
 
-### Planning and adaptation: November 2026
+### Intake and initial plan: November 2026
 
-- deterministic plan generation for a deliberately limited set of scenarios;
-- perceived-effort feedback;
-- minor schedule tuning;
-- major adjustment events;
-- first-version educational guidance; and
-- test coverage for approved rules.
+- persistent runner profiles and first-marathon intake;
+- race feasibility across all three supported starting groups;
+- deterministic, versioned initial-plan generation;
+- plan review, approval, and persistence; and
+- the next workout visible through supported clients.
 
-### Review and private testing: December 2026
+### Adaptation and iOS daily companion: December 2026
 
-- qualified expert review;
-- internal and invited testing;
-- correction of unsafe, unclear, or inconsistent behavior;
-- mobile-browser usability validation;
-- beta support and feedback tools; and
-- waitlist or targeted recruitment.
+- completed-run and perceived-effort feedback;
+- pattern-based deterministic adaptation;
+- authored explanations and adjustment approval;
+- timely first-version educational guidance;
+- an end-to-end daily loop on a physical iPhone; and
+- an installable internal or TestFlight candidate.
 
-### Invite-only external beta: January 2027
+The exact waves, dates, and evidence gates are maintained in the
+[zero-to-beta plan](zero-to-beta-plan.md).
+
+### Invite-only external beta: January 15, 2027
 
 The target is a small cohort of English-speaking adults in the United States
 preparing for their first marathon later in 2027.
@@ -383,8 +390,9 @@ The proposed recruitment sequence, participant offer, and early learning gates
 are described in the
 [founding cohort recruitment and validation plan](founding-cohort-plan.md).
 
-The beta is a responsive web experience. It does not promise native apps,
-Garmin integration, advanced analytics, or broad public availability.
+The beta requires iOS and preserves the responsive web application. It does not
+promise Android external distribution, Garmin integration, advanced analytics,
+or broad public availability.
 
 The New Year period may be used for targeted recruitment and learning. Major
 paid acquisition should wait until onboarding, comprehension, retention, and
@@ -397,9 +405,9 @@ using evidence from real participants.
 
 ### Multi-platform expansion: after beta validation
 
-Develop native applications, pursue Garmin and health-platform integrations,
-expand analytics, and prepare the public marketing experience when the core
-journey is dependable.
+Evaluate Android external distribution, pursue Garmin and health-platform
+integrations, expand analytics, and prepare the public marketing experience
+when the core journey is dependable.
 
 ### Public launch: evidence-driven
 
@@ -409,9 +417,10 @@ responsible recommendations.
 
 ## January beta scope
 
-The initial external beta may include:
+The initial external beta includes:
 
-- responsive web and mobile-browser experiences;
+- an iOS application distributed through TestFlight;
+- the preserved responsive web experience;
 - account creation and persistent data;
 - beginner onboarding;
 - race-date feasibility;
@@ -426,7 +435,7 @@ The initial external beta may include:
 
 The beta does not require:
 
-- native app-store releases;
+- an Android external release or public App Store release;
 - Garmin or health-platform integrations;
 - a generative planning system;
 - multiple race distances;
@@ -475,7 +484,8 @@ hypothesis, not a launch commitment.
 - Health, privacy, accessibility, and consumer-protection requirements require
   deliberate review before public launch.
 - Garmin and other integrations depend on external approval and platform terms.
-- The January beta target is aggressive for a small part-time team.
+- The January beta target is aggressive for one owner-developer working around
+  a full-time job and personal commitments.
 - Training guidance must remain understandable and testable as personalization
   grows.
 - The product must avoid copying proprietary plans or educational material.
@@ -492,7 +502,7 @@ For the initial product, Marathoner is not:
 - a marketplace for coaches;
 - a general-purpose app for every race distance;
 - a guarantee of race completion or injury avoidance; or
-- a native mobile application before the responsive product is validated.
+- an Android external release before the iOS beta is validated.
 
 ## Open questions
 
@@ -500,6 +510,6 @@ For the initial product, Marathoner is not:
 - How many users can the first beta support responsibly?
 - What evidence is sufficient before finish-time goals are introduced?
 - What price and access period fit the First Marathon Journey?
-- When should native mobile development begin?
+- What evidence should trigger an Android external-release plan?
 - Which integrations follow Garmin?
 - Which beta measures should block or permit a broader launch?
