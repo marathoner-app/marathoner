@@ -6,14 +6,16 @@
 - **Target:** Open the founding cohort on January 15, 2027
 - **Master tracker:** [GitHub issue #104](https://github.com/marathoner-app/marathoner/issues/104)
 - **Active remediation:** [Committee remediation sprint](committee-remediation-sprint.md)
+- **Founding-beta contract:** [GitHub issue #117](https://github.com/marathoner-app/marathoner/issues/117)
 
 ## Outcome
 
-By January 15, 2027, Marathoner can invite a small founding cohort to an iOS
-beta that supports the complete first-marathon training loop: intake, an
-understandable initial plan, daily use, completed-run feedback, deterministic
-adaptation, timely educational guidance, and informed approval of material plan
-changes.
+By January 15, 2027, Marathoner can invite a small, allowlisted founding cohort
+of adults who already run consistently and are preparing for a first marathon.
+The beta supports a bounded first-marathon loop: intake, a reviewed plan family,
+daily use, completed-run feedback, deterministic hold/repeat/reschedule
+recommendations, timely reviewed guidance, and informed approval of material
+plan changes.
 
 The date is the target for opening the founding cohort. It is not a promise of
 public launch, completed cohort validation, or an Android external release.
@@ -22,61 +24,108 @@ The September 2026 committee review found that the target remains conditional
 on methodology authority, executable issue decomposition, client data
 integrity, operational readiness, and participant evidence. The
 [committee remediation sprint](committee-remediation-sprint.md) is the
-canonical backlog for closing those gaps. Existing commitments remain active
-until a focused product decision changes them; conflicts are tracked rather
-than silently overridden.
+canonical backlog for closing those gaps.
 
-## Product commitments
+## Founding-beta contract
 
-- iOS is required for the founding beta. The supported distribution path is an
-  external TestFlight beta unless a later recorded decision changes it.
-- The existing responsive web application remains part of Marathoner. It is the
-  planning, history, configuration, and detailed-analysis surface and is not
-  being replaced by the mobile work.
-- Android should remain buildable when the approved shared-mobile architecture
-  makes that practical, but an Android external release is not a beta gate and
-  has no committed date.
-- The beta serves runners starting from no running, runners without a
-  consistent base, and runners who already run consistently. Intake and plan
-  generation may choose different starting phases for each group.
-- Ongoing adaptation and educational guidance are beta requirements. A static
-  plan plus activity logging is not enough to test the product promise.
-- Beta decisions may use deterministic, versioned rules and authored
+### Supported participant
+
+The founding beta supports an English-speaking adult in the United States who:
+
+- is preparing for a first marathon;
+- already runs consistently under the eligibility boundary approved in #119;
+- has a race horizon, recent training, and availability supported by the
+  approved beta rules;
+- is willing to log training and complete brief feedback check-ins; and
+- understands that Marathoner is experimental training support, not medical
+  care or an individual professional coach.
+
+The founding beta does not support someone starting from no running, returning
+after an inconsistent period, presenting a pain or unusual-symptom escalation,
+or requesting a race timeline outside the approved rule boundary. Those people
+receive an honest unsupported result rather than an improvised plan. Numeric
+mileage, frequency, duration, and progression thresholds are methodology and
+must be approved through #119 before invitations open.
+
+The broader product vision still includes couch-to-5K and base-building paths.
+They are deferred until the first narrow workflow produces trustworthy safety,
+support, and product evidence.
+
+### Cohort size and sequence
+
+- The first invitation batch contains five to eight allowlisted participants.
+- No more than eight participants may be active before the two-week operating
+  review.
+- After a passing two-week review, the owner may expand to no more than twelve
+  concurrently active participants and fifteen accepted invitations through
+  the eight-week review.
+- Expansion pauses when support capacity, safety, privacy, recommendation, or
+  data-integrity evidence fails its threshold.
+- The beta remains free in exchange for structured feedback.
+
+### Plan and adaptation boundary
+
+- Use one qualified-review-approved first-marathon plan family or a small set
+  of deterministic variants for the supported runner segment.
+- Generate recommendations from explicit, versioned, tested rules and authored
   explanations. Generative AI is not required.
-- The founding cohort remains free in exchange for structured feedback. The
-  planning targets remain 25 accepted invitations, 18 completed onboardings,
-  and 12 participants active at four weeks.
-- No delivery commitment assumes that a contributor joins. Future contributors
-  may take bounded work after they arrive, but the plan must remain executable
-  and understandable by the owner working alone.
+- Limit beta adaptation to rescheduling an approved workout, holding
+  progression, repeating an approved period, or making no change.
+- Require informed runner approval before a material plan revision.
+- Do not autonomously increase intensity or training load, change the race or
+  goal, predict a finish time, diagnose injury, or improvise outside the
+  approved rule set.
+
+### Supported clients
+
+| Capability | Responsive web | iOS through TestFlight |
+| --- | --- | --- |
+| Account creation, recovery, consent, and intake | Primary | Sign-in and session recovery |
+| Plan generation result, review, and approval | Primary | Read approved plan and next workout |
+| Configuration, history, and detailed analysis | Primary | Compact daily context |
+| Today's workout and manual completion | Supported | Primary |
+| Effort, optional notes, and shoe capture | Supported | Primary |
+| Reviewed guidance and bounded adjustment decision | Supported | Primary |
+| Support, withdrawal, and deletion initiation | Supported | Required in app |
+
+Both clients use the same owned, versioned records. The web application remains
+a first-class product surface and is not replaced by the iOS work.
+
+### Network and platform boundary
+
+- Material writes require a network connection. Plan approval, run completion,
+  adjustment decisions, consent changes, and deletion requests must not enter a
+  custom offline mutation queue.
+- A client may show its last safe in-memory or platform-provided cached view,
+  but it must say when reconnecting is required to save or change data.
+- iOS is required for the founding beta. External TestFlight is the intended
+  distribution path unless a later recorded decision changes it.
+- Android external distribution, integrations, payments, AI planning, GPS,
+  push notifications, and health-platform data are excluded.
+- No delivery commitment assumes another contributor joins.
+
+### Methodology fallback
+
+If qualified approval for the supported beta slice is unavailable, Marathoner
+may run only a non-prescriptive research beta using a participant-supplied or
+individually human-reviewed plan. That fallback may test planning interfaces,
+logging, comprehension, and feedback, but it may not generate algorithmic
+training, adaptation, pain, fueling, hydration, or recovery recommendations.
 
 ## Architecture decision boundary
 
-The recommended direction is one Expo and React Native mobile application with
-an iOS beta target and an Android-capable shared core, alongside the existing
-Vite web application. Shared TypeScript packages should hold portable training
-contracts, deterministic rules, validation, calculations, and persistence
-boundaries; platform-specific interfaces should remain separate.
+The mobile implementation remains undecided until issue
+[#83](https://github.com/marathoner-app/marathoner/issues/83) compares a
+Capacitor iOS shell, Expo with the Firebase JavaScript SDK, and Expo with React
+Native Firebase against the same physical-device evidence. Prefer the least
+duplicated option that passes session recovery, shared-record, accessibility,
+network-boundary, clean-build, signing, and external-TestFlight-path checks.
 
-The proposed shape is:
-
-```text
-apps/
-  web/                 existing React and Vite application
-  mobile/              proposed Expo and React Native application
-packages/
-  training-domain/     portable entities, units, validation, and calculations
-  training-contracts/  serialized cross-client contracts and fixtures
-  training-rules/      versioned generation and adaptation rules
-  training-data/       repository interfaces and platform adapters
-```
-
-This structure is a proposal until issue
-[#83](https://github.com/marathoner-app/marathoner/issues/83) approves the
-mobile architecture decision record. The spike may change package boundaries
-when evidence warrants it. Android-only issues remain open in their holding
-milestone until that decision is approved; they must not be closed as
-superseded merely because Expo is the current recommendation.
+Do not relocate the existing web application or build a generalized shared
+workspace before the winning spike is proven. Extract only the minimum pure
+TypeScript contract or rule package needed by the selected client. Android-only
+issues remain in their holding milestone until the ADR records whether they are
+reused, rewritten, deferred, or superseded.
 
 ## Delivery waves
 
@@ -86,12 +135,14 @@ when it does not weaken the preceding gate.
 | Wave | Target | Tracker | Required outcome |
 | --- | --- | --- | --- |
 | 00 Solo Delivery and Beta Contract | October 4, 2026 | [#54](https://github.com/marathoner-app/marathoner/issues/54) | One canonical beta promise, solo delivery workflow, issue hierarchy, and approved scope boundaries. |
-| 01 Shared Mobile Foundation | October 18, 2026 | [#33](https://github.com/marathoner-app/marathoner/issues/33) | A physical iPhone can authenticate and exchange one typed training record with the preserved web application through the proposed shared boundary. |
-| 02 Intake and Initial Plan | November 15, 2026 | [#65](https://github.com/marathoner-app/marathoner/issues/65) | A representative runner from each starting group can complete intake, receive and approve a deterministic plan, and identify the next workout. |
+| 01 Shared Mobile Foundation | October 18, 2026 | [#33](https://github.com/marathoner-app/marathoner/issues/33) | A physical iPhone can authenticate and exchange one typed training record with the preserved web application through the approved least-duplicated client boundary. |
+| 02 Intake and Initial Plan | November 15, 2026 | [#65](https://github.com/marathoner-app/marathoner/issues/65) | A representative supported runner can complete intake, receive an approved deterministic plan or honest unsupported result, approve the plan, and identify the next workout. |
 | 03 Track, Learn, and Adapt | December 6, 2026 | [#105](https://github.com/marathoner-app/marathoner/issues/105), [#106](https://github.com/marathoner-app/marathoner/issues/106) | A runner can log what happened, receive an authored explanation and deterministic adjustment recommendation, and approve or decline a material change. |
 | 04 iOS Daily Companion | December 20, 2026 | [#108](https://github.com/marathoner-app/marathoner/issues/108) | The complete daily loop is usable on a physical iPhone and an internal/TestFlight candidate can be installed and exercised. |
 | 05 Trust and External-Beta Readiness | January 8, 2027 | [#107](https://github.com/marathoner-app/marathoner/issues/107), [#109](https://github.com/marathoner-app/marathoner/issues/109) | Safety boundaries, privacy and deletion, accessibility, reliability, support, consent, instrumentation, and TestFlight operations satisfy the beta checklist. |
-| 06 Founding Cohort | January 15, 2027 | [#110](https://github.com/marathoner-app/marathoner/issues/110) | Invitations can open to the supported cohort with a measured onboarding, support, feedback, and pause process. |
+| 06A Founding Cohort Invitations | January 15, 2027 | [#129](https://github.com/marathoner-app/marathoner/issues/129) | Five to eight allowlisted invitations may open only when every invitation blocker passes. |
+| 06B Four-Week Review | February 12, 2027 | [#131](https://github.com/marathoner-app/marathoner/issues/131) | Activation, comprehension, trust, safety, usefulness, and support burden produce a proceed, refine, or pause decision. |
+| 06C Eight-Week Review | March 12, 2027 | [#128](https://github.com/marathoner-app/marathoner/issues/128) | Continued usefulness, adaptation trust, willingness to pay, and the next experiment receive a recorded decision. |
 
 ## Evidence gates
 
@@ -101,8 +152,9 @@ By October 18:
 
 - the beta contract is consistent across the roadmap, product vision, and
   cohort plan;
-- issue #83 records the mobile stack, repository boundary, ownership of shared
-  rules, rejected alternatives, and migration sequence;
+- issue #83 compares Capacitor, Expo with the Firebase JavaScript SDK, and Expo
+  with React Native Firebase and records the selected stack, rejected
+  alternatives, minimal repository boundary, and migration sequence;
 - a development build launches on a physical iPhone;
 - the iOS client can authenticate against the Marathoner Firebase project;
 - iOS and web can read and write the same typed sample training record without
@@ -115,13 +167,13 @@ the iOS proof.
 
 ### November: prove the initial-plan journey
 
-By November 15, test fixtures representing all three starting groups must each
-complete this path:
+By November 15, supported, unsupported-base, unsafe-escalation, and infeasible
+race-date fixtures must complete the appropriate path:
 
 1. create or load an owned runner profile;
 2. provide race, current-running, availability, and schedule context;
-3. receive a feasible, deterministic initial plan or an honest infeasibility
-   result;
+3. receive a feasible plan from the reviewed deterministic family or an honest
+   unsupported result;
 4. understand and approve the proposed plan; and
 5. find the next scheduled workout.
 
@@ -142,8 +194,9 @@ device:
 
 By December 20, that loop must run on a physical iPhone from an installable
 internal or TestFlight candidate with honest loading, empty, offline, and
-recoverable-error behavior. Failure of either December gate triggers scope or
-date review before external invitations are promised.
+recoverable-error behavior. Offline material actions must show that a network
+connection is required rather than appearing saved. Failure of either December
+gate triggers scope or date review before external invitations are promised.
 
 ## Wave exit conditions
 
@@ -161,18 +214,21 @@ date review before external invitations are promised.
 
 ### Wave 01: Shared Mobile Foundation
 
-- Complete the Expo and shared-architecture spike and approve issue #83.
+- Compare the candidate Capacitor and Expo paths on a physical iPhone and
+  approve issue #83 from evidence.
 - Preserve the deployed web experience during any workspace migration.
 - Establish a single source of truth for portable training contracts and
   cross-client fixtures.
 - Prove authentication, ownership, read/write synchronization, local build
   instructions, and repeatable verification on a physical iPhone.
-- Decide the minimum reliable offline and conflict behavior needed by beta.
+- Prove online-required material writes, honest reconnect behavior, and the
+  minimum revision-based conflict policy.
 
 ### Wave 02: Intake and Initial Plan
 
 - Persist the minimum runner profile needed for plan generation.
-- Support all three starting groups through one coherent intake.
+- Support the ratified consistent-runner segment and reject deferred starting
+  groups honestly.
 - Report when a requested race date cannot support a responsible progression.
 - Generate plans only from explicit, versioned, tested rules.
 - Let the runner understand and approve a plan before activation.
@@ -215,9 +271,10 @@ date review before external invitations are promised.
 
 ### Wave 06: Founding Cohort
 
-- Invite no more participants than can be supported responsibly.
-- Track 25 accepted invitations, 18 completed onboardings, and 12 participants
-  active at four weeks as hypotheses, not guarantees.
+- Invite five to eight allowlisted participants initially.
+- Keep no more than eight participants active before the two-week review and no
+  more than twelve concurrently active or fifteen accepted through the
+  eight-week review.
 - Review activation, comprehension, adaptation trust, safety, and support burden
   before expanding recruitment.
 - Pause invitations for unresolved critical recommendation, privacy,
@@ -225,13 +282,15 @@ date review before external invitations are promised.
 
 ## Safety and expert review
 
-Qualified review of the full training methodology is not a blocker for the
-initial invite-only beta, but a disclaimer is not the safety system.
+Qualified review of the full future methodology is not required for the first
+cohort. Dated qualified approval of the exact rules and guidance supported by
+that cohort is required before invitations. A disclaimer is not the safety
+system.
 
 Before invitations open, the beta must:
 
-- describe the rules and guidance as experimental and identify unreviewed
-  areas plainly;
+- identify the reviewed ruleset and content versions and describe the bounded
+  beta as experimental;
 - avoid diagnosis, treatment claims, injury-prevention promises, and guaranteed
   outcomes;
 - use conservative, authored escalation boundaries for pain, unusual symptoms,
@@ -241,10 +300,9 @@ Before invitations open, the beta must:
 - make it possible to stop recruitment and disable unsafe guidance; and
 - give participants a clear support and withdrawal path.
 
-Qualified review of the training methodology, pain escalation, fueling,
-hydration, and recovery guidance is required before broad public launch. Beta
-evidence may help identify what needs review, but it does not convert unreviewed
-guidance into approved guidance.
+Additional starting segments, rules, and guidance require additional qualified
+approval before they are exposed. Beta evidence may identify what needs review,
+but it does not convert unreviewed guidance into approved guidance.
 
 ## Creator Radar boundary
 
@@ -263,9 +321,9 @@ private research data must not be placed in this public repository.
 The critical path is:
 
 ```text
-beta contract -> iOS/shared foundation -> intake and initial plan
+beta contract -> iOS/shared foundation -> bounded intake and initial plan
               -> tracking and adaptation -> iOS daily companion
-              -> trust/readiness -> founding cohort
+              -> trust/readiness -> invitations -> four/eight-week reviews
 ```
 
 Android external distribution, generative AI, Garmin, payments, social

@@ -5,7 +5,7 @@
 - **Owner:** Kevin Tulloch
 - **Review scope:** The Marathoner product repository, excluding Creator Radar
 - **Parent tracker:** [GitHub issue #104](https://github.com/marathoner-app/marathoner/issues/104)
-- **Current delivery slice:** [GitHub issue #113](https://github.com/marathoner-app/marathoner/issues/113)
+- **Current delivery slice:** [GitHub issue #117](https://github.com/marathoner-app/marathoner/issues/117)
 - **Related plans:** [Zero-to-beta plan](zero-to-beta-plan.md),
   [product vision](product-vision.md), and
   [founding cohort plan](founding-cohort-plan.md)
@@ -49,10 +49,9 @@ The current investment and release posture is:
   more starting segments, broad adaptation, native depth, integrations, or
   acquisition scale.
 
-## Working beta direction
+## Ratified founding-beta contract
 
-Issue #81 must ratify the final contract. The committee recommends that the
-first supported slice use these constraints:
+Issue #117 ratifies the first supported slice with these constraints:
 
 - Start with five to eight allowlisted adults who already run consistently and
   are preparing for a first marathon.
@@ -67,8 +66,11 @@ first supported slice use these constraints:
   shoes, bounded adjustment review, support, and deletion initiation.
 - Defer Android external distribution, integrations, payments, AI, GPS, push
   notifications, and health-platform data.
-- Begin with five to eight participants, review the first two weeks, and expand
-  only when safety and support capacity remain acceptable.
+- Invite five to eight participants initially and keep no more than eight
+  active before the two-week review.
+- After a passing two-week review, permit no more than twelve concurrently
+  active participants and fifteen accepted invitations through the eight-week
+  review.
 
 If qualified methodology review is unavailable, the fallback is a
 non-prescriptive research beta using a participant-supplied or individually
@@ -99,10 +101,10 @@ Critical items can have prerequisites in earlier high-priority work.
 | ID | Priority | Type | Required outcome | Existing home | Gate | Status |
 | --- | --- | --- | --- | --- | --- | --- |
 | CR-01 | Critical | Safety | Name the qualified reviewer role and obtain dated approval for the supported rules, eligibility, escalation boundaries, and guidance. | #70, #107 | Invitations | Not started |
-| CR-02 | Critical | Product | Ratify one narrow beta segment, participant count, adaptation boundary, client capability matrix, and explicit exclusions. | #81, #104 | Wave 00 | Not started |
+| CR-02 | Critical | Product | Ratify one narrow beta segment, participant count, adaptation boundary, client capability matrix, and explicit exclusions. | #117, #104 | Wave 00 | Complete |
 | CR-03 | Critical | Investment | Record problem evidence, alternatives, differentiation, participant commitments, and willingness-to-pay signals. | #35, #110 | Cohort expansion | Not started |
 | CR-04 | High | Governance | Repair contradictory platform, parent, milestone, design, audit, and current-state sources. | #54, #55, #104 | Wave 00 | In progress |
-| CR-05 | High | Delivery | Decompose #105 through #110 into owner-sized child issues with dependencies and evidence-based exit criteria. | #104–#110 | Wave 00 | Not started |
+| CR-05 | High | Delivery | Decompose #105 through #110 into owner-sized child issues with dependencies and evidence-based exit criteria. | #104–#140 | Wave 00 | Complete |
 | CR-06 | High | Delivery | Produce a capacity model and likely/conservative forecast using focused sessions, external wait time, and 60–70% planned utilization. | #54, #104 | Wave 00 | Not started |
 | CR-07 | High | Quality | Run lint, tests, typecheck/build, and Firestore emulator checks on pull requests and make required checks visible before merge. | #56, #57 | Wave 00 | Not started |
 | CR-08 | High | Mobile | Compare Capacitor, Expo with Firebase JS, and Expo with React Native Firebase on a physical-iPhone vertical slice; approve the ADR from evidence. | #33, #83–#89 | Wave 01 | Not started |
@@ -138,12 +140,12 @@ unrelated implementation issues.
    - Evidence: merged document, working links, successful repository checks.
 2. **Ratify the narrowed beta contract.**
    - Owner: Kevin Tulloch
-   - Issue: #81
+   - Issue: #117
    - Evidence: README, product vision, zero-to-beta plan, cohort plan, #104, and
      milestones agree on segment, participant count, clients, adaptation, and
      exclusions.
 3. **Repair live issue truth.**
-   - Create a focused issue under #54.
+   - Issue: #118.
    - Correct stale parent declarations, remove Android beta requirements from
      #23, update obsolete current-state descriptions, and close or supersede
      stale draft work explicitly.
@@ -157,16 +159,16 @@ unrelated implementation issues.
    - Evidence: focused issue templates and a contribution guide explain branch,
      verification, review, merge, and evidence expectations.
 6. **Add the capacity forecast.**
-   - Create a focused issue under #54.
+   - Issue: #116.
    - Estimate leaf issues in focused sessions with optimistic, likely, and
      conservative values; reserve 30–40% capacity; include Apple and reviewer
      wait time; publish likely and conservative gate dates.
 7. **Create methodology-review work.**
-   - Create focused child issues under #107 and prerequisites for #70.
+   - Issues: #119 and #134.
    - Record reviewer qualifications, rule inventory, review scope, approval
      evidence, unsupported cases, and change-control process.
 8. **Contain premature external use.**
-   - Create a focused child issue under #109.
+   - Issue: #123.
    - Decide whether to disable public signup or add prototype limitations,
      privacy, support, withdrawal, and deletion-request paths immediately.
 9. **Decompose the critical outcome epics.**
@@ -175,7 +177,7 @@ unrelated implementation issues.
      content and triggers, safety controls, iOS delivery, beta operations, and
      post-invitation reviews.
 10. **Record the first validation plan.**
-    - Create a focused child issue under #110.
+    - Issues: #126 and #127.
     - Choose one initial segment; define interview evidence, beta commitment,
       willingness-to-pay questions, metric thresholds, and private research
       storage.
