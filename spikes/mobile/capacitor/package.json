@@ -1,0 +1,23 @@
+{
+  "name": "marathoner-capacitor-spike",
+  "version": "0.0.0",
+  "private": true,
+  "engines": {
+    "node": "^22.0.0"
+  },
+  "scripts": {
+    "build:web": "npm --prefix ../../.. run build:mobile-spike",
+    "sync:ios": "cap sync ios",
+    "open:ios": "cap open ios",
+    "typecheck": "tsc --noEmit",
+    "test": "node --test test/*.test.mjs"
+  },
+  "dependencies": {
+    "@capacitor/core": "8.5.2",
+    "@capacitor/ios": "8.5.2"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "8.5.2",
+    "typescript": "~6.0.3"
+  }
+}
