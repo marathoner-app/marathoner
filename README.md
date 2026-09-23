@@ -269,3 +269,16 @@ Every repository change starts from an open issue and reaches `main` through a
 pull request. Include `Closes #<issue-number>`, `Fixes #<issue-number>`, or
 `Resolves #<issue-number>` in the pull request description so GitHub can verify
 the relationship.
+
+Every pull request targeting `main` runs these read-only GitHub Actions checks:
+
+- **Linked issue** verifies that the pull request closes an existing open issue.
+- **Lint** runs `npm run lint`.
+- **Unit tests** runs `npm test`.
+- **Production build** runs `npm run build`, including TypeScript checks.
+- **Firestore emulator tests** runs `npm run test:firestore` with Java 21.
+
+All checks must pass before the owner performs the final diff review and merges.
+The pull-request workflow does not deploy or modify application environments;
+the separate Pages workflow runs only after a merge to `main` or a manual
+dispatch.
