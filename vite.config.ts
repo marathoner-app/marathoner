@@ -1,4 +1,4 @@
-import { defineConfig } from 'vitest/config'
+import { configDefaults, defineConfig } from 'vitest/config'
 import react from '@vitejs/plugin-react'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -43,6 +43,7 @@ export default defineConfig(({ mode }) => {
       : undefined,
     test: {
       environment: 'jsdom',
+      exclude: [...configDefaults.exclude, 'spikes/mobile/**'],
       setupFiles: './src/test/setup.ts',
     },
   }
