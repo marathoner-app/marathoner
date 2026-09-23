@@ -394,10 +394,13 @@ applications, or integrations.
 - an end-to-end daily loop on a physical iPhone; and
 - an installable internal or TestFlight candidate.
 
-The exact waves, dates, and evidence gates are maintained in the
-[zero-to-beta plan](zero-to-beta-plan.md).
+The exact wave contract and evidence gates are maintained in the
+[zero-to-beta plan](zero-to-beta-plan.md). The
+[capacity forecast](capacity-forecast.md) is the scheduling source of truth;
+it concludes that the current scope and solo-owner capacity do not support the
+original January 2027 invitation target.
 
-### Invite-only external beta: January 15, 2027
+### Invite-only external beta: after the invitation gates pass
 
 The first invitation batch contains five to eight allowlisted,
 English-speaking adults in the United States who already run consistently and
@@ -405,6 +408,11 @@ are preparing for a first marathon. No more than eight may be active before the
 two-week operating review. A passing review may permit expansion to at most
 twelve concurrently active participants and fifteen accepted invitations
 through the eight-week review.
+
+January 15, 2027 remains a scope-or-date decision checkpoint, not a
+capacity-backed invitation date. Current optimistic, likely, and conservative
+dates live in the capacity forecast and must not override an unmet safety,
+integrity, privacy, methodology, or release gate.
 
 The proposed recruitment sequence, participant offer, and early learning gates
 are described in the

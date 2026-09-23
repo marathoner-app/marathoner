@@ -8,6 +8,7 @@
 - **Four-week milestone:** [06B Founding Cohort Four-Week Review](https://github.com/marathoner-app/marathoner/milestone/10)
 - **Eight-week milestone:** [06C Founding Cohort Eight-Week Review](https://github.com/marathoner-app/marathoner/milestone/11)
 - **Delivery plan:** [Marathoner zero-to-beta plan](zero-to-beta-plan.md)
+- **Capacity forecast:** [Owner-session and gate forecast](capacity-forecast.md)
 
 ## Purpose
 
@@ -19,6 +20,11 @@ It is a working hypothesis rather than a committed marketing plan. GitHub
 issues and milestones define scheduled work. Recruitment channels, targets,
 and timing should change when participant evidence shows that a different
 approach would be more responsible or effective.
+
+The January 15, 2027 milestone is a scope-or-date decision checkpoint. The
+current capacity forecast does not support invitations by that date; cohort
+timing follows the invitation gates and the forecast rather than the historical
+milestone alone.
 
 ## Objective
 
