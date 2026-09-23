@@ -5,7 +5,15 @@
 Marathoner uses Cloud Firestore for authenticated training data. Firebase
 Authentication already supplies the user identifier, the web application already
 depends on the Firebase SDK, and Firestore provides the document ownership and
-offline-friendly client model this stage of the product needs.
+typed document model this stage of the product needs.
+
+Firestore may retain a last-known in-memory view, but offline material writes are
+not part of the founding-beta promise. The current web repository sends writes
+directly through the Firebase client and has not yet implemented the explicit
+network gate, revision precondition, or cross-record transaction required by the
+ratified contract. Issues #80 and #115 own that work. Until they close, this
+document describes the current storage implementation rather than claiming the
+beta integrity boundary is complete.
 
 Components do not import Firestore. They consume typed repository interfaces
 from `src/persistence/trainingRepositories.ts`. A Firestore document-store adapter
