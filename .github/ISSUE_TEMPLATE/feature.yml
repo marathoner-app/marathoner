@@ -1,0 +1,62 @@
+name: Product or feature request
+description: Propose a user-facing capability or a change to product behavior.
+title: "[Feature]: "
+labels:
+  - enhancement
+  - planning
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Start with the runner's problem and the outcome, not an assumed implementation. Larger ideas can become an epic after the decision is clear.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Runner problem or opportunity
+      description: Who needs this, what are they trying to do, and what happens today?
+    validations:
+      required: true
+
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Required outcome
+      description: Describe the observable value this work should create.
+      placeholder: An eligible runner can... so that...
+    validations:
+      required: true
+
+  - type: textarea
+    id: scope
+    attributes:
+      label: Focused scope
+      description: Name the smallest useful behavior, client, data, and guidance boundary.
+    validations:
+      required: true
+
+  - type: textarea
+    id: non-goals
+    attributes:
+      label: Explicit non-goals
+      description: List adjacent ideas this issue should not absorb. Leave blank only when the boundary is already obvious.
+
+  - type: textarea
+    id: acceptance-criteria
+    attributes:
+      label: Acceptance criteria
+      description: List observable conditions that prove the outcome is complete.
+      placeholder: |
+        - [ ] A runner can...
+        - [ ] Unsupported cases receive...
+        - [ ] Tests cover...
+    validations:
+      required: true
+
+  - type: textarea
+    id: verification
+    attributes:
+      label: Verification plan
+      description: Name the automated, device, accessibility, data, or content evidence this change requires.
+    validations:
+      required: true

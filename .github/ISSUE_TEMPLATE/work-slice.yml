@@ -1,0 +1,61 @@
+name: Focused engineering work
+description: Define one small, reviewable implementation or maintenance slice.
+title: "[Work]: "
+labels:
+  - "size: small"
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this form when the product decision is already made and the remaining work should fit one focused pull request.
+
+  - type: input
+    id: parent
+    attributes:
+      label: Parent or related issue
+      description: Link the epic, decision, or dependency when one exists.
+      placeholder: "#123"
+
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Required outcome
+      description: State the working result this slice must leave behind.
+      placeholder: The owner can...
+    validations:
+      required: true
+
+  - type: textarea
+    id: scope
+    attributes:
+      label: Focused scope
+      description: List the files, behavior, or records in scope and the adjacent work that remains out of scope.
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance-criteria
+    attributes:
+      label: Acceptance criteria
+      description: List concrete, reviewable completion conditions.
+      placeholder: |
+        - [ ] The focused behavior is implemented.
+        - [ ] Failure and empty states are covered when relevant.
+        - [ ] Documentation matches the result.
+    validations:
+      required: true
+
+  - type: textarea
+    id: verification
+    attributes:
+      label: Verification plan
+      description: Name the exact commands and manual evidence required before merge.
+      placeholder: npm run lint; npm test; npm run build; focused manual or emulator verification when relevant.
+    validations:
+      required: true
+
+  - type: textarea
+    id: risks
+    attributes:
+      label: Risks, assumptions, or open questions
+      description: Record anything that could change the scope or block safe completion. Leave blank when none are known.
