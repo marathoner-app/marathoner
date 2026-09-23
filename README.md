@@ -39,6 +39,9 @@ the founding-beta contract. The
 [committee remediation sprint](docs/committee-remediation-sprint.md) records
 the prioritized work and evidence required to resolve the September 2026
 product, investor, architecture, delivery, and operations review. The
+[qualified methodology review](docs/methodology/README.md) defines who may
+approve the founding-beta training and safety behavior, the versioned review
+inventory, and the evidence required before prescriptive use. The
 [product vision](docs/product-vision.md) describes the larger destination, and
 the [founding cohort plan](docs/founding-cohort-plan.md) describes recruitment
 and validation.
