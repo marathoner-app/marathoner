@@ -1,10 +1,12 @@
 # Founding cohort recruitment and validation plan
 
-- **Status:** Draft
+- **Status:** Active founding-beta plan
 - **Last updated:** September 22, 2026
 - **Product owner:** Kevin Tulloch
 - **Related issue:** [#35](https://github.com/marathoner-app/marathoner/issues/35)
-- **Related milestone:** [06 Founding Cohort](https://github.com/marathoner-app/marathoner/milestone/2)
+- **Invitation milestone:** [06A Founding Cohort Invitations](https://github.com/marathoner-app/marathoner/milestone/2)
+- **Four-week milestone:** [06B Founding Cohort Four-Week Review](https://github.com/marathoner-app/marathoner/milestone/10)
+- **Eight-week milestone:** [06C Founding Cohort Eight-Week Review](https://github.com/marathoner-app/marathoner/milestone/11)
 - **Delivery plan:** [Marathoner zero-to-beta plan](zero-to-beta-plan.md)
 
 ## Purpose
@@ -30,11 +32,14 @@ valuable than a large number of unqualified registrations.
 
 ## Founding participant
 
-The initial participant is expected to be an English-speaking adult in the
-United States who:
+The initial participant must be an English-speaking adult in the United States
+who:
 
 - is preparing for a first marathon within approximately six to twelve months;
-- is a beginner, returning runner, or runner without marathon experience;
+- already runs consistently under the eligibility boundary approved through
+  issue #119;
+- has recent training, availability, and a race horizon supported by the
+  approved plan family;
 - wants structured guidance rather than only an activity tracker;
 - is willing to log training and complete brief check-ins;
 - is willing to discuss confusing, unhelpful, or missing parts of the product;
@@ -42,19 +47,38 @@ United States who:
 - understands that the beta is not medical care or a substitute for an
   individual professional coach.
 
-The cohort should include different starting mileage, schedules, and levels of
-running experience. It does not need to represent every future Marathoner user
-in the first test.
+The founding beta does not support runners starting from no running, returning
+after an inconsistent period, presenting a pain or unusual-symptom escalation,
+or requesting a race horizon outside the approved rules. Those runners receive
+an honest unsupported result and may join later research; they do not receive
+an improvised beta plan.
+
+The cohort should include variation inside the approved segment without trying
+to represent every future Marathoner user. Numeric mileage, frequency,
+duration, and progression thresholds are methodology decisions that require
+qualified approval before invitations.
+
+## Cohort size and expansion
+
+- Invite five to eight allowlisted participants in the first batch.
+- Keep no more than eight participants active before the two-week operating
+  review.
+- Expand only after that review records a passing safety, integrity, trust, and
+  support-capacity decision.
+- Before the eight-week review, cap the cohort at twelve concurrently active
+  participants and fifteen accepted invitations.
+- Pause invitations whenever a critical recommendation, privacy,
+  data-integrity, safety, or support-capacity threshold fails.
 
 ## Participant offer
 
 The initial invitation can be summarized as:
 
 > Marathoner is being built for people preparing for their first marathon. We
-> are looking for a small group of founding participants who want a structured,
-> understandable training journey. Participation is free during the beta. In
-> return, we ask for honest feedback, regular training logs, and a short weekly
-> check-in.
+> are looking for a small group of adults who already run consistently and want
+> a structured, understandable first-marathon journey. Participation is free
+> during the beta. In return, we ask for honest feedback, regular training logs,
+> and a short weekly check-in.
 
 The offer must describe the product's actual readiness. It must not promise a
 race result, injury prevention, individualized medical advice, or features that
@@ -74,21 +98,48 @@ Participant invitations should not begin until Marathoner can:
   discomfort; and
 - explain how feedback and training data will be used.
 
-The beta may identify some methodology and guidance as experimental and not yet
-expert reviewed, but a disclaimer is not the safety system. Before invitations
-open, Marathoner must use conservative authored boundaries, avoid medical or
-guaranteed-outcome claims, explain material recommendations, support participant
-withdrawal, and provide a process for pausing recruitment or disabling unsafe
-guidance. Qualified review of training methodology and safety guidance remains
-required before broad public launch.
+Before invitations open, a qualified role must provide dated approval for the
+exact supported eligibility, progression, hold/repeat, race-date rejection,
+pain escalation, fueling, hydration, sleep, and recovery slice. Marathoner must
+also avoid medical or guaranteed-outcome claims, explain material
+recommendations, support participant withdrawal, and provide a process for
+pausing recruitment or disabling unsafe guidance.
+
+If that approval is unavailable, the only allowed fallback is a
+non-prescriptive research beta using participant-supplied or individually
+human-reviewed plans. Experimental labeling alone does not authorize
+algorithmic training, adaptation, pain, fueling, hydration, or recovery
+recommendations.
 
 ## Supported beta clients
 
 - iOS is required and is expected to use external TestFlight distribution.
-- The responsive web application remains available for planning, history,
-  configuration, and detailed analysis.
+- The responsive web application is primary for account creation, consent,
+  intake, plan result/review/approval, configuration, history, and detailed
+  analysis.
+- The iOS application is primary for session recovery, today's workout, manual
+  completion, perceived effort, optional notes, shoes, reviewed guidance,
+  bounded recommendation decisions, support, and deletion initiation.
+- Both clients may expose support, withdrawal, deletion initiation, the daily
+  loop, and approved-plan context when doing so does not create conflicting
+  records.
+- Material writes require a network connection. The clients must say when the
+  runner must reconnect rather than appearing to save an offline mutation.
 - Android external distribution is not required for the founding cohort and
   has no committed date.
+
+## Supported planning and adaptation
+
+- Use one qualified-review-approved first-marathon plan family or a small set
+  of deterministic variants for the eligible segment.
+- Limit beta adaptation to rescheduling an approved workout, holding
+  progression, repeating an approved period, or making no change.
+- Require runner approval before a material plan revision.
+- Do not autonomously increase intensity or training load, change the race or
+  goal, predict a finish time, diagnose injury, or improvise outside the
+  reviewed rules.
+- Defer Android external distribution, integrations, payments, AI planning,
+  GPS, push notifications, and health-platform data.
 
 ## Recruitment sequence
 
@@ -104,13 +155,13 @@ social-media share.
 
 A useful question is:
 
-> Who do you know who has talked about running a marathon but does not know how
-> to begin?
+> Who do you know who already runs consistently, is preparing for a first
+> marathon, and wants more structure and explanation than a static plan?
 
 This channel should produce the earliest conversations because trust already
 exists and feedback can be candid.
 
-### 2. Local clubs and beginner programs
+### 2. Local clubs and first-marathon programs
 
 Participate in local running communities before asking to recruit from them.
 Contact organizers directly and position Marathoner as a supplemental beta
@@ -118,9 +169,10 @@ tool, not a replacement for their coaches or community.
 
 Potential collaboration includes:
 
-- inviting a few beginner members into the cohort;
+- inviting a few eligible, consistently running first-marathon members into
+  the cohort;
 - presenting a free first-marathon planning session;
-- collecting feedback from organizers about beginner confusion; and
+- collecting feedback from organizers about first-marathon confusion; and
 - supporting a small group preparing for the same race.
 
 ### 3. Independent running stores
@@ -128,13 +180,13 @@ Potential collaboration includes:
 Running stores regularly meet customers buying their first proper shoes or
 preparing for an unfamiliar distance. An in-person conversation may lead to:
 
-- introductions to beginner training groups;
+- introductions to eligible first-marathon training groups;
 - a small QR-code card for the cohort waitlist;
 - an educational first-marathon session; or
 - expert feedback about shoe education and replacement guidance.
 
 Marathoner should provide useful education and should not imply that a store
-endorses unreviewed training guidance.
+endorses Marathoner or any guidance outside the reviewed beta boundary.
 
 ### 4. Race organizers
 
@@ -199,22 +251,26 @@ Early experiments should test a specific message with a small budget and a
 defined learning question. Broad app-install campaigns should not substitute
 for evidence that the experience works.
 
-## Initial funnel hypothesis
+## Initial funnel and operating limits
 
-The first recruitment funnel is a planning target, not an industry benchmark:
+The first recruitment funnel is a directional learning target, not an industry
+benchmark or growth quota:
 
 | Stage | Initial target |
 | --- | ---: |
-| Potential participants or trusted connectors identified | 100 |
-| Genuine conversations | 40 |
-| People accepting a beta invitation | 25 |
-| Participants completing onboarding | 18 |
-| Participants active after four weeks | 12 |
-| Participants active after eight weeks | 8 |
+| Focused discovery conversations in the approved segment | At least 10 |
+| Concrete workarounds or costly/confusing failure modes | At least 5 |
+| Credible commitments to test the bounded beta | At least 5 |
+| First invitation batch | 5–8 |
+| Maximum active before the two-week review | 8 |
+| Maximum accepted before the eight-week review | 15 |
+| Maximum concurrently active before the eight-week review | 12 |
+| Credible willingness-to-pay signals or explicit objections | At least 3 |
 
-Large differences from these numbers are evidence. For example, high interest
-with poor onboarding indicates a product or expectation problem, while few
-conversations from many introductions may indicate weak positioning.
+Every difference from these numbers is evidence. High interest with poor
+onboarding indicates a product or expectation problem, while weak commitment
+after focused conversations may indicate an unclear or undifferentiated value
+proposition.
 
 ## Validation signals
 
@@ -265,7 +321,7 @@ product.
 
 ## Decision gates
 
-After the four-week and eight-week reviews, choose one of three paths:
+At the two-week, four-week, and eight-week reviews, choose one of three paths:
 
 - **Proceed:** Participants activate, return, understand the guidance, and
   report increasing preparedness. Recruit a slightly larger cohort or test the
@@ -315,7 +371,6 @@ their name.
 
 ## Open questions
 
-- What is the responsible maximum size for the first supported cohort?
 - Which qualified experts will review the training rules and safety guidance?
 - What private tool will manage outreach, consent, and interview notes?
 - Which local clubs, stores, and races are appropriate first partners?

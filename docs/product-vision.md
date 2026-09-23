@@ -66,6 +66,18 @@ The first version uses miles and United States-oriented race assumptions.
 Internationalization, additional unit defaults, and broader regional guidance
 can follow once the first experience is validated.
 
+### Founding-beta user
+
+The January 2027 founding beta intentionally serves a narrower first user: an
+English-speaking adult in the United States who already runs consistently and
+is preparing for a first marathon. The exact recent-running, race-horizon, and
+progression thresholds require qualified approval before invitations.
+
+Starting from no running, returning after an inconsistent period, and broader
+base building remain part of the product destination. They are excluded from
+the first cohort so one reviewed workflow can establish safety, trust, support,
+and product evidence before the methodology expands.
+
 ## Core problem
 
 First-time marathoners often do not know which questions they need to ask.
@@ -141,10 +153,11 @@ logging remains a supported baseline even after integrations exist.
 ### Mobile usability from the beginning
 
 The responsive web application remains a first-class experience rather than a
-disposable prototype. A native iOS daily companion is required for the founding
-beta. The recommended implementation is a shared Expo and React Native mobile
-application, subject to the architecture decision in issue #83. Android
-external release is valuable but does not block that beta.
+disposable prototype. An installable iOS daily companion is required for the
+founding beta. Issue #83 will select a Capacitor shell, Expo with the Firebase
+JavaScript SDK, or Expo with React Native Firebase from comparable
+physical-device evidence. Android external release is valuable but does not
+block that beta.
 
 ### Graduation is success
 
@@ -318,13 +331,15 @@ The January 2027 web experience should remain comfortable to use on a phone. A
 Progressive Web App may be useful, but it is not a substitute for the required
 iOS beta and is not a beta gate.
 
-### Native mobile applications
+### iOS daily companion
 
 An iOS application is required for the founding beta and becomes the daily
 companion for today's workout, logging, feedback, guidance, and adjustment
-approval. The proposed Expo and React Native approach allows one mobile core to
-support iOS first while retaining an Android-capable path. Android external
-distribution has no committed beta date and cannot delay the iOS cohort.
+approval. The architecture decision must prefer the least duplicated candidate
+that proves session recovery, shared records, accessibility, online-write
+boundaries, clean builds, signing, and an external TestFlight path. Android
+external distribution has no committed beta date and cannot delay the iOS
+cohort.
 
 ### Shared backend
 
@@ -364,8 +379,9 @@ applications, or integrations.
 ### Intake and initial plan: November 2026
 
 - persistent runner profiles and first-marathon intake;
-- race feasibility across all three supported starting groups;
-- deterministic, versioned initial-plan generation;
+- eligibility and race feasibility for the consistent-runner beta segment;
+- honest rejection of deferred or unsupported starting points;
+- one reviewed, deterministic, versioned first-marathon plan family;
 - plan review, approval, and persistence; and
 - the next workout visible through supported clients.
 
@@ -383,16 +399,22 @@ The exact waves, dates, and evidence gates are maintained in the
 
 ### Invite-only external beta: January 15, 2027
 
-The target is a small cohort of English-speaking adults in the United States
-preparing for their first marathon later in 2027.
+The first invitation batch contains five to eight allowlisted,
+English-speaking adults in the United States who already run consistently and
+are preparing for a first marathon. No more than eight may be active before the
+two-week operating review. A passing review may permit expansion to at most
+twelve concurrently active participants and fifteen accepted invitations
+through the eight-week review.
 
 The proposed recruitment sequence, participant offer, and early learning gates
 are described in the
 [founding cohort recruitment and validation plan](founding-cohort-plan.md).
 
-The beta requires iOS and preserves the responsive web application. It does not
-promise Android external distribution, Garmin integration, advanced analytics,
-or broad public availability.
+The beta requires iOS and preserves the responsive web application. Material
+writes require a network connection, and adaptation is limited to reviewed
+reschedule, hold, repeat, or no-change outcomes. The beta does not promise
+Android external distribution, Garmin integration, advanced analytics, or
+broad public availability.
 
 The New Year period may be used for targeted recruitment and learning. Major
 paid acquisition should wait until onboarding, comprehension, retention, and
@@ -422,22 +444,26 @@ The initial external beta includes:
 - an iOS application distributed through TestFlight;
 - the preserved responsive web experience;
 - account creation and persistent data;
-- beginner onboarding;
-- race-date feasibility;
-- limited phase and plan generation;
+- intake for adults already running consistently;
+- eligibility and race-date feasibility with honest unsupported results;
+- one reviewed deterministic plan family or a small set of approved variants;
 - manual run logging;
 - perceived-effort feedback;
-- adaptation recommendations and approvals;
+- reschedule, hold, repeat, or no-change recommendations and approvals;
 - shoe-mileage tracking;
-- essential educational guidance;
+- essential reviewed educational guidance;
 - reviewed safety escalation; and
 - structured feedback.
 
 The beta does not require:
 
 - an Android external release or public App Store release;
+- couch-to-5K, return-to-running, or inconsistent-base plans;
 - Garmin or health-platform integrations;
 - a generative planning system;
+- autonomous load or intensity increases, injury diagnosis, or finish-time
+  prediction;
+- offline material writes or a custom synchronization queue;
 - multiple race distances;
 - social features;
 - advanced analytics;
@@ -480,7 +506,8 @@ hypothesis, not a launch commitment.
 
 ## Risks and dependencies
 
-- Training methodology and guidance require qualified expert review.
+- The exact founding-beta methodology and guidance require qualified approval
+  before invitations; new segments require additional review.
 - Health, privacy, accessibility, and consumer-protection requirements require
   deliberate review before public launch.
 - Garmin and other integrations depend on external approval and platform terms.
@@ -507,9 +534,9 @@ For the initial product, Marathoner is not:
 ## Open questions
 
 - Which qualified experts will review the methodology and guidance?
-- How many users can the first beta support responsibly?
 - What evidence is sufficient before finish-time goals are introduced?
 - What price and access period fit the First Marathon Journey?
 - What evidence should trigger an Android external-release plan?
 - Which integrations follow Garmin?
 - Which beta measures should block or permit a broader launch?
+- What evidence should permit couch-to-5K and inconsistent-base participants?
