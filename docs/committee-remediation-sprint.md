@@ -5,7 +5,7 @@
 - **Owner:** Kevin Tulloch
 - **Review scope:** The Marathoner product repository, excluding Creator Radar
 - **Parent tracker:** [GitHub issue #104](https://github.com/marathoner-app/marathoner/issues/104)
-- **Current delivery slice:** [GitHub issue #116](https://github.com/marathoner-app/marathoner/issues/116)
+- **Current delivery slice:** [GitHub issue #148](https://github.com/marathoner-app/marathoner/issues/148)
 - **Related plans:** [Zero-to-beta plan](zero-to-beta-plan.md),
   [product vision](product-vision.md), and
   [founding cohort plan](founding-cohort-plan.md)
@@ -100,7 +100,7 @@ Critical items can have prerequisites in earlier high-priority work.
 
 | ID | Priority | Type | Required outcome | Existing home | Gate | Status |
 | --- | --- | --- | --- | --- | --- | --- |
-| CR-01 | Critical | Safety | Name the qualified reviewer role and obtain dated approval for the supported rules, eligibility, escalation boundaries, and guidance. | #70, #107 | Invitations | Not started |
+| CR-01 | Critical | Safety | Name the qualified reviewer role and obtain dated approval for the supported rules, eligibility, escalation boundaries, and guidance. | #70, #107, #119, #148 | Invitations | Protocol ready; reviewers and approval pending |
 | CR-02 | Critical | Product | Ratify one narrow beta segment, participant count, adaptation boundary, client capability matrix, and explicit exclusions. | #117, #104 | Wave 00 | Complete |
 | CR-03 | Critical | Investment | Record problem evidence, alternatives, differentiation, participant commitments, and willingness-to-pay signals. | #35, #110 | Cohort expansion | Not started |
 | CR-04 | High | Governance | Repair contradictory platform, parent, milestone, design, audit, and current-state sources. | #118, #104 | Wave 00 | Complete |
@@ -164,9 +164,14 @@ unrelated implementation issues.
      conservative values; reserve 30–40% capacity; include Apple and reviewer
      wait time; publish likely and conservative gate dates.
 7. **Create methodology-review work.**
-   - Issues: #119 and #134.
+   - Issues: #119, #134, and #148.
    - Record reviewer qualifications, rule inventory, review scope, approval
      evidence, unsupported cases, and change-control process.
+   - Evidence: the [qualified review protocol](methodology/README.md),
+     [founding-beta inventory](methodology/beta-review-inventory.md), and
+     [approval-record template](methodology/approval-record-template.md).
+     Protocol readiness does not close #119; named reviewers and dated approval
+     are still required.
 8. **Contain premature external use.**
    - Issue: #123.
    - Decide whether to disable public signup or add prototype limitations,

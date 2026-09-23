@@ -8,6 +8,7 @@
 - **Active remediation:** [Committee remediation sprint](committee-remediation-sprint.md)
 - **Founding-beta contract:** [GitHub issue #117](https://github.com/marathoner-app/marathoner/issues/117)
 - **Capacity forecast:** [Owner-session and gate forecast](capacity-forecast.md)
+- **Methodology review:** [Qualified review protocol](methodology/README.md)
 
 ## Outcome
 
@@ -292,6 +293,12 @@ Qualified review of the full future methodology is not required for the first
 cohort. Dated qualified approval of the exact rules and guidance supported by
 that cohort is required before invitations. A disclaimer is not the safety
 system.
+
+The [qualified review protocol](methodology/README.md) defines the reviewer
+roles, independence rules, versioning, decision evidence, and change control.
+Its [founding-beta inventory](methodology/beta-review-inventory.md) enumerates
+the complete review surface. The protocol is ready, but every inventory row is
+currently unapproved; #119, #70, and prescriptive invitations remain blocked.
 
 Before invitations open, the beta must:
 
