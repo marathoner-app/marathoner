@@ -28,6 +28,15 @@ The visible features share the typed Firestore persistence layer. Follow the
 [open issues](https://github.com/marathoner-app/marathoner/issues) to see what is
 being built next.
 
+## Governance and security
+
+Marathoner is currently maintained by Kevin Tulloch as a founder-led solo
+project. The [governance record](GOVERNANCE.md) names current decision and merge
+authority and explains how required reviews change when another maintainer
+becomes active. [CONTRIBUTING.md](CONTRIBUTING.md) defines the issue-to-PR
+workflow, and [SECURITY.md](SECURITY.md) provides the private vulnerability
+reporting path and safe-research boundaries.
+
 The canonical [zero-to-beta plan](docs/zero-to-beta-plan.md) defines the product
 commitments, delivery waves, monthly evidence gates, safety boundary, and solo
 working model. The [capacity forecast](docs/capacity-forecast.md) tests those
@@ -163,9 +172,10 @@ configuration is defined in `src/firebaseConfig.ts`. Importing
 the Authentication instance. The persistence entry point creates Firestore from
 that same app only when training repositories are requested.
 
-The authentication service exports operations for signup, sign in, sign out,
-reading the current user, and subscribing to authentication changes. The
-training-data provider uses the authenticated UID as its ownership boundary.
+The authentication service exports operations for sign in, sign out, reading
+the current user, and subscribing to authentication changes. Public account
+creation is disabled. The training-data provider uses the authenticated UID as
+its ownership boundary.
 
 The committed configuration connects the app to its current Firebase project.
 To use a different project:
