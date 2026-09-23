@@ -3,22 +3,25 @@
 - **Status:** Active delivery plan
 - **Last updated:** September 22, 2026
 - **Product owner and current implementer:** Kevin Tulloch
-- **Target:** Open the founding cohort on January 15, 2027
+- **Decision checkpoint:** January 15, 2027; the current capacity forecast does not support invitations by that date
 - **Master tracker:** [GitHub issue #104](https://github.com/marathoner-app/marathoner/issues/104)
 - **Active remediation:** [Committee remediation sprint](committee-remediation-sprint.md)
 - **Founding-beta contract:** [GitHub issue #117](https://github.com/marathoner-app/marathoner/issues/117)
+- **Capacity forecast:** [Owner-session and gate forecast](capacity-forecast.md)
 
 ## Outcome
 
-By January 15, 2027, Marathoner can invite a small, allowlisted founding cohort
-of adults who already run consistently and are preparing for a first marathon.
-The beta supports a bounded first-marathon loop: intake, a reviewed plan family,
-daily use, completed-run feedback, deterministic hold/repeat/reschedule
-recommendations, timely reviewed guidance, and informed approval of material
-plan changes.
+Marathoner may invite a small, allowlisted founding cohort only after the
+evidence gates in this plan pass. The beta supports a bounded first-marathon
+loop: intake, a reviewed plan family, daily use, completed-run feedback,
+deterministic hold/repeat/reschedule recommendations, timely reviewed guidance,
+and informed approval of material plan changes.
 
-The date is the target for opening the founding cohort. It is not a promise of
-public launch, completed cohort validation, or an Android external release.
+January 15, 2027 was the original conditional target. The September 22
+[capacity forecast](capacity-forecast.md) concludes that the current scope and
+solo-owner capacity cannot support invitations by that date. It is now a
+scope-or-date decision checkpoint, not a promise of beta access, public launch,
+completed cohort validation, or an Android external release.
 
 The September 2026 committee review found that the target remains conditional
 on methodology authority, executable issue decomposition, client data
@@ -130,7 +133,10 @@ reused, rewritten, deferred, or superseded.
 ## Delivery waves
 
 Each wave ends in observable evidence, not only merged code. Work may overlap
-when it does not weaken the preceding gate.
+when it does not weaken the preceding gate. The targets below are the original
+evidence checkpoints. The [capacity forecast](capacity-forecast.md) records
+the current optimistic, likely, and conservative dates and must be updated when
+scope or measured throughput changes.
 
 | Wave | Target | Tracker | Required outcome |
 | --- | --- | --- | --- |

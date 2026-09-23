@@ -4,11 +4,12 @@ Plan, track, and understand marathon training in one focused workspace.
 
 Marathoner is an actively developed training companion for runners preparing
 for a marathon. The product is being built in small, understandable increments
-toward a conditional iOS founding beta on January 15, 2027. The first
-invitation batch is limited to five to eight allowlisted adults who already run
-consistently and are preparing for a first marathon. The existing responsive
-web application remains the planning and analysis surface; Android external
-release is not on the beta critical path.
+toward a conditional iOS founding beta. January 15, 2027 remains a
+scope-or-date decision checkpoint, not a capacity-backed invitation forecast.
+The first invitation batch is limited to five to eight allowlisted adults who
+already run consistently and are preparing for a first marathon. The existing
+responsive web application remains the planning and analysis surface; Android
+external release is not on the beta critical path.
 
 ## Project status
 
@@ -28,7 +29,10 @@ being built next.
 
 The canonical [zero-to-beta plan](docs/zero-to-beta-plan.md) defines the product
 commitments, delivery waves, monthly evidence gates, safety boundary, and solo
-working model. [GitHub issue #104](https://github.com/marathoner-app/marathoner/issues/104)
+working model. The [capacity forecast](docs/capacity-forecast.md) tests those
+gates against owner sessions and external waits; it concludes that the current
+scope does not support January 2027 invitations.
+[GitHub issue #104](https://github.com/marathoner-app/marathoner/issues/104)
 is its live execution tracker, and
 [issue #117](https://github.com/marathoner-app/marathoner/issues/117) records
 the founding-beta contract. The
