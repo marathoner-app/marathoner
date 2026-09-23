@@ -20,8 +20,9 @@ includes:
 - **Track:** persist shoes and runs, associate runs with planned workouts, and
   edit or delete completed runs.
 - **Analyze:** calculate mileage, pace, and run counts from completed-run history.
-- **Authentication:** create an account and sign in with Firebase email/password
-  authentication.
+- **Authentication:** existing accounts can sign in with Firebase
+  email/password authentication. Public account creation is disabled while the
+  beta trust and access controls are incomplete.
 
 The visible features share the typed Firestore persistence layer. Follow the
 [open issues](https://github.com/marathoner-app/marathoner/issues) to see what is
@@ -42,6 +43,9 @@ product, investor, architecture, delivery, and operations review. The
 [qualified methodology review](docs/methodology/README.md) defines who may
 approve the founding-beta training and safety behavior, the versioned review
 inventory, and the evidence required before prescriptive use. The
+[public prototype access decision](docs/public-prototype-access.md) records why
+open registration is disabled and which trust paths must exist before access
+expands. The
 [product vision](docs/product-vision.md) describes the larger destination, and
 the [founding cohort plan](docs/founding-cohort-plan.md) describes recruitment
 and validation.

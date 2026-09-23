@@ -12,6 +12,24 @@
   text-align: center;
 }
 
+.main.public-entry {
+  justify-content: flex-start;
+  height: auto;
+  min-height: 100vh;
+  min-height: 100dvh;
+  padding: clamp(2rem, 6vw, 4rem) 1rem;
+  overflow: visible;
+}
+
+.public-entry .title {
+  line-height: 1;
+}
+
+.public-entry .subtitle {
+  margin-top: 1rem;
+  line-height: 1.5;
+}
+
 .title {
   margin: 0;
   font-size: 4.5rem;

@@ -1,17 +1,14 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import LoginButton from './LoginButton'
-import SignUpButton from './SignUpButton'
-import { signIn, signUp } from '../services/authService'
+import { signIn } from '../services/authService'
 
 vi.mock('../services/authService', () => ({
-  signIn: vi.fn(),
-  signUp: vi.fn()
+  signIn: vi.fn()
 }))
 
 const mockedSignIn = vi.mocked(signIn)
-const mockedSignUp = vi.mocked(signUp)
 
 beforeEach(() => {
   vi.clearAllMocks()
@@ -23,12 +20,19 @@ describe('authentication forms', () => {
     mockedSignIn.mockRejectedValue(new Error('Invalid credentials'))
     render(<LoginButton />)
 
-    await user.click(screen.getByRole('button', { name: 'Login' }))
+    const loginButton = screen.getByRole('button', { name: 'Log in' })
+    await user.click(loginButton)
+
+    expect(loginButton).toHaveAttribute('aria-expanded', 'true')
+    expect(
+      screen.getByRole('dialog', { name: 'Existing account login' })
+    ).toBeInTheDocument()
+    expect(screen.getByLabelText('Email')).toHaveFocus()
     await user.type(
-      screen.getByPlaceholderText('Username (Email)'),
+      screen.getByLabelText('Email'),
       'runner@example.com'
     )
-    await user.type(screen.getByPlaceholderText('Password'), 'bad-password{Enter}')
+    await user.type(screen.getByLabelText('Password'), 'bad-password{Enter}')
 
     expect(await screen.findByText('Invalid credentials')).toBeInTheDocument()
     expect(mockedSignIn).toHaveBeenCalledWith(
@@ -37,21 +41,15 @@ describe('authentication forms', () => {
     )
   })
 
-  it('shows a rejected signup attempt without contacting Firebase', async () => {
+  it('closes with Escape and restores focus to the login trigger', async () => {
     const user = userEvent.setup()
-    mockedSignUp.mockRejectedValue(new Error('Email already registered'))
-    render(<SignUpButton />)
+    render(<LoginButton />)
 
-    await user.click(screen.getByRole('button', { name: 'Sign Up' }))
-    await user.type(screen.getByPlaceholderText('Email'), 'runner@example.com')
-    await user.type(screen.getByPlaceholderText('Password'), 'password{Enter}')
+    const loginButton = screen.getByRole('button', { name: 'Log in' })
+    await user.click(loginButton)
+    await user.keyboard('{Escape}')
 
-    expect(
-      await screen.findByText('Email already registered')
-    ).toBeInTheDocument()
-    expect(mockedSignUp).toHaveBeenCalledWith(
-      'runner@example.com',
-      'password'
-    )
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    await waitFor(() => expect(loginButton).toHaveFocus())
   })
 })

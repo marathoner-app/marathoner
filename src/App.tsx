@@ -1,15 +1,16 @@
 import { useEffect, useRef, useState } from "react";
-import { motion } from "framer-motion";
-import LoginButton from "./components/LoginButton";
+import { motion, useReducedMotion } from "framer-motion";
 import Title from "./components/Title";
 import Subtitle from "./components/Subtitle";
 import Calendar from "./components/Calendar";
-import SignUpButton from "./components/SignUpButton";
+import PublicAccessNotice from "./components/PublicAccessNotice";
 import ShoeTracker from "./components/ShoeTracker";
 import Analyze from "./components/Analyze";
 import { useAuth } from "./auth/useAuth";
 import TrainingDataProvider from "./training/TrainingDataProvider";
 import { useTrainingData } from "./training/useTrainingData";
+
+const publicSupportEmail = "kevin@marathonerapp.com";
 
 const sections = [
   { id: "plan", label: "Plan", title: "Plan Your Workouts" },
@@ -21,6 +22,7 @@ type Section = (typeof sections)[number]["id"];
 
 function App() {
   const auth = useAuth();
+  const reduceMotion = useReducedMotion();
   const [activeSection, setActiveSection] = useState<Section | null>(null);
   const [logoutError, setLogoutError] = useState<string | null>(null);
   const lastActiveSection = useRef<Section | null>(null);
@@ -66,11 +68,11 @@ function App() {
   const activeSectionDetails = sections.find(({ id }) => id === activeSection);
 
   return (
-    <motion.div
-      className="main"
-      initial={{ opacity: 0 }}
+    <motion.main
+      className={`main${auth.status === "signedOut" ? " public-entry" : ""}`}
+      initial={reduceMotion ? false : { opacity: 0 }}
       animate={{ opacity: 1 }}
-      transition={{ duration: 1, ease: "easeOut" }}
+      transition={{ duration: reduceMotion ? 0 : 1, ease: "easeOut" }}
     >
       {auth.status === "loading" && (
         <>
@@ -83,12 +85,7 @@ function App() {
 
       {auth.status !== "loading" && !activeSection && (
         <>
-          {auth.status === "signedOut" ? (
-            <>
-              <LoginButton />
-              <SignUpButton />
-            </>
-          ) : (
+          {auth.status === "signedIn" && (
             <div className="session-controls">
               <p className="session-user">
                 Signed in as {auth.user.email ?? "Marathoner user"}
@@ -105,10 +102,7 @@ function App() {
           <Title />
           <Subtitle />
           {auth.status === "signedOut" && (
-            <p className="auth-message">
-              Sign in or create an account to access your training plan, run
-              tracker, and progress.
-            </p>
+            <PublicAccessNotice supportEmail={publicSupportEmail} />
           )}
           {logoutError && (
             <p className="auth-message auth-error" role="alert">
@@ -164,7 +158,7 @@ function App() {
           )}
         </TrainingDataProvider>
       )}
-    </motion.div>
+    </motion.main>
   );
 }
 
