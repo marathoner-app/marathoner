@@ -1,0 +1,27 @@
+{
+  "name": "marathoner-expo-js-spike",
+  "version": "0.0.0",
+  "main": "index.ts",
+  "private": true,
+  "engines": {
+    "node": "^22.13.0"
+  },
+  "scripts": {
+    "start": "expo start",
+    "ios": "expo start --ios",
+    "typecheck": "tsc --noEmit",
+    "test": "node --test test/*.test.mjs",
+    "export:ios": "expo export --platform ios --output-dir dist-ios"
+  },
+  "dependencies": {
+    "expo": "~57.0.24",
+    "expo-status-bar": "~57.0.1",
+    "firebase": "^12.19.0",
+    "react": "19.2.3",
+    "react-native": "0.86.3"
+  },
+  "devDependencies": {
+    "@types/react": "~19.2.2",
+    "typescript": "~6.0.3"
+  }
+}
