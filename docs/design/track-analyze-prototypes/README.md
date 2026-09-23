@@ -1,6 +1,6 @@
 # Track and Analyze prototype direction
 
-**Status:** Exploratory prototype, preserved for future implementation
+**Status:** Historical design reference; current runtime behavior lives on `main`
 
 **Captured:** July 30, 2026
 
@@ -10,13 +10,20 @@
 
 **Prototype branch:** `codex/issue-43-track-analyze-prototypes`
 
-**Draft prototype PR:** [#44](https://github.com/marathoner-app/marathoner/pull/44), preserved for reference and not intended to merge
+**Historical prototype PR:** [#44](https://github.com/marathoner-app/marathoner/pull/44), closed as superseded and not intended to merge
 
 ## Purpose
 
-This directory preserves the current visual direction for Marathoner's Track and Analyze panels. The screenshots and code on the prototype branch are references, not production-ready feature implementations.
+This directory preserves a July 2026 visual exploration for Marathoner's Track
+and Analyze panels. The screenshots and code on the prototype branch are
+historical references, not descriptions of current runtime behavior or
+production-ready feature implementations.
 
-The shared training domain and connected data behavior from issue [#11](https://github.com/marathoner-app/marathoner/issues/11) are now implemented. These prototypes remain visual references only. Any future visual refresh should be rebuilt through small, issue-linked pull requests that preserve the connected behavior and remain understandable and reviewable on their own.
+The shared training domain, Firestore repositories, and connected Plan, Track,
+and Analyze state are now implemented. These prototypes remain visual
+references only. Any future visual refresh should be rebuilt through small,
+issue-linked pull requests that preserve the connected behavior and remain
+understandable and reviewable on their own.
 
 ## Shared visual direction
 
@@ -44,12 +51,16 @@ The Track panel is intended to make routine logging feel immediate and understan
 - A shoe-rotation area built around a visible 400-mile target
 - Recent activity with a useful empty state
 
-### Current placeholders
+### Historical prototype-only elements
 
-- Run and shoe data still come from the existing local component state
-- The consistency label is presentation logic, not a calculated training signal
-- The 400-mile shoe target is fixed and has not yet been modeled as a configurable rule
-- Recent activity is not yet connected to the shared training domain model or persisted data
+- The prototype's summary cards, consistency label, 400-mile target, and recent
+  activity layout were presentation concepts rather than approved product
+  rules.
+- The current Track implementation reads persisted runs, shoes, and planned
+  workouts through `TrainingDataProvider`; it does not use the prototype's
+  local demonstration state.
+- Current shoe mileage is derived from persisted starting distance and linked
+  completed runs. A configurable retirement recommendation is not implemented.
 
 ## Analyze panel
 
@@ -64,17 +75,21 @@ The Analyze panel is intended to answer a focused question: what does the runner
 - A single **What matters next** recommendation
 - Positive language that remains direct when training needs to change
 
-### Current placeholders
+### Historical prototype-only elements
 
-- All displayed analytics are static demonstration data
-- The 42-mile week, 7:30 average pace, five-run count, and comparison text are illustrative
-- The pace trend and training balance are not calculated from recorded runs
-- **On track** and **Protect the recovery** are not yet produced by approved training rules
-- No recommendation in this prototype should be treated as coaching or safety logic
+- The prototype's 42-mile week, 7:30 pace, five-run count, charts, comparison
+  text, **On track** signal, and **Protect the recovery** recommendation are
+  illustrative and are not approved coaching or safety logic.
+- The current Analyze implementation calculates total mileage, current-week
+  mileage, average pace, and run counts from persisted completed runs.
+- Pace trends, training balance, and recommendation cards are not implemented
+  in the current application.
 
 ## Implementation boundary
 
-Do not merge this prototype into `main` as the production implementation. The branch exists to preserve exact layout and styling decisions while the application foundation is built.
+Do not merge the historical prototype PR into `main` as the production
+implementation. The branch preserves the July layout and styling experiment;
+the current typed and persisted feature behavior on `main` is authoritative.
 
 When Track and Analyze enter active development:
 

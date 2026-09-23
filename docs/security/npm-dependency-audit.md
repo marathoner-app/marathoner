@@ -1,122 +1,119 @@
 # npm dependency security review
 
-**Tracking issue:** [#31](https://github.com/marathoner-app/marathoner/issues/31)
+**Original remediation:** [#31](https://github.com/marathoner-app/marathoner/issues/31)
 
-**Reviewed:** July 30, 2026
+**Current follow-up:** [#143](https://github.com/marathoner-app/marathoner/issues/143)
 
-## Outcome
+**Last reviewed:** September 22, 2026
 
-The production dependency tree has no known npm audit findings after upgrading Firebase within major version 11.
+## Current outcome
 
-The full audit retains development-only findings in the ESLint and Firebase CLI
-trees. They trace to three upstream advisories and are temporarily accepted
-under the conditions documented below.
+The committed production dependency tree has no known npm audit findings. The
+full tree has 19 development-tool findings: 16 moderate and 3 high. There are
+no low or critical findings in the current result.
 
-## Audit results
+These results come from the committed lockfile on the issue #118 branch. No
+dependency version changed during the repository-truth repair.
 
-| Audit | Before | After |
+| Command | September 22, 2026 result | Required posture |
 | --- | --- | --- |
-| `npm audit --omit=dev` | 2 moderate, 1 high, 2 critical | 0 findings |
-| `npm audit` after issue #31 | 3 low, 4 moderate, 9 high, 2 critical | 5 high |
-| `npm audit` after adding issue #12 emulator tooling | 5 high | 2 moderate, 20 high |
+| `npm audit --omit=dev` | 0 findings | Must remain at zero before external beta. |
+| `npm audit` | 16 moderate, 3 high | Resolve or record a specific, time-bounded risk decision in #143. |
 
-## Direct dependency changes
+Audit databases change independently of the lockfile. Treat these counts as a
+dated result, not a permanent property of a package version.
 
-### Production
+## Production boundary
 
-- `firebase`: `^11.3.1` to `^11.10.0`
+Firebase remains the only direct production dependency with a substantial
+transitive tree. The current production-only audit is clean after the earlier
+Firebase 11 upgrade. A future production finding, any critical finding, or any
+finding reachable from participant-controlled input requires immediate review;
+it is not covered by the development-tool rationale below.
 
-Firebase 11.10.0 replaces the vulnerable production paths with these resolved versions:
+## Current development findings
 
-- `@grpc/grpc-js@1.9.16`
-- `protobufjs@7.6.5`
-- `@protobufjs/utf8@1.1.2`
-- `websocket-driver@0.7.5`
+The affected paths are rooted in tools that are not imported into the browser
+application bundle:
 
-### Development
+### ESLint filesystem and parser tooling
 
-- `@eslint/js`: `^9.17.0` to `^9.39.5`
-- `@vitejs/plugin-react`: `^4.3.4` to `^4.7.0`
-- `eslint`: `^9.17.0` to `^9.39.5`
-- `eslint-plugin-react-hooks`: `^5.0.0` to `^5.2.0`
-- `eslint-plugin-react-refresh`: `^0.4.16` to `^0.4.26`
-- `typescript-eslint`: `^8.18.2` to `^8.65.0`
-- `vite`: `^6.0.5` to `^6.4.3`
+`@humanfs/node` is reported through the lint toolchain for a recursive-copy
+symlink issue. ESLint also shares the affected `js-yaml` installation with
+other development tools. Marathoner runs ESLint against reviewed repository
+files and configuration, not participant-provided paths. npm reports some
+non-forced fixes; issue #143 must test them with the supported Node 22 toolchain
+before the lockfile is changed.
 
-These updates remain within the existing major versions. They remove the actionable Babel, Vite, Rollup, PostCSS, `flatted`, `js-yaml`, and `picomatch` findings without using `npm audit fix --force`.
+### Vitest mock tooling
 
-### Persistence test tooling
+`@vitest/mocker` and `vitest` are reported for a redirect-mock path-traversal
+issue. `nanoid` is reported through Vite and PostCSS. The test and build tools
+execute reviewed local inputs and are not shipped as tooling to participants.
+npm's forced recommendation for Vitest is a downgrade to `vitest@2.0.5`, which
+is not an acceptable automatic remediation. Issue #143 owns evaluation of
+supported upgrades and regression verification.
 
-- `@firebase/rules-unit-testing`: `^4.0.1`
-- `firebase-tools`: `^15.25.1`
+### Firebase CLI and emulator tooling
 
-These development dependencies run the local Firestore emulator and verify
-authorization rules against authenticated, anonymous, and cross-user requests.
-They are not imported by the application or included in its production bundle.
+Most remaining findings flow through the development-only Firebase CLI and its
+emulator dependencies. The current audit names paths involving:
 
-## Accepted residual risk
+- `@opentelemetry/core` and `@google-cloud/pubsub`;
+- `csv-parse`;
+- `gaxios` and `uuid`;
+- `stream-json`;
+- `fast-uri`;
+- `hono`;
+- `js-yaml`, which is also used by ESLint;
+- `morgan`;
+- `qs`, `body-parser`, and `express`; and
+- `re2`.
 
-### ESLint glob expansion
+The three high findings are reported in `fast-uri`, `js-yaml`, and `nanoid`.
+These packages are not in the production application dependency tree, but
+their presence still requires active remediation rather than a permanent
+blanket exception.
 
-The remaining audit result is [GHSA-mh99-v99m-4gvg](https://github.com/advisories/GHSA-mh99-v99m-4gvg), a denial-of-service issue in `brace-expansion`. npm reports five affected packages because the same underlying advisory propagates through three ESLint paths:
+## Temporary risk boundary
 
-```text
-eslint@9.39.5 -> minimatch@3.1.5 -> brace-expansion@1.1.18
-eslint@9.39.5 -> @eslint/config-array@0.21.2 -> minimatch@3.1.5 -> brace-expansion@1.1.18
-eslint@9.39.5 -> @eslint/eslintrc@3.3.6 -> minimatch@3.1.5 -> brace-expansion@1.1.18
-```
+The current development-only findings are accepted only while #143 remains an
+owned external-beta-readiness issue and all of these conditions hold:
 
-### Why it is accepted temporarily
+- `npm audit --omit=dev` remains at zero findings;
+- the affected tools run only from reviewed repository commands and trusted
+  configuration;
+- the Firestore emulator binds only to the local development environment and
+  is not exposed as a service;
+- no affected tool or dependency is imported into the browser bundle or a
+  participant-facing server path;
+- no critical finding appears; and
+- high findings receive a specific removal or time-bounded acceptance decision
+  before external invitations.
 
-- The packages exist only in the lint toolchain and are excluded from the production dependency audit and application bundle.
-- Marathoner supplies trusted repository paths and configuration to ESLint. Application users cannot provide glob patterns to this code path.
-- npm's proposed automatic remediation is an incompatible downgrade to `eslint@4.0.0`, not a safe upgrade.
-- Forcing a new major version of `minimatch` or `brace-expansion` beneath ESLint would bypass the versions ESLint declares compatible and could make lint results unreliable.
+Do not run `npm audit fix --force`. The current forced recommendations include
+breaking downgrades of direct tools and do not constitute reviewed fixes.
+Non-forced audit changes must still be inspected, tested, and committed through
+their own issue-linked pull request.
 
-### Mitigations
+## Historical record
 
-- Do not run the lint toolchain against an unreviewed third-party branch or untrusted ESLint configuration.
-- Keep `npm audit --omit=dev` at zero findings.
-- Re-run the full audit whenever the lockfile or lint dependencies change.
-- Remove this exception when ESLint adopts a compatible dependency path that resolves the advisory.
+| Review point | Production-only result | Full result |
+| --- | --- | --- |
+| Before issue #31 | 2 moderate, 1 high, 2 critical | 3 low, 4 moderate, 9 high, 2 critical |
+| After issue #31 | 0 findings | 5 high |
+| After Firestore emulator tooling was added | 0 findings | 2 moderate, 20 high |
+| September 22, 2026 refresh | 0 findings | 16 moderate, 3 high |
 
-### Firebase CLI transitive dependencies
+The historical counts explain earlier decisions; only the latest row describes
+the current lockfile and advisory database.
 
-Adding `firebase-tools@15.25.1` for the Firestore emulator introduces findings
-for these upstream packages:
+## Node version
 
-- `@opentelemetry/core@1.30.1`, reported by
-  [GHSA-8988-4f7v-96qf](https://github.com/advisories/GHSA-8988-4f7v-96qf)
-- `brace-expansion` versions 1.1.18 and 2.1.4, reported by
-  [GHSA-mh99-v99m-4gvg](https://github.com/advisories/GHSA-mh99-v99m-4gvg)
-- `uuid@9.0.1`, reported by
-  [GHSA-w5hq-g745-h8pq](https://github.com/advisories/GHSA-w5hq-g745-h8pq)
-
-They are accepted temporarily because:
-
-- Firebase CLI is development-only and is excluded from the production audit
-  and browser bundle.
-- The CLI and emulator consume trusted repository configuration and test data.
-  Application users cannot provide baggage headers, glob expressions, or UUID
-  output buffers to these local code paths.
-- The emulator binds to localhost only while the integration command is
-  running, then shuts down.
-- npm offers no compatible automatic remediation. `npm audit fix --force`
-  proposes breaking downgrades to `firebase-tools@3.18.2` and `eslint@4.0.0`.
-
-Mitigations:
-
-- Do not expose the Firestore emulator to a public network.
-- Run emulator tests only from reviewed repository code and configuration.
-- Keep Firebase CLI current and remove these exceptions when compatible
-  upstream releases resolve the dependency paths.
-- Treat any production, critical, or unrelated future finding as a new review.
-
-## Node version note
-
-The repository's GitHub Pages workflow uses Node 22, which is supported by the updated toolchain. A clean install under the local Node 23.4.0 environment completes but emits an engine warning from `eslint-visitor-keys@5.0.1`, whose supported versions are Node 20.19 or newer in the 20 line, Node 22.13 or newer in the 22 line, or Node 24 and newer.
-
-Node 23 is a non-LTS release and is not included in that package's supported range. Local development should use the same Node 22 LTS line as the repository workflow rather than weakening or downgrading the patched lint dependencies.
+The repository automation uses Node 22. Local audit and remediation work should
+use the same supported LTS line so engine behavior and dependency resolution
+match CI. Do not weaken or downgrade patched dependencies to accommodate an
+unsupported non-LTS local runtime.
 
 ## Verification commands
 
@@ -126,11 +123,10 @@ npm audit --omit=dev
 npm audit
 npm run lint
 npm test
+npm run test:firestore
 npm run build
 ```
 
-The full audit is expected to exit nonzero while the accepted development-only
-advisories remain. Its result must continue to match the dependency paths and
-exposure described above. Any new production finding, critical finding, or
-unrelated full-audit finding requires a separate review rather than being
-covered by this acceptance.
+The full audit is expected to exit nonzero until #143 resolves or explicitly
+time-bounds every remaining development-tool finding. The production-only audit
+must exit successfully.

@@ -1,6 +1,6 @@
 # Landing page design direction
 
-**Status:** Approved design direction  
+**Status:** Historical visual direction; availability and CTA contract superseded by issue #117
 **Approved:** July 22, 2026  
 **Product owner:** Kevin Tulloch  
 **Planning issue:** [#23](https://github.com/marathoner-app/marathoner/issues/23)
@@ -8,11 +8,17 @@
 
 ## Purpose
 
-This directory preserves the approved direction for Marathoner's future public landing page. The interactive mockup and reference images are design targets, not production application code.
+This directory preserves the July 2026 visual direction for Marathoner's future
+public landing page. The interactive mockup and reference images are design
+targets, not production application code. Issue
+[#117](https://github.com/marathoner-app/marathoner/issues/117) supersedes the
+original platform-availability and audience assumptions.
 
 Production work will be rebuilt in the existing React and TypeScript application through small, issue-linked pull requests. The mockup should not be copied into the application as one large change.
 
-This work is outside the current Foundation milestone. The parent issue should receive an appropriate future product or launch milestone when implementation is scheduled.
+The parent issue now belongs to the Trust and External-Beta Readiness milestone.
+Production copy and actions must reflect actual beta availability when each
+slice is implemented.
 
 ## Product goals
 
@@ -21,9 +27,12 @@ The landing page should:
 - speak directly to first-time marathoners;
 - promise preparation, useful knowledge, and a sense of control;
 - explain the product without requiring prior running knowledge;
-- show that mobile applications are the daily training companions;
+- show that the iOS beta is the required daily companion;
 - show that the web application provides a larger space for planning and review; and
-- provide separate paths for iPhone, Android, and web users.
+- provide honest paths to request iOS beta access and use the web application.
+
+Android external distribution is a future follow-on with no committed date. It
+must not appear as an available download or founding-beta action.
 
 The page should not present Marathoner as a social network, an elite coaching platform, or a general-purpose fitness application.
 
@@ -43,7 +52,7 @@ The primary product model is **Plan. Track. Adjust.**
 ## Page structure
 
 1. **Header:** Wordmark, a link to the explanation section, and web login.
-2. **Hero:** First-marathon positioning, the central promise, and three platform actions.
+2. **Hero:** First-marathon positioning, the central promise, and honest iOS-beta and web actions.
 3. **Product preview:** A realistic view of today's workout, effort guidance, shoe mileage, and product navigation.
 4. **How it works:** Three focused cards for planning, tracking, and adjusting.
 5. **Final platform call to action:** A clear distinction between the daily mobile experience and the more detailed web experience.
@@ -60,10 +69,9 @@ The approved hero direction is:
 >
 > Reach the start line prepared, informed, and in control.
 
-The three platform actions are:
+The founding-beta actions are:
 
-- Download for iPhone
-- Get it on Android
+- Request iOS beta access
 - Log in on web
 
 The explanation section should communicate:
@@ -84,7 +92,7 @@ The mobile web experience must remain fully usable. Native mobile applications a
 
 The saved mockup includes presentation-only interactions:
 
-- iPhone and Android buttons acknowledge the selected store;
+- the iOS beta button acknowledges the access request;
 - login buttons open an illustrative login dialog; and
 - Today, Plan, and Progress buttons switch the product-preview state.
 
@@ -120,7 +128,7 @@ The parent issue defines the target. Production work should be divided into thes
 1. Establish the landing-page layout and visual tokens.
 2. Build the header and navigation.
 3. Build the first-marathon hero section.
-4. Add iPhone, Android, and web-application actions.
+4. Add honest iOS-beta and web-application actions.
 5. Build the workout-preview panel.
 6. Build the Plan, Track, Adjust section.
 7. Build the final platform call to action.
@@ -135,12 +143,15 @@ Each slice should be created and scheduled when the landing page enters a future
 
 The following decisions are intentionally not approved by this reference:
 
-- final App Store and Google Play URLs;
+- the final TestFlight invitation or access-request destination;
 - the production web-application login route;
 - launch-specific availability language;
 - analytics and consent behavior;
 - final production imagery or illustration assets; and
 - whether content changes are needed after usability review.
+
+An Android action requires a later proceed decision and real distribution
+destination; it is not an unresolved founding-beta CTA.
 
 These details should be decided in the implementation issue where they become relevant.
 

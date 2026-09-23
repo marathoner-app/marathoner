@@ -5,7 +5,7 @@
 - **Owner:** Kevin Tulloch
 - **Review scope:** The Marathoner product repository, excluding Creator Radar
 - **Parent tracker:** [GitHub issue #104](https://github.com/marathoner-app/marathoner/issues/104)
-- **Current delivery slice:** [GitHub issue #117](https://github.com/marathoner-app/marathoner/issues/117)
+- **Current delivery slice:** [GitHub issue #118](https://github.com/marathoner-app/marathoner/issues/118)
 - **Related plans:** [Zero-to-beta plan](zero-to-beta-plan.md),
   [product vision](product-vision.md), and
   [founding cohort plan](founding-cohort-plan.md)
@@ -103,7 +103,7 @@ Critical items can have prerequisites in earlier high-priority work.
 | CR-01 | Critical | Safety | Name the qualified reviewer role and obtain dated approval for the supported rules, eligibility, escalation boundaries, and guidance. | #70, #107 | Invitations | Not started |
 | CR-02 | Critical | Product | Ratify one narrow beta segment, participant count, adaptation boundary, client capability matrix, and explicit exclusions. | #117, #104 | Wave 00 | Complete |
 | CR-03 | Critical | Investment | Record problem evidence, alternatives, differentiation, participant commitments, and willingness-to-pay signals. | #35, #110 | Cohort expansion | Not started |
-| CR-04 | High | Governance | Repair contradictory platform, parent, milestone, design, audit, and current-state sources. | #54, #55, #104 | Wave 00 | In progress |
+| CR-04 | High | Governance | Repair contradictory platform, parent, milestone, design, audit, and current-state sources. | #118, #104 | Wave 00 | Complete |
 | CR-05 | High | Delivery | Decompose #105 through #110 into owner-sized child issues with dependencies and evidence-based exit criteria. | #104–#140 | Wave 00 | Complete |
 | CR-06 | High | Delivery | Produce a capacity model and likely/conservative forecast using focused sessions, external wait time, and 60–70% planned utilization. | #54, #104 | Wave 00 | Not started |
 | CR-07 | High | Quality | Run lint, tests, typecheck/build, and Firestore emulator checks on pull requests and make required checks visible before merge. | #56, #57 | Wave 00 | Not started |
