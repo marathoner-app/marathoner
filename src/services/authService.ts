@@ -1,5 +1,4 @@
 import {
-  createUserWithEmailAndPassword,
   onAuthStateChanged,
   signInWithEmailAndPassword,
   signOut,
@@ -9,24 +8,6 @@ import {
 import { auth } from "./firebaseClient";
 
 export type AuthUser = Pick<User, "uid" | "email">;
-
-export const signUp = async (
-  email: string,
-  password: string,
-): Promise<User> => {
-  try {
-    const userCredential = await createUserWithEmailAndPassword(
-      auth,
-      email,
-      password,
-    );
-    return userCredential.user;
-  } catch (error) {
-    throw new Error(
-      error instanceof Error ? error.message : "An unexpected error occurred",
-    );
-  }
-};
 
 export const signIn = async (
   email: string,

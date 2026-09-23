@@ -11,9 +11,11 @@ import {
 } from './services/authService'
 
 vi.mock('framer-motion', () => ({
+  useReducedMotion: () => true,
   motion: {
     button: 'button',
     div: 'div',
+    main: ({ children }: { children?: ReactNode }) => <main>{children}</main>,
     section: 'section'
   }
 }))
@@ -21,7 +23,6 @@ vi.mock('framer-motion', () => ({
 vi.mock('./services/authService', () => ({
   logOut: vi.fn(),
   signIn: vi.fn(),
-  signUp: vi.fn(),
   subscribeToAuthState: vi.fn()
 }))
 
@@ -98,7 +99,7 @@ describe('App authentication state', () => {
     expect(screen.getByRole('status')).toHaveTextContent(
       'Loading your session...'
     )
-    expect(screen.queryByRole('button', { name: 'Login' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Log in' })).not.toBeInTheDocument()
     expect(screen.queryByRole('navigation')).not.toBeInTheDocument()
 
     unmount()
@@ -106,17 +107,38 @@ describe('App authentication state', () => {
     expect(unsubscribe).toHaveBeenCalledOnce()
   })
 
-  it('shows signed-out controls and gates personal training features', () => {
+  it('closes registration and explains the public prototype before login', () => {
     renderApp()
 
     act(() => {
       emitAuthState(null)
     })
 
-    expect(screen.getByRole('button', { name: 'Login' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Sign Up' })).toBeInTheDocument()
     expect(
-      screen.getByText(/sign in or create an account to access/i)
+      screen.getByRole('heading', { name: 'New account registration is closed.' })
+    ).toBeInTheDocument()
+    expect(screen.getByRole('main')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Log in' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /sign up/i })).not.toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Access' })).toHaveAttribute(
+      'href',
+      '#access-status'
+    )
+    expect(screen.getByRole('link', { name: 'Privacy and data' })).toHaveAttribute(
+      'href',
+      '#privacy-data-use'
+    )
+    expect(
+      screen.getByRole('link', { name: 'Support and deletion' })
+    ).toHaveAttribute('href', '#support-requests')
+    expect(
+      screen.getByRole('link', { name: 'email Marathoner support' })
+    ).toHaveAttribute(
+      'href',
+      'mailto:kevin@marathonerapp.com?subject=Marathoner%20account%20support%20request'
+    )
+    expect(
+      screen.getByText(/training methodology and safety guidance have not yet/i)
     ).toBeInTheDocument()
     expect(
       screen.queryByRole('navigation', { name: 'Training sections' })
@@ -129,7 +151,7 @@ describe('App authentication state', () => {
     act(() => {
       emitAuthState(null)
     })
-    expect(screen.getByRole('button', { name: 'Login' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Log in' })).toBeInTheDocument()
 
     act(() => {
       emitAuthState(signedInUser)
@@ -141,7 +163,7 @@ describe('App authentication state', () => {
       screen.getByRole('navigation', { name: 'Training sections' })
     ).toBeInTheDocument()
     expect(
-      screen.queryByRole('button', { name: 'Login' })
+      screen.queryByRole('button', { name: 'Log in' })
     ).not.toBeInTheDocument()
   })
 
@@ -157,7 +179,7 @@ describe('App authentication state', () => {
       emitAuthState(null)
     })
 
-    expect(screen.getByRole('button', { name: 'Login' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Log in' })).toBeInTheDocument()
     expect(
       screen.queryByRole('navigation', { name: 'Training sections' })
     ).not.toBeInTheDocument()
@@ -182,8 +204,8 @@ describe('App authentication state', () => {
       emitAuthError(new Error('Unable to restore session'))
     })
 
-    expect(screen.getByRole('button', { name: 'Login' })).toBeInTheDocument()
-    expect(screen.queryByRole('status')).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Log in' })).toBeInTheDocument()
+    expect(screen.queryByText('Loading your session...')).not.toBeInTheDocument()
   })
 })
 
