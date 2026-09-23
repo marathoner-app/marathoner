@@ -1,0 +1,77 @@
+name: Bug report
+description: Report behavior that is broken, incorrect, or unexpectedly confusing.
+title: "[Bug]: "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for helping make Marathoner more reliable. Describe what you observed in plain language; it is fine to say when a detail is unknown.
+
+  - type: textarea
+    id: observed-behavior
+    attributes:
+      label: What happened?
+      description: Describe the incorrect behavior and why it matters.
+      placeholder: I expected to see..., but instead...
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: How can someone reproduce it?
+      description: Give the shortest reliable sequence, including any required account or data state.
+      placeholder: |
+        1. Sign in with...
+        2. Open...
+        3. Select...
+    validations:
+      required: true
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Include the browser or device, operating system, branch or deployed URL, and anything else that changes the result.
+      placeholder: Safari 20 on iPhone; production site; signed-in account with one active plan.
+    validations:
+      required: true
+
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Required outcome
+      description: State the behavior that would make this issue complete.
+      placeholder: A runner can... without...
+    validations:
+      required: true
+
+  - type: textarea
+    id: scope
+    attributes:
+      label: Focused scope
+      description: Name the smallest useful repair and anything that should remain outside this issue. It is fine to write "Needs investigation."
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance-criteria
+    attributes:
+      label: Acceptance criteria
+      description: List observable conditions that prove the repair is complete.
+      placeholder: |
+        - [ ] The reported steps no longer reproduce the problem.
+        - [ ] A focused regression test covers the failure.
+    validations:
+      required: true
+
+  - type: textarea
+    id: verification
+    attributes:
+      label: Verification plan
+      description: Explain the automated and manual checks that should prove the change works.
+      placeholder: Run the focused test, lint, the full test suite, the production build, and manually repeat the reported steps.
+    validations:
+      required: true

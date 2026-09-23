@@ -265,8 +265,11 @@ asset paths. Add or update focused tests whenever behavior changes.
 
 ## Contributing workflow
 
-Every repository change starts from an open issue and reaches `main` through a
-pull request. Include `Closes #<issue-number>`, `Fixes #<issue-number>`, or
+The complete [contributing guide](CONTRIBUTING.md) documents local setup, issue
+selection, branch naming, focused implementation, verification, pull requests,
+owner review, merge, and local cleanup. Every repository change starts from an
+open issue and reaches `main` through a pull request. Include
+`Closes #<issue-number>`, `Fixes #<issue-number>`, or
 `Resolves #<issue-number>` in the pull request description so GitHub can verify
 the relationship.
 
