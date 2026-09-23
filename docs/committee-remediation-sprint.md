@@ -5,7 +5,7 @@
 - **Owner:** Kevin Tulloch
 - **Review scope:** The Marathoner product repository, excluding Creator Radar
 - **Parent tracker:** [GitHub issue #104](https://github.com/marathoner-app/marathoner/issues/104)
-- **Current delivery slice:** [GitHub issue #118](https://github.com/marathoner-app/marathoner/issues/118)
+- **Current delivery slice:** [GitHub issues #56 and #57](https://github.com/marathoner-app/marathoner/issues/56)
 - **Related plans:** [Zero-to-beta plan](zero-to-beta-plan.md),
   [product vision](product-vision.md), and
   [founding cohort plan](founding-cohort-plan.md)
@@ -106,7 +106,7 @@ Critical items can have prerequisites in earlier high-priority work.
 | CR-04 | High | Governance | Repair contradictory platform, parent, milestone, design, audit, and current-state sources. | #118, #104 | Wave 00 | Complete |
 | CR-05 | High | Delivery | Decompose #105 through #110 into owner-sized child issues with dependencies and evidence-based exit criteria. | #104–#140 | Wave 00 | Complete |
 | CR-06 | High | Delivery | Produce a capacity model and likely/conservative forecast using focused sessions, external wait time, and 60–70% planned utilization. | #54, #104 | Wave 00 | Not started |
-| CR-07 | High | Quality | Run lint, tests, typecheck/build, and Firestore emulator checks on pull requests and make required checks visible before merge. | #56, #57 | Wave 00 | Not started |
+| CR-07 | High | Quality | Run lint, tests, typecheck/build, and Firestore emulator checks on pull requests and make required checks visible before merge. | #56, #57 | Wave 00 | Complete |
 | CR-08 | High | Mobile | Compare Capacitor, Expo with Firebase JS, and Expo with React Native Firebase on a physical-iPhone vertical slice; approve the ADR from evidence. | #33, #83–#89 | Wave 01 | Not started |
 | CR-09 | High | Architecture | Make completion, plan approval, and adjustment writes atomic and idempotent; enforce one active plan and stale-write rejection. | #72, #105, #107 | Invitations | Not started |
 | CR-10 | High | Security | Enforce allowlisted beta access, verified-email writes, supported schema/rules versions, bounded fields, immutable ownership, and negative rules tests. | #87, #107, #109 | Invitations | Not started |
