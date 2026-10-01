@@ -1,9 +1,9 @@
 {
   "firestore": {
-    "rules": "firestore.rules",
+    "rules": "firestore.beta.rules",
     "indexes": "firestore.indexes.json",
     "predeploy": [
-      "node scripts/assert-firestore-deploy-target.mjs development"
+      "node scripts/assert-firestore-deploy-target.mjs beta"
     ]
   },
   "emulators": {
