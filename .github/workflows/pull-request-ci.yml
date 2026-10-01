@@ -75,6 +75,8 @@ jobs:
 
       - name: Build production application
         run: npm run build
+        env:
+          VITE_FIREBASE_ENVIRONMENT: development
 
   firestore-tests:
     name: Firestore emulator tests
