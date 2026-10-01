@@ -1,3 +1,7 @@
+import {
+  createCompletedRunId,
+  milesToMeters,
+} from '@marathoner/training-contract';
 import { SDK_VERSION } from 'firebase/app';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaView, StyleSheet, Text, View } from 'react-native';
@@ -13,6 +17,10 @@ const firebaseStatus = inspectFirebaseEnvironment({
   EXPO_PUBLIC_FIREBASE_APP_ID:
     process.env.EXPO_PUBLIC_FIREBASE_APP_ID,
 });
+const sharedContractProbe = {
+  distance: milesToMeters(1),
+  runId: createCompletedRunId('expo-spike-run-1'),
+};
 
 export default function App() {
   return (
@@ -35,6 +43,10 @@ export default function App() {
           <Text style={styles.detail}>Firebase JS SDK: {SDK_VERSION}</Text>
           <Text style={styles.detail}>
             Development configuration: {firebaseStatus.label}
+          </Text>
+          <Text style={styles.detail}>
+            Shared contract: {sharedContractProbe.runId} ·{' '}
+            {sharedContractProbe.distance} m
           </Text>
           {firebaseStatus.missingKeys.length > 0 && (
             <Text style={styles.missing}>
