@@ -29,7 +29,9 @@ test('Capacitor bundle is visibly disposable and contains no web Firebase projec
     'utf8',
   );
   const configuredRemoteValues = Array.from(
-    rootFirebaseConfig.matchAll(/:\s*"([^"]+)"/g),
+    rootFirebaseConfig.matchAll(
+      /(?:apiKey|authDomain|projectId|storageBucket|messagingSenderId|appId):\s*["']([^"']+)["']/g,
+    ),
     (match) => match[1],
   );
   const text = (
