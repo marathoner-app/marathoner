@@ -77,5 +77,8 @@ values.
 
 The provider loads a snapshot when the authenticated experience starts and when
 the user chooses retry. Mutations update both Firestore and that shared snapshot.
-Real-time listeners and cross-device live refresh are future enhancements; a
-new session or page refresh reloads the persisted records.
+It does not yet provide real-time listeners, freshness states, atomic material
+commands, or cross-device live refresh; a new session or page refresh reloads
+the persisted records. The accepted target behavior and ordered migration are
+documented in
+[`training-data-synchronization.md`](training-data-synchronization.md).
