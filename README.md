@@ -107,6 +107,9 @@ The shared training domain model is documented in
 [`docs/architecture/training-domain-model.md`](docs/architecture/training-domain-model.md).
 Cross-feature behavior is documented in
 [`docs/architecture/training-feature-integration.md`](docs/architecture/training-feature-integration.md).
+The accepted live-read, online-write, conflict, and local-cache contract is
+documented in
+[`docs/architecture/training-data-synchronization.md`](docs/architecture/training-data-synchronization.md).
 The development/test-only Creator Radar boundary is documented in
 [`docs/architecture/creator-radar-event-publisher.md`](docs/architecture/creator-radar-event-publisher.md).
 
@@ -115,9 +118,9 @@ The development/test-only Creator Radar boundary is documented in
 - Personalized plan generation and plan-creation UI are not implemented yet.
   Accounts without a plan receive an honest empty state. This work is tracked in
   [issue #29](https://github.com/marathoner-app/marathoner/issues/29).
-- Training data loads as a persisted snapshot. Mutations remain synchronized
-  inside the current session, while real-time cross-device listeners remain a
-  future enhancement.
+- Training data currently loads as a persisted snapshot. Mutations remain
+  synchronized inside the current session, while the accepted real-time read
+  and server-confirmed write architecture remains implementation work.
 - The first Track form captures date, distance, elapsed time, shoe, and optional
   planned-workout association. Perceived effort and the remaining coaching
   inputs will be added in later product slices.
