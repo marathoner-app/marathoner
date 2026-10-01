@@ -8,9 +8,14 @@
       "types": "./src/index.d.ts",
       "import": "./src/index.mjs",
       "default": "./src/index.mjs"
+    },
+    "./fixtures/v1": {
+      "types": "./fixtures/v1/index.d.ts",
+      "default": "./fixtures/v1/training-contract.json"
     }
   },
   "files": [
-    "src"
+    "src",
+    "fixtures"
   ]
 }

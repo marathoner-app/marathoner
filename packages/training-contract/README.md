@@ -19,3 +19,15 @@ This is evidence for a package boundary, not a complete shared domain model.
 Dates, durations, plans, workouts, shoes, completed-run records, persistence,
 offline behavior, and schema migration remain in their current owners until the
 mobile ADR has enough evidence to approve a wider boundary.
+
+## Canonical fixtures
+
+The `@marathoner/training-contract/fixtures/v1` export is a technology-neutral
+JSON conformance set. It covers the current identifiers, base units, dates,
+runner profiles, training plans, planned workouts, completed runs, and shoes
+without making their implementations part of this package. Each case declares
+its schema version and expected acceptance result.
+
+See [`fixtures/v1/README.md`](./fixtures/v1/README.md) for the conformance
+workflow and the distinction between fixture compatibility and production
+persistence compatibility.

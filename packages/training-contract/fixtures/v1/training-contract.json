@@ -1,0 +1,325 @@
+{
+  "$schema": "./fixture-format.schema.json",
+  "fixtureFormatVersion": 1,
+  "contractVersion": "training-domain@1",
+  "fixtures": [
+    {
+      "id": "identifier.user.valid",
+      "schemaVersion": 1,
+      "subject": "userId",
+      "expected": { "valid": true },
+      "value": "runner-fixture-1"
+    },
+    {
+      "id": "identifier.user.padded",
+      "schemaVersion": 1,
+      "subject": "userId",
+      "expected": { "valid": false, "reason": "Identifiers cannot contain surrounding whitespace." },
+      "value": " runner-fixture-1 "
+    },
+    {
+      "id": "identifier.plan.valid",
+      "schemaVersion": 1,
+      "subject": "trainingPlanId",
+      "expected": { "valid": true },
+      "value": "plan-fixture-1"
+    },
+    {
+      "id": "identifier.workout.valid",
+      "schemaVersion": 1,
+      "subject": "plannedWorkoutId",
+      "expected": { "valid": true },
+      "value": "workout-fixture-1"
+    },
+    {
+      "id": "identifier.completed-run.valid",
+      "schemaVersion": 1,
+      "subject": "completedRunId",
+      "expected": { "valid": true },
+      "value": "run-fixture-1"
+    },
+    {
+      "id": "identifier.completed-run.path",
+      "schemaVersion": 1,
+      "subject": "completedRunId",
+      "expected": { "valid": false, "reason": "Identifiers cannot contain path separators." },
+      "value": "runs/run-fixture-1"
+    },
+    {
+      "id": "identifier.shoe.valid",
+      "schemaVersion": 1,
+      "subject": "shoeId",
+      "expected": { "valid": true },
+      "value": "shoe-fixture-1"
+    },
+    {
+      "id": "unit.distance.zero-boundary",
+      "schemaVersion": 1,
+      "subject": "distanceMeters",
+      "expected": { "valid": true },
+      "value": 0
+    },
+    {
+      "id": "unit.distance.fraction",
+      "schemaVersion": 1,
+      "subject": "distanceMeters",
+      "expected": { "valid": false, "reason": "Stored meter values must be whole numbers." },
+      "value": 1609.344
+    },
+    {
+      "id": "unit.duration.zero-boundary",
+      "schemaVersion": 1,
+      "subject": "durationSeconds",
+      "expected": { "valid": true },
+      "value": 0
+    },
+    {
+      "id": "unit.duration.negative",
+      "schemaVersion": 1,
+      "subject": "durationSeconds",
+      "expected": { "valid": false, "reason": "Durations cannot be negative." },
+      "value": -1
+    },
+    {
+      "id": "date.leap-day.valid",
+      "schemaVersion": 1,
+      "subject": "dateOnly",
+      "expected": { "valid": true },
+      "value": "2028-02-29"
+    },
+    {
+      "id": "date.non-leap-day.invalid",
+      "schemaVersion": 1,
+      "subject": "dateOnly",
+      "expected": { "valid": false, "reason": "The value is not a real calendar day." },
+      "value": "2027-02-29"
+    },
+    {
+      "id": "timestamp.utc.valid",
+      "schemaVersion": 1,
+      "subject": "utcDateTime",
+      "expected": { "valid": true },
+      "value": "2026-09-01T12:00:00Z"
+    },
+    {
+      "id": "timestamp.offset.invalid",
+      "schemaVersion": 1,
+      "subject": "utcDateTime",
+      "expected": { "valid": false, "reason": "Stored timestamps must be expressed in UTC with Z." },
+      "value": "2026-09-01T05:00:00-07:00"
+    },
+    {
+      "id": "timezone.iana.valid",
+      "schemaVersion": 1,
+      "subject": "ianaTimeZone",
+      "expected": { "valid": true },
+      "value": "America/Los_Angeles"
+    },
+    {
+      "id": "timezone.friendly-name.invalid",
+      "schemaVersion": 1,
+      "subject": "ianaTimeZone",
+      "expected": { "valid": false, "reason": "Friendly labels are not stable IANA time-zone identifiers." },
+      "value": "Pacific Time"
+    },
+    {
+      "id": "profile.valid",
+      "schemaVersion": 1,
+      "subject": "userProfile",
+      "expected": { "valid": true },
+      "value": {
+        "id": "runner-fixture-1",
+        "displayName": "Fixture runner",
+        "preferredDistanceUnit": "mile",
+        "timeZone": "America/Los_Angeles",
+        "createdAt": "2026-09-01T12:00:00Z",
+        "updatedAt": "2026-09-01T12:05:00Z"
+      }
+    },
+    {
+      "id": "profile.blank-display-name.invalid",
+      "schemaVersion": 1,
+      "subject": "userProfile",
+      "expected": { "valid": false, "reason": "An included display name cannot be blank." },
+      "value": {
+        "id": "runner-fixture-1",
+        "displayName": "   ",
+        "preferredDistanceUnit": "kilometer",
+        "timeZone": "Etc/UTC",
+        "createdAt": "2026-09-01T12:00:00Z",
+        "updatedAt": "2026-09-01T12:05:00Z"
+      }
+    },
+    {
+      "id": "plan.valid",
+      "schemaVersion": 1,
+      "subject": "trainingPlan",
+      "expected": { "valid": true },
+      "value": {
+        "id": "plan-fixture-1",
+        "userId": "runner-fixture-1",
+        "name": "Fixture first marathon plan",
+        "startDate": "2026-10-05",
+        "targetRaceDate": "2027-04-18",
+        "status": "active",
+        "createdAt": "2026-09-01T12:00:00Z",
+        "updatedAt": "2026-09-01T12:05:00Z"
+      }
+    },
+    {
+      "id": "plan.race-before-start.invalid",
+      "schemaVersion": 1,
+      "subject": "trainingPlan",
+      "expected": { "valid": false, "reason": "The target race cannot precede the plan start." },
+      "value": {
+        "id": "plan-fixture-1",
+        "userId": "runner-fixture-1",
+        "name": "Fixture first marathon plan",
+        "startDate": "2027-04-19",
+        "targetRaceDate": "2027-04-18",
+        "status": "active",
+        "createdAt": "2026-09-01T12:00:00Z",
+        "updatedAt": "2026-09-01T12:05:00Z"
+      }
+    },
+    {
+      "id": "workout.run.valid",
+      "schemaVersion": 1,
+      "subject": "plannedWorkout",
+      "expected": { "valid": true },
+      "value": {
+        "id": "workout-fixture-1",
+        "userId": "runner-fixture-1",
+        "planId": "plan-fixture-1",
+        "scheduledDate": "2026-10-05",
+        "phase": "base_building",
+        "status": "planned",
+        "kind": "run",
+        "purpose": "easy",
+        "targetDistanceMeters": 4828,
+        "createdAt": "2026-09-01T12:00:00Z",
+        "updatedAt": "2026-09-01T12:05:00Z"
+      }
+    },
+    {
+      "id": "workout.run-without-target.invalid",
+      "schemaVersion": 1,
+      "subject": "plannedWorkout",
+      "expected": { "valid": false, "reason": "A run needs a positive distance or duration target." },
+      "value": {
+        "id": "workout-fixture-2",
+        "userId": "runner-fixture-1",
+        "planId": "plan-fixture-1",
+        "scheduledDate": "2026-10-07",
+        "phase": "base_building",
+        "status": "planned",
+        "kind": "run",
+        "purpose": "easy",
+        "targetDistanceMeters": 0,
+        "createdAt": "2026-09-01T12:00:00Z",
+        "updatedAt": "2026-09-01T12:05:00Z"
+      }
+    },
+    {
+      "id": "workout.rest.zero-target-boundary",
+      "schemaVersion": 1,
+      "subject": "plannedWorkout",
+      "expected": { "valid": true },
+      "value": {
+        "id": "workout-fixture-3",
+        "userId": "runner-fixture-1",
+        "planId": "plan-fixture-1",
+        "scheduledDate": "2026-10-06",
+        "phase": "base_building",
+        "status": "planned",
+        "kind": "rest",
+        "createdAt": "2026-09-01T12:00:00Z",
+        "updatedAt": "2026-09-01T12:05:00Z"
+      }
+    },
+    {
+      "id": "completed-run.valid",
+      "schemaVersion": 1,
+      "subject": "completedRun",
+      "expected": { "valid": true },
+      "value": {
+        "id": "run-fixture-1",
+        "userId": "runner-fixture-1",
+        "plannedWorkoutPlanId": "plan-fixture-1",
+        "plannedWorkoutId": "workout-fixture-1",
+        "shoeId": "shoe-fixture-1",
+        "startedAt": "2026-10-05T14:00:00Z",
+        "timeZone": "America/Los_Angeles",
+        "distanceMeters": 4828,
+        "durationSeconds": 1800,
+        "perceivedEffort": "about_right",
+        "unusualPain": false,
+        "createdAt": "2026-10-05T14:31:00Z",
+        "updatedAt": "2026-10-05T14:31:00Z"
+      }
+    },
+    {
+      "id": "completed-run.zero-values.invalid",
+      "schemaVersion": 1,
+      "subject": "completedRun",
+      "expected": { "valid": false, "reason": "A completed run needs positive distance and duration." },
+      "value": {
+        "id": "run-fixture-2",
+        "userId": "runner-fixture-1",
+        "startedAt": "2026-10-05T14:00:00Z",
+        "timeZone": "America/Los_Angeles",
+        "distanceMeters": 0,
+        "durationSeconds": 0,
+        "createdAt": "2026-10-05T14:01:00Z",
+        "updatedAt": "2026-10-05T14:01:00Z"
+      }
+    },
+    {
+      "id": "completed-run.partial-workout-link.invalid",
+      "schemaVersion": 1,
+      "subject": "completedRun",
+      "expected": { "valid": false, "reason": "A planned-workout link needs both plan and workout identifiers." },
+      "value": {
+        "id": "run-fixture-3",
+        "userId": "runner-fixture-1",
+        "plannedWorkoutId": "workout-fixture-1",
+        "startedAt": "2026-10-05T14:00:00Z",
+        "timeZone": "America/Los_Angeles",
+        "distanceMeters": 4828,
+        "durationSeconds": 1800,
+        "createdAt": "2026-10-05T14:31:00Z",
+        "updatedAt": "2026-10-05T14:31:00Z"
+      }
+    },
+    {
+      "id": "shoe.active.valid",
+      "schemaVersion": 1,
+      "subject": "shoe",
+      "expected": { "valid": true },
+      "value": {
+        "id": "shoe-fixture-1",
+        "userId": "runner-fixture-1",
+        "name": "Fixture daily trainer",
+        "startingDistanceMeters": 0,
+        "status": "active",
+        "createdAt": "2026-09-01T12:00:00Z",
+        "updatedAt": "2026-09-01T12:05:00Z"
+      }
+    },
+    {
+      "id": "shoe.retired-without-date.invalid",
+      "schemaVersion": 1,
+      "subject": "shoe",
+      "expected": { "valid": false, "reason": "A retired shoe needs a retirement date." },
+      "value": {
+        "id": "shoe-fixture-2",
+        "userId": "runner-fixture-1",
+        "name": "Fixture retired trainer",
+        "startingDistanceMeters": 8047,
+        "status": "retired",
+        "createdAt": "2026-09-01T12:00:00Z",
+        "updatedAt": "2026-09-01T12:05:00Z"
+      }
+    }
+  ]
+}
