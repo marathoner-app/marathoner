@@ -195,8 +195,11 @@ credential and must not be treated as authorization. Protect any future
 database or storage service with appropriate Firebase Security Rules. Never
 commit service-account files, private keys, passwords, or other secrets.
 
-Moving environment-specific configuration out of the source file is tracked in
-[issue #22](https://github.com/marathoner-app/marathoner/issues/22).
+The verified client-key, provider, domain, data-service, and App Check posture is
+documented in
+[`docs/security/firebase-client-configuration.md`](docs/security/firebase-client-configuration.md).
+Separating environment-specific configuration is tracked in
+[issue #125](https://github.com/marathoner-app/marathoner/issues/125).
 
 ## Available scripts
 

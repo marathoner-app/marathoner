@@ -6,7 +6,7 @@
 - **Decision issue:** [#123](https://github.com/marathoner-app/marathoner/issues/123)
 - **Related controls:** [#78](https://github.com/marathoner-app/marathoner/issues/78),
   [#79](https://github.com/marathoner-app/marathoner/issues/79),
-  [#87](https://github.com/marathoner-app/marathoner/issues/87), and
+  [#125](https://github.com/marathoner-app/marathoner/issues/125), and
   [#124](https://github.com/marathoner-app/marathoner/issues/124)
 
 ## Decision
@@ -80,7 +80,7 @@ data path, completion evidence, and the response service level.
 Removing the signup UI and client service contains ordinary public use; it is
 not the beta authorization boundary. Firebase client configuration is public
 by design, and someone can call an identity endpoint outside the shipped user
-interface. Issue #87 must enforce allowlisted, verified-email access and data
+interface. Issue #125 must enforce allowlisted, verified-email access and data
 writes before invitations. Firestore Security Rules, not hidden UI, protect
 participant data.
 
@@ -90,7 +90,7 @@ Self-service registration must not return for the founding beta. Invitation
 access may begin only when:
 
 - #119 provides dated qualified approval for the exact supported methodology;
-- #87 enforces the allowlist and verified-email boundary;
+- #125 enforces the allowlist and verified-email boundary;
 - #78 and #79 provide usable privacy, consent, withdrawal, and deletion paths;
 - #124 rehearses complete deletion and participant support operations;
 - the invitation gate in the

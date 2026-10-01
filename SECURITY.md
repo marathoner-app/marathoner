@@ -65,3 +65,7 @@ public explanation; the repository must receive an appropriately redacted
 record afterward. The full beta incident, participant-communication, deletion,
 backup, and recovery procedures remain tracked in
 [#124](https://github.com/marathoner-app/marathoner/issues/124).
+
+The public Firebase client configuration and its live control inventory are
+documented in
+[`docs/security/firebase-client-configuration.md`](docs/security/firebase-client-configuration.md).
