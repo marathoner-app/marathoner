@@ -17,6 +17,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@marathoner/training-contract": "file:packages/training-contract",
     "@amcharts/amcharts4": "^4.10.40",
     "@amcharts/amcharts5": "^5.11.1",
     "firebase": "^11.10.0",

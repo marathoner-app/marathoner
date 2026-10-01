@@ -15,6 +15,12 @@ Both candidates are deliberately disconnected from remote services:
   reports whether an explicit development environment exists but never calls
   Firebase initialization. Authentication and data writes remain disabled.
 
+Both paths now consume the same small
+[`@marathoner/training-contract`](../../packages/training-contract/README.md)
+boundary for completed-run identity and meter-based distance. Capacitor receives
+it through the preserved web domain; Expo imports it directly. The package is a
+boundary proof, not approval to relocate the full training model.
+
 Do not add real Firebase values, signing material, an EAS project, or production
 features to either candidate. Those belong to later, separately reviewed issues.
 
