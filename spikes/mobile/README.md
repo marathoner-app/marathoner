@@ -108,15 +108,15 @@ or performance. Those remain acceptance gates in #84 and its later child issues.
 
 ## Dependency evidence
 
-`npm audit --omit=dev` on September 22, 2026 reported:
+The September 30, 2026 Node 22.13 review updated the Expo candidate to SDK
+57.0.26 and reproduced 14 audit paths: 10 moderate paths to `uuid` through
+Expo's Xcode tooling and four high paths through Firestore to two grpc
+advisories. The affected packages are absent from the generated iOS runtime
+bundle, and the individual code paths concern Xcode tooling APIs or gRPC server
+behavior that the disconnected candidate does not use.
 
-- zero advisories for the Capacitor candidate;
-- 10 moderate paths in the Expo candidate, all leading to
-  [`uuid` GHSA-w5hq-g745-h8pq](https://github.com/advisories/GHSA-w5hq-g745-h8pq)
-  through Expo's `xcode` and configuration-tooling dependency chain.
-
-npm's forced remediation would replace Expo SDK 57 with Expo 46, so it was not
-applied. This scaffold processes no untrusted project input and is not shipped,
-but issue #83 must include this unresolved upstream tooling advisory in the
-mobile ADR's dependency-health comparison. A production Expo selection cannot
-silently waive it.
+The complete version, reachability, remediation, and time-bounded risk record is
+in [`dependency-audit.md`](./dependency-audit.md). The finding is accepted only
+for this disposable spike through October 18, 2026. It remains a production
+decision blocker if issue #83 selects Expo; npm's forced Expo 46 and Firebase 9
+downgrades were not applied.
