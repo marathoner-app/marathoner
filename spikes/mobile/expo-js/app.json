@@ -1,0 +1,14 @@
+{
+  "expo": {
+    "name": "Marathoner Expo JS Spike",
+    "slug": "marathoner-expo-js-spike",
+    "version": "0.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.marathonerapp.spike.expojs"
+    }
+  }
+}
