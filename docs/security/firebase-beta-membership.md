@@ -1,6 +1,6 @@
 # Founding-beta Firebase membership boundary
 
-- **Status:** Live beta project provisioned; reviewed rules deployment pending
+- **Status:** Deployed and verified with self-cleaning fictional live fixtures
 - **Tracking issue:** [#166](https://github.com/marathoner-app/marathoner/issues/166)
 - **Activation issue:** [#168](https://github.com/marathoner-app/marathoner/issues/168)
 - **Parent:** [#125](https://github.com/marathoner-app/marathoner/issues/125)
@@ -49,6 +49,28 @@ state for each protected request. Revoking membership does not delete an Auth
 account or participant records; the complete suspension, deletion, audit, and
 communication procedures remain owned by #124 and #121.
 
+## Operator approval and revocation procedure
+
+Until a reviewed server-side membership command replaces it, only the dedicated
+beta administrator may change membership through privileged console or operator
+authority. A participant client must never receive that authority.
+
+For approval, the operator must:
+
+1. confirm the invitation and verified-email state against the private cohort
+   record;
+2. create `/betaMemberships/{uid}` with exactly the five fields documented
+   above;
+3. record the approver and approval time in the private operating log; and
+4. confirm that the participant can read its own membership without exposing
+   another user's path.
+
+For revocation, the operator deletes the membership or changes its status away
+from `approved`, records the reason privately, and verifies that a subsequent
+training-data request is denied. Account disabling, participant-data retention
+or deletion, and participant communication follow #124 and #121; membership
+revocation alone does not perform those actions.
+
 ## Rules and test isolation
 
 - `firestore.rules` remains the deployed development/prototype ruleset.
@@ -68,13 +90,21 @@ It deliberately preserves the current training-write schema checks. Broader
 field bounds, immutable metadata, revision checks, and server-only material
 writes remain in #121 after their command migrations.
 
-## Live activation gate
+## Live verification evidence
 
-Do not deploy this ruleset until the reviewed project alias and public client
-configuration merge. Activation also requires:
+The reviewed alias and public configuration merged before the rules were
+deployed to `marathonerapp-beta` on October 1, 2026. The guarded live verifier
+then proved:
 
-1. a dedicated operator procedure for approving and revoking membership;
-2. live approved and unapproved account checks against non-participant fixture
-   data; and
-3. the remaining App Check, support, incident, deletion, and command-boundary
-   gates owned by #161, #124, #121, and #158.
+1. approved verified owner reads and writes succeed;
+2. anonymous, unverified, unapproved, cross-owner, and client membership
+   mutation requests fail;
+3. deleting membership denies the next training read without waiting for an ID
+   token refresh; and
+4. all fictional Auth accounts and Firestore records are removed afterward.
+
+The exact command, HTTP outcomes, cleanup guarantee, project controls, and
+quota procedure are recorded in
+[the founding-beta project record](firebase-beta-project.md). App Check,
+support, incident, deletion, and command-boundary work remains owned by #161,
+#124, #121, and #158; this verification does not bypass those invitation gates.
