@@ -9,6 +9,7 @@ import {
 } from './firebaseEnvironment'
 
 const developmentConfig = firebaseProjectConfigurations.development
+const betaConfig = firebaseProjectConfigurations.beta
 
 describe('Firebase environment selection', () => {
   it('selects the audited development project explicitly', () => {
@@ -33,8 +34,21 @@ describe('Firebase environment selection', () => {
     )
   })
 
-  it('fails closed while the beta project is unprovisioned', () => {
-    expect(() => resolveFirebaseEnvironment('beta')).toThrow(
+  it('selects the distinct beta project explicitly', () => {
+    expect(resolveFirebaseEnvironment('beta')).toEqual({
+      name: 'beta',
+      config: betaConfig,
+    })
+    expect(betaConfig.projectId).not.toBe(developmentConfig.projectId)
+  })
+
+  it('fails closed when a registry leaves beta unprovisioned', () => {
+    const registry: FirebaseConfigurationRegistry = {
+      development: developmentConfig,
+      beta: null,
+    }
+
+    expect(() => resolveFirebaseEnvironment('beta', registry)).toThrow(
       'Firebase environment "beta" has not been provisioned',
     )
   })

@@ -27,8 +27,8 @@ would not turn them into secrets.
 
 | Surface | Live evidence | Disposition |
 | --- | --- | --- |
-| Firebase project | The committed project ID, app ID, sender ID, auth domain, and storage-bucket name identify `marathoner-d9bf9`. | This is the single foundation-stage prototype project, not a separated beta environment. |
-| Environment selector | Web, CI, Pages, and disconnected mobile-spike commands select the audited project as `development`; the reserved `beta` entry is unprovisioned and fails closed. | The [environment selection contract](firebase-environment-selection.md) defines the boundary. Issue #125 still owns distinct cloud projects and beta access. |
+| Firebase project | The committed project ID, app ID, sender ID, auth domain, and storage-bucket name identify `marathoner-d9bf9`. | This remains the development/prototype side of the separated environment boundary. |
+| Environment selector | Web, CI, Pages, and disconnected mobile-spike commands select the audited project as `development`; the distinct beta registration is available only to an explicit production-mode selection. | The [environment selection contract](firebase-environment-selection.md) and [beta project record](firebase-beta-project.md) define the boundary. Issue #125 still owns complete beta activation. |
 | Browser API key | The committed value exactly matches the only `Browser key (auto created by Firebase)` in the project without printing or copying the value into this record. | It is an intentionally public Firebase client identifier. Rotation is not required solely because it appears in source or a browser bundle. |
 | API allowlist | The key is restricted to the eight APIs listed below. Generative Language and the previously allowed unused AI, SQL, Storage, Realtime Database, distribution, hosting, messaging, ML, and Remote Config APIs are not allowed. | Keep this inventory narrow. A later feature must deliberately update this record before adding an API. |
 | Application restriction | The key accepts browser requests only from the current GitHub Pages host, `localhost`, and `127.0.0.1`, using the exact patterns below. | Keep these origins until environment separation is complete. Add the custom domain only when #162 publishes it. |
@@ -108,12 +108,13 @@ The current project is treated as legacy prototype/development infrastructure.
 It must not silently become the founding-beta project, and its five legacy
 accounts must not be copied to beta as an allowlist.
 
-Issue [#125](https://github.com/marathoner-app/marathoner/issues/125) creates
-visibly distinct development and beta Firebase projects, registers separate web
-and selected mobile apps, injects environment-specific public configuration,
-and makes local/CI commands choose development or emulators by default. The
-final project IDs are recorded only after they exist; this audit does not invent
-them.
+Issue [#168](https://github.com/marathoner-app/marathoner/issues/168) provisioned
+the distinct `marathonerapp-beta` project and web registration without changing
+the development defaults. The [beta project record](firebase-beta-project.md)
+contains its verified public controls. Issue
+[#125](https://github.com/marathoner-app/marathoner/issues/125) continues to own
+rules activation, selected mobile-app registration, live access verification,
+and the final environment boundary.
 
 Beta operator access should use the dedicated privileged administrator identity
 and recovery process. Public support uses `kevin@marathonerapp.com` and must not

@@ -1,5 +1,6 @@
 {
   "projects": {
-    "development": "marathoner-d9bf9"
+    "development": "marathoner-d9bf9",
+    "beta": "marathonerapp-beta"
   }
 }

@@ -3,6 +3,7 @@ import { assertFirestoreDeployTarget } from './assert-firestore-deploy-target.mj
 
 const projectAliases = {
   development: 'marathoner-development-fixture',
+  beta: 'marathoner-beta-fixture',
 }
 
 describe('Firestore deployment target guard', () => {
@@ -16,12 +17,24 @@ describe('Firestore deployment target guard', () => {
     ).not.toThrow()
   })
 
-  it('rejects an unprovisioned beta environment', () => {
+  it('allows the configured beta environment and project pair', () => {
     expect(() =>
       assertFirestoreDeployTarget({
         actualProjectId: 'marathoner-beta-fixture',
         environmentName: 'beta',
         projectAliases,
+      }),
+    ).not.toThrow()
+  })
+
+  it('rejects an unprovisioned beta environment', () => {
+    expect(() =>
+      assertFirestoreDeployTarget({
+        actualProjectId: 'marathoner-beta-fixture',
+        environmentName: 'beta',
+        projectAliases: {
+          development: projectAliases.development,
+        },
       }),
     ).toThrow('Firebase environment "beta" is unprovisioned')
   })
