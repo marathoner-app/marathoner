@@ -180,15 +180,11 @@ the current user, and subscribing to authentication changes. Public account
 creation is disabled. The training-data provider uses the authenticated UID as
 its ownership boundary.
 
-The committed configuration connects the app to its current Firebase project.
-To use a different project:
-
-1. Create or select a Firebase project.
-2. Register a web app in that project.
-3. Enable the **Email/Password** provider under Firebase Authentication.
-4. Add local development and deployment hosts to the project's authorized
-   domains when Firebase requires them.
-5. Replace the web client configuration values in `src/firebaseConfig.ts`.
+The committed registry contains visibly distinct development and founding-beta
+projects. `.env`, local development, CI, mobile spikes, and GitHub Pages remain
+pinned to development. Beta requires an explicit production-mode
+`VITE_FIREBASE_ENVIRONMENT=beta` selection and does not become a deployment
+default merely because its public identifiers are present.
 
 Firebase web configuration identifies a Firebase project; it is not a server
 credential and must not be treated as authorization. Protect any future
@@ -198,8 +194,10 @@ commit service-account files, private keys, passwords, or other secrets.
 The verified client-key, provider, domain, data-service, and App Check posture is
 documented in
 [`docs/security/firebase-client-configuration.md`](docs/security/firebase-client-configuration.md).
-Separating environment-specific configuration is tracked in
-[issue #125](https://github.com/marathoner-app/marathoner/issues/125).
+The selection contract and provisioned beta controls are documented in
+[`docs/security/firebase-environment-selection.md`](docs/security/firebase-environment-selection.md)
+and
+[`docs/security/firebase-beta-project.md`](docs/security/firebase-beta-project.md).
 
 ## Available scripts
 

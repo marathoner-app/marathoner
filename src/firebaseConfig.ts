@@ -23,5 +23,12 @@ export const firebaseProjectConfigurations = {
     messagingSenderId: "677998037771",
     appId: "1:677998037771:web:9269b3b5f82909ccc3b00e",
   },
-  beta: null,
+  beta: {
+    apiKey: "AIzaSyAkTxZmX63bw_eyt7KJDtlVHLIbZiXuI7s",
+    authDomain: "marathonerapp-beta.firebaseapp.com",
+    projectId: "marathonerapp-beta",
+    storageBucket: "marathonerapp-beta.firebasestorage.app",
+    messagingSenderId: "156851031272",
+    appId: "1:156851031272:web:a6ab19f6b760fcf5084d5d",
+  },
 } satisfies FirebaseConfigurationRegistry

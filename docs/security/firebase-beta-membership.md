@@ -1,7 +1,8 @@
 # Founding-beta Firebase membership boundary
 
-- **Status:** Pre-deployment rules candidate with CI emulator coverage
+- **Status:** Live beta project provisioned; reviewed rules deployment pending
 - **Tracking issue:** [#166](https://github.com/marathoner-app/marathoner/issues/166)
+- **Activation issue:** [#168](https://github.com/marathoner-app/marathoner/issues/168)
 - **Parent:** [#125](https://github.com/marathoner-app/marathoner/issues/125)
 - **Broader rules hardening:** [#121](https://github.com/marathoner-app/marathoner/issues/121)
 
@@ -55,8 +56,9 @@ communication procedures remain owned by #124 and #121.
 - `firebase.json` points to development rules, while `firebase.beta.json`
   points to beta rules.
 - Each configuration runs a predeploy guard against the exact project alias in
-  `.firebaserc`. Only development is configured today, so beta deployment is
-  blocked; development rules are also blocked from any other project.
+  `.firebaserc`. Development maps only to `marathoner-d9bf9`, while beta maps
+  only to `marathonerapp-beta`; either ruleset is blocked from every other
+  project.
 - The emulator permits multiple logical project IDs so the development and
   beta suites run together without sharing data or rules.
 
@@ -68,14 +70,11 @@ writes remain in #121 after their command migrations.
 
 ## Live activation gate
 
-Do not deploy this ruleset until #125 provisions the distinct beta project and
-records its operator ownership. Activation also requires:
+Do not deploy this ruleset until the reviewed project alias and public client
+configuration merge. Activation also requires:
 
-1. Email/Password configuration and invitation operations for the beta project;
-2. a dedicated operator procedure for approving and revoking membership;
-3. a reviewed `beta` alias in `.firebaserc` and the matching public client
-   configuration;
-4. live approved and unapproved account checks against non-participant fixture
+1. a dedicated operator procedure for approving and revoking membership;
+2. live approved and unapproved account checks against non-participant fixture
    data; and
-5. the remaining App Check, support, incident, deletion, and command-boundary
+3. the remaining App Check, support, incident, deletion, and command-boundary
    gates owned by #161, #124, #121, and #158.
