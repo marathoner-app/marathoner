@@ -88,7 +88,8 @@ The October 1, 2026 live run produced this evidence:
 | Verified user without a membership | Denied, HTTP 403 |
 | Approved verified user's own membership read | Allowed, HTTP 200 |
 | Approved verified owner's own training write | Allowed, HTTP 200 |
-| Approved member's cross-owner training write | Denied, HTTP 403 |
+| Approved verified owner's own training read | Allowed, HTTP 200 |
+| Approved member's cross-owner training read and write | Denied, HTTP 403 |
 | Participant mutation of its membership | Denied, HTTP 403 |
 | Training read immediately after membership revocation | Denied, HTTP 403 |
 | Fixture cleanup | All Auth users and Firestore documents removed |

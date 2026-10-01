@@ -572,6 +572,22 @@ async function run() {
       projectId: options.projectId,
     })
     await verifyDecision({
+      allowed: true,
+      documentPath: approvedRunPath,
+      idToken: idTokenByRole.get('approved'),
+      label: 'approved verified owner can read own training data',
+      method: 'GET',
+      projectId: options.projectId,
+    })
+    await verifyDecision({
+      allowed: false,
+      documentPath: `users/${unapproved.uid}/runs/cross-owner-verification`,
+      idToken: idTokenByRole.get('approved'),
+      label: 'approved member cross-owner training read is denied',
+      method: 'GET',
+      projectId: options.projectId,
+    })
+    await verifyDecision({
       allowed: false,
       documentPath: `users/${unapproved.uid}/runs/cross-owner-verification`,
       fields: runFields(unapproved.uid),

@@ -96,7 +96,8 @@ The reviewed alias and public configuration merged before the rules were
 deployed to `marathonerapp-beta` on October 1, 2026. The guarded live verifier
 then proved:
 
-1. approved verified owner reads and writes succeed;
+1. approved verified owner's membership and training reads and training writes
+   succeed;
 2. anonymous, unverified, unapproved, cross-owner, and client membership
    mutation requests fail;
 3. deleting membership denies the next training read without waiting for an ID
