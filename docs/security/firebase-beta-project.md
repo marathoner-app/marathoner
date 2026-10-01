@@ -1,6 +1,6 @@
 # Founding-beta Firebase project record
 
-- **Status:** Provisioned; rules deployment and live fixture verification pending
+- **Status:** Provisioned; live rules deployed and access boundary verified
 - **Tracking issue:** [#168](https://github.com/marathoner-app/marathoner/issues/168)
 - **Parent:** [#125](https://github.com/marathoner-app/marathoner/issues/125)
 
@@ -18,7 +18,8 @@ verified against project-level ownership, and removed immediately afterward.
 
 ## Provisioned controls
 
-The live console was verified on September 30, 2026:
+The project controls were verified during provisioning on September 30, 2026,
+and the live rules and access boundary were verified on October 1, 2026:
 
 | Control | Live setting |
 | --- | --- |
@@ -46,23 +47,76 @@ The beta browser key intentionally permits no localhost or GitHub Pages
 referrer. It will remain unusable from those origins. The custom-domain
 publication and Authentication authorized-domain changes remain owned by #162.
 
-After this record and alias merge, deploy the already reviewed beta rules with
-an explicit target:
+The reviewed rules were deployed on October 1, 2026, with this explicit target:
 
 ```sh
 npx firebase deploy --config firebase.beta.json --project marathonerapp-beta --only firestore
 ```
 
-The predeploy guard must print that it verified the beta target before the CLI
-uploads rules. If the selected project differs from the `beta` alias, deployment
-must stop. Use only fictional fixture accounts and records for the subsequent
-approved and denied live checks; do not enroll participants in this issue.
+The predeploy guard printed `Verified beta Firestore deploy target
+marathonerapp-beta` before the CLI compiled and released
+`firestore.beta.rules`. If the selected project differs from the `beta` alias,
+deployment stops before upload.
 
-## Remaining activation gates
+## Repeatable live boundary verification
 
-- Deploy `firestore.beta.rules` after the configuration PR merges.
-- Prove one approved, verified fictional owner can read and write its permitted
-  data while anonymous, unverified, unapproved, and cross-owner attempts fail.
+The operator-only verifier requires an active Firebase CLI session for
+`kevin-admin@marathonerapp.com`, the exact beta project ID, and an explicit
+confirmation phrase:
+
+```sh
+firebase login
+npm run verify:beta-boundary -- \
+  --project marathonerapp-beta \
+  --confirm CREATE-TEST-AND-DELETE-BETA-FIXTURES
+```
+
+The verifier refuses every other project or operator. It first checks for
+collisions with its fixed fictional UIDs, generates passwords only in memory,
+and never prints credentials or tokens. It creates three fictional Auth users,
+creates only the membership and training records required for the checks, and
+removes every account and document it created in a `finally` cleanup. If a
+collision exists, it stops rather than assuming ownership of an existing
+account.
+
+The October 1, 2026 live run produced this evidence:
+
+| Boundary | Live result |
+| --- | --- |
+| Anonymous training write | Denied, HTTP 403 |
+| Unverified user with an approved membership | Denied, HTTP 403 |
+| Verified user without a membership | Denied, HTTP 403 |
+| Approved verified user's own membership read | Allowed, HTTP 200 |
+| Approved verified owner's own training write | Allowed, HTTP 200 |
+| Approved verified owner's own training read | Allowed, HTTP 200 |
+| Approved member's cross-owner training read and write | Denied, HTTP 403 |
+| Participant mutation of its membership | Denied, HTTP 403 |
+| Training read immediately after membership revocation | Denied, HTTP 403 |
+| Fixture cleanup | All Auth users and Firestore documents removed |
+
+No participant identity or data was used. The verifier's unit tests cover the
+project, operator, confirmation, public-configuration, fixed-identity, OAuth
+scope, and expected-response guards.
+
+## Quota monitoring and recovery
+
+The dedicated administrator owns quota review. Before each invitation batch
+and daily while a founding cohort is active, the operator must review the beta
+project's Firebase and Google Cloud usage pages for Firestore operations and
+storage, Authentication activity, API errors, and quota saturation. The review
+result belongs in the private operating log because it can contain participant
+and traffic information.
+
+The Spark plan cannot create paid overage. A quota warning, unexplained usage
+increase, or service-limit error pauses new invitations and the affected
+workflow while the operator investigates. Enabling billing or raising a paid
+quota requires a separately reviewed decision; it is not an incident
+workaround. Administrator recovery factors remain outside the repository, and
+the versioned project alias, rules, deployment guard, and this runbook provide
+the rebuild path after account recovery.
+
+## Remaining participant-activation gates
+
 - Complete App Check enforcement and rollback planning in #161.
 - Publish the custom domain and authorized-domain configuration in #162.
 - Complete participant-data integrity, deletion, incident, and support controls

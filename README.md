@@ -207,6 +207,7 @@ and
 | `npm run lint` | Check the repository with ESLint. |
 | `npm test` | Run the automated test suite once. |
 | `npm run test:firestore` | Run ownership and persistence integration tests against the local Firestore emulator. |
+| `npm run verify:beta-boundary -- --project marathonerapp-beta --confirm CREATE-TEST-AND-DELETE-BETA-FIXTURES` | Operator-only live check that creates and removes fixed fictional beta fixtures. |
 | `npm run test:watch` | Keep the test runner open and rerun affected tests after changes. |
 | `npm run build` | Run TypeScript project checks and create a production build in `dist/`. |
 | `npm run preview` | Serve the production build locally for a final browser check. |

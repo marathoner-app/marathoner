@@ -1,6 +1,6 @@
 # Firebase environment selection
 
-- **Status:** Distinct development and beta projects provisioned; beta deployment pending review
+- **Status:** Distinct projects provisioned; beta rules live and boundary verified
 - **Tracking issues:** [#164](https://github.com/marathoner-app/marathoner/issues/164),
   [#168](https://github.com/marathoner-app/marathoner/issues/168),
   parent [#125](https://github.com/marathoner-app/marathoner/issues/125)
@@ -14,8 +14,9 @@ Marathoner has two supported Firebase environment names:
   local work and the registration-closed GitHub Pages prototype while
   environment separation is completed.
 - `beta` is the isolated `marathonerapp-beta` project. Its public web
-  configuration is recorded, but only an explicit production-mode selection
-  can initialize it.
+  configuration, membership-gated rules deployment, and fictional live-boundary
+  evidence are recorded, but only an explicit production-mode selection can
+  initialize it.
 
 The root `.env` file contains only the public environment name. The Firebase
 browser configurations remain in `src/firebaseConfig.ts` because browser
@@ -48,14 +49,15 @@ audited development values if they leak into the Capacitor bundle.
 
 ## Beta activation sequence
 
-The distinct project and web registration now exist. Beta still is not an
-application default and is not ready for participants. Issue #125 must complete
-the remaining activation sequence through separately reviewed changes:
+The distinct project, web registration, rules deployment, and live access proof
+now exist. Beta still is not an application default and is not ready for
+participants. Issue #125 must complete the remaining activation sequence
+through separately reviewed changes:
 
-1. merge the reviewed alias and public client configuration;
-2. deploy the emulator-tested
-   [membership and verified-email gate](firebase-beta-membership.md), then run
-   approved and unapproved live checks;
+1. keep the reviewed alias and public client configuration aligned with the
+   deployed project;
+2. preserve the deployed, live-verified
+   [membership and verified-email gate](firebase-beta-membership.md);
 3. verify representative web and selected iOS builds choose the intended
    project; and
 4. change only the approved beta deployment to
