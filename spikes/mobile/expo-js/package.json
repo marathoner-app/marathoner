@@ -15,7 +15,7 @@
   },
   "dependencies": {
     "@marathoner/training-contract": "file:../../../packages/training-contract",
-    "expo": "~57.0.24",
+    "expo": "~57.0.26",
     "expo-status-bar": "~57.0.1",
     "firebase": "^12.19.0",
     "react": "19.2.3",
