@@ -191,6 +191,13 @@ plan-field validation, and an end-to-end repository round trip for a related
 plan, workout, shoe, and run. The Firebase emulator requires a local Java
 runtime.
 
+The separate, not-yet-deployed `firestore.beta.rules` candidate additionally
+requires verified email and an administrator-created approved membership for
+participant-data access. Its negative fixtures run in the same emulator check
+under a distinct logical project ID. The decision and activation gate are
+documented in
+[`../security/firebase-beta-membership.md`](../security/firebase-beta-membership.md).
+
 The tested rules and index configuration were deployed to the Marathoner Firebase
 project during the Foundation closeout. Repeat this explicit production operation
 whenever either file changes:
@@ -200,6 +207,9 @@ npx firebase deploy --project marathoner-d9bf9 --only firestore
 ```
 
 This is an explicit production operation, not part of the local test command.
+The predeploy guard requires the command's project ID to match the
+`development` alias in `.firebaserc`. The separate beta configuration remains
+undeployable until a reviewed `beta` alias exists.
 
 Plan, Track, and Analyze integration is documented in
 [`training-feature-integration.md`](training-feature-integration.md).

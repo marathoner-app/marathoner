@@ -50,7 +50,9 @@ Issue #125 must complete all of these steps in a separately reviewed change:
 
 1. provision a visibly distinct beta project and web registration;
 2. record its public identifiers without copying development credentials;
-3. enforce allowlisted, verified-email writes and negative rules tests;
+3. deploy the emulator-tested
+   [membership and verified-email gate](firebase-beta-membership.md), then run
+   approved and unapproved live checks;
 4. document deployment target and operator ownership;
 5. verify representative web and selected iOS builds choose the intended
    project; and

@@ -1,0 +1,100 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isSignedInAs(userId) {
+      return request.auth != null && request.auth.uid == userId;
+    }
+
+    function hasVerifiedEmail() {
+      return request.auth != null
+        && request.auth.token.email_verified == true;
+    }
+
+    function hasApprovedBetaMembership(userId) {
+      return exists(
+          /databases/$(database)/documents/betaMemberships/$(userId)
+        )
+        && get(
+          /databases/$(database)/documents/betaMemberships/$(userId)
+        ).data.keys().hasAll([
+          'schemaVersion',
+          'userId',
+          'status',
+          'approvedAt',
+          'approvedBy'
+        ])
+        && get(
+          /databases/$(database)/documents/betaMemberships/$(userId)
+        ).data.keys().hasOnly([
+          'schemaVersion',
+          'userId',
+          'status',
+          'approvedAt',
+          'approvedBy'
+        ])
+        && get(
+          /databases/$(database)/documents/betaMemberships/$(userId)
+        ).data.schemaVersion == 1
+        && get(
+          /databases/$(database)/documents/betaMemberships/$(userId)
+        ).data.userId == userId
+        && get(
+          /databases/$(database)/documents/betaMemberships/$(userId)
+        ).data.status == 'approved'
+        && get(
+          /databases/$(database)/documents/betaMemberships/$(userId)
+        ).data.approvedAt is timestamp
+        && get(
+          /databases/$(database)/documents/betaMemberships/$(userId)
+        ).data.approvedBy is string
+        && get(
+          /databases/$(database)/documents/betaMemberships/$(userId)
+        ).data.approvedBy.size() > 0
+        && get(
+          /databases/$(database)/documents/betaMemberships/$(userId)
+        ).data.approvedBy.size() <= 128;
+    }
+
+    function canAccessBetaTrainingData(userId) {
+      return isSignedInAs(userId)
+        && hasVerifiedEmail()
+        && hasApprovedBetaMembership(userId);
+    }
+
+    function isValidOwnedWrite(userId) {
+      return request.resource.data.schemaVersion == 1
+        && request.resource.data.userId == userId;
+    }
+
+    match /betaMemberships/{userId} {
+      allow get: if isSignedInAs(userId) && hasVerifiedEmail();
+      allow list, create, update, delete: if false;
+    }
+
+    match /users/{userId}/plans/{planId} {
+      allow read, delete: if canAccessBetaTrainingData(userId);
+      allow create, update: if canAccessBetaTrainingData(userId)
+        && isValidOwnedWrite(userId);
+
+      match /workouts/{workoutId} {
+        allow read, delete: if canAccessBetaTrainingData(userId);
+        allow create, update: if canAccessBetaTrainingData(userId)
+          && isValidOwnedWrite(userId)
+          && request.resource.data.planId == planId;
+      }
+    }
+
+    match /users/{userId}/runs/{runId} {
+      allow read, delete: if canAccessBetaTrainingData(userId);
+      allow create, update: if canAccessBetaTrainingData(userId)
+        && isValidOwnedWrite(userId);
+    }
+
+    match /users/{userId}/shoes/{shoeId} {
+      allow read, delete: if canAccessBetaTrainingData(userId);
+      allow create, update: if canAccessBetaTrainingData(userId)
+        && isValidOwnedWrite(userId);
+    }
+  }
+}
