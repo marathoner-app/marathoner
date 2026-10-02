@@ -4,8 +4,7 @@ import { loadEnv } from 'vite'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import {
-  assertFirebaseEnvironmentForMode,
-  resolveFirebaseEnvironment,
+  resolveFirebaseEnvironmentForMode,
 } from './src/firebaseEnvironment'
 
 const repositoryRoot = path.dirname(fileURLToPath(import.meta.url))
@@ -17,15 +16,16 @@ const capacitorStubRoot = path.resolve(
 // https://vite.dev/config/
 export default defineConfig(({ mode }) => {
   const isMobileSpike = mode === 'mobile-spike'
+  const isMobileAuthSpike = mode === 'mobile-auth-spike'
   const environment = loadEnv(mode, repositoryRoot, 'VITE_')
-  const selectedFirebaseEnvironment = resolveFirebaseEnvironment(
-    environment.VITE_FIREBASE_ENVIRONMENT,
-  )
-
-  assertFirebaseEnvironmentForMode(mode, selectedFirebaseEnvironment.name)
+  resolveFirebaseEnvironmentForMode({
+    mode,
+    requestedEnvironment: environment.VITE_FIREBASE_ENVIRONMENT,
+    mobileApiKey: environment.VITE_FIREBASE_MOBILE_API_KEY,
+  })
 
   return {
-    base: isMobileSpike ? './' : '/marathoner/',
+    base: isMobileSpike || isMobileAuthSpike ? './' : '/marathoner/',
     plugins: [react()],
     assetsInclude: ['src/assets/IMG_0437.JPG'],
     optimizeDeps: {
@@ -54,10 +54,40 @@ export default defineConfig(({ mode }) => {
             },
           ],
         }
-      : undefined,
+      : isMobileAuthSpike
+        ? {
+            alias: [
+              {
+                find: './App.tsx',
+                replacement: path.resolve(
+                  repositoryRoot,
+                  'spikes/mobile/capacitor/auth/AuthProofApp.tsx',
+                ),
+              },
+              {
+                find: '../selectedFirebaseEnvironment',
+                replacement: path.resolve(
+                  repositoryRoot,
+                  'spikes/mobile/capacitor/auth/selectedFirebaseEnvironment.ts',
+                ),
+              },
+              {
+                find: './firebaseClient',
+                replacement: path.resolve(
+                  repositoryRoot,
+                  'spikes/mobile/capacitor/auth/firebaseClient.ts',
+                ),
+              },
+            ],
+          }
+        : undefined,
     test: {
       environment: 'jsdom',
-      exclude: [...configDefaults.exclude, 'spikes/mobile/**'],
+      exclude: [
+        ...configDefaults.exclude,
+        'spikes/mobile/expo-js/**',
+        'spikes/mobile/capacitor/test/**',
+      ],
       setupFiles: './src/test/setup.ts',
     },
   }

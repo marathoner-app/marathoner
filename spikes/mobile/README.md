@@ -5,15 +5,21 @@ a child of the physical-iPhone comparison in
 [issue #84](https://github.com/marathoner-app/marathoner/issues/84). They are
 disposable evidence, not production clients and not a mobile-stack decision.
 
-Both candidates are deliberately disconnected from remote services:
+Issue #84 established disconnected build and launch viability:
 
 - `capacitor/` wraps the responsive root application in a Capacitor iOS shell,
   but its `mobile-spike` Vite mode replaces authentication, persistence, and the
   public login screen at bundle time. Its test rejects a bundle containing the
   current web Firebase project identifier.
-- `expo-js/` proves Expo and Firebase JavaScript SDK bundle compatibility. It
-  reports whether an explicit development environment exists but never calls
-  Firebase initialization. Authentication and data writes remain disabled.
+- `expo-js/` proves Expo and Firebase JavaScript SDK bundle compatibility and
+  keeps remote services disabled unless the explicit issue #86 Auth
+  configuration is present.
+
+Issue [#86](https://github.com/marathoner-app/marathoner/issues/86) adds a
+separate, fail-closed authentication mode to each candidate. Its
+[`auth-evidence.md`](./auth-evidence.md) records successful Email/Password
+authentication, session restoration, logout, and durable logout on the same
+physical iPhone. Firestore and training-data access remain disabled.
 
 Both paths now consume the same small
 [`@marathoner/training-contract`](../../packages/training-contract/README.md)
@@ -21,13 +27,16 @@ boundary for completed-run identity and meter-based distance. Capacitor receives
 it through the preserved web domain; Expo imports it directly. The package is a
 boundary proof, not approval to relocate the full training model.
 
-Do not add real Firebase values, signing material, an EAS project, or production
-features to either candidate. Those belong to later, separately reviewed issues.
+Do not commit Firebase values, signing material, an EAS project, or production
+features to either candidate. The approved issue #86 values belong only in the
+ignored local environment files and connect only to the development project.
+Other remote behavior belongs to later, separately reviewed issues.
 
 The October 2, 2026 signed-build and physical-iPhone results are recorded in
 [`device-evidence.md`](./device-evidence.md). Both shells passed build and launch
-viability; authentication, shared data, offline behavior, accessibility, and
-external distribution remain separate gates.
+viability. Issue #86 subsequently proved authentication on that device; shared
+data, offline behavior, accessibility, and external distribution remain
+separate gates.
 
 ## Supported toolchain
 
@@ -79,6 +88,16 @@ npm test
 npm run sync:ios
 ```
 
+After populating the ignored root `.env.mobile-auth-spike.local` from its
+example, build the separate authentication proof with:
+
+```sh
+npm run build:mobile-auth-spike
+cd spikes/mobile/capacitor
+npm run build:auth
+npm run sync:ios
+```
+
 `ios/` is committed as a reproducible SPM-based project. If it is intentionally
 regenerated in a disposable checkout, build the web candidate first and run:
 
@@ -101,6 +120,11 @@ npm test
 npm run export:ios
 ```
 
+The authentication proof additionally requires a local `.env.local` populated
+from `.env.example`. The resolver accepts only a complete development-project
+configuration and otherwise renders a blocked state without attempting a
+Firebase connection.
+
 With the supported Xcode and Node versions installed, `npm run ios` launches the
 candidate for simulator testing. For the October 2 physical test, Expo Go and
 the CLI used the same development account. An explicitly approved temporary
@@ -117,10 +141,15 @@ production-development workflow.
   pass the local boundary tests, and export an iOS JavaScript bundle.
 - Both candidates can compile or bundle and render their isolated shell on the
   same physical iPhone.
+- Both candidates can observe Firebase Auth state, authenticate the same
+  existing development account used by the web app, restore the session after
+  a force-quit, log out, and preserve that signed-out state after another
+  force-quit.
 
-It does not prove session restoration, a Firestore round trip, network-loss
-behavior, external distribution, background behavior, accessibility, or
-performance. Those remain acceptance gates in #86, #87, #88, and #83.
+It does not prove a Firestore round trip, network-loss behavior, external
+distribution, background behavior, accessibility, Android signed-build
+configuration, or performance. Those remain acceptance gates in #87, #88, and
+#83.
 
 ## Dependency evidence
 

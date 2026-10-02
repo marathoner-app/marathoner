@@ -3,7 +3,7 @@
 - **Issue:** [#153](https://github.com/marathoner-app/marathoner/issues/153)
 - **Reviewed:** October 2, 2026
 - **Owner:** Kevin Tulloch
-- **Applies to:** the disconnected `spikes/mobile/expo-js` candidate only
+- **Applies to:** the isolated `spikes/mobile/expo-js` candidate only
 - **Disposition expires:** October 18, 2026
 - **Production status:** not accepted for a selected or participant-facing client
 
@@ -11,8 +11,9 @@
 
 The current advisories are temporarily accepted for the disposable Expo
 architecture candidate because the affected code is not present in its iOS
-runtime bundle and the candidate neither initializes Firebase, verifies
-untrusted Expo update signatures, nor processes untrusted Xcode projects. This
+runtime bundle and the candidate neither invokes Firestore, verifies untrusted
+Expo update signatures, nor processes untrusted Xcode projects. Issue #86 now
+initializes Firebase Auth only, under the narrow controls recorded below. This
 acceptance permits continued comparison work; it does not approve Expo,
 Firebase JS, an override, or these versions for the production mobile client.
 
@@ -109,7 +110,9 @@ contained no `node_modules/@grpc` or `@grpc/grpc-js` reference.
 This decision remains valid only while all of these statements are true:
 
 - the candidate remains isolated under `spikes/mobile/expo-js`;
-- Firebase initialization, authentication, and Firestore calls remain disabled;
+- remote use remains limited to Email/Password Auth in the development project,
+  through the dedicated issue #86 client key;
+- Firestore and other remote data calls remain disabled;
 - none of the advisory packages appears in an iOS runtime bundle or source map;
 - Expo update code signing remains unconfigured and the candidate does not
   verify externally supplied certificates or signatures;
@@ -124,8 +127,8 @@ when any of these triggers occurs:
 - Expo CLI, `@expo/code-signing-certificates`, or `node-forge` changes in the
   lockfile;
 - an advisory changes affected APIs, severity, or patched ranges;
-- remote Firebase behavior, EAS/TestFlight distribution, or production mobile
-  work begins;
+- Firebase use expands beyond the reviewed issue #86 Auth path,
+  EAS/TestFlight distribution begins, or production mobile work begins;
 - the iOS bundle starts resolving a Node Firestore entry or any affected
   package; or
 - issue #83 is ready to approve an Expo-based architecture.
@@ -146,14 +149,20 @@ The following passed with Expo 57.0.26 during the October 2 review:
 - clean iOS native-project generation with `expo prebuild --platform ios
   --no-install --clean`;
 - a 719-module physical-iPhone bundle and visible Expo Go launch; and
+- ten candidate tests covering fail-closed configuration and the shared
+  training-contract boundary;
+- Email/Password sign-in with the same development account used on web,
+  signed-in restoration after force-quit, logout, and durable logout on the
+  physical iPhone; and
 - an iOS export scan with no `node-forge`, code-signing-certificate, `uuid`,
   `xcode`, or grpc package match.
 
 Full Xcode, Apple signing, and a physical iPhone are now available on this
-workstation, and the shell-level physical test passed. A generated Expo native
-application, TestFlight path, authentication, remote data, and production
-update-signing flow have not passed. The record therefore continues to reject
-an override and stops short of production acceptance.
+workstation, and the shell-level and Firebase Auth physical tests passed. A
+generated Expo native application, TestFlight path, Firestore access, Android
+signed build, and production update-signing flow have not passed. The record
+therefore continues to reject an override and stops short of production
+acceptance.
 
 ## Reproduction commands
 

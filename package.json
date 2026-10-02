@@ -8,6 +8,7 @@
     "dev": "vite",
     "build": "npm run check:server-boundary && npm run check:creator-radar-infrastructure && tsc -b && vite build",
     "build:mobile-spike": "npm run check:server-boundary && npm run check:creator-radar-infrastructure && tsc -b && vite build --mode mobile-spike --outDir spikes/mobile/capacitor/web --emptyOutDir",
+    "build:mobile-auth-spike": "npm run check:server-boundary && npm run check:creator-radar-infrastructure && tsc -b && vite build --mode mobile-auth-spike --outDir spikes/mobile/capacitor/web --emptyOutDir",
     "check:server-boundary": "node scripts/check-server-boundary.mjs",
     "check:creator-radar-infrastructure": "node scripts/check-creator-radar-infrastructure.mjs",
     "lint": "eslint .",
