@@ -1,0 +1,111 @@
+.shared-record-proof {
+  min-height: 100vh;
+  padding: max(3rem, env(safe-area-inset-top)) 1.5rem
+    max(2rem, env(safe-area-inset-bottom));
+  background: #0d1b2a;
+  color: #fff;
+}
+
+.shared-record-proof h1 {
+  margin: 0;
+  font-size: clamp(2.75rem, 14vw, 4.5rem);
+}
+
+.shared-record-eyebrow {
+  margin: 0 0 1rem;
+  color: #7ed6c2;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+}
+
+.shared-record-subtitle {
+  margin: 0.25rem 0 2.5rem;
+  color: #c5d5e4;
+  font-size: 1.125rem;
+}
+
+.shared-record-card {
+  padding: 1.25rem;
+  border: 1px solid #7ed6c2;
+  border-radius: 1rem;
+  background: #16324f;
+}
+
+.shared-record-card h2 {
+  margin-top: 0;
+}
+
+.shared-record-card button {
+  min-height: 2.75rem;
+  padding: 0.6rem 1rem;
+  border: 0;
+  border-radius: 0.5rem;
+  background: #7ed6c2;
+  color: #0d1b2a;
+  font: inherit;
+  font-weight: 700;
+}
+
+.shared-record-card button:disabled {
+  opacity: 0.55;
+}
+
+.shared-record-card .login-popup {
+  position: static;
+  width: auto;
+  margin-top: 1rem;
+  color: #0d1b2a;
+}
+
+.shared-record-success {
+  color: #7ed6c2;
+  font-weight: 700;
+}
+
+.shared-record-data {
+  margin: 1.25rem 0;
+  padding: 1rem;
+  border-radius: 0.75rem;
+  background: #0d253a;
+}
+
+.shared-record-data h3 {
+  margin-top: 0;
+}
+
+.shared-record-data dl {
+  margin: 0 0 1rem;
+}
+
+.shared-record-data dl div {
+  display: grid;
+  grid-template-columns: 7rem 1fr;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.shared-record-data dt {
+  color: #9fb4c7;
+}
+
+.shared-record-data dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.shared-record-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.shared-record-error {
+  color: #ffd2d2;
+}
+
+.shared-record-footer {
+  margin-top: 2rem;
+  color: #8399ad;
+  font-size: 0.875rem;
+}

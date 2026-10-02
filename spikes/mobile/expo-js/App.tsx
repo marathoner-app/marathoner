@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   onAuthStateChanged,
   signInWithEmailAndPassword,
@@ -19,8 +19,13 @@ import {
   SafeAreaProvider,
   SafeAreaView,
 } from 'react-native-safe-area-context';
+import type { SharedRecordProof } from '@marathoner/training-contract';
 import { resolveFirebaseConfiguration } from './src/firebaseBoundary.mjs';
 import { createMobileAuth } from './src/firebaseClient';
+import {
+  createExpoSharedRecordClient,
+  type ExpoSharedRecordClient,
+} from './src/sharedRecordClient';
 
 type AuthSetup =
   | { status: 'ready'; auth: Auth }
@@ -30,6 +35,12 @@ type Session =
   | { status: 'loading'; user: null }
   | { status: 'signedOut'; user: null }
   | { status: 'signedIn'; user: User };
+
+type RecordState =
+  | { status: 'loading'; record: null }
+  | { status: 'missing'; record: null }
+  | { status: 'ready'; record: SharedRecordProof }
+  | { status: 'error'; record: null };
 
 const authSetup = prepareAuth();
 
@@ -49,6 +60,10 @@ export default function App() {
 }
 
 function AuthProof({ auth }: { auth: Auth }) {
+  const sharedRecordClient = useMemo(
+    () => createExpoSharedRecordClient(auth.app),
+    [auth],
+  );
   const [session, setSession] = useState<Session>({
     status: 'loading',
     user: null,
@@ -166,6 +181,10 @@ function AuthProof({ auth }: { auth: Auth }) {
             <Text style={styles.copy}>
               {session.user.email ?? 'Marathoner test account'}
             </Text>
+            <SharedRecordControls
+              client={sharedRecordClient}
+              userId={session.user.uid}
+            />
             <ActionButton
               disabled={isSubmitting}
               label={isSubmitting ? 'Logging out...' : 'Log out'}
@@ -181,8 +200,116 @@ function AuthProof({ auth }: { auth: Auth }) {
         )}
       </View>
       <Text style={styles.footer}>
-        Development authentication only. No training or beta data.
+        Development proof only. No production training or beta data.
       </Text>
+    </View>
+  );
+}
+
+function SharedRecordControls({
+  client,
+  userId,
+}: {
+  client: ExpoSharedRecordClient;
+  userId: string;
+}) {
+  const [recordState, setRecordState] = useState<RecordState>({
+    status: 'loading',
+    record: null,
+  });
+  const [isChanging, setIsChanging] = useState(false);
+
+  const refresh = useCallback(async () => {
+    setRecordState({ status: 'loading', record: null });
+
+    try {
+      const record = await client.read(userId);
+      setRecordState(
+        record
+          ? { status: 'ready', record }
+          : { status: 'missing', record: null },
+      );
+    } catch {
+      setRecordState({ status: 'error', record: null });
+    }
+  }, [client, userId]);
+
+  useEffect(() => {
+    void refresh();
+  }, [refresh]);
+
+  const write = async () => {
+    setIsChanging(true);
+
+    try {
+      const record = await client.write(userId);
+      setRecordState({ status: 'ready', record });
+    } catch {
+      setRecordState({ status: 'error', record: null });
+    } finally {
+      setIsChanging(false);
+    }
+  };
+
+  const remove = async () => {
+    setIsChanging(true);
+
+    try {
+      await client.delete(userId);
+      setRecordState({ status: 'missing', record: null });
+    } catch {
+      setRecordState({ status: 'error', record: null });
+    } finally {
+      setIsChanging(false);
+    }
+  };
+
+  return (
+    <View style={styles.recordCard}>
+      <Text style={styles.recordTitle}>Isolated sample record</Text>
+
+      {recordState.status === 'loading' && (
+        <Text style={styles.copy}>Reading the shared record...</Text>
+      )}
+      {recordState.status === 'missing' && (
+        <Text style={styles.copy}>No sample record exists.</Text>
+      )}
+      {recordState.status === 'error' && (
+        <Text accessibilityRole="alert" style={styles.error}>
+          The sample record request failed. Check the network and retry.
+        </Text>
+      )}
+      {recordState.status === 'ready' && (
+        <View style={styles.recordDetails}>
+          <Text style={styles.copy}>
+            Last writer: {recordState.record.sourceClient}
+          </Text>
+          <Text style={styles.copy}>
+            Sample run: {recordState.record.sampleRunId}
+          </Text>
+          <Text style={styles.copy}>
+            Distance: {recordState.record.distanceMeters} meters
+          </Text>
+        </View>
+      )}
+
+      <View style={styles.recordActions}>
+        <ActionButton
+          disabled={isChanging}
+          label="Write as expo"
+          onPress={() => void write()}
+        />
+        <ActionButton
+          disabled={isChanging}
+          label="Refresh"
+          onPress={() => void refresh()}
+        />
+        <ActionButton
+          disabled={isChanging}
+          label="Delete sample"
+          onPress={() => void remove()}
+        />
+      </View>
     </View>
   );
 }
@@ -206,7 +333,7 @@ function ConfigurationBlocked({ message }: { message: string }) {
 function Header() {
   return (
     <View>
-      <Text style={styles.eyebrow}>ISSUE #86 · IOS AUTH PROOF</Text>
+      <Text style={styles.eyebrow}>ISSUE #87 · SHARED RECORD PROOF</Text>
       <Text style={styles.title}>Marathoner</Text>
       <Text style={styles.subtitle}>Expo + Firebase JS candidate</Text>
     </View>
@@ -331,6 +458,23 @@ const styles = StyleSheet.create({
   },
   form: {
     gap: 12,
+  },
+  recordCard: {
+    gap: 12,
+    padding: 16,
+    borderRadius: 12,
+    backgroundColor: '#0d253a',
+  },
+  recordTitle: {
+    color: '#ffffff',
+    fontSize: 17,
+    fontWeight: '700',
+  },
+  recordDetails: {
+    gap: 4,
+  },
+  recordActions: {
+    gap: 8,
   },
   input: {
     minHeight: 48,

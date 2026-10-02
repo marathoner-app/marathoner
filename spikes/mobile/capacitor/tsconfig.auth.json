@@ -6,7 +6,14 @@
   "include": [
     "auth/**/*.ts",
     "auth/**/*.tsx",
+    "../shared-record/**/*.ts",
+    "../shared-record/**/*.tsx",
     "../../../src/vite-env.d.ts"
   ],
-  "exclude": ["auth/**/*.test.ts", "auth/**/*.test.tsx"]
+  "exclude": [
+    "auth/**/*.test.ts",
+    "auth/**/*.test.tsx",
+    "../shared-record/**/*.test.ts",
+    "../shared-record/**/*.test.tsx"
+  ]
 }

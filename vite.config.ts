@@ -17,6 +17,10 @@ const capacitorStubRoot = path.resolve(
 export default defineConfig(({ mode }) => {
   const isMobileSpike = mode === 'mobile-spike'
   const isMobileAuthSpike = mode === 'mobile-auth-spike'
+  const isMobileSharedRecordSpike = mode === 'mobile-shared-record-spike'
+  const isWebSharedRecordSpike = mode === 'web-shared-record-spike'
+  const isSharedRecordSpike =
+    isMobileSharedRecordSpike || isWebSharedRecordSpike
   const environment = loadEnv(mode, repositoryRoot, 'VITE_')
   resolveFirebaseEnvironmentForMode({
     mode,
@@ -25,7 +29,10 @@ export default defineConfig(({ mode }) => {
   })
 
   return {
-    base: isMobileSpike || isMobileAuthSpike ? './' : '/marathoner/',
+    base:
+      isMobileSpike || isMobileAuthSpike || isSharedRecordSpike
+        ? './'
+        : '/marathoner/',
     plugins: [react()],
     assetsInclude: ['src/assets/IMG_0437.JPG'],
     optimizeDeps: {
@@ -54,30 +61,36 @@ export default defineConfig(({ mode }) => {
             },
           ],
         }
-      : isMobileAuthSpike
+      : isMobileAuthSpike || isSharedRecordSpike
         ? {
             alias: [
               {
                 find: './App.tsx',
                 replacement: path.resolve(
                   repositoryRoot,
-                  'spikes/mobile/capacitor/auth/AuthProofApp.tsx',
+                  isSharedRecordSpike
+                    ? 'spikes/mobile/shared-record/SharedRecordProofApp.tsx'
+                    : 'spikes/mobile/capacitor/auth/AuthProofApp.tsx',
                 ),
               },
-              {
-                find: '../selectedFirebaseEnvironment',
-                replacement: path.resolve(
-                  repositoryRoot,
-                  'spikes/mobile/capacitor/auth/selectedFirebaseEnvironment.ts',
-                ),
-              },
-              {
-                find: './firebaseClient',
-                replacement: path.resolve(
-                  repositoryRoot,
-                  'spikes/mobile/capacitor/auth/firebaseClient.ts',
-                ),
-              },
+              ...(isMobileAuthSpike || isMobileSharedRecordSpike
+                ? [
+                    {
+                      find: '../selectedFirebaseEnvironment',
+                      replacement: path.resolve(
+                        repositoryRoot,
+                        'spikes/mobile/capacitor/auth/selectedFirebaseEnvironment.ts',
+                      ),
+                    },
+                    {
+                      find: './firebaseClient',
+                      replacement: path.resolve(
+                        repositoryRoot,
+                        'spikes/mobile/capacitor/auth/firebaseClient.ts',
+                      ),
+                    },
+                  ]
+                : []),
             ],
           }
         : undefined,

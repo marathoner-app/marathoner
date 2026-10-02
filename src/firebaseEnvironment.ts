@@ -27,6 +27,15 @@ interface FirebaseEnvironmentForModeOptions {
   registry?: FirebaseConfigurationRegistry
 }
 
+const mobileFirebaseSpikeModes = [
+  'mobile-auth-spike',
+  'mobile-shared-record-spike',
+] as const
+
+function isMobileFirebaseSpikeMode(mode: string): boolean {
+  return mobileFirebaseSpikeModes.some((candidate) => candidate === mode)
+}
+
 export function assertFirebaseEnvironmentForMode(
   mode: string,
   environmentName: FirebaseEnvironmentName,
@@ -108,10 +117,10 @@ export function resolveFirebaseEnvironmentForMode({
 
   assertFirebaseEnvironmentForMode(mode, selectedEnvironment.name)
 
-  if (mode === 'mobile-auth-spike') {
+  if (isMobileFirebaseSpikeMode(mode)) {
     if (!normalizedMobileApiKey) {
       throw new Error(
-        'VITE_FIREBASE_MOBILE_API_KEY is required for the mobile-auth-spike build. Put the dedicated development-project key in .env.mobile-auth-spike.local.',
+        `VITE_FIREBASE_MOBILE_API_KEY is required for the ${mode} build. Put the dedicated development-project key in .env.${mode}.local.`,
       )
     }
 
@@ -126,7 +135,7 @@ export function resolveFirebaseEnvironmentForMode({
 
   if (normalizedMobileApiKey) {
     throw new Error(
-      `VITE_FIREBASE_MOBILE_API_KEY cannot be used in Vite mode "${mode}". It is reserved for the isolated mobile-auth-spike build.`,
+      `VITE_FIREBASE_MOBILE_API_KEY cannot be used in Vite mode "${mode}". It is reserved for isolated mobile Firebase spike builds.`,
     )
   }
 

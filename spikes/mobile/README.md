@@ -19,7 +19,13 @@ Issue [#86](https://github.com/marathoner-app/marathoner/issues/86) adds a
 separate, fail-closed authentication mode to each candidate. Its
 [`auth-evidence.md`](./auth-evidence.md) records successful Email/Password
 authentication, session restoration, logout, and durable logout on the same
-physical iPhone. Firestore and training-data access remain disabled.
+physical iPhone. That gate did not access Firestore or training data.
+
+Issue [#87](https://github.com/marathoner-app/marathoner/issues/87) adds one
+exact, owner-scoped Firestore proof document without enabling production
+training writes. Its contract, emulator evidence, live procedure, and cleanup
+requirements are in
+[`shared-record-evidence.md`](./shared-record-evidence.md).
 
 Both paths now consume the same small
 [`@marathoner/training-contract`](../../packages/training-contract/README.md)
@@ -64,7 +70,9 @@ as comparison evidence.
 Physical-device validation on October 2 used Node 22.22.0, Xcode 27.0, an
 iPhone 15 running iOS 26.6.2, and the exact candidate versions above. Both
 candidates launched successfully. The local Personal Team selection was removed
-from tracked project settings after the test.
+from tracked project settings after the test. Both candidates subsequently
+passed the issue #87 owner-scoped Firestore round trip against the preserved web
+client, and both cleaned up the deterministic sample.
 
 ## Clean verification
 
@@ -96,6 +104,22 @@ npm run build:mobile-auth-spike
 cd spikes/mobile/capacitor
 npm run build:auth
 npm run sync:ios
+```
+
+The shared-record proof reuses the same temporary development key through the
+ignored `.env.mobile-shared-record-spike.local` file:
+
+```sh
+npm run build:mobile-shared-record-spike
+cd spikes/mobile/capacitor
+npm run build:shared-record
+npm run sync:ios
+```
+
+Run the corresponding preserved-web proof without changing the normal app:
+
+```sh
+npm run dev:web-shared-record-spike
 ```
 
 `ios/` is committed as a reproducible SPM-based project. If it is intentionally
@@ -145,11 +169,17 @@ production-development workflow.
   existing development account used by the web app, restore the session after
   a force-quit, log out, and preserve that signed-out state after another
   force-quit.
+- The shared contract, client adapters, and development rules can build and pass
+  owner, anonymous, cross-owner, malformed-record, and cleanup tests for one
+  exact proof document.
+- Both candidates can write that document on the physical iPhone, have it read
+  and replaced by the preserved web client, read the web replacement, and
+  delete it with absence confirmed in both clients. The live detail is recorded
+  in the issue #87 evidence.
 
-It does not prove a Firestore round trip, network-loss behavior, external
+It does not prove production training writes, network-loss behavior, external
 distribution, background behavior, accessibility, Android signed-build
-configuration, or performance. Those remain acceptance gates in #87, #88, and
-#83.
+configuration, or performance. Those remain acceptance gates in #88 and #83.
 
 ## Dependency evidence
 

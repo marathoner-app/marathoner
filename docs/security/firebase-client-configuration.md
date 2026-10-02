@@ -81,29 +81,35 @@ account depends on it. Email/Password remains enabled. Public signup remains
 disabled in the application, but UI removal is not an authorization control;
 #125 must enforce beta membership and verified email in the beta project.
 
-## Temporary mobile authentication key
+## Temporary mobile Firebase key
 
-Issue [#86](https://github.com/marathoner-app/marathoner/issues/86) uses a
+Issues [#86](https://github.com/marathoner-app/marathoner/issues/86) and
+[#87](https://github.com/marathoner-app/marathoner/issues/87) use a
 separate temporary public client key, `marathoner-ios-auth-spike`, to compare
-Firebase Email/Password authentication in the Capacitor and Expo candidates.
-It belongs only to the development project and allows only the Identity Toolkit
-API and Token Service API. It does not replace or broaden the current browser
-key.
+Firebase Email/Password authentication and one exact Firestore proof in the
+Capacitor and Expo candidates. It belongs only to the development project and
+allows exactly Cloud Firestore API, Identity Toolkit API, and Token Service API.
+It does not replace or broaden the current browser key.
 
 The temporary key has no application restriction because the proof must support
 both a Capacitor WebView and Expo's React Native runtime. This exception is
 accepted only for the isolated, non-production comparison: the value is stored
 in ignored mode-`0600` local environment files, each client fails closed when
 it is absent, the clients reject the beta project, no signup or Firestore path
-is exposed, and the key is deleted after issue #83 selects the mobile stack.
+other than `users/{uid}/mobileSpikeProofs/issue-87-shared-record` is exposed,
+that path requires the authenticated owner and an exact fixed shape, and the key
+is deleted after issue #83 selects the mobile stack.
 The value must never be printed or added to source, logs, screenshots, issues,
 or pull requests.
 
 The complete device sequence, failed persistence configurations, and Android
 implications are recorded in
 [`spikes/mobile/auth-evidence.md`](../../spikes/mobile/auth-evidence.md). The
-selected production clients require their own platform-appropriate application
-restrictions and App Check controls before external invitations.
+live Firestore rule, device round trips, SDK differences, and confirmed cleanup
+are recorded in
+[`spikes/mobile/shared-record-evidence.md`](../../spikes/mobile/shared-record-evidence.md).
+The selected production clients require their own platform-appropriate
+application restrictions and App Check controls before external invitations.
 
 ## App Check decision
 

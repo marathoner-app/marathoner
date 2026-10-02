@@ -5,7 +5,13 @@ import {
   initializeTestEnvironment,
   type RulesTestEnvironment,
 } from "@firebase/rules-unit-testing";
-import { doc, getDoc, setDoc, type Firestore } from "firebase/firestore";
+import {
+  deleteDoc,
+  doc,
+  getDoc,
+  setDoc,
+  type Firestore,
+} from "firebase/firestore";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import {
   createDateOnly,
@@ -17,6 +23,10 @@ import {
 } from "../../domain/training";
 import { createDocumentTrainingRepositories } from "../documentTrainingRepositories";
 import { FirestoreDocumentStore } from "./firestoreDocumentStore";
+import {
+  createSharedRecordProof,
+  sharedRecordProofDocumentPath,
+} from "@marathoner/training-contract";
 
 const projectId = "demo-marathoner";
 const firstUserId = "runner-one";
@@ -142,6 +152,65 @@ describe("Firestore training-data ownership rules", () => {
       await assertFails(getDoc(doc(otherDatabase, path)));
     },
   );
+});
+
+describe("Firestore shared-record spike ownership rules", () => {
+  it("allows the owner to write, read, and clean up the exact proof record", async () => {
+    const ownerDatabase = testEnvironment
+      .authenticatedContext(firstUserId)
+      .firestore();
+    const path = sharedRecordProofDocumentPath(firstUserId);
+    const reference = doc(ownerDatabase, path);
+
+    await assertSucceeds(
+      setDoc(reference, createSharedRecordProof(firstUserId, "capacitor")),
+    );
+    await assertSucceeds(getDoc(reference));
+    await assertSucceeds(deleteDoc(reference));
+    const cleanedSnapshot = await assertSucceeds(getDoc(reference));
+
+    expect(cleanedSnapshot.exists()).toBe(false);
+  });
+
+  it("denies anonymous and cross-owner reads, writes, and cleanup", async () => {
+    const ownerDatabase = testEnvironment
+      .authenticatedContext(firstUserId)
+      .firestore();
+    const otherDatabase = testEnvironment
+      .authenticatedContext(secondUserId)
+      .firestore();
+    const anonymousDatabase = testEnvironment.unauthenticatedContext().firestore();
+    const path = sharedRecordProofDocumentPath(firstUserId);
+    const record = createSharedRecordProof(firstUserId, "expo");
+
+    await assertSucceeds(setDoc(doc(ownerDatabase, path), record));
+    await assertFails(getDoc(doc(otherDatabase, path)));
+    await assertFails(setDoc(doc(otherDatabase, path), record));
+    await assertFails(deleteDoc(doc(otherDatabase, path)));
+    await assertFails(getDoc(doc(anonymousDatabase, path)));
+    await assertFails(setDoc(doc(anonymousDatabase, path), record));
+  });
+
+  it("rejects wrong-owner, malformed, and non-proof writes", async () => {
+    const ownerDatabase = testEnvironment
+      .authenticatedContext(firstUserId)
+      .firestore();
+    const path = sharedRecordProofDocumentPath(firstUserId);
+    const record = createSharedRecordProof(firstUserId, "web");
+
+    await assertFails(
+      setDoc(doc(ownerDatabase, path), { ...record, userId: secondUserId }),
+    );
+    await assertFails(
+      setDoc(doc(ownerDatabase, path), { ...record, unexpected: true }),
+    );
+    await assertFails(
+      setDoc(
+        doc(ownerDatabase, `users/${firstUserId}/mobileSpikeProofs/another-proof`),
+        record,
+      ),
+    );
+  });
 });
 
 describe("Firestore repository integration", () => {
