@@ -1,68 +1,266 @@
+import { useEffect, useState } from 'react';
 import {
-  createCompletedRunId,
-  milesToMeters,
-} from '@marathoner/training-contract';
-import { SDK_VERSION } from 'firebase/app';
+  onAuthStateChanged,
+  signInWithEmailAndPassword,
+  signOut,
+  type Auth,
+  type User,
+} from 'firebase/auth';
 import { StatusBar } from 'expo-status-bar';
-import { SafeAreaView, StyleSheet, Text, View } from 'react-native';
-import { inspectFirebaseEnvironment } from './src/firebaseBoundary.mjs';
+import {
+  ActivityIndicator,
+  Pressable,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
+import {
+  SafeAreaProvider,
+  SafeAreaView,
+} from 'react-native-safe-area-context';
+import { resolveFirebaseConfiguration } from './src/firebaseBoundary.mjs';
+import { createMobileAuth } from './src/firebaseClient';
 
-const firebaseStatus = inspectFirebaseEnvironment({
-  EXPO_PUBLIC_FIREBASE_API_KEY:
-    process.env.EXPO_PUBLIC_FIREBASE_API_KEY,
-  EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN:
-    process.env.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN,
-  EXPO_PUBLIC_FIREBASE_PROJECT_ID:
-    process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID,
-  EXPO_PUBLIC_FIREBASE_APP_ID:
-    process.env.EXPO_PUBLIC_FIREBASE_APP_ID,
-});
-const sharedContractProbe = {
-  distance: milesToMeters(1),
-  runId: createCompletedRunId('expo-spike-run-1'),
-};
+type AuthSetup =
+  | { status: 'ready'; auth: Auth }
+  | { status: 'blocked'; message: string };
+
+type Session =
+  | { status: 'loading'; user: null }
+  | { status: 'signedOut'; user: null }
+  | { status: 'signedIn'; user: User };
+
+const authSetup = prepareAuth();
 
 export default function App() {
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <View style={styles.container}>
-        <Text style={styles.eyebrow}>DISPOSABLE ARCHITECTURE SPIKE</Text>
-        <Text style={styles.title}>Marathoner</Text>
-        <Text style={styles.subtitle}>Expo + Firebase JS candidate</Text>
-
-        <View style={styles.statusCard}>
-          <Text style={styles.statusTitle}>Remote writes are disabled</Text>
-          <Text style={styles.statusCopy}>
-            This candidate proves dependency and bundle compatibility only. It
-            does not initialize Firebase Authentication, Firestore, or any
-            beta service.
-          </Text>
-        </View>
-
-        <View style={styles.details}>
-          <Text style={styles.detail}>Firebase JS SDK: {SDK_VERSION}</Text>
-          <Text style={styles.detail}>
-            Development configuration: {firebaseStatus.label}
-          </Text>
-          <Text style={styles.detail}>
-            Shared contract: {sharedContractProbe.runId} ·{' '}
-            {sharedContractProbe.distance} m
-          </Text>
-          {firebaseStatus.missingKeys.length > 0 && (
-            <Text style={styles.missing}>
-              Fail-closed boundary: {firebaseStatus.missingKeys.length}{' '}
-              required values absent
-            </Text>
-          )}
-        </View>
-
-        <Text style={styles.footer}>
-          No training guidance. No production data. Issue #152.
-        </Text>
+    <SafeAreaProvider>
+      <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
+        {authSetup.status === 'ready' ? (
+          <AuthProof auth={authSetup.auth} />
+        ) : (
+          <ConfigurationBlocked message={authSetup.message} />
+        )}
         <StatusBar style="light" />
-      </View>
-    </SafeAreaView>
+      </SafeAreaView>
+    </SafeAreaProvider>
   );
+}
+
+function AuthProof({ auth }: { auth: Auth }) {
+  const [session, setSession] = useState<Session>({
+    status: 'loading',
+    user: null,
+  });
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(
+    () =>
+      onAuthStateChanged(
+        auth,
+        (user) => {
+          setSession(
+            user
+              ? { status: 'signedIn', user }
+              : { status: 'signedOut', user: null },
+          );
+          setError(null);
+        },
+        () => {
+          setSession({ status: 'signedOut', user: null });
+          setError('Unable to restore the authentication session.');
+        },
+      ),
+    [auth],
+  );
+
+  const handleSignIn = async () => {
+    if (!email.trim() || !password) {
+      setError('Enter the existing test account email and password.');
+      return;
+    }
+
+    setError(null);
+    setIsSubmitting(true);
+
+    try {
+      await signInWithEmailAndPassword(auth, email.trim(), password);
+      setPassword('');
+    } catch {
+      setError('Sign-in failed. Check the test account and network, then retry.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleLogout = async () => {
+    setError(null);
+    setIsSubmitting(true);
+
+    try {
+      await signOut(auth);
+    } catch {
+      setError('Logout failed. Check the network, then retry.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <View style={styles.container}>
+      <Header />
+      <View style={styles.card}>
+        <Text style={styles.cardTitle}>Authentication state</Text>
+
+        {session.status === 'loading' && (
+          <View style={styles.loadingRow}>
+            <ActivityIndicator color="#7ed6c2" />
+            <Text style={styles.copy}>Loading your session...</Text>
+          </View>
+        )}
+
+        {session.status === 'signedOut' && (
+          <View style={styles.form}>
+            <Text style={styles.copy}>
+              Signed out. Use an existing development account.
+            </Text>
+            <TextInput
+              accessibilityLabel="Email"
+              autoCapitalize="none"
+              autoComplete="email"
+              autoCorrect={false}
+              inputMode="email"
+              onChangeText={setEmail}
+              placeholder="Email"
+              placeholderTextColor="#71869a"
+              style={styles.input}
+              value={email}
+            />
+            <TextInput
+              accessibilityLabel="Password"
+              autoCapitalize="none"
+              autoComplete="current-password"
+              onChangeText={setPassword}
+              onSubmitEditing={() => void handleSignIn()}
+              placeholder="Password"
+              placeholderTextColor="#71869a"
+              secureTextEntry
+              style={styles.input}
+              value={password}
+            />
+            <ActionButton
+              disabled={isSubmitting}
+              label={isSubmitting ? 'Signing in...' : 'Log in'}
+              onPress={() => void handleSignIn()}
+            />
+          </View>
+        )}
+
+        {session.status === 'signedIn' && (
+          <View style={styles.form}>
+            <Text style={styles.success}>Signed in</Text>
+            <Text style={styles.copy}>
+              {session.user.email ?? 'Marathoner test account'}
+            </Text>
+            <ActionButton
+              disabled={isSubmitting}
+              label={isSubmitting ? 'Logging out...' : 'Log out'}
+              onPress={() => void handleLogout()}
+            />
+          </View>
+        )}
+
+        {error && (
+          <Text accessibilityRole="alert" style={styles.error}>
+            {error}
+          </Text>
+        )}
+      </View>
+      <Text style={styles.footer}>
+        Development authentication only. No training or beta data.
+      </Text>
+    </View>
+  );
+}
+
+function ConfigurationBlocked({ message }: { message: string }) {
+  return (
+    <View style={styles.container}>
+      <Header />
+      <View style={styles.blockedCard}>
+        <Text style={styles.cardTitle}>Authentication disabled</Text>
+        <Text style={styles.copy}>{message}</Text>
+        <Text style={styles.blockedCopy}>
+          Add the local development configuration before running this proof.
+        </Text>
+      </View>
+      <Text style={styles.footer}>No Firebase connection was attempted.</Text>
+    </View>
+  );
+}
+
+function Header() {
+  return (
+    <View>
+      <Text style={styles.eyebrow}>ISSUE #86 · IOS AUTH PROOF</Text>
+      <Text style={styles.title}>Marathoner</Text>
+      <Text style={styles.subtitle}>Expo + Firebase JS candidate</Text>
+    </View>
+  );
+}
+
+function ActionButton({
+  disabled,
+  label,
+  onPress,
+}: {
+  disabled: boolean;
+  label: string;
+  onPress: () => void;
+}) {
+  return (
+    <Pressable
+      accessibilityRole="button"
+      disabled={disabled}
+      onPress={onPress}
+      style={({ pressed }) => [
+        styles.button,
+        pressed && styles.buttonPressed,
+        disabled && styles.buttonDisabled,
+      ]}
+    >
+      <Text style={styles.buttonLabel}>{label}</Text>
+    </Pressable>
+  );
+}
+
+function prepareAuth(): AuthSetup {
+  try {
+    const config = resolveFirebaseConfiguration({
+      EXPO_PUBLIC_FIREBASE_API_KEY:
+        process.env.EXPO_PUBLIC_FIREBASE_API_KEY,
+      EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN:
+        process.env.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN,
+      EXPO_PUBLIC_FIREBASE_PROJECT_ID:
+        process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID,
+      EXPO_PUBLIC_FIREBASE_APP_ID:
+        process.env.EXPO_PUBLIC_FIREBASE_APP_ID,
+    });
+
+    return { status: 'ready', auth: createMobileAuth(config) };
+  } catch (error) {
+    return {
+      status: 'blocked',
+      message:
+        error instanceof Error
+          ? error.message
+          : 'Firebase authentication configuration is invalid.',
+    };
+  }
 }
 
 const styles = StyleSheet.create({
@@ -73,7 +271,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     paddingHorizontal: 28,
-    paddingVertical: 40,
+    paddingVertical: 32,
     backgroundColor: '#0d1b2a',
   },
   eyebrow: {
@@ -93,7 +291,7 @@ const styles = StyleSheet.create({
     fontSize: 20,
     marginTop: 6,
   },
-  statusCard: {
+  card: {
     backgroundColor: '#16324f',
     borderColor: '#7ed6c2',
     borderRadius: 16,
@@ -101,29 +299,78 @@ const styles = StyleSheet.create({
     marginTop: 40,
     padding: 20,
   },
-  statusTitle: {
+  blockedCard: {
+    backgroundColor: '#3a2630',
+    borderColor: '#f7c873',
+    borderRadius: 16,
+    borderWidth: 1,
+    marginTop: 40,
+    padding: 20,
+  },
+  cardTitle: {
     color: '#ffffff',
     fontSize: 20,
     fontWeight: '700',
+    marginBottom: 12,
   },
-  statusCopy: {
+  copy: {
     color: '#d8e4ee',
     fontSize: 16,
     lineHeight: 24,
-    marginTop: 10,
   },
-  details: {
-    gap: 8,
-    marginTop: 28,
-  },
-  detail: {
-    color: '#c5d5e4',
-    fontSize: 15,
-  },
-  missing: {
+  blockedCopy: {
     color: '#f7c873',
     fontSize: 15,
-    fontWeight: '600',
+    lineHeight: 22,
+    marginTop: 12,
+  },
+  loadingRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 12,
+  },
+  form: {
+    gap: 12,
+  },
+  input: {
+    minHeight: 48,
+    paddingHorizontal: 14,
+    borderColor: '#8aa3b8',
+    borderRadius: 8,
+    borderWidth: 1,
+    backgroundColor: '#ffffff',
+    color: '#0d1b2a',
+    fontSize: 16,
+  },
+  button: {
+    alignItems: 'center',
+    minHeight: 48,
+    justifyContent: 'center',
+    borderRadius: 8,
+    backgroundColor: '#7ed6c2',
+    paddingHorizontal: 16,
+  },
+  buttonPressed: {
+    opacity: 0.8,
+  },
+  buttonDisabled: {
+    opacity: 0.55,
+  },
+  buttonLabel: {
+    color: '#0d1b2a',
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  success: {
+    color: '#7ed6c2',
+    fontSize: 18,
+    fontWeight: '700',
+  },
+  error: {
+    color: '#ffd2d2',
+    fontSize: 15,
+    lineHeight: 22,
+    marginTop: 14,
   },
   footer: {
     color: '#8399ad',

@@ -20,6 +20,13 @@ export interface SelectedFirebaseEnvironment {
   config: FirebaseClientConfiguration
 }
 
+interface FirebaseEnvironmentForModeOptions {
+  mode: string
+  requestedEnvironment: string | undefined
+  mobileApiKey: string | undefined
+  registry?: FirebaseConfigurationRegistry
+}
+
 export function assertFirebaseEnvironmentForMode(
   mode: string,
   environmentName: FirebaseEnvironmentName,
@@ -85,4 +92,43 @@ export function resolveFirebaseEnvironment(
   }
 
   return { name: environmentName, config }
+}
+
+export function resolveFirebaseEnvironmentForMode({
+  mode,
+  requestedEnvironment,
+  mobileApiKey,
+  registry = firebaseProjectConfigurations,
+}: FirebaseEnvironmentForModeOptions): SelectedFirebaseEnvironment {
+  const selectedEnvironment = resolveFirebaseEnvironment(
+    requestedEnvironment,
+    registry,
+  )
+  const normalizedMobileApiKey = mobileApiKey?.trim()
+
+  assertFirebaseEnvironmentForMode(mode, selectedEnvironment.name)
+
+  if (mode === 'mobile-auth-spike') {
+    if (!normalizedMobileApiKey) {
+      throw new Error(
+        'VITE_FIREBASE_MOBILE_API_KEY is required for the mobile-auth-spike build. Put the dedicated development-project key in .env.mobile-auth-spike.local.',
+      )
+    }
+
+    return {
+      ...selectedEnvironment,
+      config: {
+        ...selectedEnvironment.config,
+        apiKey: normalizedMobileApiKey,
+      },
+    }
+  }
+
+  if (normalizedMobileApiKey) {
+    throw new Error(
+      `VITE_FIREBASE_MOBILE_API_KEY cannot be used in Vite mode "${mode}". It is reserved for the isolated mobile-auth-spike build.`,
+    )
+  }
+
+  return selectedEnvironment
 }

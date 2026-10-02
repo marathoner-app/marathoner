@@ -6,6 +6,7 @@ import {
 import {
   assertFirebaseEnvironmentForMode,
   resolveFirebaseEnvironment,
+  resolveFirebaseEnvironmentForMode,
 } from './firebaseEnvironment'
 
 const developmentConfig = firebaseProjectConfigurations.development
@@ -97,5 +98,51 @@ describe('Firebase environment selection', () => {
     expect(() =>
       assertFirebaseEnvironmentForMode('production', 'beta'),
     ).not.toThrow()
+  })
+
+  it('requires a dedicated API key for the isolated mobile auth build', () => {
+    expect(() =>
+      resolveFirebaseEnvironmentForMode({
+        mode: 'mobile-auth-spike',
+        requestedEnvironment: 'development',
+        mobileApiKey: undefined,
+      }),
+    ).toThrow('VITE_FIREBASE_MOBILE_API_KEY is required')
+  })
+
+  it('overrides only the API key for the mobile auth build', () => {
+    const result = resolveFirebaseEnvironmentForMode({
+      mode: 'mobile-auth-spike',
+      requestedEnvironment: 'development',
+      mobileApiKey: ' mobile-spike-key ',
+    })
+
+    expect(result).toEqual({
+      name: 'development',
+      config: {
+        ...developmentConfig,
+        apiKey: 'mobile-spike-key',
+      },
+    })
+  })
+
+  it('rejects the mobile API key outside the isolated auth build', () => {
+    expect(() =>
+      resolveFirebaseEnvironmentForMode({
+        mode: 'development',
+        requestedEnvironment: 'development',
+        mobileApiKey: 'mobile-spike-key',
+      }),
+    ).toThrow('reserved for the isolated mobile-auth-spike build')
+  })
+
+  it('keeps beta unavailable to the mobile auth build', () => {
+    expect(() =>
+      resolveFirebaseEnvironmentForMode({
+        mode: 'mobile-auth-spike',
+        requestedEnvironment: 'beta',
+        mobileApiKey: 'mobile-spike-key',
+      }),
+    ).toThrow('Beta is reserved for an approved production deployment')
   })
 })

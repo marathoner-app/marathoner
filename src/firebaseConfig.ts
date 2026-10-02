@@ -14,14 +14,18 @@ export type FirebaseConfigurationRegistry = Record<
   FirebaseClientConfiguration | null
 >
 
+export const developmentFirebaseClientIdentity = {
+  authDomain: "marathoner-d9bf9.firebaseapp.com",
+  projectId: "marathoner-d9bf9",
+  storageBucket: "marathoner-d9bf9.firebasestorage.app",
+  messagingSenderId: "677998037771",
+  appId: "1:677998037771:web:9269b3b5f82909ccc3b00e",
+} satisfies Omit<FirebaseClientConfiguration, 'apiKey'>
+
 export const firebaseProjectConfigurations = {
   development: {
     apiKey: "AIzaSyDlbphupyfLU7ul46LWnK-bjFq8sOotcPw",
-    authDomain: "marathoner-d9bf9.firebaseapp.com",
-    projectId: "marathoner-d9bf9",
-    storageBucket: "marathoner-d9bf9.firebasestorage.app",
-    messagingSenderId: "677998037771",
-    appId: "1:677998037771:web:9269b3b5f82909ccc3b00e",
+    ...developmentFirebaseClientIdentity,
   },
   beta: {
     apiKey: "AIzaSyAkTxZmX63bw_eyt7KJDtlVHLIbZiXuI7s",

@@ -7,9 +7,10 @@
   },
   "scripts": {
     "build:web": "npm --prefix ../../.. run build:mobile-spike",
+    "build:auth": "npm --prefix ../../.. run build:mobile-auth-spike",
     "sync:ios": "cap sync ios",
     "open:ios": "cap open ios",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.auth.json",
     "test": "node --test test/*.test.mjs"
   },
   "dependencies": {
