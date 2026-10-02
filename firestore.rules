@@ -11,6 +11,35 @@ service cloud.firestore {
         && request.resource.data.userId == userId;
     }
 
+    function isSharedRecordProof(proofId) {
+      return proofId == 'issue-87-shared-record';
+    }
+
+    function isValidSharedRecordProof(userId) {
+      return request.resource.data.keys().hasAll([
+          'schemaVersion',
+          'recordType',
+          'userId',
+          'sampleRunId',
+          'distanceMeters',
+          'sourceClient'
+        ])
+        && request.resource.data.keys().hasOnly([
+          'schemaVersion',
+          'recordType',
+          'userId',
+          'sampleRunId',
+          'distanceMeters',
+          'sourceClient'
+        ])
+        && request.resource.data.schemaVersion == 1
+        && request.resource.data.recordType == 'shared_training_record_proof'
+        && request.resource.data.userId == userId
+        && request.resource.data.sampleRunId == 'issue-87-sample-run'
+        && request.resource.data.distanceMeters == 5000
+        && request.resource.data.sourceClient in ['web', 'capacitor', 'expo'];
+    }
+
     match /users/{userId}/plans/{planId} {
       allow read, delete: if isSignedInAs(userId);
       allow create, update: if isSignedInAs(userId)
@@ -34,6 +63,14 @@ service cloud.firestore {
       allow read, delete: if isSignedInAs(userId);
       allow create, update: if isSignedInAs(userId)
         && isValidOwnedWrite(userId);
+    }
+
+    match /users/{userId}/mobileSpikeProofs/{proofId} {
+      allow read, delete: if isSharedRecordProof(proofId)
+        && isSignedInAs(userId);
+      allow create, update: if isSharedRecordProof(proofId)
+        && isSignedInAs(userId)
+        && isValidSharedRecordProof(userId);
     }
   }
 }

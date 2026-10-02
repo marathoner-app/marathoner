@@ -20,6 +20,13 @@ Dates, durations, plans, workouts, shoes, completed-run records, persistence,
 offline behavior, and schema migration remain in their current owners until the
 mobile ADR has enough evidence to approve a wider boundary.
 
+Issue [#87](https://github.com/marathoner-app/marathoner/issues/87) adds one
+deliberately fixed `SharedRecordProof` shape and owner-scoped document path. It
+combines the existing completed-run identity and meter types with a source-client
+label so web, Capacitor, and Expo can prove the same Firestore round trip. It is
+not a production completed-run model or permission to move persistence into this
+package; its exact collection and document are temporary architecture evidence.
+
 ## Canonical fixtures
 
 The `@marathoner/training-contract/fixtures/v1` export is a technology-neutral

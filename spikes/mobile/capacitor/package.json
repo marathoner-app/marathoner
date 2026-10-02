@@ -8,6 +8,7 @@
   "scripts": {
     "build:web": "npm --prefix ../../.. run build:mobile-spike",
     "build:auth": "npm --prefix ../../.. run build:mobile-auth-spike",
+    "build:shared-record": "npm --prefix ../../.. run build:mobile-shared-record-spike",
     "sync:ios": "cap sync ios",
     "open:ios": "cap open ios",
     "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.auth.json",

@@ -38,6 +38,16 @@ users/{userId}
   shoes/{shoeId}
 ```
 
+Issue #87 temporarily adds one non-production proof path below the same owner:
+
+```text
+users/{userId}/mobileSpikeProofs/issue-87-shared-record
+```
+
+Only that exact document is allowed, its shape is fixed by the shared contract,
+and it must be deleted after the cross-client test. It is not part of the
+production training hierarchy. The beta rules do not permit it.
+
 The path is the primary ownership boundary. Each training document also stores
 its `userId`, allowing converters to reject a document whose data disagrees with
 its path. Workouts similarly store `planId` and are rejected when it disagrees
@@ -198,9 +208,10 @@ under a distinct logical project ID. The decision and activation gate are
 documented in
 [`../security/firebase-beta-membership.md`](../security/firebase-beta-membership.md).
 
-The tested rules and index configuration were deployed to the Marathoner Firebase
-project during the Foundation closeout. Repeat this explicit production operation
-whenever either file changes:
+The tested rules and index configuration were deployed to the Marathoner
+development Firebase project during the Foundation closeout and again for the
+exact issue #87 proof path on October 2, 2026. Repeat this explicit production
+operation whenever either file changes:
 
 ```bash
 npx firebase deploy --project marathoner-d9bf9 --only firestore

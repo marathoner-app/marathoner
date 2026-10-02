@@ -100,19 +100,38 @@ describe('Firebase environment selection', () => {
     ).not.toThrow()
   })
 
-  it('requires a dedicated API key for the isolated mobile auth build', () => {
-    expect(() =>
-      resolveFirebaseEnvironmentForMode({
-        mode: 'mobile-auth-spike',
-        requestedEnvironment: 'development',
-        mobileApiKey: undefined,
-      }),
-    ).toThrow('VITE_FIREBASE_MOBILE_API_KEY is required')
-  })
+  it.each(['mobile-auth-spike', 'mobile-shared-record-spike'])(
+    'requires a dedicated API key for the isolated %s build',
+    (mode) => {
+      expect(() =>
+        resolveFirebaseEnvironmentForMode({
+          mode,
+          requestedEnvironment: 'development',
+          mobileApiKey: undefined,
+        }),
+      ).toThrow('VITE_FIREBASE_MOBILE_API_KEY is required')
+    },
+  )
 
   it('overrides only the API key for the mobile auth build', () => {
     const result = resolveFirebaseEnvironmentForMode({
       mode: 'mobile-auth-spike',
+      requestedEnvironment: 'development',
+      mobileApiKey: ' mobile-spike-key ',
+    })
+
+    expect(result).toEqual({
+      name: 'development',
+      config: {
+        ...developmentConfig,
+        apiKey: 'mobile-spike-key',
+      },
+    })
+  })
+
+  it('overrides only the API key for the mobile shared-record build', () => {
+    const result = resolveFirebaseEnvironmentForMode({
+      mode: 'mobile-shared-record-spike',
       requestedEnvironment: 'development',
       mobileApiKey: ' mobile-spike-key ',
     })
@@ -133,13 +152,23 @@ describe('Firebase environment selection', () => {
         requestedEnvironment: 'development',
         mobileApiKey: 'mobile-spike-key',
       }),
-    ).toThrow('reserved for the isolated mobile-auth-spike build')
+    ).toThrow('reserved for isolated mobile Firebase spike builds')
   })
 
   it('keeps beta unavailable to the mobile auth build', () => {
     expect(() =>
       resolveFirebaseEnvironmentForMode({
         mode: 'mobile-auth-spike',
+        requestedEnvironment: 'beta',
+        mobileApiKey: 'mobile-spike-key',
+      }),
+    ).toThrow('Beta is reserved for an approved production deployment')
+  })
+
+  it('keeps beta unavailable to the mobile shared-record build', () => {
+    expect(() =>
+      resolveFirebaseEnvironmentForMode({
+        mode: 'mobile-shared-record-spike',
         requestedEnvironment: 'beta',
         mobileApiKey: 'mobile-spike-key',
       }),
