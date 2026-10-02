@@ -27,6 +27,12 @@ training writes. Its contract, emulator evidence, live procedure, and cleanup
 requirements are in
 [`shared-record-evidence.md`](./shared-record-evidence.md).
 
+Issue [#88](https://github.com/marathoner-app/marathoner/issues/88) closes the
+comparison with a confirmed-versus-unknown matrix, build-service and CI
+implications, risk ownership, and a **revise and advance Capacitor**
+recommendation in [`closeout.md`](./closeout.md). The recommendation is evidence
+for the ADR in #83, not a claim of TestFlight or beta readiness.
+
 Both paths now consume the same small
 [`@marathoner/training-contract`](../../packages/training-contract/README.md)
 boundary for completed-run identity and meter-based distance. Capacitor receives
@@ -41,8 +47,9 @@ Other remote behavior belongs to later, separately reviewed issues.
 The October 2, 2026 signed-build and physical-iPhone results are recorded in
 [`device-evidence.md`](./device-evidence.md). Both shells passed build and launch
 viability. Issue #86 subsequently proved authentication on that device; shared
-data, offline behavior, accessibility, and external distribution remain
-separate gates.
+data subsequently passed through #87. Offline behavior, accessibility, and
+external distribution remain separate implementation and release gates mapped
+by the issue #88 closeout.
 
 ## Supported toolchain
 
