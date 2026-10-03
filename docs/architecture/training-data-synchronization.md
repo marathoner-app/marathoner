@@ -49,9 +49,9 @@ deliver the committed result to every signed-in client without a second
 synchronization system.
 
 The server command boundary is intentionally logical rather than framework
-specific. The mobile framework decision may choose Capacitor, Expo with the
-Firebase JavaScript SDK, or a native Firebase adapter without changing this
-contract.
+specific. The accepted mobile ADR selects Capacitor with the Firebase
+JavaScript SDK, but its rejected alternatives or a future native adapter can
+still implement this contract if a recorded reopen trigger changes the client.
 
 ## Current implementation snapshot
 

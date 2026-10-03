@@ -97,8 +97,9 @@ accepted only for the isolated, non-production comparison: the value is stored
 in ignored mode-`0600` local environment files, each client fails closed when
 it is absent, the clients reject the beta project, no signup or Firestore path
 other than `users/{uid}/mobileSpikeProofs/issue-87-shared-record` is exposed,
-that path requires the authenticated owner and an exact fixed shape, and the key
-is deleted after issue #83 selects the mobile stack.
+that path requires the authenticated owner and an exact fixed shape. The mobile
+ADR selects Capacitor; issue #178 deletes the key after #177 provides the
+replacement development path.
 The value must never be printed or added to source, logs, screenshots, issues,
 or pull requests.
 
@@ -114,9 +115,11 @@ application restrictions and App Check controls before external invitations.
 ## App Check decision
 
 App Check is required before external invitations, but enabling enforcement in
-the shared prototype project today would be premature. Marathoner must first
-separate development and beta projects (#125), select the mobile runtime (#83),
-and establish the material-command endpoint (#158).
+the shared prototype project today would be premature. The mobile ADR selects
+Capacitor and explicitly leaves its native App Attest bridge unproven.
+Marathoner must first complete the selected development/beta boundary (#125),
+promote the production shell (#177), and establish the material-command
+endpoint (#158).
 
 Issue [#161](https://github.com/marathoner-app/marathoner/issues/161) then owns:
 

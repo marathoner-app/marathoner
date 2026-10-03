@@ -118,18 +118,24 @@ training, adaptation, pain, fueling, hydration, or recovery recommendations.
 
 ## Architecture decision boundary
 
-The mobile implementation remains undecided until issue
-[#83](https://github.com/marathoner-app/marathoner/issues/83) compares a
-Capacitor iOS shell, Expo with the Firebase JavaScript SDK, and Expo with React
-Native Firebase against the same physical-device evidence. Prefer the least
-duplicated option that passes session recovery, shared-record, accessibility,
-network-boundary, clean-build, signing, and external-TestFlight-path checks.
+The accepted
+[mobile client ADR](architecture/mobile-client-architecture.md) selects the
+root Vite and React application inside a thin Capacitor 8 iOS shell. Expo plus
+Firebase JS remains historical fallback evidence; Expo plus React Native
+Firebase is reconsidered only if native attestation, telemetry, or another hard
+requirement triggers the ADR's reopen rules.
 
-Do not relocate the existing web application or build a generalized shared
-workspace before the winning spike is proven. Extract only the minimum pure
-TypeScript contract or rule package needed by the selected client. Android-only
-issues remain in their holding milestone until the ADR records whether they are
-reused, rewritten, deferred, or superseded.
+The decision does not claim participant readiness. Issue #177 must promote the
+production-shaped shell, #125 must prove explicit beta selection, #161 must
+prove Apple App Check, and #122, #137, #138, and #140 retain their distribution,
+session, daily-use, offline, and accessibility gates. Failure of a binding gate
+can reopen the framework choice or move the date.
+
+The existing web application remains canonical. Do not relocate it or build a
+generalized shared workspace. Keep only the minimum pure TypeScript contracts
+and fixtures required across real boundaries. Android uses the same Capacitor
+direction by default but remains in its holding milestone until #90 produces
+separate Android evidence.
 
 ## Delivery waves
 
@@ -159,9 +165,8 @@ By October 18:
 
 - the beta contract is consistent across the roadmap, product vision, and
   cohort plan;
-- issue #83 compares Capacitor, Expo with the Firebase JavaScript SDK, and Expo
-  with React Native Firebase and records the selected stack, rejected
-  alternatives, minimal repository boundary, and migration sequence;
+- issue #83 records Capacitor as the selected stack, the rejected alternatives,
+  minimal repository boundary, migration sequence, and reopen triggers;
 - a development build launches on a physical iPhone;
 - the iOS client can authenticate against the Marathoner Firebase project;
 - iOS and web can read and write the same typed sample training record without
