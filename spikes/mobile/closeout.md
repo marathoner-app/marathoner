@@ -10,10 +10,10 @@
 
 Marathoner should advance the Vite application inside a Capacitor iOS shell as
 the founding-beta architecture. Keep Expo plus the Firebase JavaScript SDK as a
-documented fallback until the first Capacitor distribution and daily-use gates
-pass. Do not build the Expo plus React Native Firebase option unless a hard
-requirement emerges for native Firebase behavior that the accepted online-only,
-memory-cache product contract cannot meet.
+documented fallback in the evidence record and Git history rather than a
+maintained second application. Do not build the Expo plus React Native Firebase
+option unless a hard requirement emerges for native Firebase behavior that the
+accepted online-only, memory-cache product contract cannot meet.
 
 This is a recommendation to select an architecture, not a claim that the iOS
 app is ready for beta. The evidence is strong enough for #83 to choose a stack,
@@ -230,7 +230,7 @@ Service API, but it has no application restriction because the comparison
 needed both a Capacitor WebView and React Native runtime. Its value remains
 uncommitted, yet API restriction alone is not the intended production posture.
 
-After #83 selects the stack:
+Under the accepted ADR's implementation sequence:
 
 1. delete the temporary key and remove the proof-only development Firestore
    path and rule;
@@ -299,7 +299,7 @@ to encode in the architecture.
 
 ## Recommended repository boundary
 
-Issue #83 should approve this minimal shape:
+The accepted issue #83 ADR uses this minimal shape:
 
 - keep the existing root Vite application, `src/` UI, domain, and services as
   the canonical product implementation;

@@ -30,8 +30,10 @@ requirements are in
 Issue [#88](https://github.com/marathoner-app/marathoner/issues/88) closes the
 comparison with a confirmed-versus-unknown matrix, build-service and CI
 implications, risk ownership, and a **revise and advance Capacitor**
-recommendation in [`closeout.md`](./closeout.md). The recommendation is evidence
-for the ADR in #83, not a claim of TestFlight or beta readiness.
+recommendation in [`closeout.md`](./closeout.md). The accepted
+[mobile client ADR](../../docs/architecture/mobile-client-architecture.md)
+selects Capacitor from that evidence; neither document claims TestFlight or
+beta readiness.
 
 Both paths now consume the same small
 [`@marathoner/training-contract`](../../packages/training-contract/README.md)
@@ -199,6 +201,7 @@ specific APIs were not used by the disconnected candidate.
 
 The complete version, reachability, remediation, and time-bounded risk record is
 in [`dependency-audit.md`](./dependency-audit.md). The findings are accepted only
-for this disposable spike through October 18, 2026. It remains a production
-decision blocker if issue #83 selects Expo; npm's forced Expo 46 and Firebase 9
-downgrades were not applied.
+for this disposable spike through October 18, 2026. The accepted ADR did not
+select Expo, and issue #178 removes this dependency graph. The findings become
+a production decision blocker again if the ADR reopens to Expo; npm's forced
+Expo 46 and Firebase 9 downgrades were not applied.
