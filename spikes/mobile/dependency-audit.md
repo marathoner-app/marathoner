@@ -6,6 +6,8 @@
 - **Applies to:** the isolated `spikes/mobile/expo-js` candidate only
 - **Disposition expires:** October 18, 2026
 - **Production status:** not accepted for a selected or participant-facing client
+- **Retired:** October 5, 2026; the Expo runtime and candidate lockfile are no
+  longer present on current `main`
 
 ## Decision
 
@@ -19,12 +21,18 @@ acceptance permits continued comparison work; it does not approve Expo,
 Firebase JS, an override, or these versions for the production mobile client.
 
 Issue #83 selected Capacitor, so this temporary acceptance never became a
-production waiver. Issue #178 removes the disposable Expo runtime and its
-dependency graph after the selected shell replaces the comparison path. If the
+production waiver. Issue #178 removed the disposable Expo runtime and its
+dependency graph after the selected shell replaced the comparison path. If the
 mobile ADR later reopens to Expo, production adoption remains blocked until
 either upstream packages remove the affected paths or a narrowly scoped
 override passes the complete automated, generated-native-project, signed-build,
 and physical-iPhone verification gate.
+
+After removal, the root `npm audit --omit=dev` result returned to the four known
+high-severity Firebase/grpc dependency entries. npm still proposes a breaking
+Firebase 9.14 downgrade, so issue #178 does not apply that forced remediation.
+The Expo-only `node-forge`, `xcode`, and candidate `uuid` paths below are no
+longer installed by the repository.
 
 ## Reproduced result
 
@@ -111,7 +119,11 @@ contained no `node_modules/@grpc` or `@grpc/grpc-js` reference.
 
 ## Temporary acceptance controls
 
-This decision remains valid only while all of these statements are true:
+These controls governed the candidate until issue #178 removed its runtime and
+lockfile on October 5, 2026. The temporary acceptance ended at removal and does
+not apply to the selected root Capacitor application.
+
+The decision was valid only while all of these statements were true:
 
 - the candidate remains isolated under `spikes/mobile/expo-js`;
 - remote use remains limited to Email/Password Auth plus the exact issue #87
@@ -125,8 +137,8 @@ This decision remains valid only while all of these statements are true:
 - Expo remains an unselected, disposable candidate rather than a production
   client.
 
-The owner must re-run this review at least by October 18, 2026, and immediately
-when any of these triggers occurs:
+Had the candidate remained, the owner would have needed to re-run this review by
+October 18, 2026 and immediately when any of these triggers occurred:
 
 - Expo, Firebase, Firestore, `xcode`, `uuid`, or grpc changes in the lockfile;
 - Expo CLI, `@expo/code-signing-certificates`, or `node-forge` changes in the
@@ -173,10 +185,10 @@ production Firestore access, Android signed build, and production update-signing
 flow have not passed. The record therefore continues to reject an override and
 stops short of production acceptance.
 
-## Reproduction commands
+## Historical reproduction commands
 
-Run these from `spikes/mobile/expo-js` with Node 22.13 or newer in the Node 22
-LTS line:
+Run these from `spikes/mobile/expo-js` at the immutable issue #153 merge commit,
+not from current `main`, with Node 22.13 or newer in the Node 22 LTS line:
 
 ```sh
 node --version

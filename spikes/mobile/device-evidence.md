@@ -4,6 +4,11 @@
 - **Observed:** October 2, 2026
 - **Result:** both disposable candidates built and launched on a physical iPhone
 - **Decision status:** shell viability passed; no production mobile stack is selected
+- **Retirement:** historical evidence only; Capacitor was later selected and
+  promoted into the root application, and both disposable runtimes were removed
+
+The runtime paths below refer to the immutable issue #84 implementation linked
+from [`README.md`](./README.md), not to current `main`.
 
 ## Scope and safeguards
 

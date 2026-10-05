@@ -34,7 +34,8 @@ The word **revise** is intentional:
 3. Treat external distribution, accessibility, production environment
    selection, and failure-state testing as release gates, not inferred results.
 4. Delete the temporary mobile key exception and proof-only Firestore path when
-   #83 no longer needs the comparison environment.
+   #83 no longer needs the comparison environment. Issue #178 completed that
+   retirement after #177 promoted the selected shell.
 
 Decision confidence is **medium for framework selection** and **low for
 participant readiness**. Capacitor's native Apple App Check path is a material
@@ -62,11 +63,12 @@ The detailed device, Auth, shared-record, and dependency observations are in
 [`shared-record-evidence.md`](./shared-record-evidence.md), and
 [`dependency-audit.md`](./dependency-audit.md).
 
-### Reproducible command surface
+### Historical command surface
 
 The proof commits passed the following repository-owned command families. The
-candidate commands are intentionally explicit because neither mobile candidate
-is part of the normal root install or pull-request workflow yet.
+candidate directories and commands were removed by issue #178 and are not
+runnable from current `main`; use the immutable commits in the evidence ledger
+to reproduce the historical comparison in a disposable checkout.
 
 ```sh
 # Preserved web and shared contract
@@ -90,9 +92,10 @@ npm --prefix spikes/mobile/expo-js test
 npm --prefix spikes/mobile/expo-js run export:ios
 ```
 
-The Auth and shared-record modes additionally require the ignored development
-configuration described in the evidence documents. Never print or commit those
-files.
+The historical Auth and shared-record modes additionally required ignored
+development configuration described in the evidence documents. Those local
+files and the temporary key are retired. Never restore their values from logs or
+commit them.
 
 ## Confirmed behavior versus unknowns
 
@@ -224,16 +227,16 @@ incomplete configuration and the beta project. Firebase public client values
 live in ignored local files; Apple and Expo credentials are neither required by
 the normal web build nor committed.
 
-The temporary `marathoner-ios-auth-spike` key is deliberately exceptional. It
-currently permits only Cloud Firestore API, Identity Toolkit API, and Token
-Service API, but it has no application restriction because the comparison
-needed both a Capacitor WebView and React Native runtime. Its value remains
-uncommitted, yet API restriction alone is not the intended production posture.
+The temporary `marathoner-ios-auth-spike` key was deliberately exceptional. It
+permitted only Cloud Firestore API, Identity Toolkit API, and Token Service API,
+but had no application restriction because the comparison needed both a
+Capacitor WebView and React Native runtime. Issue #178 deleted it after the root
+Capacitor shell proved its separately reviewed development configuration.
 
 Under the accepted ADR's implementation sequence:
 
 1. delete the temporary key and remove the proof-only development Firestore
-   path and rule;
+   path and rule — completed by issue #178;
 2. register the selected production bundle and environment boundary;
 3. prove a representative iOS build selects development or beta intentionally
    and never by fallback;
@@ -354,12 +357,13 @@ Issue #83 can now write the ADR without rerunning the comparison. It should:
    route, with automation deferred until a clean archive is repeatable;
 7. name #125, #158, #159, #122, #137, #138, #140, and #161 as binding
    implementation or release gates; and
-8. assign removal of the temporary key, rule, and disposable candidates.
+8. assign removal of the temporary key, rule, and disposable candidates —
+   completed by issue #178.
 
-After the ADR merges and the comparison infrastructure is removed, #33 can
-close with the production Capacitor shell as the next implementation slice. A
-closed architecture spike will then mean “the least-duplicated path was selected
-from physical evidence,” not “the mobile beta is finished.”
+The comparison infrastructure is now removed and the production Capacitor shell
+is the active implementation boundary. A closed architecture spike means “the
+least-duplicated path was selected from physical evidence,” not “the mobile beta
+is finished.”
 
 ## Primary external references
 

@@ -5,6 +5,13 @@
 - **Device:** iPhone 15 running iOS 26.6.2
 - **Toolchain:** Node 22.22.0, Xcode 27.0, Capacitor 8.5.2, and Expo SDK 57
 - **Result:** both candidates passed the required authentication sequence
+- **Retirement:** historical evidence only; issue #178 removed both candidate
+  runtimes and the temporary comparison key after the root Capacitor shell was
+  promoted
+
+The commands and paths below describe the repository at the immutable issue
+#86 merge commit linked from [`README.md`](./README.md). They are intentionally
+not runnable from current `main`.
 
 ## Scope and boundary
 

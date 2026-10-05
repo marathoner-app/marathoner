@@ -22,18 +22,8 @@ export interface SelectedFirebaseEnvironment {
 interface FirebaseEnvironmentForModeOptions {
   mode: string
   requestedEnvironment: string | undefined
-  mobileApiKey: string | undefined
   iosApiKey?: string | undefined
   registry: FirebaseConfigurationRegistry
-}
-
-const mobileFirebaseSpikeModes = [
-  'mobile-auth-spike',
-  'mobile-shared-record-spike',
-] as const
-
-function isMobileFirebaseSpikeMode(mode: string): boolean {
-  return mobileFirebaseSpikeModes.some((candidate) => candidate === mode)
 }
 
 export function assertFirebaseEnvironmentForMode(
@@ -106,7 +96,6 @@ export function resolveFirebaseEnvironment(
 export function resolveFirebaseEnvironmentForMode({
   mode,
   requestedEnvironment,
-  mobileApiKey,
   iosApiKey,
   registry,
 }: FirebaseEnvironmentForModeOptions): SelectedFirebaseEnvironment {
@@ -114,7 +103,6 @@ export function resolveFirebaseEnvironmentForMode({
     requestedEnvironment,
     registry,
   )
-  const normalizedMobileApiKey = mobileApiKey?.trim()
   const normalizedIosApiKey = iosApiKey?.trim()
 
   assertFirebaseEnvironmentForMode(mode, selectedEnvironment.name)
@@ -132,12 +120,6 @@ export function resolveFirebaseEnvironmentForMode({
       )
     }
 
-    if (normalizedMobileApiKey) {
-      throw new Error(
-        'VITE_FIREBASE_MOBILE_API_KEY belongs only to the disposable mobile spikes and cannot configure the selected iOS build.',
-      )
-    }
-
     return {
       ...selectedEnvironment,
       config: {
@@ -145,28 +127,6 @@ export function resolveFirebaseEnvironmentForMode({
         apiKey: normalizedIosApiKey,
       },
     }
-  }
-
-  if (isMobileFirebaseSpikeMode(mode)) {
-    if (!normalizedMobileApiKey) {
-      throw new Error(
-        `VITE_FIREBASE_MOBILE_API_KEY is required for the ${mode} build. Put the dedicated development-project key in .env.${mode}.local.`,
-      )
-    }
-
-    return {
-      ...selectedEnvironment,
-      config: {
-        ...selectedEnvironment.config,
-        apiKey: normalizedMobileApiKey,
-      },
-    }
-  }
-
-  if (normalizedMobileApiKey) {
-    throw new Error(
-      `VITE_FIREBASE_MOBILE_API_KEY cannot be used in Vite mode "${mode}". It is reserved for isolated mobile Firebase spike builds.`,
-    )
   }
 
   if (normalizedIosApiKey) {

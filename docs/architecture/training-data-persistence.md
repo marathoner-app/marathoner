@@ -38,15 +38,17 @@ users/{userId}
   shoes/{shoeId}
 ```
 
-Issue #87 temporarily adds one non-production proof path below the same owner:
+Issue #87 temporarily added one non-production proof path below the same owner:
 
 ```text
 users/{userId}/mobileSpikeProofs/issue-87-shared-record
 ```
 
-Only that exact document is allowed, its shape is fixed by the shared contract,
-and it must be deleted after the cross-client test. It is not part of the
-production training hierarchy. The beta rules do not permit it.
+The proof completed and the document was deleted. Issue #178 then removed its
+contract and explicit development rule; current rules deny this retired path by
+default. It was never part of the production training hierarchy, and beta was
+not changed. The immutable result remains in the
+[mobile evidence](../../spikes/mobile/shared-record-evidence.md).
 
 The path is the primary ownership boundary. Each training document also stores
 its `userId`, allowing converters to reject a document whose data disagrees with

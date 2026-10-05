@@ -191,8 +191,8 @@ creation is disabled. The training-data provider uses the authenticated UID as
 its ownership boundary.
 
 The committed registry contains visibly distinct development and founding-beta
-projects. `.env`, local development, CI, mobile spikes, and GitHub Pages remain
-pinned to development. Beta requires an explicit production-mode
+projects. `.env`, local development, CI, the selected iOS development build,
+and GitHub Pages remain pinned to development. Beta requires an explicit production-mode
 `VITE_FIREBASE_ENVIRONMENT=beta` selection and does not become a deployment
 default merely because its public identifiers are present.
 

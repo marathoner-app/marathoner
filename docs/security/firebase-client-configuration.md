@@ -1,9 +1,10 @@
 # Firebase client configuration audit
 
-- **Status:** Verified and hardened current prototype configuration
-- **Audit date:** 2026-09-30
+- **Status:** Verified browser and selected iOS development configuration
+- **Audit dates:** 2026-09-30 browser audit; 2026-10-05 iOS retirement audit
 - **Owner:** Kevin Tulloch
-- **Tracking issue:** [#22](https://github.com/marathoner-app/marathoner/issues/22)
+- **Tracking issues:** [#22](https://github.com/marathoner-app/marathoner/issues/22),
+  [#178](https://github.com/marathoner-app/marathoner/issues/178)
 - **Current project:** `marathoner-d9bf9` (`Marathoner`)
 
 ## Purpose and boundary
@@ -28,10 +29,12 @@ would not turn them into secrets.
 | Surface | Live evidence | Disposition |
 | --- | --- | --- |
 | Firebase project | The committed project ID, app ID, sender ID, auth domain, and storage-bucket name identify `marathoner-d9bf9`. | This remains the development/prototype side of the separated environment boundary. |
-| Environment selector | Web, CI, Pages, and disconnected mobile-spike commands select the audited project as `development`; the distinct beta registration is available only to an explicit production-mode selection. | The [environment selection contract](firebase-environment-selection.md) and [beta project record](firebase-beta-project.md) define the boundary. Issue #125 still owns complete beta activation. |
+| Environment selector | Web, CI, Pages, and the selected iOS development build select the audited project as `development`; the distinct beta registration is available only to an explicit production-mode selection. | The [environment selection contract](firebase-environment-selection.md) and [beta project record](firebase-beta-project.md) define the boundary. Issue #125 still owns complete beta activation. |
 | Browser API key | The committed value exactly matches the only `Browser key (auto created by Firebase)` in the project without printing or copying the value into this record. | It is an intentionally public Firebase client identifier. Rotation is not required solely because it appears in source or a browser bundle. |
 | API allowlist | The key is restricted to the eight APIs listed below. Generative Language and the previously allowed unused AI, SQL, Storage, Realtime Database, distribution, hosting, messaging, ML, and Remote Config APIs are not allowed. | Keep this inventory narrow. A later feature must deliberately update this record before adding an API. |
 | Application restriction | The key accepts browser requests only from the current GitHub Pages host, `localhost`, and `127.0.0.1`, using the exact patterns below. | Keep these origins until environment separation is complete. Add the custom domain only when #162 publishes it. |
+| Selected iOS development key | `marathoner-ios-development` belongs only to the development project and permits Cloud Firestore API, Identity Toolkit API, and Token Service API. | It supports the canonical Capacitor shell through an ignored mode-`0600` local environment file. It is not committed, printed, or shared with beta. |
+| iOS application restriction | The iOS shell currently uses the Firebase JavaScript SDK inside a Capacitor WebView, so the key cannot use an iOS bundle restriction and has no application restriction. | The narrow API allowlist limits the key's reach. Issue #161 must add and enforce App Check before external invitations. |
 | Sign-in providers | Email/Password is enabled and Google is disabled. The application implements only Email/Password, and the five visible legacy accounts all use the Email provider. | Keep Email/Password until the beta identity decision changes it. Do not migrate the legacy account list wholesale into beta. |
 | Authorized domains | `localhost`, the two Firebase default hosts, and `marathoner-app.github.io` are authorized. `marathonerapp.com` is not. | Keep the current hosts while this project serves local/prototype use. Issue #162 adds the apex and `www` hosts with the actual deployment. |
 | Cloud Firestore | The default `nam5` database is active. The live rule editor is byte-equivalent after whitespace normalization to the tracked `firestore.rules`. | Current rules enforce owner-path access and schema version 1. The separate [beta membership candidate](firebase-beta-membership.md) adds verified-email and approved-membership access but remains undeployed; #121 and the server-command migration must close the remaining beta rule boundary. |
@@ -81,36 +84,45 @@ account depends on it. Email/Password remains enabled. Public signup remains
 disabled in the application, but UI removal is not an authorization control;
 #125 must enforce beta membership and verified email in the beta project.
 
-## Temporary mobile Firebase key
+## Selected iOS development key and spike retirement
 
-Issues [#86](https://github.com/marathoner-app/marathoner/issues/86) and
-[#87](https://github.com/marathoner-app/marathoner/issues/87) use a
-separate temporary public client key, `marathoner-ios-auth-spike`, to compare
-Firebase Email/Password authentication and one exact Firestore proof in the
-Capacitor and Expo candidates. It belongs only to the development project and
-allows exactly Cloud Firestore API, Identity Toolkit API, and Token Service API.
-It does not replace or broaden the current browser key.
+Issue [#177](https://github.com/marathoner-app/marathoner/issues/177) promoted
+the selected Capacitor shell into the canonical root application. On
+2026-10-05, issue [#178](https://github.com/marathoner-app/marathoner/issues/178)
+replaced the shared proof credential with `marathoner-ios-development`. The
+replacement key belongs only to `marathoner-d9bf9` and allows exactly:
 
-The temporary key has no application restriction because the proof must support
-both a Capacitor WebView and Expo's React Native runtime. This exception is
-accepted only for the isolated, non-production comparison: the value is stored
-in ignored mode-`0600` local environment files, each client fails closed when
-it is absent, the clients reject the beta project, no signup or Firestore path
-other than `users/{uid}/mobileSpikeProofs/issue-87-shared-record` is exposed,
-that path requires the authenticated owner and an exact fixed shape. The mobile
-ADR selects Capacitor; issue #178 deletes the key after #177 provides the
-replacement development path.
-The value must never be printed or added to source, logs, screenshots, issues,
-or pull requests.
+- Cloud Firestore API;
+- Identity Toolkit API; and
+- Token Service API.
 
-The complete device sequence, failed persistence configurations, and Android
-implications are recorded in
-[`spikes/mobile/auth-evidence.md`](../../spikes/mobile/auth-evidence.md). The
-live Firestore rule, device round trips, SDK differences, and confirmed cleanup
-are recorded in
+The key has no application restriction because Firebase runs through the
+JavaScript SDK inside the Capacitor WebView. Its value exists only in the
+ignored mode-`0600` `.env.ios-development.local`; the iOS build fails closed
+when it is absent, rejects the beta project, and does not affect the restricted
+browser key. This is an accepted development-only boundary, not the final beta
+control. Issue #161 must establish the selected Apple attestation path and
+enforce App Check before external invitations.
+
+The replacement was verified on a physical iPhone before retirement: an
+existing development account authenticated, survived an intended persistence
+check, signed out cleanly, and loaded the canonical Plan surface after its
+Firestore reads completed. The development project had no
+`mobileSpikeProofs/issue-87-shared-record` document for the verified account.
+The updated default-deny rules were then deployed to development.
+
+Only after those checks passed, the temporary `marathoner-ios-auth-spike` key
+was deleted from Google Cloud and the obsolete local auth and shared-record
+spike environment files were removed. The beta project was not changed. The
+retired cloud key remains recoverable through Google Cloud's deleted-credential
+workflow for 30 days; it must not be restored unless rollback is explicitly
+approved.
+
+The historical comparison evidence remains in
+[`spikes/mobile/auth-evidence.md`](../../spikes/mobile/auth-evidence.md) and
 [`spikes/mobile/shared-record-evidence.md`](../../spikes/mobile/shared-record-evidence.md).
-The selected production clients require their own platform-appropriate
-application restrictions and App Check controls before external invitations.
+The disposable candidate runtimes, commands, proof contract, and proof-specific
+Firestore allowance are no longer part of the product repository.
 
 ## App Check decision
 
@@ -188,6 +200,21 @@ Evidence recorded on 2026-09-30, without secret values or participant data:
 5. GitHub secret-scanning alert #1 recorded the false-positive resolution and
    hardened-key rationale.
 6. No check failed and no rollback was required.
+
+Additional evidence recorded on 2026-10-05 for issue #178:
+
+1. The replacement iOS development key showed exactly the three APIs listed
+   above after saving and reopening its settings.
+2. The canonical Capacitor application built, synchronized, and passed its
+   repository boundary check with that key.
+3. A physical-device authentication and Firestore-loading smoke test passed.
+4. The proof-only document was absent, and the development Firestore rules were
+   successfully compiled and deployed without the proof allowance.
+5. The temporary cloud key and obsolete local spike environment files were
+   removed only after the replacement proof passed.
+6. The final development-project credential inventory contained the restricted
+   browser key and `marathoner-ios-development`; the temporary spike key was
+   absent.
 
 Any later console change must update this record or its owning issue. A Firebase
 setting is not complete merely because the application still builds locally.
