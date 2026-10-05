@@ -39,13 +39,12 @@ silently reach a future beta project:
 npm run dev
 npm test
 npm run build
-npm run build:mobile-spike
+npm run build:ios
 ```
 
 The GitHub Pages and pull-request production-build workflows also set
-`VITE_FIREBASE_ENVIRONMENT=development` explicitly. The disconnected mobile
-spikes continue to replace or omit Firebase initialization and reject the
-audited development values if they leak into the Capacitor bundle.
+`VITE_FIREBASE_ENVIRONMENT=development` explicitly. The selected iOS build
+requires its reviewed development-only API key and fails closed without it.
 
 ## Beta activation sequence
 
@@ -63,6 +62,7 @@ through separately reviewed changes:
 4. change only the approved beta deployment to
    `VITE_FIREBASE_ENVIRONMENT=beta`.
 
-Local development, CI, mobile spikes, and the current GitHub Pages deployment
-remain explicitly pinned to development. Until the remaining cloud controls
-and live verification evidence exist, failing closed is the intended behavior.
+Local development, CI, the selected iOS development build, and the current
+GitHub Pages deployment remain explicitly pinned to development. Until the
+remaining cloud controls and live verification evidence exist, failing closed
+is the intended behavior.

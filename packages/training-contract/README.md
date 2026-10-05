@@ -2,8 +2,8 @@
 
 This private package is the deliberately small cross-client boundary from
 [issue #85](https://github.com/marathoner-app/marathoner/issues/85). It exposes
-two representative concepts used by both the preserved web application and the
-Expo mobile proof:
+two representative concepts proven across the web application and the retired
+mobile candidates:
 
 - a branded, runtime-validated `CompletedRunId` that rejects blank, padded, and
   path-like values;
@@ -13,19 +13,19 @@ Expo mobile proof:
 The ESM runtime and TypeScript declaration are published together so Vite,
 Metro, and plain Node tests can consume the same validation without a package
 build step. The root web domain re-exports the contract to preserve its current
-imports. The Expo spike imports this package directly.
+imports. The historical Expo candidate imported this package directly; that
+runtime was removed after Capacitor was selected.
 
 This is evidence for a package boundary, not a complete shared domain model.
 Dates, durations, plans, workouts, shoes, completed-run records, persistence,
 offline behavior, and schema migration remain in their current owners until the
 mobile ADR has enough evidence to approve a wider boundary.
 
-Issue [#87](https://github.com/marathoner-app/marathoner/issues/87) adds one
-deliberately fixed `SharedRecordProof` shape and owner-scoped document path. It
-combines the existing completed-run identity and meter types with a source-client
-label so web, Capacitor, and Expo can prove the same Firestore round trip. It is
-not a production completed-run model or permission to move persistence into this
-package; its exact collection and document are temporary architecture evidence.
+Issue [#87](https://github.com/marathoner-app/marathoner/issues/87) temporarily
+added a fixed `SharedRecordProof` shape so web, Capacitor, and Expo could prove
+the same Firestore round trip. Issue #178 removed that proof-only contract and
+path after the architecture decision. The result lives in the preserved
+[mobile evidence](../../spikes/mobile/README.md), not in the current API.
 
 ## Canonical fixtures
 

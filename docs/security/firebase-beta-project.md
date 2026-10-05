@@ -38,9 +38,9 @@ recovery material, and App Check debug tokens remain prohibited from source.
 
 ## Deployment boundary
 
-The repository default, local development, CI, GitHub Pages, and disconnected
-mobile spikes remain pinned to development or emulators. Beta can initialize
-only when a production build explicitly selects
+The repository default, local development, CI, GitHub Pages, and the selected
+iOS development build remain pinned to development or emulators. Beta can
+initialize only when a production build explicitly selects
 `VITE_FIREBASE_ENVIRONMENT=beta`.
 
 The beta browser key intentionally permits no localhost or GitHub Pages

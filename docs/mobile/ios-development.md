@@ -29,8 +29,8 @@ cp .env.ios-development.example .env.ios-development.local
 ```
 
 Set `VITE_FIREBASE_IOS_API_KEY` in that local file. The `ios-development` mode
-fails closed when the value is absent, when the selected environment is not
-`development`, or when a disposable spike key variable is also present.
+fails closed when the value is absent or when the selected environment is not
+`development`.
 
 For a physical development build, create the ignored signing override:
 
@@ -109,6 +109,9 @@ The selected root shell was verified on 2026-10-05 with Xcode 27.0:
   canonical Marathoner entry experience;
 - the physical test iPhone launched the root application against the
   development Firebase project;
+- the replacement `marathoner-ios-development` key completed Email/Password
+  authentication and the canonical Plan surface reached its ready state after
+  the required Firestore reads;
 - an existing development account remained signed in after a force-quit and
   cold start;
 - signing out remained effective after a second force-quit and cold start; and

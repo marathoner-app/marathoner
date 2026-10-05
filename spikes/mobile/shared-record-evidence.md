@@ -3,6 +3,12 @@
 - **Issue:** [#87](https://github.com/marathoner-app/marathoner/issues/87)
 - **Environment:** legacy development project only
 - **Status:** passed on web, Capacitor, Expo, emulator, and physical iPhone
+- **Retirement:** historical evidence only; issue #178 removed the proof UI,
+  contract, client adapters, allow rule, and temporary comparison key
+
+The commands and paths below describe the repository at the immutable issue
+#87 merge commit linked from [`README.md`](./README.md). The exact proof record
+was absent before retirement, and the former path is now denied by default.
 
 ## Scope and non-production boundary
 
