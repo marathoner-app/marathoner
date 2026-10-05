@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url'
 import {
   resolveFirebaseEnvironmentForMode,
 } from './src/firebaseEnvironment'
+import { firebaseProjectConfigurations } from './src/firebaseConfig'
 
 const repositoryRoot = path.dirname(fileURLToPath(import.meta.url))
 const capacitorStubRoot = path.resolve(
@@ -15,6 +16,7 @@ const capacitorStubRoot = path.resolve(
 
 // https://vite.dev/config/
 export default defineConfig(({ mode }) => {
+  const isIosDevelopment = mode === 'ios-development'
   const isMobileSpike = mode === 'mobile-spike'
   const isMobileAuthSpike = mode === 'mobile-auth-spike'
   const isMobileSharedRecordSpike = mode === 'mobile-shared-record-spike'
@@ -26,11 +28,16 @@ export default defineConfig(({ mode }) => {
     mode,
     requestedEnvironment: environment.VITE_FIREBASE_ENVIRONMENT,
     mobileApiKey: environment.VITE_FIREBASE_MOBILE_API_KEY,
+    iosApiKey: environment.VITE_FIREBASE_IOS_API_KEY,
+    registry: firebaseProjectConfigurations,
   })
 
   return {
     base:
-      isMobileSpike || isMobileAuthSpike || isSharedRecordSpike
+      isIosDevelopment ||
+      isMobileSpike ||
+      isMobileAuthSpike ||
+      isSharedRecordSpike
         ? './'
         : '/marathoner/',
     plugins: [react()],

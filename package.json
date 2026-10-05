@@ -7,6 +7,7 @@
   "scripts": {
     "dev": "vite",
     "build": "npm run check:server-boundary && npm run check:creator-radar-infrastructure && tsc -b && vite build",
+    "build:ios": "npm run check:server-boundary && npm run check:creator-radar-infrastructure && tsc -b && vite build --mode ios-development --outDir dist-ios --emptyOutDir",
     "build:mobile-spike": "npm run check:server-boundary && npm run check:creator-radar-infrastructure && tsc -b && vite build --mode mobile-spike --outDir spikes/mobile/capacitor/web --emptyOutDir",
     "build:mobile-auth-spike": "npm run check:server-boundary && npm run check:creator-radar-infrastructure && tsc -b && vite build --mode mobile-auth-spike --outDir spikes/mobile/capacitor/web --emptyOutDir",
     "build:mobile-shared-record-spike": "npm run check:server-boundary && npm run check:creator-radar-infrastructure && tsc -b && vite build --mode mobile-shared-record-spike --outDir spikes/mobile/capacitor/web --emptyOutDir",
@@ -14,23 +15,29 @@
     "dev:web-shared-record-spike": "vite --mode web-shared-record-spike",
     "check:server-boundary": "node scripts/check-server-boundary.mjs",
     "check:creator-radar-infrastructure": "node scripts/check-creator-radar-infrastructure.mjs",
+    "check:ios": "npm run build:ios && npm run sync:ios && node scripts/check-ios-boundary.mjs",
     "lint": "eslint .",
     "test": "vitest run",
     "test:firestore": "firebase emulators:exec --project demo-marathoner --only firestore \"vitest run --config vitest.firestore.config.ts\"",
     "verify:beta-boundary": "node scripts/verify-live-beta-boundary.mjs",
     "test:watch": "vitest",
+    "sync:ios": "cap sync ios",
+    "open:ios": "cap open ios",
     "preview": "vite preview"
   },
   "dependencies": {
-    "@marathoner/training-contract": "file:packages/training-contract",
     "@amcharts/amcharts4": "^4.10.40",
     "@amcharts/amcharts5": "^5.11.1",
+    "@capacitor/core": "8.5.2",
+    "@capacitor/ios": "8.5.2",
+    "@marathoner/training-contract": "file:packages/training-contract",
     "firebase": "^11.10.0",
     "framer-motion": "^12.0.6",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },
   "devDependencies": {
+    "@capacitor/cli": "8.5.2",
     "@eslint/js": "^9.39.5",
     "@firebase/rules-unit-testing": "^4.0.1",
     "@testing-library/dom": "^10.4.1",

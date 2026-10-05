@@ -66,16 +66,17 @@ failure-state gates below rather than overturning the lower-duplication result.
 
 ## Current state versus target state
 
-On the decision date, the production root is still a browser-only Vite
-application. The committed native projects and mobile Firebase modes remain
-disposable evidence under `spikes/mobile/`. They must not be described as the
-shipping iOS client.
+The root now contains the selected Capacitor configuration and committed,
+team-neutral SPM Xcode project produced by issue
+[#177](https://github.com/marathoner-app/marathoner/issues/177). That shell is a
+development foundation, not the shipping iOS client: beta selection, App Check,
+daily-use failure states, accessibility, and TestFlight remain unproven.
 
-Issue [#177](https://github.com/marathoner-app/marathoner/issues/177) owns the
-production-shaped Capacitor promotion. Issue
+The comparison projects and mobile Firebase modes remain disposable evidence
+under `spikes/mobile/`. Issue
 [#178](https://github.com/marathoner-app/marathoner/issues/178) removes the
-disposable candidate runtimes, proof rule, and temporary key only after the
-promoted shell passes its replacement checks.
+candidate runtimes, proof rule, and temporary key after the promoted shell
+passes its replacement checks.
 
 ## Repository boundary
 

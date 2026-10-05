@@ -5,9 +5,31 @@ import {
 } from './firebaseConfig'
 import {
   assertFirebaseEnvironmentForMode,
-  resolveFirebaseEnvironment,
-  resolveFirebaseEnvironmentForMode,
+  resolveFirebaseEnvironment as resolveFirebaseEnvironmentWithRegistry,
+  resolveFirebaseEnvironmentForMode as resolveFirebaseEnvironmentForModeWithRegistry,
 } from './firebaseEnvironment'
+
+type ModeOptions = Parameters<
+  typeof resolveFirebaseEnvironmentForModeWithRegistry
+>[0]
+
+function resolveFirebaseEnvironment(
+  requestedEnvironment: string | undefined,
+  registry: FirebaseConfigurationRegistry = firebaseProjectConfigurations,
+) {
+  return resolveFirebaseEnvironmentWithRegistry(requestedEnvironment, registry)
+}
+
+function resolveFirebaseEnvironmentForMode(
+  options: Omit<ModeOptions, 'registry'> & {
+    registry?: FirebaseConfigurationRegistry
+  },
+) {
+  return resolveFirebaseEnvironmentForModeWithRegistry({
+    ...options,
+    registry: options.registry ?? firebaseProjectConfigurations,
+  })
+}
 
 const developmentConfig = firebaseProjectConfigurations.development
 const betaConfig = firebaseProjectConfigurations.beta
@@ -171,6 +193,67 @@ describe('Firebase environment selection', () => {
         mode: 'mobile-shared-record-spike',
         requestedEnvironment: 'beta',
         mobileApiKey: 'mobile-spike-key',
+      }),
+    ).toThrow('Beta is reserved for an approved production deployment')
+  })
+
+  it('requires an explicit key for the selected iOS development build', () => {
+    expect(() =>
+      resolveFirebaseEnvironmentForMode({
+        mode: 'ios-development',
+        requestedEnvironment: 'development',
+        mobileApiKey: undefined,
+        iosApiKey: undefined,
+      }),
+    ).toThrow('VITE_FIREBASE_IOS_API_KEY is required')
+  })
+
+  it('selects development with only the reviewed iOS key overridden', () => {
+    expect(
+      resolveFirebaseEnvironmentForMode({
+        mode: 'ios-development',
+        requestedEnvironment: 'development',
+        mobileApiKey: undefined,
+        iosApiKey: ' reviewed-ios-key ',
+      }),
+    ).toEqual({
+      name: 'development',
+      config: {
+        ...developmentConfig,
+        apiKey: 'reviewed-ios-key',
+      },
+    })
+  })
+
+  it('rejects the disposable spike key in the selected iOS build', () => {
+    expect(() =>
+      resolveFirebaseEnvironmentForMode({
+        mode: 'ios-development',
+        requestedEnvironment: 'development',
+        mobileApiKey: 'spike-key',
+        iosApiKey: 'reviewed-ios-key',
+      }),
+    ).toThrow('belongs only to the disposable mobile spikes')
+  })
+
+  it('rejects the selected iOS key outside its dedicated mode', () => {
+    expect(() =>
+      resolveFirebaseEnvironmentForMode({
+        mode: 'development',
+        requestedEnvironment: 'development',
+        mobileApiKey: undefined,
+        iosApiKey: 'reviewed-ios-key',
+      }),
+    ).toThrow('reserved for the selected iOS development build')
+  })
+
+  it('keeps beta unavailable to the selected iOS development build', () => {
+    expect(() =>
+      resolveFirebaseEnvironmentForMode({
+        mode: 'ios-development',
+        requestedEnvironment: 'beta',
+        mobileApiKey: undefined,
+        iosApiKey: 'reviewed-ios-key',
       }),
     ).toThrow('Beta is reserved for an approved production deployment')
   })
