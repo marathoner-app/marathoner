@@ -18,8 +18,11 @@ document under the narrow controls recorded below. This
 acceptance permits continued comparison work; it does not approve Expo,
 Firebase JS, an override, or these versions for the production mobile client.
 
-If issue #83 selects Expo with the Firebase JavaScript SDK, its ADR is blocked
-until either upstream packages remove the affected paths or a narrowly scoped
+Issue #83 selected Capacitor, so this temporary acceptance never became a
+production waiver. Issue #178 removes the disposable Expo runtime and its
+dependency graph after the selected shell replaces the comparison path. If the
+mobile ADR later reopens to Expo, production adoption remains blocked until
+either upstream packages remove the affected paths or a narrowly scoped
 override passes the complete automated, generated-native-project, signed-build,
 and physical-iPhone verification gate.
 
@@ -119,7 +122,8 @@ This decision remains valid only while all of these statements are true:
   verify externally supplied certificates or signatures;
 - no build service processes participant-controlled or otherwise untrusted
   Xcode project input; and
-- issue #83 has not selected Expo for the production client.
+- Expo remains an unselected, disposable candidate rather than a production
+  client.
 
 The owner must re-run this review at least by October 18, 2026, and immediately
 when any of these triggers occurs:
@@ -132,7 +136,7 @@ when any of these triggers occurs:
   EAS/TestFlight distribution begins, or production mobile work begins;
 - the iOS bundle starts resolving a Node Firestore entry or any affected
   package; or
-- issue #83 is ready to approve an Expo-based architecture.
+- the mobile ADR reopens to evaluate an Expo-based architecture.
 
 Monitoring sources are `npm audit --omit=dev`, the four linked GitHub
 advisories, and upstream Expo/Firebase release metadata. A new critical finding

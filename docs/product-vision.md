@@ -154,10 +154,10 @@ logging remains a supported baseline even after integrations exist.
 
 The responsive web application remains a first-class experience rather than a
 disposable prototype. An installable iOS daily companion is required for the
-founding beta. Issue #83 will select a Capacitor shell, Expo with the Firebase
-JavaScript SDK, or Expo with React Native Firebase from comparable
-physical-device evidence. Android external release is valuable but does not
-block that beta.
+founding beta. The accepted mobile ADR selects a thin Capacitor shell around the
+same root application from comparable physical-device evidence; its App Check,
+TestFlight, accessibility, session, and failure-state gates remain open. Android
+external release is valuable but does not block that beta.
 
 ### Graduation is success
 

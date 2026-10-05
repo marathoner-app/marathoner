@@ -58,7 +58,8 @@ That temporary exception is bounded as follows:
 - the dedicated Vite mode rejects the temporary key in normal web builds;
 - the key permits only the two APIs needed for Email/Password authentication;
 - the candidate UI contains no signup or data-access path; and
-- the key will be deleted after issue #83 selects the mobile stack.
+- the key will be deleted by issue #178 after issue #177 promotes the selected
+  Capacitor shell.
 
 The ignored local files are `.env.mobile-auth-spike.local` at the repository
 root and `spikes/mobile/expo-js/.env.local`. The checked-in

@@ -277,7 +277,8 @@ The recommended response is therefore:
    expectation;
 3. use August 22, 2027 as the current likely forecast and April 30, 2028 as the
    conservative forecast until measured throughput replaces assumptions;
-4. reforecast immediately after the mobile ADR in #83; and
+4. record the ADR's scope effect immediately, then quantitatively reforecast
+   after #177 supplies production-shell implementation throughput; and
 5. choose explicitly among a later date, the non-prescriptive research
    fallback, or a materially narrower gate contract.
 
@@ -294,7 +295,7 @@ responsible product experiment.
 | Tier | Participant promise | Preliminary owner effort | Forecast at likely capacity |
 | --- | --- | ---: | --- |
 | Non-prescriptive research pilot | Three to five private participants use the web product with a participant-supplied or individually human-reviewed plan; guidance and adaptation remain manual and explicitly non-prescriptive | 40–70 session-equivalents, pending focused decomposition | Five to nine delivery weeks plus trust-path and participant-scheduling elapsed time; approximately late November 2026 through January 2027 |
-| Functional founding beta | The ratified bounded product works for five to eight participants, with iOS, deterministic rules, and the mandatory safety, privacy, integrity, deletion, and support gates | Must be reclassified from the current inventory after #83 and measured throughput | Earlier than the diligence-ready scope only if non-gate polish, public acquisition, and investment evidence move later |
+| Functional founding beta | The ratified bounded product works for five to eight participants, with iOS, deterministic rules, and the mandatory safety, privacy, integrity, deletion, and support gates | Must be reclassified from the current inventory after #177 and representative measured throughput | Earlier than the diligence-ready scope only if non-gate polish, public acquisition, and investment evidence move later |
 | Diligence-ready founding beta | The complete current milestone scope, including public positioning, market evidence, operational rehearsals, and repository-quality work | 374 likely session-equivalents through invitations | August 22, 2027 likely |
 
 The research pilot is the approved fallback already described in the beta
@@ -325,8 +326,8 @@ the owner-understanding requirement to improve the metric.
 
 Reforecast #104 and this document when any of the following occurs:
 
-- #83 selects the mobile architecture and replaces spike uncertainty with
-  measured implementation throughput;
+- #177 promotes the selected mobile architecture and replaces spike uncertainty
+  with measured production-shell implementation throughput;
 - three representative issues or four delivery weeks provide measured
   AI-assisted throughput;
 - #119 identifies the reviewer and a real review calendar;
