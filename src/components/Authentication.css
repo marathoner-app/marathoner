@@ -58,6 +58,25 @@
   color: #9f1d1d;
 }
 
+.startup-error {
+  display: grid;
+  justify-items: center;
+  gap: 1rem;
+  max-width: 32rem;
+  margin: 1.5rem 1rem 0;
+  color: #9f1d1d;
+  line-height: 1.5;
+}
+
+.startup-error p {
+  margin: 0;
+}
+
+.startup-error button {
+  min-height: 2.75rem;
+  padding: 0.65rem 1.25rem;
+}
+
 .login-wrapper,
 .existing-account-access {
   display: inline-block;

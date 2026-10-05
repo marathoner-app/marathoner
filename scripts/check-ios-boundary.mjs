@@ -36,10 +36,14 @@ async function filesBelow(directory) {
 async function run() {
   const [
     capacitorConfig,
+    bridgeViewController,
     debugConfig,
     infoPlist,
+    launchStoryboard,
+    mainStoryboard,
     packageJson,
     packageManifest,
+    sceneDelegate,
     xcodeProject,
     runtimeConfig,
     tracked,
@@ -47,13 +51,32 @@ async function run() {
     copiedFiles,
   ] = await Promise.all([
     readFile(path.join(repositoryRoot, 'capacitor.config.ts'), 'utf8'),
+    readFile(
+      path.join(
+        repositoryRoot,
+        'ios/App/App/MarathonerBridgeViewController.swift',
+      ),
+      'utf8',
+    ),
     readFile(path.join(repositoryRoot, 'ios/debug.xcconfig'), 'utf8'),
     readFile(path.join(repositoryRoot, 'ios/App/App/Info.plist'), 'utf8'),
+    readFile(
+      path.join(
+        repositoryRoot,
+        'ios/App/App/Base.lproj/LaunchScreen.storyboard',
+      ),
+      'utf8',
+    ),
+    readFile(
+      path.join(repositoryRoot, 'ios/App/App/Base.lproj/Main.storyboard'),
+      'utf8',
+    ),
     readFile(path.join(repositoryRoot, 'package.json'), 'utf8').then(JSON.parse),
     readFile(
       path.join(repositoryRoot, 'ios/App/CapApp-SPM/Package.swift'),
       'utf8',
     ),
+    readFile(path.join(repositoryRoot, 'ios/App/App/SceneDelegate.swift'), 'utf8'),
     readFile(
       path.join(repositoryRoot, 'ios/App/App.xcodeproj/project.pbxproj'),
       'utf8',
@@ -76,10 +99,14 @@ async function run() {
   const violations = [
     ...findIosProjectViolations({
       capacitorConfig,
+      bridgeViewController,
       debugConfig,
       infoPlist,
+      launchStoryboard,
+      mainStoryboard,
       packageJson,
       packageManifest,
+      sceneDelegate,
       trackedPaths: tracked,
       xcodeProject,
     }),

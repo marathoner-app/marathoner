@@ -8,9 +8,77 @@
     <link rel="apple-touch-icon" href="/brand/apple-touch-icon.png" sizes="180x180" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Marathoner.</title>
+    <style>
+      html,
+      body,
+      #root {
+        width: 100%;
+        min-height: 100%;
+        margin: 0;
+        background: #fff;
+        color: #000;
+      }
+
+      .startup-shell {
+        display: flex;
+        min-height: 100vh;
+        min-height: 100dvh;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        box-sizing: border-box;
+        padding: 2rem;
+        font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont,
+          "Segoe UI", sans-serif;
+        text-align: center;
+      }
+
+      .startup-shell h1 {
+        margin: 0;
+        font-size: 3.5rem;
+        line-height: 1;
+      }
+
+      .startup-shell p {
+        max-width: 32rem;
+        margin: 1.5rem 0 0;
+        color: #454545;
+        font-size: 1rem;
+        line-height: 1.5;
+      }
+
+      .startup-shell a {
+        display: inline-block;
+        margin-top: 1rem;
+        color: #1d4ed8;
+        font-weight: 650;
+        text-underline-offset: 0.2em;
+      }
+
+      .startup-shell [hidden] {
+        display: none;
+      }
+    </style>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <main class="startup-shell" data-marathoner-startup>
+        <h1>Marathoner.</h1>
+        <p role="status" data-startup-status>Loading your session...</p>
+        <a href="./" data-startup-recovery hidden>Reload Marathoner</a>
+      </main>
+    </div>
+    <script>
+      window.setTimeout(() => {
+        const startupShell = document.querySelector('[data-marathoner-startup]')
+        if (!startupShell) return
+
+        const status = startupShell.querySelector('[data-startup-status]')
+        const recovery = startupShell.querySelector('[data-startup-recovery]')
+        if (status) status.textContent = "Marathoner couldn't start."
+        if (recovery) recovery.hidden = false
+      }, 10000)
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

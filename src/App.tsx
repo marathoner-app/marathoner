@@ -9,6 +9,7 @@ import Analyze from "./components/Analyze";
 import { useAuth } from "./auth/useAuth";
 import TrainingDataProvider from "./training/TrainingDataProvider";
 import { useTrainingData } from "./training/useTrainingData";
+import { releaseNativeStartupOverlayAfterPaint } from "./services/nativeStartup";
 
 const publicSupportEmail = "kevin@marathonerapp.com";
 
@@ -31,6 +32,8 @@ function App() {
     track: null,
     analyze: null,
   });
+
+  useEffect(() => releaseNativeStartupOverlayAfterPaint(), []);
 
   useEffect(() => {
     if (!activeSection && lastActiveSection.current) {
@@ -70,7 +73,7 @@ function App() {
   return (
     <motion.main
       className={`main${auth.status === "signedOut" ? " public-entry" : ""}`}
-      initial={reduceMotion ? false : { opacity: 0 }}
+      initial={false}
       animate={{ opacity: 1 }}
       transition={{ duration: reduceMotion ? 0 : 1, ease: "easeOut" }}
     >
@@ -83,34 +86,47 @@ function App() {
         </>
       )}
 
-      {auth.status !== "loading" && !activeSection && (
+      {auth.status === "error" && (
         <>
-          {auth.status === "signedIn" && (
-            <div className="session-controls">
-              <p className="session-user">
-                Signed in as {auth.user.email ?? "Marathoner user"}
-              </p>
-              <button
-                type="button"
-                className="logout-btn"
-                onClick={handleLogout}
-              >
-                Log out
-              </button>
-            </div>
-          )}
           <Title />
-          <Subtitle />
-          {auth.status === "signedOut" && (
-            <PublicAccessNotice supportEmail={publicSupportEmail} />
-          )}
-          {logoutError && (
-            <p className="auth-message auth-error" role="alert">
-              {logoutError}
-            </p>
-          )}
+          <div className="startup-error" role="alert">
+            <p>{auth.message}</p>
+            <button type="button" onClick={auth.retrySession}>
+              Try again
+            </button>
+          </div>
         </>
       )}
+
+      {(auth.status === "signedIn" || auth.status === "signedOut") &&
+        !activeSection && (
+          <>
+            {auth.status === "signedIn" && (
+              <div className="session-controls">
+                <p className="session-user">
+                  Signed in as {auth.user.email ?? "Marathoner user"}
+                </p>
+                <button
+                  type="button"
+                  className="logout-btn"
+                  onClick={handleLogout}
+                >
+                  Log out
+                </button>
+              </div>
+            )}
+            <Title />
+            <Subtitle />
+            {auth.status === "signedOut" && (
+              <PublicAccessNotice supportEmail={publicSupportEmail} />
+            )}
+            {logoutError && (
+              <p className="auth-message auth-error" role="alert">
+                {logoutError}
+              </p>
+            )}
+          </>
+        )}
 
       {auth.status === "signedIn" && (
         <TrainingDataProvider userId={auth.user.uid}>
