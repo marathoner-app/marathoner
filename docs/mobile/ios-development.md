@@ -99,6 +99,36 @@ run. Confirm that the canonical Marathoner UI appears and that the expected
 development account state resolves. Test sign-in only with an existing
 development account; signup remains disabled.
 
+### Launch-continuity acceptance test
+
+Run this test after a startup, authentication-bootstrap, WebView, or native
+launch-screen change. Record one clean installation and five true cold starts
+on the physical test iPhone. A warm foreground transition does not count.
+
+1. Delete the development app from the iPhone, then build and run it from
+   Xcode. This is the clean-install launch.
+2. Confirm that the native `Marathoner.` / `Loading your session...` presentation
+   is visible immediately and remains continuous while the native bridge starts
+   and React paints the matching web loading state. There must be no blank or
+   black frame between those layers. Both native overlays have a 10-second
+   safety timeout so a broken web bundle cannot hide behind them indefinitely.
+3. Complete a development-account sign-in, force-quit the app, and reopen it.
+   Confirm the signed-in session returns. Repeat enough times to record three
+   signed-in cold starts.
+4. Sign out, force-quit the app, and reopen it. Confirm the signed-out state
+   returns. Repeat once to record two signed-out cold starts.
+
+The result passes only when all six launches have zero observed blank, black,
+or unbranded plain-white frames and each launch reaches the expected signed-in
+or signed-out state. If Firebase Auth has not resolved within 10 seconds, the
+app must replace the loading state with its retryable recovery message; an
+indefinite loading state does not pass. If the WebView itself cannot load the
+bundle, the static `Marathoner could not start` recovery page must appear.
+
+Record the date, device/iOS version, Xcode version, build commit, launch result,
+restored state, and any visible transition defect in the issue or pull request.
+Do not record account credentials or device identifiers.
+
 ### Recorded foundation evidence
 
 The selected root shell was verified on 2026-10-05 with Xcode 27.0:
@@ -119,8 +149,27 @@ The selected root shell was verified on 2026-10-05 with Xcode 27.0:
   without console errors.
 
 The first physical launch briefly showed a blank black WebView before the
-application rendered. The condition did not recur on the next cold start, so it
-is recorded as launch-polish follow-up rather than a failed shell or Auth test.
+application rendered. The condition did not recur on the next cold start and
+prompted the startup-continuity work tracked in #181.
+
+### Recorded launch-continuity evidence
+
+The #181 launch boundary was verified on 2026-10-05 from the working tree based
+on `main` commit `1c11727`, using Xcode 27.0 and a physical iPhone running iOS
+26.6.2:
+
+- the clean-install launch remained branded without a blank, black, or
+  plain-white frame and reached the signed-out state;
+- three signed-in force-quit cold starts remained continuously branded and
+  restored the expected development account;
+- two signed-out force-quit cold starts remained continuously branded and
+  restored the public entry state; and
+- all six launches passed with zero visible transition defects.
+
+The accepted sequence uses the immutable Apple launch screen, an immediate
+storyboard bridge overlay, Capacitor's launch overlay, and the matching React
+loading state. React dismisses both native overlays after its first paint; both
+native layers retain the 10-second failure timeout.
 
 The local Firestore emulator check could not start because this Mac does not
 have Java installed. Pull-request CI installs Java 21 and remains the required

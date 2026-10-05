@@ -1,9 +1,9 @@
-import { act, render, screen } from '@testing-library/react'
+import { act, fireEvent, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { ReactNode } from 'react'
 import App from './App'
-import AuthProvider from './auth/AuthProvider'
+import AuthProvider, { authSessionTimeoutMs } from './auth/AuthProvider'
 import {
   logOut,
   subscribeToAuthState,
@@ -197,15 +197,43 @@ describe('App authentication state', () => {
     )
   })
 
-  it('resolves an authentication subscription error to signed-out UI', () => {
+  it('shows a retryable error when authentication restoration fails', () => {
     renderApp()
 
     act(() => {
       emitAuthError(new Error('Unable to restore session'))
     })
 
-    expect(screen.getByRole('button', { name: 'Log in' })).toBeInTheDocument()
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      "We couldn't restore your session. Check your connection and try again."
+    )
+    expect(screen.getByRole('button', { name: 'Try again' })).toBeInTheDocument()
     expect(screen.queryByText('Loading your session...')).not.toBeInTheDocument()
+  })
+
+  it('times out a stalled authentication subscription and retries it', () => {
+    vi.useFakeTimers()
+
+    try {
+      renderApp()
+
+      act(() => {
+        vi.advanceTimersByTime(authSessionTimeoutMs)
+      })
+
+      expect(screen.getByRole('alert')).toHaveTextContent(
+        "We couldn't restore your session. Check your connection and try again."
+      )
+
+      fireEvent.click(screen.getByRole('button', { name: 'Try again' }))
+
+      expect(mockedSubscribeToAuthState).toHaveBeenCalledTimes(2)
+      expect(screen.getByRole('status')).toHaveTextContent(
+        'Loading your session...'
+      )
+    } finally {
+      vi.useRealTimers()
+    }
   })
 })
 

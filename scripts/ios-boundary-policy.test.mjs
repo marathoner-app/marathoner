@@ -7,17 +7,26 @@ import {
 } from './ios-boundary-policy.mjs'
 
 const validProject = {
-  capacitorConfig: `appId: 'com.marathonerapp.marathoner'\nappName: 'Marathoner'\nwebDir: 'dist-ios'`,
+  bridgeViewController:
+    'installStartupOverlay() registerPluginInstance(StartupOverlayPlugin()) DispatchQueue.main.asyncAfter(deadline: .now() + 10',
+  capacitorConfig: `appId: 'com.marathonerapp.marathoner'\nappName: 'Marathoner'\nwebDir: 'dist-ios'\nbackgroundColor: '#ffffff'\nerrorPath: 'startup-error.html'\nlaunchAutoHide: true\nlaunchShowDuration: 10_000\nbackgroundColor: '#ffffffff'`,
   debugConfig: '#include? "local.xcconfig"',
-  infoPlist: '<string>Marathoner</string>',
+  infoPlist:
+    '<string>Marathoner</string><key>UIUserInterfaceStyle</key><string>Light</string>',
+  launchStoryboard:
+    '<view><label text="Marathoner."/><label text="Loading your session..."/><color key="backgroundColor" white="1"/></view>',
+  mainStoryboard:
+    '<viewController customClass="MarathonerBridgeViewController"/>',
   packageJson: {
     dependencies: {
       '@capacitor/core': '8.5.2',
       '@capacitor/ios': '8.5.2',
+      '@capacitor/splash-screen': '8.0.2',
     },
     devDependencies: { '@capacitor/cli': '8.5.2' },
   },
   packageManifest: 'exact: "8.5.2"',
+  sceneDelegate: 'guard let sceneWindow = window',
   trackedPaths: ['ios/App/App/AppDelegate.swift'],
   xcodeProject:
     'PRODUCT_BUNDLE_IDENTIFIER = com.marathonerapp.marathoner;',
@@ -49,7 +58,16 @@ describe('iOS boundary policy', () => {
 
   it('accepts an exact copied development bundle', () => {
     const builtFiles = new Map([
-      ['index.html', Buffer.from('<script src="./assets/app.js"></script>')],
+      [
+        'index.html',
+        Buffer.from(
+          '<main data-marathoner-startup>Loading your session...<a data-startup-recovery>Reload</a></main><script>10000</script><script src="./assets/app.js"></script>',
+        ),
+      ],
+      [
+        'startup-error.html',
+        Buffer.from('Marathoner could not start. Reload Marathoner'),
+      ],
       ['assets/app.js', Buffer.from('project="marathoner-d9bf9"')],
     ])
 
@@ -61,6 +79,15 @@ describe('iOS boundary policy', () => {
           appId: 'com.marathonerapp.marathoner',
           appName: 'Marathoner',
           webDir: 'dist-ios',
+          ios: { backgroundColor: '#ffffff' },
+          server: { errorPath: 'startup-error.html' },
+          plugins: {
+            SplashScreen: {
+              backgroundColor: '#ffffffff',
+              launchAutoHide: true,
+              launchShowDuration: 10_000,
+            },
+          },
         }),
       }),
     ).toEqual([])

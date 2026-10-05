@@ -2,7 +2,10 @@ export const expectedIosBoundary = {
   appId: 'com.marathonerapp.marathoner',
   appName: 'Marathoner',
   capacitorVersion: '8.5.2',
+  splashScreenVersion: '8.0.2',
   developmentProjectId: 'marathoner-d9bf9',
+  launchBackgroundColor: '#ffffff',
+  startupErrorPath: 'startup-error.html',
   webDir: 'dist-ios',
 }
 
@@ -30,10 +33,14 @@ function requireText(violations, source, expected, label) {
 
 export function findIosProjectViolations({
   capacitorConfig,
+  bridgeViewController,
   debugConfig,
   infoPlist,
+  launchStoryboard,
+  mainStoryboard,
   packageJson,
   packageManifest,
+  sceneDelegate,
   trackedPaths,
   xcodeProject,
 }) {
@@ -45,6 +52,18 @@ export function findIosProjectViolations({
     `appId: '${expectedIosBoundary.appId}'`,
     'capacitor.config.ts',
   )
+  for (const requiredSplashConfig of [
+    'launchAutoHide: true',
+    'launchShowDuration: 10_000',
+    "backgroundColor: '#ffffffff'",
+  ]) {
+    requireText(
+      violations,
+      capacitorConfig,
+      requiredSplashConfig,
+      'capacitor.config.ts',
+    )
+  }
   requireText(
     violations,
     debugConfig,
@@ -65,6 +84,18 @@ export function findIosProjectViolations({
   )
   requireText(
     violations,
+    capacitorConfig,
+    `backgroundColor: '${expectedIosBoundary.launchBackgroundColor}'`,
+    'capacitor.config.ts',
+  )
+  requireText(
+    violations,
+    capacitorConfig,
+    `errorPath: '${expectedIosBoundary.startupErrorPath}'`,
+    'capacitor.config.ts',
+  )
+  requireText(
+    violations,
     xcodeProject,
     `PRODUCT_BUNDLE_IDENTIFIER = ${expectedIosBoundary.appId};`,
     'Xcode project',
@@ -75,6 +106,77 @@ export function findIosProjectViolations({
     `<string>${expectedIosBoundary.appName}</string>`,
     'Info.plist',
   )
+  requireText(
+    violations,
+    infoPlist,
+    '<key>UIUserInterfaceStyle</key>',
+    'Info.plist',
+  )
+  requireText(
+    violations,
+    infoPlist,
+    '<string>Light</string>',
+    'Info.plist',
+  )
+  requireText(
+    violations,
+    launchStoryboard,
+    'text="Marathoner."',
+    'LaunchScreen.storyboard',
+  )
+  requireText(
+    violations,
+    launchStoryboard,
+    'text="Loading your session..."',
+    'LaunchScreen.storyboard',
+  )
+  requireText(
+    violations,
+    launchStoryboard,
+    '<color key="backgroundColor" white="1"',
+    'LaunchScreen.storyboard',
+  )
+
+  if (
+    launchStoryboard.includes('image="Splash"') ||
+    launchStoryboard.includes('systemBackgroundColor')
+  ) {
+    violations.push(
+      'LaunchScreen.storyboard uses a disposable or adaptive launch background',
+    )
+  }
+  requireText(
+    violations,
+    mainStoryboard,
+    'customClass="MarathonerBridgeViewController"',
+    'Main.storyboard',
+  )
+  for (const startupBridgeValue of [
+    'installStartupOverlay()',
+    'registerPluginInstance(StartupOverlayPlugin())',
+    'DispatchQueue.main.asyncAfter(deadline: .now() + 10',
+  ]) {
+    requireText(
+      violations,
+      bridgeViewController,
+      startupBridgeValue,
+      'MarathonerBridgeViewController.swift',
+    )
+  }
+  requireText(
+    violations,
+    sceneDelegate,
+    'guard let sceneWindow = window',
+    'SceneDelegate.swift',
+  )
+  if (
+    sceneDelegate.includes('UIWindow(windowScene:') ||
+    sceneDelegate.includes('CAPBridgeViewController()')
+  ) {
+    violations.push(
+      'SceneDelegate.swift replaces the storyboard-provided Capacitor window',
+    )
+  }
   requireText(
     violations,
     packageManifest,
@@ -96,6 +198,14 @@ export function findIosProjectViolations({
         `${packageName} must be pinned to ${expectedIosBoundary.capacitorVersion}`,
       )
     }
+  }
+  if (
+    dependencies['@capacitor/splash-screen'] !==
+    expectedIosBoundary.splashScreenVersion
+  ) {
+    violations.push(
+      `@capacitor/splash-screen must be pinned to ${expectedIosBoundary.splashScreenVersion}`,
+    )
   }
 
   if (/\bDEVELOPMENT_TEAM\s*=\s*[^;\s]+\s*;/u.test(xcodeProject)) {
@@ -147,6 +257,9 @@ export function findCopiedBundleViolations({
 }) {
   const violations = []
   const indexHtml = builtFiles.get('index.html')?.toString('utf8') ?? ''
+  const startupErrorHtml = builtFiles
+    .get(expectedIosBoundary.startupErrorPath)
+    ?.toString('utf8') ?? ''
   const builtText = [...builtFiles.entries()]
     .filter(([file]) => /\.(?:css|html|js|json|txt|xml)$/u.test(file))
     .map(([, contents]) => contents.toString('utf8'))
@@ -157,6 +270,28 @@ export function findCopiedBundleViolations({
   }
   if (indexHtml.includes('/marathoner/')) {
     violations.push('iOS index.html contains the GitHub Pages base path')
+  }
+  for (const expectedStartupValue of [
+    'data-marathoner-startup',
+    'Loading your session...',
+    'data-startup-recovery',
+    '10000',
+  ]) {
+    if (!indexHtml.includes(expectedStartupValue)) {
+      violations.push(
+        `iOS index.html is missing startup marker ${expectedStartupValue}`,
+      )
+    }
+  }
+  for (const expectedErrorValue of [
+    'Marathoner could not start',
+    'Reload Marathoner',
+  ]) {
+    if (!startupErrorHtml.includes(expectedErrorValue)) {
+      violations.push(
+        `${expectedIosBoundary.startupErrorPath} is missing ${expectedErrorValue}`,
+      )
+    }
   }
   if (!builtText.includes(expectedIosBoundary.developmentProjectId)) {
     violations.push('iOS bundle does not contain the development project')
@@ -190,6 +325,28 @@ export function findCopiedBundleViolations({
         `generated capacitor.config.json has unexpected ${field}`,
       )
     }
+  }
+  if (
+    runtimeConfig.ios?.backgroundColor !==
+    expectedIosBoundary.launchBackgroundColor
+  ) {
+    violations.push(
+      'generated capacitor.config.json has unexpected iOS backgroundColor',
+    )
+  }
+  if (runtimeConfig.server?.errorPath !== expectedIosBoundary.startupErrorPath) {
+    violations.push(
+      'generated capacitor.config.json has unexpected server errorPath',
+    )
+  }
+  if (
+    runtimeConfig.plugins?.SplashScreen?.launchAutoHide !== true ||
+    runtimeConfig.plugins?.SplashScreen?.launchShowDuration !== 10_000 ||
+    runtimeConfig.plugins?.SplashScreen?.backgroundColor !== '#ffffffff'
+  ) {
+    violations.push(
+      'generated capacitor.config.json has unexpected SplashScreen startup policy',
+    )
   }
 
   return [...new Set(violations)].sort()

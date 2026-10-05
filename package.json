@@ -25,6 +25,7 @@
     "@amcharts/amcharts5": "^5.11.1",
     "@capacitor/core": "8.5.2",
     "@capacitor/ios": "8.5.2",
+    "@capacitor/splash-screen": "8.0.2",
     "@marathoner/training-contract": "file:packages/training-contract",
     "firebase": "^11.10.0",
     "framer-motion": "^12.0.6",
