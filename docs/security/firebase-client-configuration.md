@@ -43,7 +43,7 @@ would not turn them into secrets.
 | App Check | The console shows **Get started**; no app or API enforcement is configured. | Implement and observe it through #161 after environment and mobile decisions, then enforce it before external invitations. |
 | GitHub Pages | The workflow serves `https://marathoner-app.github.io/marathoner/` with HTTPS. No Pages custom domain is configured. | The GitHub Pages host is the only current production origin. Issue #162 owns the coordinated custom-domain migration. |
 | Repository credentials | Current tracked files and historical filenames contain no Marathoner service-account file, private key, password, Firebase CLI token, or administrative credential. | Continue to prohibit privileged credentials in source. Use workload identity or provider-managed operator sessions. |
-| GitHub secret controls | Secret scanning and push protection were disabled at audit start and are now enabled for the public repository. Alert #1 identified the public Firebase browser key. | Alert #1 was resolved as a documented false positive after the restrictions and live smoke tests passed. |
+| GitHub secret controls | Secret scanning and push protection were disabled at audit start and are now enabled for the public repository. Alert #1 identified the development browser key; alert #2 identified the beta browser key when its isolated registration was committed. | Both alerts were resolved as documented false positives after their project identity, API allowlist, and website restrictions were verified. |
 
 No secret value, participant identifier, or account email belongs in this
 record. Console screenshots and logs used as evidence must be redacted before
@@ -166,12 +166,20 @@ and recovery process. Public support uses `kevin@marathonerapp.com` and must not
 hold cloud-administration authority. Development credentials, debug tokens, and
 service identities must not be shared with beta.
 
-## Secret-scanning alert #1
+## Secret-scanning alerts #1 and #2
 
 Alert #1 reports a Google API key first committed in the original Firebase
 configuration and repeated in historical compiled assets. GitHub marks it
 publicly leaked because the detector cannot infer Firebase's public-client-key
 model.
+
+Alert #2 reports the separate beta Firebase browser key introduced with issue
+#168. Its location is the versioned `marathonerapp-beta` client registration,
+not a mobile-spike environment file or administrative credential. The beta key
+is restricted to the same eight required Firebase APIs and only
+`marathonerapp.com` and `www.marathonerapp.com`; it is unavailable from
+localhost and GitHub Pages. The beta project remains an explicit, non-default
+selection with membership-gated Firestore rules.
 
 Alert #1 was resolved as **false positive** on 2026-09-30 after the live API and
 website restrictions were saved and the deployed client passed Auth and
@@ -181,6 +189,12 @@ Firestore smoke tests. The recorded rationale is:
 > limited to 8 required APIs and approved web origins. Live Auth login and owned
 > Firestore read passed. Security Rules are deployed; App Check is tracked in
 > #161. Rotation is not indicated.
+
+Alert #2 was resolved as **false positive** on 2026-10-05 after its exact
+historical location was matched to the isolated beta registration and the
+already recorded API and website restrictions were reviewed. The resolution
+does not classify the value as secret, does not broaden its permissions, and
+does not activate beta.
 
 Rotation becomes necessary if the key belongs to the wrong project, permits an
 unrelated or billable non-Firebase API, restrictions cannot be applied, abuse is
@@ -215,6 +229,9 @@ Additional evidence recorded on 2026-10-05 for issue #178:
 6. The final development-project credential inventory contained the restricted
    browser key and `marathoner-ios-development`; the temporary spike key was
    absent.
+7. The repository secret scan identified only the pre-existing beta public
+   browser-key alert; its exact commit and file location matched issue #168,
+   and it was resolved with the documented restricted-client rationale.
 
 Any later console change must update this record or its owning issue. A Firebase
 setting is not complete merely because the application still builds locally.
