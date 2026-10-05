@@ -1,6 +1,6 @@
 # Public prototype access and trust posture
 
-- **Status:** Open registration disabled; public support contact configured
+- **Status:** Open registration disabled; beta membership boundary and public support configured
 - **Decision date:** September 22, 2026
 - **Owner:** Kevin Tulloch
 - **Decision issue:** [#123](https://github.com/marathoner-app/marathoner/issues/123)
@@ -24,8 +24,9 @@ adults who already run consistently and are preparing for a first marathon.
 ## Rationale
 
 The current application is a foundation-stage prototype. Its methodology and
-safety guidance are not approved, the allowlist and full privacy controls are
-not implemented, and complete deletion operations have not been rehearsed.
+safety guidance are not approved, participant invitation operations and full
+privacy controls are not complete, and deletion operations have not been
+rehearsed.
 Collecting additional accounts during that state would create privacy and
 support obligations without providing the ratified beta experience.
 
@@ -80,9 +81,10 @@ data path, completion evidence, and the response service level.
 Removing the signup UI and client service contains ordinary public use; it is
 not the beta authorization boundary. Firebase client configuration is public
 by design, and someone can call an identity endpoint outside the shipped user
-interface. Issue #125 must enforce allowlisted, verified-email access and data
-writes before invitations. Firestore Security Rules, not hidden UI, protect
-participant data.
+interface. Issue #125 deployed and verified allowlisted, verified-email beta
+access. Firestore Security Rules, not hidden UI, protect participant data. That
+boundary remains one prerequisite rather than permission to invite
+participants.
 
 ## Reopening criteria
 

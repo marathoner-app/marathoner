@@ -1,17 +1,30 @@
 import {
+  betaFirebaseClientConfiguration,
   developmentFirebaseClientConfiguration,
   firebaseProjectConfigurations,
   type FirebaseConfigurationRegistry,
 } from './firebaseConfig'
 import { resolveFirebaseEnvironmentForMode } from './firebaseEnvironment'
 
-const registry: FirebaseConfigurationRegistry =
-  import.meta.env.MODE === 'ios-development'
-    ? {
-        development: developmentFirebaseClientConfiguration,
-        beta: null,
-      }
-    : firebaseProjectConfigurations
+function registryForMode(mode: string): FirebaseConfigurationRegistry {
+  if (mode === 'ios-development') {
+    return {
+      development: developmentFirebaseClientConfiguration,
+      beta: null,
+    }
+  }
+
+  if (mode === 'ios-beta') {
+    return {
+      development: null,
+      beta: betaFirebaseClientConfiguration,
+    }
+  }
+
+  return firebaseProjectConfigurations
+}
+
+const registry = registryForMode(import.meta.env.MODE)
 
 export const selectedFirebaseEnvironment = resolveFirebaseEnvironmentForMode({
   mode: import.meta.env.MODE,

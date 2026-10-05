@@ -102,6 +102,12 @@ jobs:
           VITE_FIREBASE_ENVIRONMENT: development
           VITE_FIREBASE_IOS_API_KEY: ci-non-live-ios-key
 
+      - name: Build, sync, and inspect explicit beta iOS selection
+        run: npm run check:ios:beta
+        env:
+          VITE_FIREBASE_ENVIRONMENT: beta
+          VITE_FIREBASE_IOS_API_KEY: ci-non-live-beta-ios-key
+
   firestore-tests:
     name: Firestore emulator tests
     runs-on: ubuntu-latest

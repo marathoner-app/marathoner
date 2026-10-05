@@ -125,11 +125,11 @@ Firebase JS remains historical fallback evidence; Expo plus React Native
 Firebase is reconsidered only if native attestation, telemetry, or another hard
 requirement triggers the ADR's reopen rules.
 
-The decision does not claim participant readiness. Issue #177 must promote the
-production-shaped shell, #125 must prove explicit beta selection, #161 must
-prove Apple App Check, and #122, #137, #138, and #140 retain their distribution,
-session, daily-use, offline, and accessibility gates. Failure of a binding gate
-can reopen the framework choice or move the date.
+The decision does not claim participant readiness. Issue #177 promoted the
+production-shaped shell and #125 proved explicit beta selection. Issue #161
+must still prove Apple App Check, while #122, #137, #138, and #140 retain their
+distribution, session, daily-use, offline, and accessibility gates. Failure of
+a binding gate can reopen the framework choice or move the date.
 
 The existing web application remains canonical. Do not relocate it or build a
 generalized shared workspace. Keep only the minimum pure TypeScript contracts

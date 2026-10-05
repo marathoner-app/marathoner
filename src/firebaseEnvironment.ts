@@ -30,9 +30,13 @@ export function assertFirebaseEnvironmentForMode(
   mode: string,
   environmentName: FirebaseEnvironmentName,
 ) {
-  if (environmentName === 'beta' && mode !== 'production') {
+  if (
+    environmentName === 'beta' &&
+    mode !== 'production' &&
+    mode !== 'ios-beta'
+  ) {
     throw new Error(
-      `Firebase environment "beta" cannot run in Vite mode "${mode}". Beta is reserved for an approved production deployment.`,
+      `Firebase environment "beta" cannot run in Vite mode "${mode}". Beta is reserved for an approved production deployment or the explicit ios-beta build.`,
     )
   }
 }
@@ -107,16 +111,23 @@ export function resolveFirebaseEnvironmentForMode({
 
   assertFirebaseEnvironmentForMode(mode, selectedEnvironment.name)
 
-  if (mode === 'ios-development') {
-    if (selectedEnvironment.name !== 'development') {
+  const expectedIosEnvironment =
+    mode === 'ios-development'
+      ? 'development'
+      : mode === 'ios-beta'
+        ? 'beta'
+        : null
+
+  if (expectedIosEnvironment) {
+    if (selectedEnvironment.name !== expectedIosEnvironment) {
       throw new Error(
-        'The selected iOS development build can only use the development Firebase environment.',
+        `The ${mode} build can only use the ${expectedIosEnvironment} Firebase environment.`,
       )
     }
 
     if (!normalizedIosApiKey) {
       throw new Error(
-        'VITE_FIREBASE_IOS_API_KEY is required for the ios-development build. Put the reviewed development-only key in .env.ios-development.local.',
+        `VITE_FIREBASE_IOS_API_KEY is required for the ${mode} build. Put the reviewed ${expectedIosEnvironment}-only key in .env.${mode}.local.`,
       )
     }
 
@@ -131,7 +142,7 @@ export function resolveFirebaseEnvironmentForMode({
 
   if (normalizedIosApiKey) {
     throw new Error(
-      `VITE_FIREBASE_IOS_API_KEY cannot be used in Vite mode "${mode}". It is reserved for the selected iOS development build.`,
+      `VITE_FIREBASE_IOS_API_KEY cannot be used in Vite mode "${mode}". It is reserved for the explicit iOS environment builds.`,
     )
   }
 

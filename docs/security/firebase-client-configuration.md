@@ -1,11 +1,12 @@
 # Firebase client configuration audit
 
-- **Status:** Verified browser and selected iOS development configuration
-- **Audit dates:** 2026-09-30 browser audit; 2026-10-05 iOS retirement audit
+- **Status:** Verified browser plus selected iOS development and beta configuration
+- **Audit dates:** 2026-09-30 browser audit; 2026-10-05 development and beta iOS audits
 - **Owner:** Kevin Tulloch
 - **Tracking issues:** [#22](https://github.com/marathoner-app/marathoner/issues/22),
-  [#178](https://github.com/marathoner-app/marathoner/issues/178)
-- **Current project:** `marathoner-d9bf9` (`Marathoner`)
+  [#178](https://github.com/marathoner-app/marathoner/issues/178),
+  [#125](https://github.com/marathoner-app/marathoner/issues/125)
+- **Current projects:** `marathoner-d9bf9` development and `marathonerapp-beta` beta
 
 ## Purpose and boundary
 
@@ -29,11 +30,12 @@ would not turn them into secrets.
 | Surface | Live evidence | Disposition |
 | --- | --- | --- |
 | Firebase project | The committed project ID, app ID, sender ID, auth domain, and storage-bucket name identify `marathoner-d9bf9`. | This remains the development/prototype side of the separated environment boundary. |
-| Environment selector | Web, CI, Pages, and the selected iOS development build select the audited project as `development`; the distinct beta registration is available only to an explicit production-mode selection. | The [environment selection contract](firebase-environment-selection.md) and [beta project record](firebase-beta-project.md) define the boundary. Issue #125 still owns complete beta activation. |
+| Environment selector | Web, CI defaults, Pages, and the selected iOS development build select the audited project as `development`; the distinct beta registration is available only to an explicit production web build or separately keyed `ios-beta` mode. | The [environment selection contract](firebase-environment-selection.md) and [beta project record](firebase-beta-project.md) define the verified boundary. App Check and participant activation remain separate gates. |
 | Browser API key | The committed value exactly matches the only `Browser key (auto created by Firebase)` in the project without printing or copying the value into this record. | It is an intentionally public Firebase client identifier. Rotation is not required solely because it appears in source or a browser bundle. |
 | API allowlist | The key is restricted to the eight APIs listed below. Generative Language and the previously allowed unused AI, SQL, Storage, Realtime Database, distribution, hosting, messaging, ML, and Remote Config APIs are not allowed. | Keep this inventory narrow. A later feature must deliberately update this record before adding an API. |
 | Application restriction | The key accepts browser requests only from the current GitHub Pages host, `localhost`, and `127.0.0.1`, using the exact patterns below. | Keep these origins until environment separation is complete. Add the custom domain only when #162 publishes it. |
 | Selected iOS development key | `marathoner-ios-development` belongs only to the development project and permits Cloud Firestore API, Identity Toolkit API, and Token Service API. | It supports the canonical Capacitor shell through an ignored mode-`0600` local environment file. It is not committed, printed, or shared with beta. |
+| Selected iOS beta key | `marathoner-ios-beta` belongs only to `marathonerapp-beta` and permits Cloud Firestore API, Identity Toolkit API, and Token Service API. | The real beta bundle and physical approved/denied evidence passed. Its value exists only in `.env.ios-beta.local`. |
 | iOS application restriction | The iOS shell currently uses the Firebase JavaScript SDK inside a Capacitor WebView, so the key cannot use an iOS bundle restriction and has no application restriction. | The narrow API allowlist limits the key's reach. Issue #161 must add and enforce App Check before external invitations. |
 | Sign-in providers | Email/Password is enabled and Google is disabled. The application implements only Email/Password, and the five visible legacy accounts all use the Email provider. | Keep Email/Password until the beta identity decision changes it. Do not migrate the legacy account list wholesale into beta. |
 | Authorized domains | `localhost`, the two Firebase default hosts, and `marathoner-app.github.io` are authorized. `marathonerapp.com` is not. | Keep the current hosts while this project serves local/prototype use. Issue #162 adds the apex and `www` hosts with the actual deployment. |
@@ -75,16 +77,17 @@ The current browser key allows requests only from:
 - `http://127.0.0.1/*`.
 
 Local origins remain temporary because this project still supports the current
-development workflow. Issue #125 must move local development to a separate
-project or emulator-only default. Issue #162 adds `marathonerapp.com` and
-`www.marathonerapp.com` only when those hosts actually serve the supported app.
+development workflow. Issue #125 preserves them only on the distinct
+development project; beta does not allow those origins. Issue #162 adds
+`marathonerapp.com` and `www.marathonerapp.com` only when those hosts actually
+serve the supported app.
 
 Google sign-in is disabled because no shipped UI, service, test, or current
 account depends on it. Email/Password remains enabled. Public signup remains
-disabled in the application, but UI removal is not an authorization control;
-#125 must enforce beta membership and verified email in the beta project.
+disabled in the application, but UI removal is not an authorization control.
+The beta project independently enforces approved membership and verified email.
 
-## Selected iOS development key and spike retirement
+## Selected iOS keys and spike retirement
 
 Issue [#177](https://github.com/marathoner-app/marathoner/issues/177) promoted
 the selected Capacitor shell into the canonical root application. On
@@ -124,18 +127,27 @@ The historical comparison evidence remains in
 The disposable candidate runtimes, commands, proof contract, and proof-specific
 Firestore allowance are no longer part of the product repository.
 
+The selected beta path mirrors the same client boundary without sharing a
+credential. `ios-beta` requires the isolated beta configuration and a separate
+ignored API-key override, while `ios-development` refuses beta and the beta
+mode refuses development. The repository boundary test builds and inspects
+both variants using non-live placeholder keys and rejects a copied beta bundle
+that contains the development project identity. The real restricted key then
+passed approved and denied physical-iPhone smoke checks, and the fictional
+fixtures were removed before the copied bundle was restored to development.
+
 ## App Check decision
 
 App Check is required before external invitations, but enabling enforcement in
 the shared prototype project today would be premature. The mobile ADR selects
 Capacitor and explicitly leaves its native App Attest bridge unproven.
-Marathoner must first complete the selected development/beta boundary (#125),
-promote the production shell (#177), and establish the material-command
-endpoint (#158).
+The selected development/beta boundary (#125) and production shell (#177) are
+now proven. The material-command endpoint (#158) remains a separate dependency.
 
 Issue [#161](https://github.com/marathoner-app/marathoner/issues/161) then owns:
 
-1. distinct development and beta registrations;
+1. App Check registrations that preserve the distinct development and beta
+   client boundary;
 2. reCAPTCHA Enterprise for beta web and the selected Apple attestation path;
 3. protected debug tokens for local, emulator, and CI use;
 4. a monitoring-only observation window;
@@ -155,11 +167,11 @@ accounts must not be copied to beta as an allowlist.
 
 Issue [#168](https://github.com/marathoner-app/marathoner/issues/168) provisioned
 the distinct `marathonerapp-beta` project and web registration without changing
-the development defaults. The [beta project record](firebase-beta-project.md)
-contains its verified public controls. Issue
-[#125](https://github.com/marathoner-app/marathoner/issues/125) continues to own
-rules activation, selected mobile-app registration, live access verification,
-and the final environment boundary.
+the development defaults. Issue
+[#125](https://github.com/marathoner-app/marathoner/issues/125) completed the
+selected iOS key, explicit beta mode, and approved and denied physical-device
+proof. The [beta project record](firebase-beta-project.md) contains the verified
+public controls.
 
 Beta operator access should use the dedicated privileged administrator identity
 and recovery process. Public support uses `kevin@marathonerapp.com` and must not
@@ -232,6 +244,23 @@ Additional evidence recorded on 2026-10-05 for issue #178:
 7. The repository secret scan identified only the pre-existing beta public
    browser-key alert; its exact commit and file location matched issue #168,
    and it was resolved with the documented restricted-client rationale.
+
+Additional evidence recorded on 2026-10-05 for issue #125:
+
+1. `marathoner-ios-beta` appeared in `marathonerapp-beta` with no application
+   restriction and exactly Cloud Firestore, Identity Toolkit, and Token Service
+   APIs.
+2. The explicit beta build and copied-bundle inspection passed with the real
+   key while rejecting development project identity.
+3. A fictional approved verified member authenticated on the physical iPhone
+   and reached the empty **Plan** ready state.
+4. A fictional verified non-member authenticated but received the expected
+   permission error and no training data.
+5. Sign-out plus force-quit returned to the signed-out state without prior
+   account data.
+6. Both temporary Auth users, the membership document, and their ignored local
+   credential manifest were removed, then the development bundle boundary was
+   restored and verified.
 
 Any later console change must update this record or its owning issue. A Firebase
 setting is not complete merely because the application still builds locally.

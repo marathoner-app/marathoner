@@ -93,6 +93,59 @@ describe('iOS boundary policy', () => {
     ).toEqual([])
   })
 
+  it('accepts an exact copied beta bundle and rejects development identity', () => {
+    const builtFiles = new Map([
+      [
+        'index.html',
+        Buffer.from(
+          '<main data-marathoner-startup>Loading your session...<a data-startup-recovery>Reload</a></main><script>10000</script><script src="./assets/app.js"></script>',
+        ),
+      ],
+      [
+        'startup-error.html',
+        Buffer.from('Marathoner could not start. Reload Marathoner'),
+      ],
+      ['assets/app.js', Buffer.from('project="marathonerapp-beta"')],
+    ])
+
+    expect(
+      findCopiedBundleViolations({
+        builtFiles,
+        copiedFiles: new Map(builtFiles),
+        environmentName: 'beta',
+        capacitorRuntimeConfig: JSON.stringify({
+          appId: 'com.marathonerapp.marathoner',
+          appName: 'Marathoner',
+          webDir: 'dist-ios',
+          ios: { backgroundColor: '#ffffff' },
+          server: { errorPath: 'startup-error.html' },
+          plugins: {
+            SplashScreen: {
+              backgroundColor: '#ffffffff',
+              launchAutoHide: true,
+              launchShowDuration: 10_000,
+            },
+          },
+        }),
+      }),
+    ).toEqual([])
+
+    const mixedFiles = new Map(builtFiles)
+    mixedFiles.set(
+      'assets/app.js',
+      Buffer.from('marathonerapp-beta marathoner-d9bf9'),
+    )
+
+    expect(
+      findCopiedBundleViolations({
+        builtFiles: mixedFiles,
+        copiedFiles: new Map(mixedFiles),
+        environmentName: 'beta',
+        capacitorRuntimeConfig: JSON.stringify({}),
+      }),
+    ).toContain('iOS bundle contains marathoner-d9bf9')
+  })
+
   it('rejects beta configuration and a changed copied asset', () => {
     expect(
       findCopiedBundleViolations({

@@ -108,7 +108,7 @@ describe('Firebase environment selection', () => {
     'prevents beta access in the %s Vite mode',
     (mode) => {
       expect(() => assertFirebaseEnvironmentForMode(mode, 'beta')).toThrow(
-        'Beta is reserved for an approved production deployment',
+        'Beta is reserved for an approved production deployment or the explicit ios-beta build',
       )
     },
   )
@@ -119,6 +119,9 @@ describe('Firebase environment selection', () => {
     ).not.toThrow()
     expect(() =>
       assertFirebaseEnvironmentForMode('production', 'beta'),
+    ).not.toThrow()
+    expect(() =>
+      assertFirebaseEnvironmentForMode('ios-beta', 'beta'),
     ).not.toThrow()
   })
 
@@ -155,7 +158,7 @@ describe('Firebase environment selection', () => {
         requestedEnvironment: 'development',
         iosApiKey: 'reviewed-ios-key',
       }),
-    ).toThrow('reserved for the selected iOS development build')
+    ).toThrow('reserved for the explicit iOS environment builds')
   })
 
   it('keeps beta unavailable to the selected iOS development build', () => {
@@ -165,6 +168,42 @@ describe('Firebase environment selection', () => {
         requestedEnvironment: 'beta',
         iosApiKey: 'reviewed-ios-key',
       }),
-    ).toThrow('Beta is reserved for an approved production deployment')
+    ).toThrow('Beta is reserved for an approved production deployment or the explicit ios-beta build')
+  })
+
+  it('requires an explicit key for the selected iOS beta build', () => {
+    expect(() =>
+      resolveFirebaseEnvironmentForMode({
+        mode: 'ios-beta',
+        requestedEnvironment: 'beta',
+        iosApiKey: undefined,
+      }),
+    ).toThrow('VITE_FIREBASE_IOS_API_KEY is required for the ios-beta build')
+  })
+
+  it('selects beta with only the reviewed iOS key overridden', () => {
+    expect(
+      resolveFirebaseEnvironmentForMode({
+        mode: 'ios-beta',
+        requestedEnvironment: 'beta',
+        iosApiKey: ' reviewed-beta-ios-key ',
+      }),
+    ).toEqual({
+      name: 'beta',
+      config: {
+        ...betaConfig,
+        apiKey: 'reviewed-beta-ios-key',
+      },
+    })
+  })
+
+  it('keeps development unavailable to the selected iOS beta build', () => {
+    expect(() =>
+      resolveFirebaseEnvironmentForMode({
+        mode: 'ios-beta',
+        requestedEnvironment: 'development',
+        iosApiKey: 'reviewed-beta-ios-key',
+      }),
+    ).toThrow('ios-beta build can only use the beta Firebase environment')
   })
 })

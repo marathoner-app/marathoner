@@ -68,15 +68,12 @@ failure-state gates below rather than overturning the lower-duplication result.
 
 The root now contains the selected Capacitor configuration and committed,
 team-neutral SPM Xcode project produced by issue
-[#177](https://github.com/marathoner-app/marathoner/issues/177). That shell is a
-development foundation, not the shipping iOS client: beta selection, App Check,
+[#177](https://github.com/marathoner-app/marathoner/issues/177). Issue #178
+removed the candidate runtimes, proof rule, and temporary key; only historical
+evidence remains under `spikes/mobile/`. Issue #181 proved continuous physical-
+device startup, and issue #125 proved explicit beta selection plus approved and
+denied beta access. The shell is still not a shipping iOS client: App Check,
 daily-use failure states, accessibility, and TestFlight remain unproven.
-
-The comparison projects and mobile Firebase modes remain disposable evidence
-under `spikes/mobile/`. Issue
-[#178](https://github.com/marathoner-app/marathoner/issues/178) removes the
-candidate runtimes, proof rule, and temporary key after the promoted shell
-passes its replacement checks.
 
 ## Repository boundary
 
@@ -143,12 +140,15 @@ runtime:
 - logout and account switching must clear participant state through the shared
   session-generation contract before ending Auth.
 
-Development and beta remain separate. The physical proof used only
-`marathoner-d9bf9`; it is not evidence that the selected shell can safely reach
-`marathonerapp-beta`. Issue
-[#125](https://github.com/marathoner-app/marathoner/issues/125) remains open
-until a representative selected iOS build intentionally chooses beta and passes
-approved and denied smoke checks.
+Development and beta remain separate. The development mode requires its
+development-only key and rejects beta, while the explicit beta mode requires
+its beta-only key and rejects development. Issue
+[#125](https://github.com/marathoner-app/marathoner/issues/125) proved the
+selected shell against `marathonerapp-beta` on a physical iPhone: an approved
+verified fixture reached the empty training-data ready state, a verified
+non-member received the expected permission denial, sign-out cleared the
+session across a cold start, all fictional fixtures were removed, and the
+copied bundle was restored to development.
 
 Firebase public client configuration is not a server secret, but it is still
 environment-controlled configuration. Apple signing keys, provisioning
@@ -335,13 +335,13 @@ founding-beta promise without an explicit product/date decision.
 
 ## Migration and cleanup sequence
 
-1. Merge this ADR and close #83.
-2. #177 promotes the tested Capacitor boundary to root with the reserved bundle
+1. The ADR merged and #83 closed.
+2. #177 promoted the tested Capacitor boundary to root with the reserved bundle
    identifier, committed SPM project, production Firebase bootstrap, bounded CI,
    simulator evidence, and a physical development launch.
-3. #125 proves the selected client intentionally targets the beta environment;
+3. #125 proved the selected client intentionally targets the beta environment;
    it never falls back from development to beta.
-4. #178 removes candidate runtimes, the proof-only Firestore rule/tests, and the
+4. #178 removed candidate runtimes, the proof-only Firestore rule/tests, and the
    temporary unrestricted mobile comparison key while preserving evidence.
 5. #158 and #159 implement server-confirmed writes, live reads, memory-only
    caching, freshness, and account-isolation contracts in web first.

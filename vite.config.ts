@@ -12,7 +12,7 @@ const repositoryRoot = path.dirname(fileURLToPath(import.meta.url))
 
 // https://vite.dev/config/
 export default defineConfig(({ mode }) => {
-  const isIosDevelopment = mode === 'ios-development'
+  const isIosBuild = mode === 'ios-development' || mode === 'ios-beta'
   const environment = loadEnv(mode, repositoryRoot, 'VITE_')
   resolveFirebaseEnvironmentForMode({
     mode,
@@ -22,7 +22,7 @@ export default defineConfig(({ mode }) => {
   })
 
   return {
-    base: isIosDevelopment ? './' : '/marathoner/',
+    base: isIosBuild ? './' : '/marathoner/',
     plugins: [react()],
     assetsInclude: ['src/assets/IMG_0437.JPG'],
     optimizeDeps: {

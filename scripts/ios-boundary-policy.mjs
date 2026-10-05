@@ -4,14 +4,31 @@ export const expectedIosBoundary = {
   capacitorVersion: '8.5.2',
   splashScreenVersion: '8.0.2',
   developmentProjectId: 'marathoner-d9bf9',
+  betaProjectId: 'marathonerapp-beta',
   launchBackgroundColor: '#ffffff',
   startupErrorPath: 'startup-error.html',
   webDir: 'dist-ios',
 }
 
-const forbiddenBundleValues = [
+const forbiddenNativeValues = [
   'marathonerapp-beta',
   '156851031272',
+  'com.marathonerapp.spike',
+  'Disposable architecture spike',
+]
+
+const environmentBundleBoundaries = {
+  development: {
+    projectId: expectedIosBoundary.developmentProjectId,
+    forbiddenValues: [expectedIosBoundary.betaProjectId, '156851031272'],
+  },
+  beta: {
+    projectId: expectedIosBoundary.betaProjectId,
+    forbiddenValues: [expectedIosBoundary.developmentProjectId, '677998037771'],
+  },
+}
+
+const alwaysForbiddenBundleValues = [
   'com.marathonerapp.spike',
   'Disposable architecture spike',
 ]
@@ -235,7 +252,7 @@ export function findIosProjectViolations({
     }
   }
 
-  for (const forbiddenValue of forbiddenBundleValues) {
+  for (const forbiddenValue of forbiddenNativeValues) {
     if (
       capacitorConfig.includes(forbiddenValue) ||
       debugConfig.includes(forbiddenValue) ||
@@ -254,8 +271,13 @@ export function findCopiedBundleViolations({
   builtFiles,
   capacitorRuntimeConfig,
   copiedFiles,
+  environmentName = 'development',
 }) {
   const violations = []
+  const environmentBoundary = environmentBundleBoundaries[environmentName]
+  if (!environmentBoundary) {
+    return [`Unsupported iOS bundle environment ${environmentName}`]
+  }
   const indexHtml = builtFiles.get('index.html')?.toString('utf8') ?? ''
   const startupErrorHtml = builtFiles
     .get(expectedIosBoundary.startupErrorPath)
@@ -293,10 +315,15 @@ export function findCopiedBundleViolations({
       )
     }
   }
-  if (!builtText.includes(expectedIosBoundary.developmentProjectId)) {
-    violations.push('iOS bundle does not contain the development project')
+  if (!builtText.includes(environmentBoundary.projectId)) {
+    violations.push(
+      `iOS bundle does not contain the ${environmentName} project`,
+    )
   }
-  for (const forbiddenValue of forbiddenBundleValues) {
+  for (const forbiddenValue of [
+    ...environmentBoundary.forbiddenValues,
+    ...alwaysForbiddenBundleValues,
+  ]) {
     if (builtText.includes(forbiddenValue)) {
       violations.push(`iOS bundle contains ${forbiddenValue}`)
     }

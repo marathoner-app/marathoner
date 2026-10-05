@@ -173,7 +173,7 @@ function identityToolkitUrl(pathname, apiKey) {
   return url
 }
 
-function randomPassword() {
+export function randomPassword() {
   return `${randomBytes(24).toString('base64url')}Aa1!`
 }
 
@@ -229,7 +229,7 @@ function bearerHeaders(token) {
   return { Authorization: `Bearer ${token}` }
 }
 
-async function assertFixtureAccountsDoNotExist({
+export async function assertFixtureAccountsDoNotExist({
   accessToken,
   fixtures,
   projectId,
@@ -259,7 +259,7 @@ async function assertFixtureAccountsDoNotExist({
   }
 }
 
-async function createFixtureAccount({
+export async function createFixtureAccount({
   accessToken,
   fixture,
   password,
@@ -287,7 +287,7 @@ async function createFixtureAccount({
   assertRequestSucceeded(result, `Create ${fixture.role} fixture`)
 }
 
-async function deleteFixtureAccount({
+export async function deleteFixtureAccount({
   accessToken,
   projectId,
   uid,
@@ -328,7 +328,7 @@ async function signInFixture({ apiKey, email, password }) {
   return result.payload.idToken
 }
 
-async function writeAdminDocument({
+export async function writeAdminDocument({
   accessToken,
   documentPath,
   fields,
@@ -345,7 +345,7 @@ async function writeAdminDocument({
   assertRequestSucceeded(result, `Write ${documentPath}`)
 }
 
-async function deleteAdminDocument({
+export async function deleteAdminDocument({
   accessToken,
   documentPath,
   projectId,
@@ -362,7 +362,7 @@ async function deleteAdminDocument({
   }
 }
 
-async function assertFixtureDocumentsDoNotExist({
+export async function assertFixtureDocumentsDoNotExist({
   accessToken,
   documentPaths,
   projectId,
@@ -402,7 +402,7 @@ async function clientDocumentRequest({
   })
 }
 
-function membershipFields(uid) {
+export function membershipFields(uid) {
   return {
     approvedAt: { timestampValue: new Date().toISOString() },
     approvedBy: { stringValue: 'live-boundary-verification' },
