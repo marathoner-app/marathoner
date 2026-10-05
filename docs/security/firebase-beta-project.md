@@ -19,7 +19,8 @@ verified against project-level ownership, and removed immediately afterward.
 ## Provisioned controls
 
 The project controls were verified during provisioning on September 30, 2026,
-and the live rules and access boundary were verified on October 1, 2026:
+the live rules and access boundary were verified on October 1, 2026, and the
+selected iOS client boundary was verified on October 5, 2026:
 
 | Control | Live setting |
 | --- | --- |
@@ -30,6 +31,7 @@ and the live rules and access boundary were verified on October 1, 2026:
 | Firestore | Standard edition, default database, `nam5`, production-mode deny-all initialization |
 | Browser-key APIs | Datastore, Firestore, Logging, App Check, Installations, Firebase Management, Identity Toolkit, and Token Service only |
 | Browser-key websites | `https://marathonerapp.com/*` and `https://www.marathonerapp.com/*` only |
+| Selected iOS key | `marathoner-ios-beta`; Cloud Firestore, Identity Toolkit, and Token Service APIs only; no application restriction for the Capacitor Firebase JavaScript client |
 
 The public Firebase web identifiers are versioned in `src/firebaseConfig.ts`.
 They are identifiers delivered to browser clients, not administrator
@@ -38,14 +40,23 @@ recovery material, and App Check debug tokens remain prohibited from source.
 
 ## Deployment boundary
 
-The repository default, local development, CI, GitHub Pages, and the selected
-iOS development build remain pinned to development or emulators. Beta can
-initialize only when a production build explicitly selects
-`VITE_FIREBASE_ENVIRONMENT=beta`.
+The repository default, local development, CI defaults, GitHub Pages, and the
+selected iOS development build remain pinned to development or emulators. Beta
+can initialize only when a production web build explicitly selects
+`VITE_FIREBASE_ENVIRONMENT=beta` or when the separately keyed `ios-beta` mode
+is invoked for its reviewed device proof.
 
 The beta browser key intentionally permits no localhost or GitHub Pages
 referrer. It will remain unusable from those origins. The custom-domain
 publication and Authentication authorized-domain changes remain owned by #162.
+
+The beta iOS path uses a separate `marathoner-ios-beta` key because the
+browser key's website restrictions correctly reject the Capacitor WebView. The
+iOS key allows only Cloud Firestore API, Identity Toolkit API, and Token
+Service API. It has no application restriction because the selected shell uses
+the Firebase JavaScript SDK rather than the native Apple SDK. Its value exists
+only in the ignored mode-`0600` `.env.ios-beta.local`; App Check issue #161 must
+add the Apple attestation control before external invitations.
 
 The reviewed rules were deployed on October 1, 2026, with this explicit target:
 

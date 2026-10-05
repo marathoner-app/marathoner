@@ -1,12 +1,14 @@
-# iOS development workflow
+# iOS environment workflow
 
 The root application is the canonical web and iOS product. Capacitor copies an
 iOS-specific Vite build into the committed Swift Package Manager Xcode project;
 there is no second feature application under `ios/`.
 
-This workflow proves the selected development shell. It does not activate the
-beta Firebase project, App Check, material mobile writes, TestFlight, or
-Android. Those remain in #125, #161, #158–#159, #122, and #90.
+The ordinary workflow proves the selected development shell. A separate,
+explicit beta proof below verifies environment selection without changing the
+development, CI, Pages, or production-web defaults. Neither workflow activates
+App Check, material mobile writes, TestFlight, or Android. Those remain in
+#161, #158–#159, #122, and #90.
 
 ## Prerequisites
 
@@ -16,6 +18,8 @@ Android. Those remain in #125, #161, #158–#159, #122, and #90.
 - the physical test iPhone and an owner-controlled Apple development identity
   only when recording device evidence
 - the reviewed development-only iOS Firebase API key
+- the separately reviewed beta-only iOS Firebase API key only when running the
+  explicit beta proof
 
 Do not put Apple credentials, team identifiers, profiles, certificates, device
 identifiers, beta configuration, or the populated Firebase key in Git.
@@ -31,6 +35,21 @@ cp .env.ios-development.example .env.ios-development.local
 Set `VITE_FIREBASE_IOS_API_KEY` in that local file. The `ios-development` mode
 fails closed when the value is absent or when the selected environment is not
 `development`.
+
+Do not reuse the development key for beta. The beta proof uses a separate
+ignored file:
+
+```sh
+cp .env.ios-beta.example .env.ios-beta.local
+chmod 600 .env.ios-beta.local
+```
+
+The `ios-beta` file must retain `VITE_FIREBASE_ENVIRONMENT=beta` and contain
+only the reviewed beta iOS API key. The key belongs to `marathonerapp-beta`,
+allows only Cloud Firestore API, Identity Toolkit API, and Token Service API,
+and has no application restriction because Firebase runs through the
+JavaScript SDK inside a Capacitor WebView. The key value must never appear in
+Git, an issue, a pull request, a screenshot, or command output.
 
 For a physical development build, create the ignored signing override:
 
@@ -64,6 +83,111 @@ That command:
 
 The normal `npm run build` remains the GitHub Pages build with its existing
 `/marathoner/` base. It does not read the iOS key.
+
+## Explicit beta selection and physical proof
+
+This is an operator proof, not a day-to-day development command. Start with a
+clean working tree and the reviewed `.env.ios-beta.local`. Prepare the two
+temporary, fictional beta accounts with the dedicated Firebase CLI operator:
+
+```sh
+npm run prepare:beta-ios-smoke -- \
+  --project marathonerapp-beta \
+  --confirm CREATE-BETA-IOS-SMOKE-FIXTURES
+```
+
+The command refuses every other project and operator, checks for fixed-fixture
+collisions, and writes random credentials only to the ignored mode-`0600`
+`.beta-ios-smoke.local` file. It creates:
+
+- one verified account with an active membership document; and
+- one verified account with no membership document.
+
+Do not use participant identities or copy development accounts into beta. Do
+not record either temporary password or Firebase UID. Open the local manifest
+only on the operator machine and delete it through the cleanup command after
+the proof.
+
+Build, copy, and inspect the beta bundle:
+
+```sh
+npm run check:ios:beta
+```
+
+The check must report that the copied beta bundle preserves the reviewed iOS
+boundary. It rejects the development project ID and sender ID, disposable
+spike identities, a missing beta project ID, or a copied bundle that differs
+from the Vite output.
+
+Open the already synchronized project with `npm run open:ios`, select the
+physical test iPhone, and run these checks:
+
+If Xcode focuses a stale project reference and reports a missing
+`project.pbxproj` even though the tracked file is present, close that Xcode
+window and open `ios/App/App.xcodeproj` directly. Do not recreate the project.
+
+1. Sign in with the approved verified account. Open **Plan**. Training data
+   must reach its ready state and show either the account's plan or **No
+   training plan yet**; a permission error does not pass.
+2. Sign out and confirm the public entry state appears before changing
+   accounts.
+3. Sign in with the verified account that has no membership. Authentication
+   may succeed, but opening **Plan** must show **You do not have permission to
+   access this training data.** Retrying must remain denied; any plan, run, or
+   shoe data is a failure.
+4. Sign out, force-quit, reopen, and confirm no approved-account state or
+   training data appears.
+
+Record the date, iOS and Xcode versions, source commit, beta project ID,
+approved ready-state result, denied permission-state result, and cleanup result
+in the issue or pull request. Do not record account emails, UIDs, passwords,
+device identifiers, or the API key. Delete the temporary membership, both
+temporary Auth users, and the local credential manifest after recording the
+evidence:
+
+```sh
+npm run cleanup:beta-ios-smoke -- \
+  --project marathonerapp-beta \
+  --confirm DELETE-BETA-IOS-SMOKE-FIXTURES
+```
+
+The beta command leaves the copied Xcode web bundle pointed at beta. Restore
+the normal development boundary immediately after the proof:
+
+```sh
+npm run check:ios
+```
+
+Confirm that this reports the development bundle boundary before doing any
+further development-account testing.
+
+### Recorded beta-environment evidence
+
+The #125 selected-client boundary was verified on 2026-10-05 from the working
+tree based on `main` commit `aeb6d20`, using Xcode 27.0 and the same physical
+iPhone running iOS 26.6.2 used for the selected-shell evidence:
+
+- the live `marathoner-ios-beta` key belonged to `marathonerapp-beta`, had no
+  application restriction, and allowed exactly Cloud Firestore API, Identity
+  Toolkit API, and Token Service API;
+- `npm run check:ios:beta` built and synchronized the selected Capacitor shell,
+  found the beta project identity, and rejected development and disposable
+  identities from the copied bundle;
+- a temporary verified approved member authenticated on the physical iPhone,
+  and **Plan** reached its ready state with **No training plan yet**;
+- a temporary verified account without membership authenticated but **Plan**
+  displayed **You do not have permission to access this training data** and no
+  participant data;
+- after sign-out, a force-quit cold start returned to the signed-out state with
+  no approved-account state or training data;
+- the guarded cleanup removed both fictional Auth users, the temporary
+  membership document, and the ignored credential manifest; and
+- `npm run check:ios` then restored and verified the development bundle.
+
+No participant identity, training record, credential, API-key value, Firebase
+UID, or device identifier was recorded. The environment-selection proof does
+not satisfy App Check, TestFlight, accessibility, or daily-use failure-state
+gates.
 
 ## Unsigned simulator compile
 

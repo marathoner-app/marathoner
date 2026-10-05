@@ -14,6 +14,17 @@ const repositoryRoot = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
   '..',
 )
+const environmentArgumentIndex = process.argv.indexOf('--environment')
+const environmentName =
+  environmentArgumentIndex === -1
+    ? 'development'
+    : process.argv[environmentArgumentIndex + 1]
+
+if (environmentName !== 'development' && environmentName !== 'beta') {
+  throw new Error(
+    'Use --environment development or --environment beta when checking the iOS boundary.',
+  )
+}
 
 async function fileEntriesBelow(directory, root) {
   const entries = await readdir(directory, { withFileTypes: true })
@@ -114,6 +125,7 @@ async function run() {
       builtFiles,
       capacitorRuntimeConfig: runtimeConfig,
       copiedFiles,
+      environmentName,
     }),
   ]
 
@@ -122,7 +134,7 @@ async function run() {
   }
 
   console.log(
-    'The root Capacitor project and copied development bundle preserve the reviewed iOS boundary.',
+    `The root Capacitor project and copied ${environmentName} bundle preserve the reviewed iOS boundary.`,
   )
 }
 

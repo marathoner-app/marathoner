@@ -1,6 +1,6 @@
 # Firebase environment selection
 
-- **Status:** Distinct projects provisioned; beta rules live and boundary verified
+- **Status:** Distinct projects provisioned; explicit web and iOS selection boundaries verified
 - **Tracking issues:** [#164](https://github.com/marathoner-app/marathoner/issues/164),
   [#168](https://github.com/marathoner-app/marathoner/issues/168),
   parent [#125](https://github.com/marathoner-app/marathoner/issues/125)
@@ -11,12 +11,12 @@
 Marathoner has two supported Firebase environment names:
 
 - `development` is the existing audited `marathoner-d9bf9` project. It supports
-  local work and the registration-closed GitHub Pages prototype while
-  environment separation is completed.
+  local work and the registration-closed GitHub Pages prototype; it does not
+  hold founding-beta participant data.
 - `beta` is the isolated `marathonerapp-beta` project. Its public web
   configuration, membership-gated rules deployment, and fictional live-boundary
-  evidence are recorded, but only an explicit production-mode selection can
-  initialize it.
+  evidence are recorded. Only an explicit production-mode web build or the
+  separately keyed `ios-beta` mode can initialize it.
 
 The root `.env` file contains only the public environment name. The Firebase
 browser configurations remain in `src/firebaseConfig.ts` because browser
@@ -46,23 +46,38 @@ The GitHub Pages and pull-request production-build workflows also set
 `VITE_FIREBASE_ENVIRONMENT=development` explicitly. The selected iOS build
 requires its reviewed development-only API key and fails closed without it.
 
+The beta iOS proof is intentionally separate from every default command:
+
+```sh
+npm run check:ios:beta
+```
+
+That command requires both `VITE_FIREBASE_ENVIRONMENT=beta` and the reviewed
+beta-only iOS key in the ignored `.env.ios-beta.local` file. It fails if beta
+is absent, if development is selected, or if either development project
+identity appears in the built bundle. Running it replaces the copied Xcode web
+bundle with beta, so an operator must run `npm run check:ios` afterward before
+returning to development-device work.
+
 ## Beta activation sequence
 
-The distinct project, web registration, rules deployment, and live access proof
-now exist. Beta still is not an application default and is not ready for
-participants. Issue #125 must complete the remaining activation sequence
-through separately reviewed changes:
+The distinct project, web registration, rules deployment, web selection, and
+selected-iOS live access proof now exist. Beta still is not an application
+default and is not ready for participants. Later activation work must preserve
+this sequence through separately reviewed changes:
 
 1. keep the reviewed alias and public client configuration aligned with the
    deployed project;
 2. preserve the deployed, live-verified
    [membership and verified-email gate](firebase-beta-membership.md);
-3. verify representative web and selected iOS builds choose the intended
-   project; and
+3. retain the recorded representative web and selected iOS project-selection
+   evidence, including approved and denied physical-iPhone results; and
 4. change only the approved beta deployment to
    `VITE_FIREBASE_ENVIRONMENT=beta`.
 
-Local development, CI, the selected iOS development build, and the current
-GitHub Pages deployment remain explicitly pinned to development. Until the
-remaining cloud controls and live verification evidence exist, failing closed
-is the intended behavior.
+Local development, CI defaults, the selected iOS development build, and the
+current GitHub Pages deployment remain explicitly pinned to development. The
+pull-request iOS job checks both environment bundles with non-live placeholder
+keys, but it does not contact beta. App Check, custom-domain publication, and
+the remaining invitation controls stay separate gates; failing closed remains
+the intended behavior until each is complete.
