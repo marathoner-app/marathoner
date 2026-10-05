@@ -1,0 +1,4 @@
+// Optional owner-machine signing override for physical development builds.
+// Copy to local.xcconfig and provide the Apple development team identifier.
+// local.xcconfig is ignored and must never be committed.
+DEVELOPMENT_TEAM =

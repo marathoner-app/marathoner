@@ -1,5 +1,4 @@
 import {
-  firebaseProjectConfigurations,
   type FirebaseClientConfiguration,
   type FirebaseConfigurationRegistry,
   type FirebaseEnvironmentName,
@@ -24,7 +23,8 @@ interface FirebaseEnvironmentForModeOptions {
   mode: string
   requestedEnvironment: string | undefined
   mobileApiKey: string | undefined
-  registry?: FirebaseConfigurationRegistry
+  iosApiKey?: string | undefined
+  registry: FirebaseConfigurationRegistry
 }
 
 const mobileFirebaseSpikeModes = [
@@ -66,7 +66,7 @@ function assertCompleteConfiguration(
 
 export function resolveFirebaseEnvironment(
   requestedEnvironment: string | undefined,
-  registry: FirebaseConfigurationRegistry = firebaseProjectConfigurations,
+  registry: FirebaseConfigurationRegistry,
 ): SelectedFirebaseEnvironment {
   const environmentName = requestedEnvironment?.trim()
 
@@ -107,15 +107,45 @@ export function resolveFirebaseEnvironmentForMode({
   mode,
   requestedEnvironment,
   mobileApiKey,
-  registry = firebaseProjectConfigurations,
+  iosApiKey,
+  registry,
 }: FirebaseEnvironmentForModeOptions): SelectedFirebaseEnvironment {
   const selectedEnvironment = resolveFirebaseEnvironment(
     requestedEnvironment,
     registry,
   )
   const normalizedMobileApiKey = mobileApiKey?.trim()
+  const normalizedIosApiKey = iosApiKey?.trim()
 
   assertFirebaseEnvironmentForMode(mode, selectedEnvironment.name)
+
+  if (mode === 'ios-development') {
+    if (selectedEnvironment.name !== 'development') {
+      throw new Error(
+        'The selected iOS development build can only use the development Firebase environment.',
+      )
+    }
+
+    if (!normalizedIosApiKey) {
+      throw new Error(
+        'VITE_FIREBASE_IOS_API_KEY is required for the ios-development build. Put the reviewed development-only key in .env.ios-development.local.',
+      )
+    }
+
+    if (normalizedMobileApiKey) {
+      throw new Error(
+        'VITE_FIREBASE_MOBILE_API_KEY belongs only to the disposable mobile spikes and cannot configure the selected iOS build.',
+      )
+    }
+
+    return {
+      ...selectedEnvironment,
+      config: {
+        ...selectedEnvironment.config,
+        apiKey: normalizedIosApiKey,
+      },
+    }
+  }
 
   if (isMobileFirebaseSpikeMode(mode)) {
     if (!normalizedMobileApiKey) {
@@ -136,6 +166,12 @@ export function resolveFirebaseEnvironmentForMode({
   if (normalizedMobileApiKey) {
     throw new Error(
       `VITE_FIREBASE_MOBILE_API_KEY cannot be used in Vite mode "${mode}". It is reserved for isolated mobile Firebase spike builds.`,
+    )
+  }
+
+  if (normalizedIosApiKey) {
+    throw new Error(
+      `VITE_FIREBASE_IOS_API_KEY cannot be used in Vite mode "${mode}". It is reserved for the selected iOS development build.`,
     )
   }
 

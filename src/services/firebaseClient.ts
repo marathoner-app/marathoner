@@ -1,10 +1,11 @@
-import { getApp, getApps, initializeApp } from "firebase/app";
-import { getAuth } from "firebase/auth";
-import { selectedFirebaseEnvironment } from "../selectedFirebaseEnvironment";
+import { Capacitor } from '@capacitor/core'
+import { selectedFirebaseEnvironment } from '../selectedFirebaseEnvironment'
+import { createFirebaseClient } from './firebaseClientFactory'
 
-export const firebaseApp =
-  getApps().length > 0
-    ? getApp()
-    : initializeApp(selectedFirebaseEnvironment.config);
+const firebaseClient = createFirebaseClient(
+  selectedFirebaseEnvironment.config,
+  Capacitor.isNativePlatform(),
+)
 
-export const auth = getAuth(firebaseApp);
+export const firebaseApp = firebaseClient.app
+export const auth = firebaseClient.auth

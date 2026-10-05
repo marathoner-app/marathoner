@@ -63,8 +63,7 @@ and validation.
 
 - React and TypeScript
 - Vite
-- Capacitor 8 for the selected iOS shell; production promotion is tracked in
-  issue #177
+- Capacitor 8 for the selected root iOS shell
 - Firebase Authentication and Cloud Firestore
 - Framer Motion
 - Vitest and Testing Library
@@ -76,8 +75,9 @@ Marathoner is currently a client-only, single-page React application. It does
 not have a deployed application server, API, or router. Its authenticated
 training data uses typed repositories backed by Cloud Firestore. The accepted
 [mobile client ADR](docs/architecture/mobile-client-architecture.md) selects a
-thin Capacitor iOS shell around this root application; that production shell is
-not on `main` until issue #177 promotes the proven spike boundary.
+thin Capacitor iOS shell around this root application. The committed shell is a
+development foundation; App Check, beta activation, daily-use behavior,
+accessibility, and TestFlight remain explicit release gates.
 
 | Path | Responsibility |
 | --- | --- |
@@ -118,6 +118,8 @@ documented in
 The selected Capacitor iOS boundary, rejected alternatives, App Check reopen
 rule, and release ownership are documented in
 [`docs/architecture/mobile-client-architecture.md`](docs/architecture/mobile-client-architecture.md).
+The clean build, simulator, local signing, and physical-device workflow is in
+[`docs/mobile/ios-development.md`](docs/mobile/ios-development.md).
 The development/test-only Creator Radar boundary is documented in
 [`docs/architecture/creator-radar-event-publisher.md`](docs/architecture/creator-radar-event-publisher.md).
 

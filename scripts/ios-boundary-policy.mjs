@@ -1,0 +1,196 @@
+export const expectedIosBoundary = {
+  appId: 'com.marathonerapp.marathoner',
+  appName: 'Marathoner',
+  capacitorVersion: '8.5.2',
+  developmentProjectId: 'marathoner-d9bf9',
+  webDir: 'dist-ios',
+}
+
+const forbiddenBundleValues = [
+  'marathonerapp-beta',
+  '156851031272',
+  'com.marathonerapp.spike',
+  'Disposable architecture spike',
+]
+
+const forbiddenTrackedExtensions = [
+  '.cer',
+  '.key',
+  '.mobileprovision',
+  '.p12',
+  '.pem',
+  '.provisionprofile',
+]
+
+function requireText(violations, source, expected, label) {
+  if (!source.includes(expected)) {
+    violations.push(`${label} is missing ${expected}`)
+  }
+}
+
+export function findIosProjectViolations({
+  capacitorConfig,
+  debugConfig,
+  infoPlist,
+  packageJson,
+  packageManifest,
+  trackedPaths,
+  xcodeProject,
+}) {
+  const violations = []
+
+  requireText(
+    violations,
+    capacitorConfig,
+    `appId: '${expectedIosBoundary.appId}'`,
+    'capacitor.config.ts',
+  )
+  requireText(
+    violations,
+    debugConfig,
+    '#include? "local.xcconfig"',
+    'debug.xcconfig',
+  )
+  requireText(
+    violations,
+    capacitorConfig,
+    `appName: '${expectedIosBoundary.appName}'`,
+    'capacitor.config.ts',
+  )
+  requireText(
+    violations,
+    capacitorConfig,
+    `webDir: '${expectedIosBoundary.webDir}'`,
+    'capacitor.config.ts',
+  )
+  requireText(
+    violations,
+    xcodeProject,
+    `PRODUCT_BUNDLE_IDENTIFIER = ${expectedIosBoundary.appId};`,
+    'Xcode project',
+  )
+  requireText(
+    violations,
+    infoPlist,
+    `<string>${expectedIosBoundary.appName}</string>`,
+    'Info.plist',
+  )
+  requireText(
+    violations,
+    packageManifest,
+    `exact: "${expectedIosBoundary.capacitorVersion}"`,
+    'CapApp-SPM Package.swift',
+  )
+
+  const dependencies = {
+    ...packageJson.dependencies,
+    ...packageJson.devDependencies,
+  }
+  for (const packageName of [
+    '@capacitor/cli',
+    '@capacitor/core',
+    '@capacitor/ios',
+  ]) {
+    if (dependencies[packageName] !== expectedIosBoundary.capacitorVersion) {
+      violations.push(
+        `${packageName} must be pinned to ${expectedIosBoundary.capacitorVersion}`,
+      )
+    }
+  }
+
+  if (/\bDEVELOPMENT_TEAM\s*=\s*[^;\s]+\s*;/u.test(xcodeProject)) {
+    violations.push('Xcode project commits a development team')
+  }
+  if (/\bPROVISIONING_PROFILE(?:_SPECIFIER)?\s*=\s*[^;\s]+\s*;/u.test(xcodeProject)) {
+    violations.push('Xcode project commits a provisioning profile')
+  }
+
+  for (const trackedPath of trackedPaths) {
+    const normalizedPath = trackedPath.toLowerCase()
+    if (
+      forbiddenTrackedExtensions.some((extension) =>
+        normalizedPath.endsWith(extension),
+      )
+    ) {
+      violations.push(`${trackedPath} is a forbidden signing artifact`)
+    }
+    if (
+      normalizedPath.includes('/xcuserdata/') ||
+      normalizedPath.endsWith('/local.xcconfig') ||
+      normalizedPath.includes('/app/app/public/') ||
+      normalizedPath.endsWith('/capacitor.config.json') ||
+      normalizedPath.endsWith('/config.xml')
+    ) {
+      violations.push(`${trackedPath} is generated or account-local data`)
+    }
+  }
+
+  for (const forbiddenValue of forbiddenBundleValues) {
+    if (
+      capacitorConfig.includes(forbiddenValue) ||
+      debugConfig.includes(forbiddenValue) ||
+      infoPlist.includes(forbiddenValue) ||
+      packageManifest.includes(forbiddenValue) ||
+      xcodeProject.includes(forbiddenValue)
+    ) {
+      violations.push(`native source contains ${forbiddenValue}`)
+    }
+  }
+
+  return [...new Set(violations)].sort()
+}
+
+export function findCopiedBundleViolations({
+  builtFiles,
+  capacitorRuntimeConfig,
+  copiedFiles,
+}) {
+  const violations = []
+  const indexHtml = builtFiles.get('index.html')?.toString('utf8') ?? ''
+  const builtText = [...builtFiles.entries()]
+    .filter(([file]) => /\.(?:css|html|js|json|txt|xml)$/u.test(file))
+    .map(([, contents]) => contents.toString('utf8'))
+    .join('\n')
+
+  if (!indexHtml.includes('./assets/')) {
+    violations.push('iOS index.html does not use relative asset paths')
+  }
+  if (indexHtml.includes('/marathoner/')) {
+    violations.push('iOS index.html contains the GitHub Pages base path')
+  }
+  if (!builtText.includes(expectedIosBoundary.developmentProjectId)) {
+    violations.push('iOS bundle does not contain the development project')
+  }
+  for (const forbiddenValue of forbiddenBundleValues) {
+    if (builtText.includes(forbiddenValue)) {
+      violations.push(`iOS bundle contains ${forbiddenValue}`)
+    }
+  }
+
+  for (const [file, contents] of builtFiles) {
+    const copiedContents = copiedFiles.get(file)
+    if (!copiedContents) {
+      violations.push(`copied iOS bundle is missing ${file}`)
+    } else if (!contents.equals(copiedContents)) {
+      violations.push(`copied iOS bundle changed ${file}`)
+    }
+  }
+
+  let runtimeConfig
+  try {
+    runtimeConfig = JSON.parse(capacitorRuntimeConfig)
+  } catch {
+    violations.push('generated capacitor.config.json is not valid JSON')
+    return [...new Set(violations)].sort()
+  }
+
+  for (const field of ['appId', 'appName', 'webDir']) {
+    if (runtimeConfig[field] !== expectedIosBoundary[field]) {
+      violations.push(
+        `generated capacitor.config.json has unexpected ${field}`,
+      )
+    }
+  }
+
+  return [...new Set(violations)].sort()
+}
