@@ -41,6 +41,17 @@ export function assertFirebaseEnvironmentForMode(
   }
 }
 
+export function assertFunctionsEmulatorForMode(
+  mode: string,
+  emulatorRequested: boolean,
+) {
+  if (emulatorRequested && mode !== 'development') {
+    throw new Error(
+      `The Firebase Functions emulator cannot run in Vite mode "${mode}". It is available only to local development.`,
+    )
+  }
+}
+
 function isEnvironmentName(value: string): value is FirebaseEnvironmentName {
   return environmentNames.some((name) => name === value)
 }

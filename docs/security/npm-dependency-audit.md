@@ -4,21 +4,23 @@
 
 **Current follow-up:** [#143](https://github.com/marathoner-app/marathoner/issues/143)
 
-**Last reviewed:** September 22, 2026
+**Last reviewed:** October 5, 2026
 
 ## Current outcome
 
-The committed production dependency tree has no known npm audit findings. The
-full tree has 19 development-tool findings: 16 moderate and 3 high. There are
-no low or critical findings in the current result.
+The issue #158 dependency refresh reports six production-tree findings: two
+moderate and four high path instances. The full tree reports 20 findings: eight
+moderate and twelve high. There are no low or critical findings in the current
+result.
 
-These results come from the committed lockfile on the issue #118 branch. No
-dependency version changed during the repository-truth repair.
+These results come from the issue #158 lockfile after `npm audit fix` applied
+only non-breaking transitive updates. No forced downgrade or major-version
+change was accepted.
 
-| Command | September 22, 2026 result | Required posture |
+| Command | October 5, 2026 result | Required posture |
 | --- | --- | --- |
-| `npm audit --omit=dev` | 0 findings | Must remain at zero before external beta. |
-| `npm audit` | 16 moderate, 3 high | Resolve or record a specific, time-bounded risk decision in #143. |
+| `npm audit --omit=dev` | 2 moderate, 4 high | Resolve before live command deployment or external beta. |
+| `npm audit` | 8 moderate, 12 high | Resolve or record a specific, time-bounded risk decision in #143. |
 
 Audit databases change independently of the lockfile. Treat these counts as a
 dated result, not a permanent property of a package version.
@@ -26,10 +28,21 @@ dated result, not a permanent property of a package version.
 ## Production boundary
 
 Firebase remains the only direct production dependency with a substantial
-transitive tree. The current production-only audit is clean after the earlier
-Firebase 11 upgrade. A future production finding, any critical finding, or any
-finding reachable from participant-controlled input requires immediate review;
-it is not covered by the development-tool rationale below.
+transitive tree. The production findings are:
+
+- the Firebase 11 web Firestore tree resolves `@grpc/grpc-js@1.9.16`, below the
+  patched `1.14.5` release named by the current authorization and error-message
+  advisories; and
+- Firebase Admin includes an unused Cloud Storage path through `gaxios@6.7.1`
+  and `uuid@9.0.1`, below the patched UUID release for caller-supplied buffer
+  bounds.
+
+The material-command code imports only Firebase Admin Firestore. Its active
+Firestore path resolves `@grpc/grpc-js@1.14.5`; it does not call Cloud Storage
+or UUID generation. Live Functions deployment is also blocked in repository
+configuration. These reachability limits reduce immediate exposure but do not
+meet the external-beta gate. Issue #143 must upgrade or explicitly replace the
+affected paths before live command deployment or participant invitations.
 
 ## Current development findings
 
@@ -80,7 +93,8 @@ blanket exception.
 The current development-only findings are accepted only while #143 remains an
 owned external-beta-readiness issue and all of these conditions hold:
 
-- `npm audit --omit=dev` remains at zero findings;
+- the issue #158 Functions deployment guard remains closed while production
+  findings exist;
 - the affected tools run only from reviewed repository commands and trusted
   configuration;
 - the Firestore emulator binds only to the local development environment and
@@ -104,6 +118,7 @@ their own issue-linked pull request.
 | After issue #31 | 0 findings | 5 high |
 | After Firestore emulator tooling was added | 0 findings | 2 moderate, 20 high |
 | September 22, 2026 refresh | 0 findings | 16 moderate, 3 high |
+| October 5, 2026 issue #158 refresh | 2 moderate, 4 high | 8 moderate, 12 high |
 
 The historical counts explain earlier decisions; only the latest row describes
 the current lockfile and advisory database.
@@ -127,6 +142,6 @@ npm run test:firestore
 npm run build
 ```
 
-The full audit is expected to exit nonzero until #143 resolves or explicitly
-time-bounds every remaining development-tool finding. The production-only audit
-must exit successfully.
+Both audits are currently expected to exit nonzero. Issue #143 must resolve the
+production paths before live command deployment or external beta and must
+resolve or explicitly time-bound every remaining development-tool finding.

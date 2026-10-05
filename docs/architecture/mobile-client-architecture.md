@@ -174,9 +174,10 @@ The mobile selection does not change the accepted
   participant state.
 
 The issue #87 `setDoc` flow was disposable architecture evidence. It is not the
-mobile write design. No plan approval, run completion, adjustment, consent, or
-deletion flow may ship in Capacitor until #158 and #159 provide the command and
-read foundations and #138 passes the corresponding physical-device failure
+mobile write design. Issue #158 now provides the undeployed command foundation.
+No plan approval, run completion, adjustment, consent, or deletion flow may ship
+in Capacitor until its owning issue migrates to that boundary, #159 provides the
+read foundation, and #138 passes the corresponding physical-device failure
 states.
 
 ## App Check decision and go/no-go rule
@@ -343,8 +344,9 @@ founding-beta promise without an explicit product/date decision.
    it never falls back from development to beta.
 4. #178 removed candidate runtimes, the proof-only Firestore rule/tests, and the
    temporary unrestricted mobile comparison key while preserving evidence.
-5. #158 and #159 implement server-confirmed writes, live reads, memory-only
-   caching, freshness, and account-isolation contracts in web first.
+5. #158 established the local server-confirmed command foundation. #72 and #115
+   migrate the material workflows, while #159 implements live reads,
+   memory-only caching, freshness, and account-isolation contracts in web first.
 6. #161 proves and observes App Check before enforcement.
 7. #137, #138, and #140 implement and exercise the selected iOS behavior.
 8. #122 proves the external distribution and non-owner release journey.

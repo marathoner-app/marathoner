@@ -1,12 +1,15 @@
 {
   "name": "marathoner",
   "private": true,
+  "workspaces": [
+    "functions"
+  ],
   "version": "0.0.0",
   "type": "module",
   "homepage": "https://github.com/marathoner-app/marathoner",
   "scripts": {
     "dev": "vite",
-    "build": "npm run check:server-boundary && npm run check:creator-radar-infrastructure && tsc -b && vite build",
+    "build": "npm run check:server-boundary && npm run check:creator-radar-infrastructure && npm run build:functions && tsc -b && vite build",
     "build:ios": "npm run check:server-boundary && npm run check:creator-radar-infrastructure && tsc -b && vite build --mode ios-development --outDir dist-ios --emptyOutDir",
     "build:ios:beta": "npm run check:server-boundary && npm run check:creator-radar-infrastructure && tsc -b && vite build --mode ios-beta --outDir dist-ios --emptyOutDir",
     "check:server-boundary": "node scripts/check-server-boundary.mjs",
@@ -15,9 +18,11 @@
     "check:ios:beta": "npm run build:ios:beta && npm run sync:ios && node scripts/check-ios-boundary.mjs --environment beta",
     "prepare:beta-ios-smoke": "node scripts/manage-beta-ios-smoke.mjs prepare",
     "cleanup:beta-ios-smoke": "node scripts/manage-beta-ios-smoke.mjs cleanup",
+    "build:functions": "npm run build --workspace @marathoner/functions",
     "lint": "eslint .",
     "test": "vitest run",
     "test:firestore": "firebase emulators:exec --project demo-marathoner --only firestore \"vitest run --config vitest.firestore.config.ts\"",
+    "test:material-commands": "npm run build:functions && firebase emulators:exec --project demo-marathoner --only auth,functions,firestore \"vitest run --config vitest.material-commands.config.ts\"",
     "verify:beta-boundary": "node scripts/verify-live-beta-boundary.mjs",
     "test:watch": "vitest",
     "sync:ios": "cap sync ios",

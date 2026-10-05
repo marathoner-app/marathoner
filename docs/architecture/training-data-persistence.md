@@ -13,9 +13,12 @@ directly through the Firebase client and has not yet implemented the explicit
 network gate, revision precondition, or cross-record transaction required by the
 ratified contract. The accepted target and its migration gates are documented in
 [`training-data-synchronization.md`](training-data-synchronization.md); issues
-#72, #115, #158, and #159 own the implementation slices. Until that work closes,
-this document describes the current storage implementation rather than claiming
-the beta integrity boundary is complete.
+#72, #115, and #159 own the remaining workflow slices. Issue #158 established
+the local authenticated command foundation without migrating these direct
+writes or deploying a live endpoint. Until that work closes, this document
+describes the current storage implementation rather than claiming the beta
+integrity boundary is complete. The boundary is documented in
+[`material-command-boundary.md`](material-command-boundary.md).
 
 Components do not import Firestore. They consume typed repository interfaces
 from `src/persistence/trainingRepositories.ts`. A Firestore document-store adapter

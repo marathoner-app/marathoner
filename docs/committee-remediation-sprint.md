@@ -5,7 +5,7 @@
 - **Owner:** Kevin Tulloch
 - **Review scope:** The Marathoner product repository, excluding Creator Radar
 - **Parent tracker:** [GitHub issue #104](https://github.com/marathoner-app/marathoner/issues/104)
-- **Current delivery slice:** [GitHub issue #19](https://github.com/marathoner-app/marathoner/issues/19)
+- **Current delivery slice:** [GitHub issue #158](https://github.com/marathoner-app/marathoner/issues/158)
 - **Related plans:** [Zero-to-beta plan](zero-to-beta-plan.md),
   [product vision](product-vision.md), and
   [founding cohort plan](founding-cohort-plan.md)
@@ -107,10 +107,10 @@ Critical items can have prerequisites in earlier high-priority work.
 | CR-05 | High | Delivery | Decompose #105 through #110 into owner-sized child issues with dependencies and evidence-based exit criteria. | #104–#140 | Wave 00 | Complete |
 | CR-06 | High | Delivery | Produce a capacity model and likely/conservative forecast using focused sessions, external wait time, and 60–70% planned utilization. | #54, #104 | Wave 00 | Evidence ready |
 | CR-07 | High | Quality | Run lint, tests, typecheck/build, and Firestore emulator checks on pull requests and make required checks visible before merge. | #56, #57 | Wave 00 | Complete |
-| CR-08 | High | Mobile | Compare Capacitor, Expo with Firebase JS, and Expo with React Native Firebase on a physical-iPhone vertical slice; approve the ADR from evidence. | #33, #83–#89, #177–#178 | Wave 01 | Complete; Capacitor selected, promotion and cleanup pending |
+| CR-08 | High | Mobile | Compare Capacitor, Expo with Firebase JS, and Expo with React Native Firebase on a physical-iPhone vertical slice; approve the ADR from evidence. | #33, #83–#89, #177–#178 | Wave 01 | Complete; Capacitor selected, promoted, and spike runtimes retired |
 | CR-09 | High | Architecture | Make completion, plan approval, and adjustment writes atomic and idempotent; enforce one active plan and stale-write rejection. | #72, #105, #107 | Invitations | Not started |
 | CR-10 | High | Security | Enforce allowlisted beta access, verified-email writes, supported schema/rules versions, bounded fields, immutable ownership, and negative rules tests. | #87, #107, #109 | Invitations | In progress; proof ownership and negative tests passed |
-| CR-11 | High | Operations | Separate development and beta Firebase environments and prevent local or spike commands from reaching participant data. | #22, #83, #109 | Wave 01 | In progress; distinct beta and access boundary proved, selected-iOS beta build pending |
+| CR-11 | High | Operations | Separate development and beta Firebase environments and prevent local or spike commands from reaching participant data. | #22, #83, #109, #125 | Wave 01 | Complete; web and selected-iOS beta boundaries proved |
 | CR-12 | High | Safety | Store versioned recommendation evidence and provide a rehearsed remote generation, guidance, and adaptation kill switch. | #105, #107 | Invitations | Not started |
 | CR-13 | High | Privacy | Provide consent, limitations, password reset, support, withdrawal, deletion initiation, and a rehearsed complete deletion procedure. | #78, #79, #109 | Invitations | Public limitations and support path complete; beta controls pending |
 | CR-14 | High | Recovery | Document and rehearse export/restore, incident response, participant support, recruitment pause, and critical-failure visibility. | #107, #109 | Invitations | Not started |

@@ -107,5 +107,6 @@ then proved:
 The exact command, HTTP outcomes, cleanup guarantee, project controls, and
 quota procedure are recorded in
 [the founding-beta project record](firebase-beta-project.md). App Check,
-support, incident, deletion, and command-boundary work remains owned by #161,
-#124, #121, and #158; this verification does not bypass those invitation gates.
+support, incident, deletion, command deployment, and workflow migration remain
+owned by #161, #124, #121, #72, and #115. The local #158 proof does not bypass
+those invitation gates.
