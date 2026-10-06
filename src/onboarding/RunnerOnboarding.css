@@ -1,0 +1,342 @@
+.onboarding-panel {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  box-sizing: border-box;
+  overflow-y: auto;
+  background: #f4f7fb;
+  color: #111827;
+  line-height: 1.5;
+  text-align: left;
+}
+
+.onboarding-card {
+  box-sizing: border-box;
+  width: min(100%, 70rem);
+  min-height: 100%;
+  margin: 0 auto;
+  padding: clamp(1rem, 4vw, 3rem);
+}
+
+.onboarding-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 2rem;
+  margin-bottom: 1.5rem;
+}
+
+.onboarding-header > div {
+  max-width: 48rem;
+}
+
+.onboarding-eyebrow {
+  margin: 0 0 0.35rem;
+  color: #1d4ed8;
+  font-size: 0.8rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.onboarding-header h1 {
+  margin: 0;
+  font-size: clamp(2rem, 6vw, 3.6rem);
+  line-height: 1.05;
+}
+
+.onboarding-header p:not(.onboarding-eyebrow) {
+  max-width: 44rem;
+  margin: 0.8rem 0 0;
+  color: #374151;
+}
+
+.onboarding-close {
+  flex: 0 0 auto;
+  min-height: 2.75rem;
+  padding: 0.65rem 1rem;
+  border: 1px solid #94a3b8;
+  background: #fff;
+  color: #111827;
+}
+
+.onboarding-error-summary {
+  margin-bottom: 1rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid #b91c1c;
+  border-radius: 0.65rem;
+  background: #fef2f2;
+  color: #7f1d1d;
+  font-weight: 650;
+}
+
+.onboarding-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.onboarding-question {
+  min-width: 0;
+  margin: 0;
+  padding: 1.15rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 0.85rem;
+  background: #fff;
+}
+
+.onboarding-question-wide {
+  grid-column: 1 / -1;
+}
+
+.onboarding-question > label:first-child,
+.onboarding-question legend {
+  padding: 0;
+  color: #111827;
+  font-size: 1.05rem;
+  font-weight: 750;
+  line-height: 1.3;
+}
+
+.onboarding-question label span,
+.onboarding-question legend span {
+  color: #475569;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.onboarding-question > p:not(.onboarding-field-error, .onboarding-character-count) {
+  margin: 0.35rem 0 0.8rem;
+  color: #475569;
+  font-size: 0.92rem;
+}
+
+.onboarding-question input[type="text"],
+.onboarding-question input[type="date"],
+.onboarding-question input[type="number"],
+.onboarding-question select,
+.onboarding-question textarea {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 2.75rem;
+  padding: 0.6rem 0.7rem;
+  border: 1px solid #64748b;
+  border-radius: 0.45rem;
+  background: #fff;
+  color: #111827;
+  font: inherit;
+  line-height: 1.3;
+}
+
+.onboarding-question textarea {
+  min-height: 6rem;
+  resize: vertical;
+}
+
+.onboarding-question input[aria-invalid="true"],
+.onboarding-question select[aria-invalid="true"],
+.onboarding-question textarea[aria-invalid="true"] {
+  border-color: #b91c1c;
+}
+
+.onboarding-question input:focus-visible,
+.onboarding-question select:focus-visible,
+.onboarding-question textarea:focus-visible,
+.onboarding-close:focus-visible,
+.onboarding-actions button:focus-visible {
+  outline: 3px solid #2563eb;
+  outline-offset: 2px;
+}
+
+.onboarding-choice-row,
+.onboarding-option-grid,
+.onboarding-day-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+}
+
+.onboarding-option-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.onboarding-choice-row label,
+.onboarding-option-grid label,
+.onboarding-day-grid label,
+.onboarding-confirmation {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  min-height: 2.75rem;
+  padding: 0.45rem 0.7rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 0.55rem;
+  background: #f8fafc;
+  color: #1f2937;
+  cursor: pointer;
+}
+
+.onboarding-choice-row input,
+.onboarding-option-grid input,
+.onboarding-day-grid input,
+.onboarding-confirmation input {
+  flex: 0 0 auto;
+  width: 1.15rem;
+  height: 1.15rem;
+  margin: 0;
+}
+
+.onboarding-inline-field {
+  display: grid;
+  gap: 0.35rem;
+  max-width: 20rem;
+  margin-top: 1rem;
+  color: #1f2937;
+  font-weight: 650;
+}
+
+.onboarding-date-row,
+.onboarding-three-column-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.onboarding-three-column-row {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.onboarding-date-row label,
+.onboarding-three-column-row label {
+  display: grid;
+  gap: 0.35rem;
+  color: #1f2937;
+  font-weight: 650;
+}
+
+.onboarding-field-error {
+  margin: 0.55rem 0 0;
+  color: #9f1d1d;
+  font-size: 0.9rem;
+  font-weight: 650;
+}
+
+.onboarding-character-count {
+  margin: 0.25rem 0 0;
+  color: #64748b;
+  font-size: 0.8rem;
+  text-align: right;
+}
+
+.onboarding-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 1.25rem;
+  padding: 1rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 0.85rem;
+  background: #fff;
+}
+
+.onboarding-actions p {
+  margin: 0;
+  color: #475569;
+  font-size: 0.9rem;
+}
+
+.onboarding-actions > div {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 0.65rem;
+}
+
+.onboarding-actions button {
+  min-height: 2.75rem;
+  padding: 0.65rem 1rem;
+}
+
+.onboarding-secondary-action {
+  border: 1px solid #64748b;
+  background: #fff;
+  color: #111827;
+}
+
+.onboarding-actions button:disabled,
+.onboarding-close:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.runner-profile-entry {
+  display: grid;
+  justify-items: center;
+  gap: 0.35rem;
+  margin: 0 1rem 1.5rem;
+  line-height: 1.4;
+}
+
+.runner-profile-entry p {
+  margin: 0;
+  color: #475569;
+  font-size: 0.9rem;
+}
+
+.runner-profile-entry button {
+  min-height: 2.75rem;
+  padding: 0.6rem 1rem;
+  border: 1px solid #64748b;
+  background: #fff;
+  color: #111827;
+}
+
+.training-home-status {
+  display: grid;
+  justify-items: center;
+  gap: 0.75rem;
+  margin: 0 1rem 1.5rem;
+  line-height: 1.5;
+}
+
+.training-home-status p {
+  margin: 0;
+}
+
+.training-home-status.training-error {
+  color: #9f1d1d;
+}
+
+@media (max-width: 768px) {
+  .onboarding-card {
+    padding: 1rem;
+  }
+
+  .onboarding-header,
+  .onboarding-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .onboarding-close {
+    align-self: flex-start;
+  }
+
+  .onboarding-grid,
+  .onboarding-option-grid,
+  .onboarding-date-row,
+  .onboarding-three-column-row {
+    grid-template-columns: 1fr;
+  }
+
+  .onboarding-question-wide {
+    grid-column: auto;
+  }
+
+  .onboarding-actions > div {
+    display: grid;
+    width: 100%;
+  }
+}

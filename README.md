@@ -20,6 +20,8 @@ includes:
 - **Track:** persist shoes and runs, associate runs with planned workouts, and
   edit or delete completed runs.
 - **Analyze:** calculate mileage, pace, and run counts from completed-run history.
+- **Runner setup:** save and revise the minimum first-marathon context, including
+  target timing, recent running, availability, constraints, and unit preference.
 - **Authentication:** existing accounts can sign in with Firebase
   email/password authentication. Public account creation is disabled while the
   beta trust and access controls are incomplete.
@@ -88,6 +90,7 @@ accessibility, and TestFlight remain explicit release gates.
 | `src/domain/training/` | Defines shared training entities, identifiers, units, validation, and calculations without React or Firebase dependencies. |
 | `src/persistence/` | Defines typed training repositories, Firestore conversion, storage paths, ownership integration tests, and recoverable persistence errors. |
 | `src/training/` | Owns authenticated training-data loading, shared feature state, and cross-feature mutations. |
+| `src/onboarding/` | Owns the resumable runner-profile intake, validation, unit conversion, and completion checks. |
 | `src/services/firebaseClient.ts` | Initializes the shared Firebase app and Authentication instance. |
 | `src/services/authService.ts` | Contains authentication operations against the shared Firebase client. |
 | `src/firebaseConfig.ts` | Identifies the Firebase web project used by the client. |
@@ -104,8 +107,10 @@ The current application flow is deliberately small:
 2. `AuthProvider` resolves the Firebase session and gates personal features.
 3. `TrainingDataProvider` loads repositories for the signed-in user and keeps
    one shared profile, plan, workout, run, and shoe snapshot.
-4. Opening Plan, Track, or Analyze mounts a view over that shared snapshot.
-5. Feature mutations persist through repositories and update the shared state,
+4. An incomplete runner profile opens the resumable onboarding intake before
+   plan evaluation; saving progress writes through the same profile repository.
+5. Opening Plan, Track, or Analyze mounts a view over that shared snapshot.
+6. Feature mutations persist through repositories and update the shared state,
    so every open panel observes the same records.
 
 The shared training domain model is documented in
@@ -127,6 +132,8 @@ The development/test-only Creator Radar boundary is documented in
 
 ## Current data limitations
 
+- Completing runner setup stores context only. It does not yet determine
+  eligibility or generate, approve, or activate a training plan.
 - Personalized plan generation and plan-creation UI are not implemented yet.
   Accounts without a plan receive an honest empty state. This work is tracked in
   [issue #29](https://github.com/marathoner-app/marathoner/issues/29).
