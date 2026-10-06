@@ -37,7 +37,7 @@ const validProject = {
   sceneDelegate: 'guard let sceneWindow = window',
   trackedPaths: ['ios/App/App/AppDelegate.swift'],
   xcodeProject:
-    'PRODUCT_BUNDLE_IDENTIFIER = com.marathonerapp.marathoner;',
+    'PRODUCT_BUNDLE_IDENTIFIER = com.marathonerapp.marathoner; GoogleService-Info.plist in Resources',
 }
 
 describe('iOS boundary policy', () => {
@@ -51,6 +51,7 @@ describe('iOS boundary policy', () => {
         ...validProject,
         trackedPaths: [
           'ios/App/App/public/index.html',
+          'ios/App/App/GoogleService-Info.plist',
           'ios/signing.mobileprovision',
         ],
         xcodeProject: `${validProject.xcodeProject}\nDEVELOPMENT_TEAM = ABC123;`,
@@ -58,6 +59,7 @@ describe('iOS boundary policy', () => {
     ).toEqual(
       expect.arrayContaining([
         'Xcode project commits a development team',
+        'ios/App/App/GoogleService-Info.plist is generated or account-local data',
         'ios/App/App/public/index.html is generated or account-local data',
         'ios/signing.mobileprovision is a forbidden signing artifact',
       ]),

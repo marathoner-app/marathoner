@@ -6,8 +6,10 @@ there is no second feature application under `ios/`.
 
 The ordinary workflow proves the selected development shell. A separate,
 explicit beta proof below verifies environment selection without changing the
-development, CI, Pages, or production-web defaults. Neither workflow activates
-App Check, migrated material mobile workflows, TestFlight, or Android. The
+development, CI, Pages, or production-web defaults. Both workflows now select
+and validate the corresponding public native Firebase configuration, but
+neither initializes or enforces App Check. Migrated material mobile workflows,
+TestFlight, and Android also remain open. The
 local command foundation is proved in #158; workflow migration, live reads,
 and release work remain in #72, #115, #138, #159, #161, #122, and #90.
 
@@ -21,9 +23,18 @@ and release work remain in #72, #115, #138, #159, #161, #122, and #90.
 - the reviewed development-only iOS Firebase API key
 - the separately reviewed beta-only iOS Firebase API key only when running the
   explicit beta proof
+- both versioned public `GoogleService-Info.plist` registrations; build scripts
+  select exactly one into the ignored Xcode resource
 
-Do not put Apple credentials, team identifiers, profiles, certificates, device
-identifiers, beta configuration, or the populated Firebase key in Git.
+Do not put Apple credentials, local signing overrides, profiles, certificates,
+device identifiers, App Check debug tokens, or populated `*.local` Firebase
+environment overrides in Git.
+
+The two `ios/firebase/*/GoogleService-Info.plist` files are the exception for
+public native Firebase client configuration: they contain app/project
+identifiers and public API keys, not signing or administrator credentials. The
+generated `ios/App/App/GoogleService-Info.plist` remains ignored because it is
+environment-selected build output. App Check debug tokens remain prohibited.
 
 ## One-time local configuration
 
@@ -80,7 +91,9 @@ That command:
    boundary;
 5. rejects tracked signing/account artifacts and disposable identifiers; and
 6. verifies that the copied bundle exactly matches the development build and
-   contains no beta configuration.
+   contains no beta configuration; and
+7. validates both native Firebase registrations, selects development, and
+   proves the Xcode resource is byte-equivalent to that source.
 
 The normal `npm run build` remains the GitHub Pages build with its existing
 `/marathoner/` base. It does not read the iOS key.
@@ -327,7 +340,9 @@ ignored; never commit it. A clean checkout recreates it with `npm ci` followed
 by `npm run sync:ios`. Commit `Package.swift` and `Package.resolved`, because
 they define and pin the reproducible native graph.
 
-Issue #202 links but does not invoke App Check. Distinct native Firebase
-registrations and configuration selection belong to #203, and client
-initialization belongs to #204. Until those issues close, installing this
-plugin does not claim App Attest or enforcement is active.
+Issue #202 links but does not invoke App Check. Issue #203 registered the
+distinct development and beta native apps and implemented exact, fail-closed
+configuration selection. Client initialization belongs to #204, with
+observation and enforcement in #205 and #206. Until those issues close,
+installed and registered App Attest support does not claim that clients send a
+token or that an API rejects missing tokens.

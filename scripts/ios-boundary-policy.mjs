@@ -124,6 +124,12 @@ export function findIosProjectViolations({
   )
   requireText(
     violations,
+    xcodeProject,
+    'GoogleService-Info.plist in Resources',
+    'Xcode project',
+  )
+  requireText(
+    violations,
     infoPlist,
     `<string>${expectedIosBoundary.appName}</string>`,
     'Info.plist',
@@ -305,6 +311,7 @@ export function findIosProjectViolations({
       normalizedPath.includes('/capapp-spm/symlinks/') ||
       normalizedPath.endsWith('/local.xcconfig') ||
       normalizedPath.includes('/app/app/public/') ||
+      normalizedPath === 'ios/app/app/googleservice-info.plist' ||
       normalizedPath.endsWith('/capacitor.config.json') ||
       normalizedPath.endsWith('/config.xml')
     ) {

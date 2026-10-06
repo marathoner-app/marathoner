@@ -1,6 +1,6 @@
 # Founding-beta Firebase project record
 
-- **Status:** Provisioned; live rules deployed and access boundary verified
+- **Status:** Provisioned; live rules, access boundary, and App Check providers verified
 - **Tracking issue:** [#168](https://github.com/marathoner-app/marathoner/issues/168)
 - **Parent:** [#125](https://github.com/marathoner-app/marathoner/issues/125)
 
@@ -32,6 +32,7 @@ selected iOS client boundary was verified on October 5, 2026:
 | Browser-key APIs | Datastore, Firestore, Logging, App Check, Installations, Firebase Management, Identity Toolkit, and Token Service only |
 | Browser-key websites | `https://marathonerapp.com/*` and `https://www.marathonerapp.com/*` only |
 | Selected iOS key | `marathoner-ios-beta`; Cloud Firestore, Identity Toolkit, and Token Service APIs only; no application restriction for the Capacitor Firebase JavaScript client |
+| App Check registrations | `Marathoner Beta Web` uses the beta-only Fraud Defense site key for `marathonerapp.com` and `www`; `Marathoner Beta iOS` uses App Attest for `com.marathonerapp.marathoner`; enforcement remains off |
 
 The public Firebase web identifiers are versioned in `src/firebaseConfig.ts`.
 They are identifiers delivered to browser clients, not administrator
@@ -55,8 +56,12 @@ browser key's website restrictions correctly reject the Capacitor WebView. The
 iOS key allows only Cloud Firestore API, Identity Toolkit API, and Token
 Service API. It has no application restriction because the selected shell uses
 the Firebase JavaScript SDK rather than the native Apple SDK. Its value exists
-only in the ignored mode-`0600` `.env.ios-beta.local`; App Check issue #161 must
-add the Apple attestation control before external invitations.
+only in the ignored mode-`0600` `.env.ios-beta.local`. The distinct web and
+Apple App Check providers are now registered, with public native configuration
+selected by the fail-closed build boundary. Client initialization, observation,
+rollback, and enforcement remain owned by #204 through #206 before external
+invitations. See the
+[provider registration record](app-check-provider-registration.md).
 
 The reviewed rules were deployed on October 1, 2026, with this explicit target:
 
@@ -128,7 +133,8 @@ the rebuild path after account recovery.
 
 ## Remaining participant-activation gates
 
-- Complete App Check enforcement and rollback planning in #161.
+- Complete App Check initialization, observation, enforcement, and rollback
+  proof in #204 through #206.
 - Publish the custom domain and authorized-domain configuration in #162.
 - Complete participant-data integrity, deletion, incident, and support controls
   before invitations.
