@@ -12,10 +12,12 @@ import {
   type AccountDeletionRequestAcceptedResult,
   type AccountDeletionRequestEnvelope,
 } from '../../src/domain/materialCommands/contract.js'
+import {
+  ACCOUNT_DELETION_MANIFEST_VERSION,
+  ACCOUNT_DELETION_WORKFLOW_SCHEMA_VERSION,
+} from './accountDeletionManifest.js'
 import type { AccountDeletionRequestStore } from './accountDeletionRequestHandler.js'
 
-const deletionRequestSchemaVersion = 1
-const deletionManifestVersion = 1
 const materialCommandReceiptSchemaVersion = 1
 const completionWindowMilliseconds = 7 * 24 * 60 * 60 * 1_000
 
@@ -145,8 +147,8 @@ export class FirestoreAccountDeletionRequestStore
         status: 'deletion_pending',
       })
       transaction.create(proposedRequestReference, {
-        schemaVersion: deletionRequestSchemaVersion,
-        manifestVersion: deletionManifestVersion,
+        schemaVersion: ACCOUNT_DELETION_WORKFLOW_SCHEMA_VERSION,
+        manifestVersion: ACCOUNT_DELETION_MANIFEST_VERSION,
         requestId: proposedRequestId,
         userId: options.ownerId,
         commandId: options.envelope.commandId,

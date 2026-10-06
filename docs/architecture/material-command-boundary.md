@@ -141,7 +141,8 @@ command succeed is not approved.
 - #121 removes direct client material writes after every owning workflow moves.
 - #159 adds live reads, freshness, and account cache isolation.
 - #138 may use the boundary on iOS only after its required workflow migrations.
-- #197 adds the fixed, idempotent account-deletion runner and manifest
-  verification after the #195 request lock.
+- #197 implements the fixed, idempotent account-deletion runner and manifest
+  verification after the #195 request lock; its live-project allowlist remains
+  empty pending #124.
 - #196 adds recent password reauthentication and the user-facing deletion
   experience without changing ownership or target selection.

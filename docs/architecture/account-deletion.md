@@ -1,6 +1,6 @@
 # Account and training-data deletion
 
-- **Status:** Local request/account-lock boundary complete; runner, UI, live deployment, and rehearsal remain open
+- **Status:** Local request/account-lock and deletion runner complete; private-store activation, UI, live deployment, and rehearsal remain open
 - **Decision date:** 2026-10-05
 - **Decision owner:** Marathoner maintainer
 - **Tracking issue:** [#79](https://github.com/marathoner-app/marathoner/issues/79)
@@ -22,10 +22,12 @@ rehearsed operator procedure, but the security-sensitive request, access lock,
 and deletion authority still require trusted server code.
 
 Issue #195 implements the request contract, protected request and receipt,
-immediate membership lock, and Authentication disable/revocation locally. It
-does not deploy a Firebase Function, change billing, expose a user interface, or
-delete participant records or the Authentication user. The fixed deletion
-runner (#197), client experience (#196), live activation gates, and issue #124
+immediate membership lock, and Authentication disable/revocation locally.
+Issue #197 implements the fixed deletion runner, manifest verification,
+failure recovery, anonymized receipt, and exact-ID expiry cleanup against the
+emulators. Neither issue deploys a Firebase Function, changes billing, exposes
+a user interface, or authorizes deletion against a live project. Private-store
+activation, the client experience (#196), live activation gates, and issue #124
 rehearsal must all pass before Marathoner can claim complete in-product account
 deletion.
 
@@ -171,6 +173,11 @@ completion dispute using the request ID the runner received. It is not joined
 to an account, cohort roster, or participant metrics. Its cleanup must be
 automated or included in a dated operator check and tested before beta.
 
+The implementation and exact command boundary are documented in the
+[account-deletion operator runbook](../operations/account-deletion-runbook.md).
+Its live-project allowlist remains empty until #124 supplies the private-record
+adapter and the complete development and beta rehearsals pass.
+
 ## Failure recovery and observability
 
 Deletion is irreversible and non-atomic. Recovery means safely completing the
@@ -252,9 +259,11 @@ The accepted design is split into focused child issues in this order:
    gate, Auth disable/revocation, and local tests are complete. Live deployment
    remains blocked by #161, #121 coordination, the empty deployment allowlist,
    and an explicit Blaze/budget decision.
-2. **#197 — implement the idempotent deletion runner and manifest tests.** Add the
-   fixed-path Admin command, stage checkpoints, failure injection, verification,
-   anonymized receipt, cleanup, and operator documentation.
+2. **#197 — implement the idempotent deletion runner and manifest tests.** The
+   fixed-path Admin command, stage checkpoints, failure injection, recursive
+   verification, anonymized receipt, exact-ID cleanup, and operator runbook are
+   complete against fictional emulator records. Live projects remain blocked
+   until #124 supplies the declared private-record adapter and rehearsal.
 3. **#196 — add the calm account-deletion experience.** Add the shared responsive UI,
    password reauthentication, typed outcomes, ambiguous-response resolution,
    immediate state clearing, accessibility coverage, and accurate participant
