@@ -8,6 +8,7 @@
 @import "./styles/global.css";
 @import "./styles/app-shell.css";
 @import "./components/Authentication.css";
+@import "./components/AccountDeletion.css";
 @import "./components/Calendar.css";
 @import "./components/ShoeTracker.css";
 @import "./components/Analyze.css";

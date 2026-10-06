@@ -1,0 +1,216 @@
+.account-settings-btn {
+  box-sizing: border-box;
+  min-height: 2.75rem;
+  padding: 0.6rem 0.9rem;
+  border: 2px solid #334155;
+  background: #fff;
+  color: #111827;
+  font-weight: 650;
+}
+
+.account-settings-btn:hover {
+  background: #e2e8f0;
+  color: #111827;
+}
+
+.account-settings-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1100;
+  display: grid;
+  place-items: center;
+  box-sizing: border-box;
+  padding: 1rem;
+  overflow-y: auto;
+  background: rgba(15, 23, 42, 0.68);
+  color: #111827;
+  line-height: 1.5;
+  text-align: left;
+}
+
+.account-settings-dialog {
+  box-sizing: border-box;
+  width: min(100%, 40rem);
+  max-height: calc(100dvh - 2rem);
+  padding: clamp(1.25rem, 4vw, 2rem);
+  overflow-y: auto;
+  border: 2px solid #334155;
+  border-radius: 1rem;
+  background: #fff;
+  box-shadow: 0 1.5rem 4rem rgba(15, 23, 42, 0.3);
+}
+
+.account-settings-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.account-settings-eyebrow {
+  margin: 0 0 0.25rem;
+  color: #475569;
+  font-size: 0.82rem;
+  font-weight: 750;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.account-settings-dialog h2,
+.account-deletion-receipt h1 {
+  margin: 0;
+  line-height: 1.2;
+}
+
+.account-settings-dialog h2:focus,
+.account-deletion-error:focus {
+  outline: 3px solid #2563eb;
+  outline-offset: 0.25rem;
+}
+
+.account-settings-close {
+  flex: 0 0 auto;
+  width: 2.75rem;
+  height: 2.75rem;
+  padding: 0;
+  background: transparent;
+  color: #111827;
+  font-size: 1.75rem;
+  line-height: 1;
+}
+
+.account-settings-close:hover {
+  background: #e2e8f0;
+  color: #111827;
+}
+
+.account-deletion-facts {
+  padding-left: 1.4rem;
+}
+
+.account-settings-dialog form {
+  display: grid;
+  gap: 0.75rem;
+  margin-top: 1.25rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid #cbd5e1;
+}
+
+.account-settings-dialog label {
+  font-weight: 700;
+}
+
+.account-settings-dialog input {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 2.75rem;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid #475569;
+  border-radius: 0.45rem;
+  font: inherit;
+}
+
+.account-deletion-submit,
+.account-deletion-resolve,
+.account-deletion-done {
+  min-height: 3rem;
+  padding: 0.7rem 1rem;
+  font-weight: 750;
+}
+
+.account-deletion-submit {
+  background: #991b1b;
+}
+
+.account-deletion-submit:hover {
+  background: #7f1d1d;
+}
+
+.account-deletion-submit:disabled,
+.account-deletion-resolve:disabled,
+.account-settings-close:disabled,
+.account-settings-dialog input:disabled {
+  cursor: wait;
+  opacity: 0.6;
+}
+
+.account-deletion-status {
+  margin: 0;
+  color: #334155;
+}
+
+.account-deletion-error,
+.account-deletion-signout-error {
+  margin: 0;
+  color: #991b1b;
+  font-weight: 650;
+}
+
+.account-deletion-receipt {
+  box-sizing: border-box;
+  width: min(calc(100% - 2rem), 42rem);
+  margin: auto;
+  padding: clamp(1.5rem, 5vw, 2.5rem);
+  border: 2px solid #0f766e;
+  border-radius: 1rem;
+  background: #f0fdfa;
+  color: #111827;
+  line-height: 1.55;
+  text-align: left;
+}
+
+.account-deletion-request-id {
+  display: grid;
+  gap: 0.6rem;
+  padding: 1rem;
+  border-radius: 0.6rem;
+  background: #fff;
+}
+
+.account-deletion-request-id span {
+  font-weight: 700;
+}
+
+.account-deletion-request-id code {
+  overflow-wrap: anywhere;
+  user-select: all;
+}
+
+.account-deletion-request-id button {
+  justify-self: start;
+  min-height: 2.75rem;
+  padding: 0.6rem 0.85rem;
+}
+
+.account-deletion-signout-error {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.account-deletion-signout-error p {
+  margin: 0;
+}
+
+.account-deletion-signout-error button {
+  justify-self: start;
+  min-height: 2.75rem;
+  padding: 0.6rem 0.85rem;
+}
+
+@media (max-width: 768px) {
+  .session-controls {
+    right: 0.75rem;
+    left: 0.75rem;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .session-user {
+    flex-basis: 100%;
+    text-align: center;
+  }
+
+  .account-settings-dialog {
+    max-height: calc(100dvh - 1rem);
+  }
+}

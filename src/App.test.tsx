@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { ReactNode } from 'react'
@@ -17,6 +17,12 @@ import {
   subscribeToAuthState,
   type AuthUser
 } from './services/authService'
+import {
+  reauthenticateForAccountDeletion,
+  resolveAccountDeletionRequest,
+  submitAccountDeletionRequest
+} from './services/accountDeletionService'
+import type { AccountDeletionRequestAcceptedResult } from './domain/materialCommands/contract'
 
 vi.mock('framer-motion', () => ({
   useReducedMotion: () => true,
@@ -30,12 +36,21 @@ vi.mock('framer-motion', () => ({
 
 vi.mock('./services/authService', () => ({
   logOut: vi.fn(),
+  reauthenticateWithPassword: vi.fn(),
   signIn: vi.fn(),
   subscribeToAuthState: vi.fn()
 }))
 
+vi.mock('./services/accountDeletionService', () => ({
+  reauthenticateForAccountDeletion: vi.fn(),
+  resolveAccountDeletionRequest: vi.fn(),
+  submitAccountDeletionRequest: vi.fn()
+}))
+
 vi.mock('./training/TrainingDataProvider', () => ({
-  default: ({ children }: { children: ReactNode }) => children
+  default: ({ children }: { children: ReactNode }) => (
+    <div data-testid="training-data-provider">{children}</div>
+  )
 }))
 
 const trainingMock = vi.hoisted(() => ({
@@ -64,6 +79,11 @@ vi.mock('./training/useTrainingData', () => ({
 
 const mockedLogOut = vi.mocked(logOut)
 const mockedSubscribeToAuthState = vi.mocked(subscribeToAuthState)
+const mockedDeletionReauthentication = vi.mocked(
+  reauthenticateForAccountDeletion
+)
+const mockedDeletionSubmission = vi.mocked(submitAccountDeletionRequest)
+const mockedDeletionResolution = vi.mocked(resolveAccountDeletionRequest)
 const signedInUser: AuthUser = {
   uid: 'runner-1',
   email: 'runner@example.com'
@@ -83,6 +103,14 @@ const completeRunnerProfile: UserProfile = {
   completionGoal: 'complete_first_marathon',
   createdAt: timestamp,
   updatedAt: timestamp
+}
+const acceptedDeletion: AccountDeletionRequestAcceptedResult = {
+  status: 'accepted',
+  commandId: 'account-delete-11111111-1111-4111-8111-111111111111',
+  requestId: '22222222-2222-4222-8222-222222222222',
+  requestedAt: '2026-10-06T12:00:00.000Z',
+  completionDueAt: '2026-10-13T12:00:00.000Z',
+  accessLocked: true
 }
 
 let emitAuthState: (user: AuthUser | null) => void
@@ -119,6 +147,9 @@ beforeEach(() => {
   trainingMock.saveProfile.mockResolvedValue(completeRunnerProfile)
   unsubscribe = vi.fn()
   mockedLogOut.mockResolvedValue()
+  mockedDeletionReauthentication.mockResolvedValue()
+  mockedDeletionSubmission.mockResolvedValue(acceptedDeletion)
+  mockedDeletionResolution.mockResolvedValue(acceptedDeletion)
   mockedSubscribeToAuthState.mockImplementation((onChange, onError) => {
     emitAuthState = onChange
     emitAuthError = onError ?? (() => undefined)
@@ -228,6 +259,123 @@ describe('App authentication state', () => {
 
     expect(screen.getByRole('alert')).toHaveTextContent(
       "We couldn't log you out. Please try again."
+    )
+  })
+
+  it('opens account settings and restores focus when the dialog closes', async () => {
+    const user = userEvent.setup()
+    renderSignedInApp()
+
+    const settingsButton = screen.getByRole('button', {
+      name: 'Account settings'
+    })
+    await user.click(settingsButton)
+
+    expect(
+      screen.getByRole('dialog', { name: 'Delete your Marathoner account' })
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole('heading', { name: 'Delete your Marathoner account' })
+    ).toHaveFocus()
+
+    await user.click(
+      screen.getByRole('button', { name: 'Close account settings' })
+    )
+
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(settingsButton).toHaveFocus()
+  })
+
+  it('hides and unmounts participant state before signing out an accepted deletion', async () => {
+    const user = userEvent.setup()
+    renderSignedInApp()
+
+    expect(screen.getByTestId('training-data-provider')).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Account settings' }))
+    await user.type(
+      screen.getByLabelText('Re-enter the password for runner@example.com'),
+      'private-password'
+    )
+    await user.click(
+      screen.getByRole('button', {
+        name: 'Permanently delete my Marathoner account'
+      })
+    )
+
+    expect(
+      await screen.findByRole('heading', {
+        name: 'Your deletion request is pending'
+      })
+    ).toBeInTheDocument()
+    expect(screen.queryByTestId('training-data-provider')).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole('navigation', { name: 'Training sections' })
+    ).not.toBeInTheDocument()
+    expect(mockedLogOut).toHaveBeenCalledOnce()
+
+    act(() => {
+      emitAuthState(null)
+    })
+
+    expect(
+      screen.getByRole('button', { name: 'Return to sign in' })
+    ).toBeInTheDocument()
+  })
+
+  it('preserves an ambiguous command when account settings is closed and reopened', async () => {
+    const user = userEvent.setup()
+    const unknownResult = (commandId: string) => ({
+      status: 'outcome_unknown' as const,
+      commandId,
+      code: 'resolve-by-command-id' as const,
+      message: 'Resolve the original command.'
+    })
+    mockedDeletionSubmission.mockImplementation(async (commandId) =>
+      unknownResult(commandId)
+    )
+    mockedDeletionResolution.mockImplementation(async (commandId) =>
+      unknownResult(commandId)
+    )
+    renderSignedInApp()
+
+    await user.click(screen.getByRole('button', { name: 'Account settings' }))
+    await user.type(
+      screen.getByLabelText('Re-enter the password for runner@example.com'),
+      'private-password'
+    )
+    await user.click(
+      screen.getByRole('button', {
+        name: 'Permanently delete my Marathoner account'
+      })
+    )
+
+    expect(
+      await screen.findByRole('button', { name: 'Check the original request' })
+    ).toBeInTheDocument()
+    const originalCommandId = mockedDeletionSubmission.mock.calls[0][0]
+    await user.click(
+      screen.getByRole('button', { name: 'Close account settings' })
+    )
+    await user.click(screen.getByRole('button', { name: 'Account settings' }))
+
+    expect(
+      screen.getByRole('button', { name: 'Check the original request' })
+    ).toBeInTheDocument()
+    expect(
+      screen.queryByRole('button', {
+        name: 'Permanently delete my Marathoner account'
+      })
+    ).not.toBeInTheDocument()
+    expect(mockedDeletionSubmission).toHaveBeenCalledOnce()
+
+    await user.click(
+      screen.getByRole('button', { name: 'Check the original request' })
+    )
+
+    await waitFor(() =>
+      expect(mockedDeletionResolution).toHaveBeenLastCalledWith(
+        originalCommandId
+      )
     )
   })
 

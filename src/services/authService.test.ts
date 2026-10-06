@@ -2,17 +2,29 @@ import { FirebaseError } from 'firebase/app'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const firebaseAuth = vi.hoisted(() => ({
+  EmailAuthProvider: { credential: vi.fn() },
+  getIdToken: vi.fn(),
   onAuthStateChanged: vi.fn(),
+  reauthenticateWithCredential: vi.fn(),
   sendPasswordResetEmail: vi.fn(),
   signInWithEmailAndPassword: vi.fn(),
   signOut: vi.fn(),
 }))
 
+const testAuth = vi.hoisted(() => ({
+  name: 'test-auth',
+  currentUser: {
+    uid: 'runner-1',
+    email: 'runner@example.com' as string | null,
+  },
+}))
+
 vi.mock('firebase/auth', () => firebaseAuth)
-vi.mock('./firebaseClient', () => ({ auth: { name: 'test-auth' } }))
+vi.mock('./firebaseClient', () => ({ auth: testAuth }))
 
 import {
   AuthenticationError,
+  reauthenticateWithPassword,
   requestPasswordReset,
   signIn,
   toAuthenticationError,
@@ -21,6 +33,7 @@ import {
 describe('authentication error mapping', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    testAuth.currentUser.email = 'runner@example.com'
   })
 
   it.each([
@@ -97,13 +110,44 @@ describe('authentication error mapping', () => {
     })
   })
 
+  it('reauthenticates with the current password and force-refreshes the token', async () => {
+    const credential = { providerId: 'password' }
+    const refreshedUser = { uid: 'runner-1' }
+    firebaseAuth.EmailAuthProvider.credential.mockReturnValue(credential)
+    firebaseAuth.reauthenticateWithCredential.mockResolvedValue({
+      user: refreshedUser,
+    })
+    firebaseAuth.getIdToken.mockResolvedValue('fresh-token')
+
+    await reauthenticateWithPassword('correct horse battery staple')
+
+    expect(firebaseAuth.EmailAuthProvider.credential).toHaveBeenCalledWith(
+      'runner@example.com',
+      'correct horse battery staple',
+    )
+    expect(firebaseAuth.reauthenticateWithCredential).toHaveBeenCalledWith(
+      testAuth.currentUser,
+      credential,
+    )
+    expect(firebaseAuth.getIdToken).toHaveBeenCalledWith(refreshedUser, true)
+  })
+
+  it('does not attempt password reauthentication without a current email user', async () => {
+    testAuth.currentUser.email = null
+
+    await expect(
+      reauthenticateWithPassword('not-used'),
+    ).rejects.toMatchObject({ code: 'unknown' })
+    expect(firebaseAuth.reauthenticateWithCredential).not.toHaveBeenCalled()
+  })
+
   it('requests a password-reset email through Firebase', async () => {
     firebaseAuth.sendPasswordResetEmail.mockResolvedValue(undefined)
 
     await requestPasswordReset('runner@example.com')
 
     expect(firebaseAuth.sendPasswordResetEmail).toHaveBeenCalledWith(
-      { name: 'test-auth' },
+      testAuth,
       'runner@example.com',
     )
   })
