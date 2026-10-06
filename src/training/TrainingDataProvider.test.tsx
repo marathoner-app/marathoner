@@ -58,9 +58,25 @@ function IntegrationProbe() {
   return (
     <div>
       <p>Runs: {training.runs.length}</p>
+      <p>Profile: {training.profile?.displayName ?? "none"}</p>
       <p>Workout: {workout?.status ?? "none"}</p>
       <p>Total: {Number(metersToMiles(analytics.totalDistance).toFixed(1))}</p>
       <p>Shoe: {Number(shoeMiles.toFixed(1))}</p>
+      <button
+        type="button"
+        onClick={() =>
+          void training.saveProfile({
+            displayName: "Runner One",
+            preferredDistanceUnit: "mile",
+            timeZone,
+            experienceLevel: "consistent",
+            currentRunningFrequencyDaysPerWeek: 4,
+            completionGoal: "complete_first_marathon",
+          })
+        }
+      >
+        Save profile
+      </button>
       <button
         type="button"
         disabled={!workout || !shoe}
@@ -112,6 +128,31 @@ describe("TrainingDataProvider", () => {
     expect(await screen.findByText("Runs: 0")).toBeInTheDocument();
     expect(screen.getByText("Workout: none")).toBeInTheDocument();
     expect(screen.getByText("Total: 0")).toBeInTheDocument();
+    expect(screen.getByText("Profile: none")).toBeInTheDocument();
+  });
+
+  it("saves an owned profile through the application boundary", async () => {
+    const user = userEvent.setup();
+
+    render(
+      <TrainingDataProvider
+        userId={userId}
+        repositoryFactory={repositoryFactory}
+      >
+        <IntegrationProbe />
+      </TrainingDataProvider>,
+    );
+
+    await screen.findByText("Profile: none");
+    await user.click(screen.getByRole("button", { name: "Save profile" }));
+
+    expect(await screen.findByText("Profile: Runner One")).toBeInTheDocument();
+    await expect(repositories.profile.load()).resolves.toMatchObject({
+      id: userId,
+      displayName: "Runner One",
+      experienceLevel: "consistent",
+      currentRunningFrequencyDaysPerWeek: 4,
+    });
   });
 
   it("keeps completion status, analytics, and shoe mileage in sync", async () => {

@@ -15,6 +15,7 @@ import {
 } from "../domain/training";
 import type { DocumentStore, StoredDocument } from "./documentStore";
 import { createDocumentRunAndShoeRepositories } from "./documentRunShoeRepositories";
+import { createDocumentUserProfileRepository } from "./documentUserProfileRepository";
 import { PersistenceError, toPersistenceError } from "./errors";
 import {
   completedRunFromDocument,
@@ -406,6 +407,7 @@ export function createDocumentTrainingRepositories(
   const workouts = new DocumentPlannedWorkoutRepository(store, userId, plans, clock);
 
   return {
+    profile: createDocumentUserProfileRepository(store, userId, clock),
     plans,
     workouts,
     ...createDocumentRunAndShoeRepositories(store, userId, workouts, clock),

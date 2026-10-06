@@ -11,6 +11,141 @@ service cloud.firestore {
         && request.resource.data.userId == userId;
     }
 
+    function hasValidOptionalProfileFields(data) {
+      return (!data.keys().hasAny(['displayName'])
+          || (data.displayName is string
+            && data.displayName.size() > 0
+            && data.displayName.size() <= 120))
+        && (!data.keys().hasAny(['experienceLevel'])
+          || data.experienceLevel in [
+            'not_running',
+            'inconsistent',
+            'returning',
+            'consistent'
+          ])
+        && (!data.keys().hasAny(['currentWeeklyDistanceMeters'])
+          || (data.currentWeeklyDistanceMeters is int
+            && data.currentWeeklyDistanceMeters >= 0))
+        && (!data.keys().hasAny(['currentRunningFrequencyDaysPerWeek'])
+          || (data.currentRunningFrequencyDaysPerWeek is int
+            && data.currentRunningFrequencyDaysPerWeek >= 0
+            && data.currentRunningFrequencyDaysPerWeek <= 7))
+        && (!data.keys().hasAny(['longestRecentRunDistanceMeters'])
+          || (data.longestRecentRunDistanceMeters is int
+            && data.longestRecentRunDistanceMeters >= 0))
+        && (!data.keys().hasAny(['availableTrainingDays'])
+          || (data.availableTrainingDays is list
+            && data.availableTrainingDays.size() <= 7
+            && data.availableTrainingDays.hasOnly([
+              'monday',
+              'tuesday',
+              'wednesday',
+              'thursday',
+              'friday',
+              'saturday',
+              'sunday'
+            ])))
+        && (!data.keys().hasAny(['preferredLongRunDay'])
+          || data.preferredLongRunDay in [
+            'monday',
+            'tuesday',
+            'wednesday',
+            'thursday',
+            'friday',
+            'saturday',
+            'sunday'
+          ])
+        && (!data.keys().hasAny(['scheduleConstraints'])
+          || (data.scheduleConstraints is string
+            && data.scheduleConstraints.size() > 0
+            && data.scheduleConstraints.size() <= 500))
+        && (!data.keys().hasAny(['completionGoal'])
+          || data.completionGoal == 'complete_first_marathon');
+    }
+
+    function hasValidTargetRace(data) {
+      return !data.keys().hasAny(['targetRace'])
+        || (data.targetRace is map
+          && ((data.targetRace.keys().hasOnly(['kind', 'date'])
+              && data.targetRace.kind == 'date'
+              && data.targetRace.date is string)
+            || (data.targetRace.keys().hasOnly([
+                  'kind',
+                  'startDate',
+                  'endDate'
+                ])
+              && data.targetRace.kind == 'window'
+              && data.targetRace.startDate is string
+              && data.targetRace.endDate is string)));
+    }
+
+    function hasValidRecentPerformance(data) {
+      return !data.keys().hasAny(['recentPerformance'])
+        || (data.recentPerformance is map
+          && data.recentPerformance.keys().hasOnly([
+            'completedOn',
+            'distanceMeters',
+            'durationSeconds'
+          ])
+          && data.recentPerformance.completedOn is string
+          && data.recentPerformance.distanceMeters is int
+          && data.recentPerformance.distanceMeters > 0
+          && data.recentPerformance.durationSeconds is int
+          && data.recentPerformance.durationSeconds > 0);
+    }
+
+    function isValidProfileWrite(userId) {
+      let data = request.resource.data;
+      return isValidOwnedWrite(userId)
+        && data.keys().hasAll([
+          'schemaVersion',
+          'userId',
+          'preferredDistanceUnit',
+          'timeZone',
+          'createdAt',
+          'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'schemaVersion',
+          'userId',
+          'displayName',
+          'preferredDistanceUnit',
+          'timeZone',
+          'experienceLevel',
+          'targetRace',
+          'currentWeeklyDistanceMeters',
+          'currentRunningFrequencyDaysPerWeek',
+          'longestRecentRunDistanceMeters',
+          'recentPerformance',
+          'availableTrainingDays',
+          'preferredLongRunDay',
+          'scheduleConstraints',
+          'completionGoal',
+          'createdAt',
+          'updatedAt'
+        ])
+        && data.preferredDistanceUnit in ['mile', 'kilometer']
+        && data.timeZone is string
+        && data.timeZone.size() > 0
+        && data.timeZone.size() <= 64
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp
+        && data.updatedAt >= data.createdAt
+        && hasValidOptionalProfileFields(data)
+        && hasValidTargetRace(data)
+        && hasValidRecentPerformance(data);
+    }
+
+    match /users/{userId} {
+      allow get: if isSignedInAs(userId);
+      allow create: if isSignedInAs(userId)
+        && isValidProfileWrite(userId);
+      allow update: if isSignedInAs(userId)
+        && isValidProfileWrite(userId)
+        && request.resource.data.createdAt == resource.data.createdAt;
+      allow list, delete: if false;
+    }
+
     match /users/{userId}/plans/{planId} {
       allow read, delete: if isSignedInAs(userId);
       allow create, update: if isSignedInAs(userId)

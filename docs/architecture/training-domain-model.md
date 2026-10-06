@@ -9,7 +9,7 @@ belong here.
 
 | Entity | Purpose | Relationships |
 | --- | --- | --- |
-| `UserProfile` | Stores the runner's minimal application preferences. | Its `id` is the owner ID used by all other entities. |
+| `UserProfile` | Stores application preferences and the approved, in-progress first-marathon intake inputs. | Its `id` is the authenticated owner ID used by all other entities. |
 | `TrainingPlan` | Represents one first-marathon journey over a defined date range. | Belongs to one user and owns many planned workouts. |
 | `PlannedWorkout` | Describes a rest, run, or walk-run assignment on a local calendar day. | Belongs to one user and one training plan. |
 | `CompletedRun` | Records what the runner actually completed. | Belongs to one user and may reference one planned workout, its parent plan, and one shoe. |
@@ -70,6 +70,9 @@ data arrives from a form, network request, or database:
 6. An entity's update timestamp cannot precede its creation timestamp.
 7. A retired shoe has a retirement date, while an active shoe does not.
 8. Text fields that are present cannot contain only whitespace.
+9. Profile race windows cannot end before they begin, running frequency is a
+   whole number from zero through seven, recent-performance values are
+   positive, and the preferred long-run day must be available.
 
 Future persistence code must also ensure that every referenced entity belongs to
 the authenticated user. Database security rules remain the final authority for
@@ -87,7 +90,8 @@ would create two competing sources of truth.
 
 ## Example flow
 
-1. Onboarding creates a user profile and a draft training plan.
+1. Onboarding creates or updates the owned user profile through the shared
+   repository boundary.
 2. Approved plan generation creates planned workouts linked to that plan.
 3. Finishing a workout creates a completed run that optionally links to the
    planned workout and selected shoe.

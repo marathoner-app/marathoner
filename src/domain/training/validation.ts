@@ -26,10 +26,89 @@ function validateTimestamps(entity: { createdAt: string; updatedAt: string }): V
 }
 
 export function validateUserProfile(profile: UserProfile): ValidationIssue[] {
-  return [
+  const issues = [
     ...validateText(profile.displayName, "displayName", false),
+    ...validateText(profile.scheduleConstraints, "scheduleConstraints", false),
     ...validateTimestamps(profile),
   ];
+
+  if (profile.displayName !== undefined && profile.displayName.length > 120) {
+    issues.push({
+      field: "displayName",
+      message: "Display name cannot exceed 120 characters.",
+    });
+  }
+
+  if (
+    profile.scheduleConstraints !== undefined &&
+    profile.scheduleConstraints.length > 500
+  ) {
+    issues.push({
+      field: "scheduleConstraints",
+      message: "Schedule constraints cannot exceed 500 characters.",
+    });
+  }
+
+  if (
+    profile.targetRace?.kind === "window" &&
+    profile.targetRace.endDate < profile.targetRace.startDate
+  ) {
+    issues.push({
+      field: "targetRace.endDate",
+      message: "Target race window cannot end before it starts.",
+    });
+  }
+
+  if (
+    profile.currentRunningFrequencyDaysPerWeek !== undefined &&
+    (!Number.isSafeInteger(profile.currentRunningFrequencyDaysPerWeek) ||
+      profile.currentRunningFrequencyDaysPerWeek < 0 ||
+      profile.currentRunningFrequencyDaysPerWeek > 7)
+  ) {
+    issues.push({
+      field: "currentRunningFrequencyDaysPerWeek",
+      message: "Current running frequency must be a whole number from 0 through 7.",
+    });
+  }
+
+  if (profile.recentPerformance !== undefined) {
+    if (profile.recentPerformance.distance <= 0) {
+      issues.push({
+        field: "recentPerformance.distance",
+        message: "Recent performance distance must be positive.",
+      });
+    }
+
+    if (profile.recentPerformance.duration <= 0) {
+      issues.push({
+        field: "recentPerformance.duration",
+        message: "Recent performance duration must be positive.",
+      });
+    }
+  }
+
+  if (profile.availableTrainingDays !== undefined) {
+    const uniqueDays = new Set(profile.availableTrainingDays);
+
+    if (uniqueDays.size !== profile.availableTrainingDays.length) {
+      issues.push({
+        field: "availableTrainingDays",
+        message: "Available training days cannot contain duplicates.",
+      });
+    }
+
+    if (
+      profile.preferredLongRunDay !== undefined &&
+      !uniqueDays.has(profile.preferredLongRunDay)
+    ) {
+      issues.push({
+        field: "preferredLongRunDay",
+        message: "Preferred long-run day must be one of the available training days.",
+      });
+    }
+  }
+
+  return issues;
 }
 
 export function validateTrainingPlan(plan: TrainingPlan): ValidationIssue[] {

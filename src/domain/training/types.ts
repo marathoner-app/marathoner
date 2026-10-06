@@ -13,11 +13,55 @@ export interface EntityTimestamps {
   readonly updatedAt: UtcDateTime;
 }
 
+export type RunningExperienceLevel =
+  | "not_running"
+  | "inconsistent"
+  | "returning"
+  | "consistent";
+
+export type Weekday =
+  | "monday"
+  | "tuesday"
+  | "wednesday"
+  | "thursday"
+  | "friday"
+  | "saturday"
+  | "sunday";
+
+export type CompletionGoal = "complete_first_marathon";
+
+export type TargetRaceTiming =
+  | {
+      readonly kind: "date";
+      readonly date: DateOnly;
+    }
+  | {
+      readonly kind: "window";
+      readonly startDate: DateOnly;
+      readonly endDate: DateOnly;
+    };
+
+export interface RecentRunPerformance {
+  readonly completedOn: DateOnly;
+  readonly distance: DistanceMeters;
+  readonly duration: DurationSeconds;
+}
+
 export interface UserProfile extends EntityTimestamps {
   readonly id: UserId;
   readonly displayName?: string;
   readonly preferredDistanceUnit: DistanceUnit;
   readonly timeZone: IanaTimeZone;
+  readonly experienceLevel?: RunningExperienceLevel;
+  readonly targetRace?: TargetRaceTiming;
+  readonly currentWeeklyDistance?: DistanceMeters;
+  readonly currentRunningFrequencyDaysPerWeek?: number;
+  readonly longestRecentRunDistance?: DistanceMeters;
+  readonly recentPerformance?: RecentRunPerformance;
+  readonly availableTrainingDays?: readonly Weekday[];
+  readonly preferredLongRunDay?: Weekday;
+  readonly scheduleConstraints?: string;
+  readonly completionGoal?: CompletionGoal;
 }
 
 export type TrainingPlanStatus = "draft" | "active" | "completed" | "archived";

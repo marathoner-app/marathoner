@@ -8,6 +8,8 @@ import type {
 
 export const userDocumentPath = (userId: UserId): string => `users/${userId}`;
 
+export const profileDocumentPath = userDocumentPath;
+
 export const plansCollectionPath = (userId: UserId): string =>
   `${userDocumentPath(userId)}/plans`;
 

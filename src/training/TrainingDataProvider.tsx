@@ -14,10 +14,12 @@ import {
   type Shoe,
   type TrainingPlan,
   type UserId,
+  type UserProfile,
 } from "../domain/training";
 import type {
   CreateCompletedRunInput,
   CreateShoeInput,
+  SaveUserProfileInput,
   TrainingRepositories,
   UpdateCompletedRunInput,
 } from "../persistence/trainingRepositories";
@@ -40,6 +42,7 @@ type TrainingDataProviderProps = {
 interface TrainingSnapshot {
   readonly status: TrainingDataStatus;
   readonly error: string | null;
+  readonly profile: UserProfile | null;
   readonly plans: TrainingPlan[];
   readonly workouts: PlannedWorkout[];
   readonly runs: CompletedRun[];
@@ -49,6 +52,7 @@ interface TrainingSnapshot {
 const emptySnapshot: TrainingSnapshot = {
   status: "loading",
   error: null,
+  profile: null,
   plans: [],
   workouts: [],
   runs: [],
@@ -85,7 +89,8 @@ export default function TrainingDataProvider({
 
     try {
       const repositories = await repositoryFactory(userId);
-      const [plans, runs, shoes] = await Promise.all([
+      const [profile, plans, runs, shoes] = await Promise.all([
+        repositories.profile.load(),
         repositories.plans.list(),
         repositories.runs.list(),
         repositories.shoes.list(),
@@ -99,7 +104,15 @@ export default function TrainingDataProvider({
       if (generation !== loadGenerationRef.current) return;
 
       repositoryRef.current = repositories;
-      setSnapshot({ status: "ready", error: null, plans, workouts, runs, shoes });
+      setSnapshot({
+        status: "ready",
+        error: null,
+        profile,
+        plans,
+        workouts,
+        runs,
+        shoes,
+      });
     } catch (error) {
       if (generation !== loadGenerationRef.current) return;
 
@@ -139,6 +152,15 @@ export default function TrainingDataProvider({
         ),
       }));
       return shoe;
+    },
+    [requireRepositories],
+  );
+
+  const saveProfile = useCallback(
+    async (input: SaveUserProfileInput) => {
+      const profile = await requireRepositories().profile.save(input);
+      setSnapshot((current) => ({ ...current, profile }));
+      return profile;
     },
     [requireRepositories],
   );
@@ -285,6 +307,7 @@ export default function TrainingDataProvider({
   const value: TrainingDataContextValue = {
     ...snapshot,
     reload: load,
+    saveProfile,
     createShoe,
     createRun,
     updateRun,
