@@ -38,6 +38,25 @@ function planDocument(userId = firstUserId) {
   };
 }
 
+function profileDocument(userId = firstUserId) {
+  return {
+    schemaVersion: 1,
+    userId,
+    preferredDistanceUnit: "mile",
+    timeZone: "America/Los_Angeles",
+    experienceLevel: "consistent",
+    targetRace: { kind: "date", date: "2027-05-02" },
+    currentWeeklyDistanceMeters: 24_000,
+    currentRunningFrequencyDaysPerWeek: 4,
+    longestRecentRunDistanceMeters: 12_000,
+    availableTrainingDays: ["tuesday", "thursday", "saturday", "sunday"],
+    preferredLongRunDay: "sunday",
+    completionGoal: "complete_first_marathon",
+    createdAt: new Date("2026-10-05T12:00:00.000Z"),
+    updatedAt: new Date("2026-10-05T12:00:00.000Z"),
+  };
+}
+
 function authenticatedContext(
   userId: string,
   emailVerified = true,
@@ -84,6 +103,23 @@ afterAll(async () => {
 });
 
 describe("founding-beta membership rules", () => {
+  it("allows an approved verified owner to create, read, and update their profile", async () => {
+    await seedMembership(firstUserId);
+    const ownerDatabase = authenticatedContext(firstUserId).firestore();
+    const otherDatabase = authenticatedContext(secondUserId).firestore();
+    const reference = doc(ownerDatabase, `users/${firstUserId}`);
+
+    await assertSucceeds(setDoc(reference, profileDocument()));
+    await assertSucceeds(getDoc(reference));
+    await assertSucceeds(
+      updateDoc(reference, {
+        updatedAt: new Date("2026-10-05T13:00:00.000Z"),
+      }),
+    );
+    await assertFails(getDoc(doc(otherDatabase, `users/${firstUserId}`)));
+    await assertFails(deleteDoc(reference));
+  });
+
   it.each([
     ["plans/plan-1", planDocument()],
     [

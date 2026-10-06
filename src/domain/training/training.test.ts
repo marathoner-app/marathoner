@@ -158,6 +158,52 @@ describe("training domain validation", () => {
     });
   });
 
+  it("validates profile scheduling and recent-running inputs without methodology thresholds", () => {
+    const invalidProfile: UserProfile = {
+      ...profile,
+      targetRace: {
+        kind: "window",
+        startDate: createDateOnly("2027-06-01"),
+        endDate: createDateOnly("2027-05-01"),
+      },
+      currentRunningFrequencyDaysPerWeek: 8,
+      recentPerformance: {
+        completedOn: createDateOnly("2026-09-27"),
+        distance: createDistanceMeters(0),
+        duration: createDurationSeconds(0),
+      },
+      availableTrainingDays: ["tuesday", "tuesday"],
+      preferredLongRunDay: "sunday",
+    };
+
+    expect(validateUserProfile(invalidProfile)).toEqual([
+      {
+        field: "targetRace.endDate",
+        message: "Target race window cannot end before it starts.",
+      },
+      {
+        field: "currentRunningFrequencyDaysPerWeek",
+        message: "Current running frequency must be a whole number from 0 through 7.",
+      },
+      {
+        field: "recentPerformance.distance",
+        message: "Recent performance distance must be positive.",
+      },
+      {
+        field: "recentPerformance.duration",
+        message: "Recent performance duration must be positive.",
+      },
+      {
+        field: "availableTrainingDays",
+        message: "Available training days cannot contain duplicates.",
+      },
+      {
+        field: "preferredLongRunDay",
+        message: "Preferred long-run day must be one of the available training days.",
+      },
+    ]);
+  });
+
   it("requires a run workout to have a positive distance or duration target", () => {
     const invalidWorkout: PlannedWorkout = {
       ...workout,

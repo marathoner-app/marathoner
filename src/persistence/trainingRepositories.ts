@@ -1,24 +1,47 @@
 import type {
   CompletedRun,
   CompletedRunId,
+  CompletionGoal,
   DateOnly,
   DistanceMeters,
+  DistanceUnit,
   DurationSeconds,
   IanaTimeZone,
   PerceivedEffort,
   PlannedWorkout,
   PlannedWorkoutId,
+  RecentRunPerformance,
   RunPurpose,
+  RunningExperienceLevel,
   Shoe,
   ShoeId,
   ShoeStatus,
+  TargetRaceTiming,
   TrainingPhase,
   TrainingPlan,
   TrainingPlanId,
   TrainingPlanStatus,
+  UserProfile,
   UtcDateTime,
+  Weekday,
   WorkoutStatus,
 } from "../domain/training";
+
+export interface SaveUserProfileInput {
+  readonly displayName?: string;
+  readonly preferredDistanceUnit: DistanceUnit;
+  readonly timeZone: IanaTimeZone;
+  readonly experienceLevel?: RunningExperienceLevel;
+  readonly targetRace?: TargetRaceTiming;
+  readonly currentWeeklyDistance?: DistanceMeters;
+  readonly currentRunningFrequencyDaysPerWeek?: number;
+  readonly longestRecentRunDistance?: DistanceMeters;
+  readonly recentPerformance?: RecentRunPerformance;
+  readonly availableTrainingDays?: readonly Weekday[];
+  readonly preferredLongRunDay?: Weekday;
+  readonly scheduleConstraints?: string;
+  readonly completionGoal?: CompletionGoal;
+}
 
 export interface CreateTrainingPlanInput {
   readonly name: string;
@@ -148,7 +171,13 @@ export interface ShoeRepository {
   permanentlyDelete(id: ShoeId): Promise<void>;
 }
 
+export interface UserProfileRepository {
+  load(): Promise<UserProfile | null>;
+  save(input: SaveUserProfileInput): Promise<UserProfile>;
+}
+
 export interface TrainingRepositories {
+  readonly profile: UserProfileRepository;
   readonly plans: TrainingPlanRepository;
   readonly workouts: PlannedWorkoutRepository;
   readonly runs: CompletedRunRepository;

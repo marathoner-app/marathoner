@@ -35,6 +35,7 @@ Every document is stored below the authenticated user's path:
 
 ```text
 users/{userId}
+  (runner profile fields)
   plans/{planId}
     workouts/{workoutId}
   runs/{runId}
@@ -62,6 +63,10 @@ Repositories are created for one `UserId`. Callers do not supply another user ID
 to individual operations, which reduces the chance of constructing a cross-user
 request.
 
+The user document itself is the versioned runner profile. Its exact input,
+conversion, application, and security contract is documented in
+[`runner-profile-persistence.md`](runner-profile-persistence.md).
+
 ## Common storage rules
 
 All documents use these conventions:
@@ -84,6 +89,17 @@ the editable product fields.
 Converters reject unknown schema versions. A future schema change must add an
 explicit converter or migration rather than silently guessing how older data
 should be interpreted.
+
+## Runner profile document
+
+Path: `users/{userId}`
+
+The profile stores distance and time-zone preferences plus optional,
+in-progress onboarding inputs. The repository derives ownership, preserves the
+creation timestamp on update, and returns `null` before a runner creates a
+profile. See the
+[runner profile persistence contract](runner-profile-persistence.md) for the
+complete version 1 field table and compatibility rules.
 
 ## Plan documents
 
@@ -178,8 +194,8 @@ deleted so historical runs do not lose their equipment association.
 
 ## Repository behavior
 
-The plan, workout, run, and shoe repositories provide focused create, read,
-list, update, archive, retire, and delete operations using shared domain types.
+The profile, plan, workout, run, and shoe repositories provide focused load,
+save, create, read, list, update, archive, retire, and delete operations using shared domain types.
 They return `null` for a missing read and throw a typed `PersistenceError` for
 invalid data, conflicts, unavailable storage, denied access, limits, and
 unexpected failures.
@@ -189,10 +205,11 @@ the future UI stable error categories it can turn into calm, recoverable states.
 
 ## Security and integration
 
-`firestore.rules` denies access by default. Training-document access requires
+`firestore.rules` denies access by default. Profile and training-document access requires
 an authenticated user whose ID matches the `userId` segment in the document
 path. Creates and updates also require schema version 1 and a matching stored
-`userId`; workout writes require a `planId` matching their parent plan path.
+`userId`; profile updates preserve the creation timestamp, and workout writes
+require a `planId` matching their parent plan path.
 
 Run the ownership and repository integration suite against the local Firestore
 emulator with:
@@ -201,10 +218,11 @@ emulator with:
 npm run test:firestore
 ```
 
-The suite proves same-user access, anonymous and cross-user denial, owner and
-plan-field validation, and an end-to-end repository round trip for a related
-plan, workout, shoe, and run. The Firebase emulator requires a local Java
-runtime.
+The suite proves profile create/read/update ownership, anonymous and cross-user
+denial, immutable profile creation timestamps, malformed-profile rejection,
+owner and plan-field validation, and an end-to-end repository round trip for a
+related plan, workout, shoe, and run. The Firebase emulator requires a local
+Java runtime.
 
 The separate, not-yet-deployed `firestore.beta.rules` candidate additionally
 requires verified email and an administrator-created approved membership for

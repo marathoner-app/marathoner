@@ -5,10 +5,12 @@ import type {
   PlannedWorkout,
   Shoe,
   TrainingPlan,
+  UserProfile,
 } from "../domain/training";
 import type {
   CreateCompletedRunInput,
   CreateShoeInput,
+  SaveUserProfileInput,
   UpdateCompletedRunInput,
 } from "../persistence/trainingRepositories";
 
@@ -17,11 +19,13 @@ export type TrainingDataStatus = "loading" | "ready" | "error";
 export interface TrainingDataContextValue {
   readonly status: TrainingDataStatus;
   readonly error: string | null;
+  readonly profile: UserProfile | null;
   readonly plans: TrainingPlan[];
   readonly workouts: PlannedWorkout[];
   readonly runs: CompletedRun[];
   readonly shoes: Shoe[];
   readonly reload: () => Promise<void>;
+  readonly saveProfile: (input: SaveUserProfileInput) => Promise<UserProfile>;
   readonly createShoe: (input: CreateShoeInput) => Promise<Shoe>;
   readonly createRun: (input: CreateCompletedRunInput) => Promise<CompletedRun>;
   readonly updateRun: (

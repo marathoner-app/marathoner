@@ -14,17 +14,25 @@ import {
   validatePlannedWorkout,
   validateShoe,
   validateTrainingPlan,
+  validateUserProfile,
+  type CompletionGoal,
   type CompletedRun,
+  type DistanceUnit,
   type PerceivedEffort,
   type PlannedWorkout,
+  type RecentRunPerformance,
   type RunPurpose,
+  type RunningExperienceLevel,
   type Shoe,
   type ShoeStatus,
+  type TargetRaceTiming,
   type TrainingPhase,
   type TrainingPlan,
   type TrainingPlanId,
   type TrainingPlanStatus,
   type UserId,
+  type UserProfile,
+  type Weekday,
   type WorkoutStatus,
 } from "../../domain/training";
 import { PersistenceError } from "../errors";
@@ -50,6 +58,24 @@ const PERCEIVED_EFFORTS = [
   "much_harder_than_expected",
 ] as const;
 const SHOE_STATUSES = ["active", "retired"] as const;
+const DISTANCE_UNITS = ["mile", "kilometer"] as const;
+const RUNNING_EXPERIENCE_LEVELS = [
+  "not_running",
+  "inconsistent",
+  "returning",
+  "consistent",
+] as const;
+const WEEKDAYS = [
+  "monday",
+  "tuesday",
+  "wednesday",
+  "thursday",
+  "friday",
+  "saturday",
+  "sunday",
+] as const;
+const COMPLETION_GOALS = ["complete_first_marathon"] as const;
+const TARGET_RACE_KINDS = ["date", "window"] as const;
 
 function invalidData(message: string): never {
   throw new PersistenceError("invalid_data", message);
@@ -106,6 +132,51 @@ function readOptionalBoolean(
     : invalidData(`${field} must be a boolean.`);
 }
 
+function readRecord(data: Record<string, unknown>, field: string): Record<string, unknown> {
+  const value = data[field];
+
+  return value !== null && typeof value === "object" && !Array.isArray(value)
+    ? value as Record<string, unknown>
+    : invalidData(`${field} must be an object.`);
+}
+
+function readOptionalRecord(
+  data: Record<string, unknown>,
+  field: string,
+): Record<string, unknown> | undefined {
+  return data[field] === undefined ? undefined : readRecord(data, field);
+}
+
+function readOptionalEnum<const Values extends readonly string[]>(
+  data: Record<string, unknown>,
+  field: string,
+  values: Values,
+): Values[number] | undefined {
+  return data[field] === undefined ? undefined : readEnum(data, field, values);
+}
+
+function readOptionalEnumArray<const Values extends readonly string[]>(
+  data: Record<string, unknown>,
+  field: string,
+  values: Values,
+): Values[number][] | undefined {
+  const value = data[field];
+
+  if (value === undefined) {
+    return undefined;
+  }
+
+  if (!Array.isArray(value)) {
+    invalidData(`${field} must be an array.`);
+  }
+
+  return value.map((item) =>
+    typeof item === "string" && values.includes(item)
+      ? item as Values[number]
+      : invalidData(`${field} has an unsupported value.`),
+  );
+}
+
 function readEnum<const Values extends readonly string[]>(
   data: Record<string, unknown>,
   field: string,
@@ -144,6 +215,213 @@ function verifyOwner(storedUserId: string, expectedUserId: UserId): UserId {
   }
 
   return userId;
+}
+
+function convertStoredValue<Value>(field: string, convert: () => Value): Value {
+  try {
+    return convert();
+  } catch (error) {
+    if (error instanceof PersistenceError) {
+      throw error;
+    }
+
+    return invalidData(`${field} is invalid.`);
+  }
+}
+
+function targetRaceToDocument(targetRace: TargetRaceTiming): Record<string, unknown> {
+  return targetRace.kind === "date"
+    ? { kind: targetRace.kind, date: targetRace.date }
+    : {
+        kind: targetRace.kind,
+        startDate: targetRace.startDate,
+        endDate: targetRace.endDate,
+      };
+}
+
+function targetRaceFromDocument(data: Record<string, unknown>): TargetRaceTiming {
+  const kind = readEnum(data, "kind", TARGET_RACE_KINDS);
+
+  return kind === "date"
+    ? {
+        kind,
+        date: convertStoredValue("targetRace.date", () =>
+          createDateOnly(readString(data, "date")),
+        ),
+      }
+    : {
+        kind,
+        startDate: convertStoredValue("targetRace.startDate", () =>
+          createDateOnly(readString(data, "startDate")),
+        ),
+        endDate: convertStoredValue("targetRace.endDate", () =>
+          createDateOnly(readString(data, "endDate")),
+        ),
+      };
+}
+
+function recentPerformanceToDocument(
+  performance: RecentRunPerformance,
+): Record<string, unknown> {
+  return {
+    completedOn: performance.completedOn,
+    distanceMeters: performance.distance,
+    durationSeconds: performance.duration,
+  };
+}
+
+function recentPerformanceFromDocument(
+  data: Record<string, unknown>,
+): RecentRunPerformance {
+  return {
+    completedOn: convertStoredValue("recentPerformance.completedOn", () =>
+      createDateOnly(readString(data, "completedOn")),
+    ),
+    distance: convertStoredValue("recentPerformance.distanceMeters", () =>
+      createDistanceMeters(readNumber(data, "distanceMeters")),
+    ),
+    duration: convertStoredValue("recentPerformance.durationSeconds", () =>
+      createDurationSeconds(readNumber(data, "durationSeconds")),
+    ),
+  };
+}
+
+export function userProfileToDocument(profile: UserProfile): Record<string, unknown> {
+  const document: Record<string, unknown> = {
+    schemaVersion: TRAINING_SCHEMA_VERSION,
+    userId: profile.id,
+    preferredDistanceUnit: profile.preferredDistanceUnit,
+    timeZone: profile.timeZone,
+    createdAt: timestampFromUtc(profile.createdAt),
+    updatedAt: timestampFromUtc(profile.updatedAt),
+  };
+
+  if (profile.displayName !== undefined) document.displayName = profile.displayName;
+  if (profile.experienceLevel !== undefined) {
+    document.experienceLevel = profile.experienceLevel;
+  }
+  if (profile.targetRace !== undefined) {
+    document.targetRace = targetRaceToDocument(profile.targetRace);
+  }
+  if (profile.currentWeeklyDistance !== undefined) {
+    document.currentWeeklyDistanceMeters = profile.currentWeeklyDistance;
+  }
+  if (profile.currentRunningFrequencyDaysPerWeek !== undefined) {
+    document.currentRunningFrequencyDaysPerWeek =
+      profile.currentRunningFrequencyDaysPerWeek;
+  }
+  if (profile.longestRecentRunDistance !== undefined) {
+    document.longestRecentRunDistanceMeters = profile.longestRecentRunDistance;
+  }
+  if (profile.recentPerformance !== undefined) {
+    document.recentPerformance = recentPerformanceToDocument(
+      profile.recentPerformance,
+    );
+  }
+  if (profile.availableTrainingDays !== undefined) {
+    document.availableTrainingDays = [...profile.availableTrainingDays];
+  }
+  if (profile.preferredLongRunDay !== undefined) {
+    document.preferredLongRunDay = profile.preferredLongRunDay;
+  }
+  if (profile.scheduleConstraints !== undefined) {
+    document.scheduleConstraints = profile.scheduleConstraints;
+  }
+  if (profile.completionGoal !== undefined) {
+    document.completionGoal = profile.completionGoal;
+  }
+
+  return document;
+}
+
+export function userProfileFromDocument(
+  id: string,
+  data: Record<string, unknown>,
+  expectedUserId: UserId,
+): UserProfile {
+  verifySchemaVersion(data);
+
+  const idFromPath = convertStoredValue("profile id", () => createUserId(id));
+  if (idFromPath !== expectedUserId) {
+    invalidData("Stored profile path does not belong to the requested user.");
+  }
+
+  const targetRace = readOptionalRecord(data, "targetRace");
+  const recentPerformance = readOptionalRecord(data, "recentPerformance");
+  const currentWeeklyDistance = readOptionalNumber(
+    data,
+    "currentWeeklyDistanceMeters",
+  );
+  const longestRecentRunDistance = readOptionalNumber(
+    data,
+    "longestRecentRunDistanceMeters",
+  );
+  const frequency = readOptionalNumber(
+    data,
+    "currentRunningFrequencyDaysPerWeek",
+  );
+
+  const profile: UserProfile = {
+    id: verifyOwner(readString(data, "userId"), expectedUserId),
+    displayName: readOptionalString(data, "displayName"),
+    preferredDistanceUnit: readEnum(
+      data,
+      "preferredDistanceUnit",
+      DISTANCE_UNITS,
+    ) as DistanceUnit,
+    timeZone: convertStoredValue("timeZone", () =>
+      createIanaTimeZone(readString(data, "timeZone")),
+    ),
+    experienceLevel: readOptionalEnum(
+      data,
+      "experienceLevel",
+      RUNNING_EXPERIENCE_LEVELS,
+    ) as RunningExperienceLevel | undefined,
+    targetRace:
+      targetRace === undefined ? undefined : targetRaceFromDocument(targetRace),
+    currentWeeklyDistance:
+      currentWeeklyDistance === undefined
+        ? undefined
+        : convertStoredValue("currentWeeklyDistanceMeters", () =>
+            createDistanceMeters(currentWeeklyDistance),
+          ),
+    currentRunningFrequencyDaysPerWeek: frequency,
+    longestRecentRunDistance:
+      longestRecentRunDistance === undefined
+        ? undefined
+        : convertStoredValue("longestRecentRunDistanceMeters", () =>
+            createDistanceMeters(longestRecentRunDistance),
+          ),
+    recentPerformance:
+      recentPerformance === undefined
+        ? undefined
+        : recentPerformanceFromDocument(recentPerformance),
+    availableTrainingDays: readOptionalEnumArray(
+      data,
+      "availableTrainingDays",
+      WEEKDAYS,
+    ) as Weekday[] | undefined,
+    preferredLongRunDay: readOptionalEnum(
+      data,
+      "preferredLongRunDay",
+      WEEKDAYS,
+    ) as Weekday | undefined,
+    scheduleConstraints: readOptionalString(data, "scheduleConstraints"),
+    completionGoal: readOptionalEnum(
+      data,
+      "completionGoal",
+      COMPLETION_GOALS,
+    ) as CompletionGoal | undefined,
+    createdAt: readTimestamp(data, "createdAt"),
+    updatedAt: readTimestamp(data, "updatedAt"),
+  };
+
+  const issues = validateUserProfile(profile);
+  if (issues.length > 0) {
+    invalidData(issues.map((issue) => issue.message).join(" "));
+  }
+
+  return profile;
 }
 
 export function trainingPlanToDocument(plan: TrainingPlan): Record<string, unknown> {

@@ -103,13 +103,15 @@ The current application flow is deliberately small:
 1. `src/main.tsx` mounts `App`.
 2. `AuthProvider` resolves the Firebase session and gates personal features.
 3. `TrainingDataProvider` loads repositories for the signed-in user and keeps
-   one shared plan, workout, run, and shoe snapshot.
+   one shared profile, plan, workout, run, and shoe snapshot.
 4. Opening Plan, Track, or Analyze mounts a view over that shared snapshot.
 5. Feature mutations persist through repositories and update the shared state,
    so every open panel observes the same records.
 
 The shared training domain model is documented in
 [`docs/architecture/training-domain-model.md`](docs/architecture/training-domain-model.md).
+The owned, versioned runner-profile contract is documented in
+[`docs/architecture/runner-profile-persistence.md`](docs/architecture/runner-profile-persistence.md).
 Cross-feature behavior is documented in
 [`docs/architecture/training-feature-integration.md`](docs/architecture/training-feature-integration.md).
 The accepted live-read, online-write, conflict, and local-cache contract is
