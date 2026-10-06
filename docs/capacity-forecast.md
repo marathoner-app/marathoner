@@ -35,6 +35,11 @@ evidence gates pass, even if a forecast date arrives. January 15, 2027 now falls
 between the optimistic and likely scenarios. It remains an explicit
 scope-or-date decision checkpoint, not a capacity-backed promise.
 
+The optimistic December 13 date means the invitation-readiness decision could
+pass early. It does not authorize invitations before the January 15 floor in
+#104. Opening earlier would require an explicit founding-beta contract change;
+this recalibration changes the forecast, not the participant promise.
+
 The recommended planning expectation is March 14, 2027 while preserving every
 ratified safety, integrity, privacy, and review gate. December is possible only
 under the full optimistic scenario, not by treating current velocity as a
