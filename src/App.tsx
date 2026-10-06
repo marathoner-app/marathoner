@@ -10,6 +10,8 @@ import { useAuth } from "./auth/useAuth";
 import TrainingDataProvider from "./training/TrainingDataProvider";
 import { useTrainingData } from "./training/useTrainingData";
 import { releaseNativeStartupOverlayAfterPaint } from "./services/nativeStartup";
+import RunnerOnboarding from "./onboarding/RunnerOnboarding";
+import { isRunnerProfileOnboardingComplete } from "./onboarding/runnerProfileDraft";
 
 const publicSupportEmail = "kevin@marathonerapp.com";
 
@@ -130,51 +132,133 @@ function App() {
 
       {auth.status === "signedIn" && (
         <TrainingDataProvider userId={auth.user.uid}>
-          {!activeSection && (
-            <nav className="section-navigation" aria-label="Training sections">
-              {sections.map(({ id, label }) => (
-                <motion.button
-                  key={id}
-                  ref={(element) => {
-                    triggerRefs.current[id] = element;
-                  }}
-                  type="button"
-                  className="section-trigger"
-                  aria-controls={`${id}-panel`}
-                  aria-expanded="false"
-                  onClick={() => openSection(id)}
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.25 }}
-                >
-                  {label}
-                </motion.button>
-              ))}
-            </nav>
-          )}
-
-          {activeSection && activeSectionDetails && (
-            <motion.section
-              id={`${activeSection}-panel`}
-              className="section-panel"
-              aria-labelledby={`${activeSection}-panel-title`}
-              initial={{ opacity: 0, scale: 0.98 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.25 }}
-              onKeyDown={(event) => {
-                if (event.key === "Escape") closeSection();
-              }}
-            >
-              <SectionContent
-                section={activeSection}
-                title={activeSectionDetails.title}
-                onClose={closeSection}
-              />
-            </motion.section>
-          )}
+          <AuthenticatedExperience
+            activeSection={activeSection}
+            activeSectionDetails={activeSectionDetails}
+            onOpenSection={openSection}
+            onCloseSection={closeSection}
+            onRegisterTrigger={(section, element) => {
+              triggerRefs.current[section] = element;
+            }}
+          />
         </TrainingDataProvider>
       )}
     </motion.main>
+  );
+}
+
+type AuthenticatedExperienceProps = {
+  activeSection: Section | null;
+  activeSectionDetails: (typeof sections)[number] | undefined;
+  onOpenSection: (section: Section) => void;
+  onCloseSection: () => void;
+  onRegisterTrigger: (
+    section: Section,
+    element: HTMLButtonElement | null,
+  ) => void;
+};
+
+function AuthenticatedExperience({
+  activeSection,
+  activeSectionDetails,
+  onOpenSection,
+  onCloseSection,
+  onRegisterTrigger,
+}: AuthenticatedExperienceProps) {
+  const training = useTrainingData();
+  const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
+  const [onboardingDeferred, setOnboardingDeferred] = useState(false);
+  const onboardingComplete = isRunnerProfileOnboardingComplete(training.profile);
+  const showOnboarding =
+    training.status === "ready" &&
+    (isOnboardingOpen || (!onboardingComplete && !onboardingDeferred));
+
+  const closeOnboarding = () => {
+    setIsOnboardingOpen(false);
+    setOnboardingDeferred(true);
+  };
+
+  return (
+    <>
+      {showOnboarding && (
+        <RunnerOnboarding
+          profile={training.profile}
+          onSave={training.saveProfile}
+          onClose={closeOnboarding}
+        />
+      )}
+
+      {!activeSection && training.status === "loading" && (
+        <div className="training-home-status" role="status">
+          <p>Loading your training data...</p>
+        </div>
+      )}
+
+      {!activeSection && training.status === "error" && (
+        <div className="training-home-status training-error" role="alert">
+          <p>{training.error}</p>
+          <button type="button" onClick={() => void training.reload()}>
+            Try again
+          </button>
+        </div>
+      )}
+
+      {!activeSection && training.status === "ready" && !showOnboarding && (
+        <>
+          <div className="runner-profile-entry">
+            <button
+              type="button"
+              onClick={() => setIsOnboardingOpen(true)}
+            >
+              {onboardingComplete ? "Edit runner profile" : "Resume runner setup"}
+            </button>
+            <p>
+              {onboardingComplete
+                ? "Your first-marathon starting point is saved."
+                : "Your saved progress is safe; finish setup before a plan can be evaluated."}
+            </p>
+          </div>
+          <nav className="section-navigation" aria-label="Training sections">
+            {sections.map(({ id, label }) => (
+              <motion.button
+                key={id}
+                ref={(element) => onRegisterTrigger(id, element)}
+                type="button"
+                className="section-trigger"
+                aria-controls={`${id}-panel`}
+                aria-expanded="false"
+                onClick={() => onOpenSection(id)}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.25 }}
+              >
+                {label}
+              </motion.button>
+            ))}
+          </nav>
+        </>
+      )}
+
+      {activeSection && activeSectionDetails && (
+        <motion.section
+          id={`${activeSection}-panel`}
+          className="section-panel"
+          aria-labelledby={`${activeSection}-panel-title`}
+          initial={{ opacity: 0, scale: 0.98 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.25 }}
+          onKeyDown={(event) => {
+            if (event.key === "Escape") onCloseSection();
+          }}
+        >
+          <SectionContent
+            section={activeSection}
+            title={activeSectionDetails.title}
+            onClose={onCloseSection}
+          />
+        </motion.section>
+      )}
+    </>
   );
 }
 

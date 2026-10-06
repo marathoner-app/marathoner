@@ -55,8 +55,17 @@ rules by itself. Numeric eligibility and progression thresholds remain owned by
 
 `TrainingDataProvider` loads the profile with the other authenticated data and
 exposes `profile` plus `saveProfile`. React components therefore do not import
-Firestore or construct user paths. Issue #67 will consume this boundary for the
-onboarding experience; it does not need a second profile model.
+Firestore or construct user paths. The runner-onboarding experience consumes
+that boundary directly; it does not maintain a second profile model.
+
+Onboarding opens automatically when the authenticated profile is incomplete.
+The runner may save a coherent partial draft, continue into the existing
+prototype, and resume later. Completing setup requires the target timing,
+recent running context, weekly volume, longest recent run, available days,
+preferred long-run day, and the completion-focused goal. Optional name,
+representative performance, and schedule constraints are labeled as optional.
+Completing intake records context only: it does not generate a plan, assess
+eligibility, or promise a finish time.
 
 Malformed fields, unsupported enum values, an unknown schema version, invalid
 dates, or ownership disagreement become a typed `PersistenceError` with code
@@ -87,9 +96,10 @@ is owned by #69 and #80.
 
 ## Verification
 
-Unit tests cover complete round trips, updates, invalid inputs, owner mismatch,
-unknown schema versions, invalid enums, and invalid dates. Firestore emulator
-tests cover owner create/read/update, anonymous and cross-owner denial,
+Unit and component tests cover onboarding completion, calm validation, partial
+progress, revision, complete profile round trips, invalid inputs, owner
+mismatch, unknown schema versions, invalid enums, and invalid dates. Firestore
+emulator tests cover owner create/read/update, anonymous and cross-owner denial,
 immutable creation timestamps, malformed documents, undeclared fields, and
 client-deletion denial in both development and beta rule sets.
 

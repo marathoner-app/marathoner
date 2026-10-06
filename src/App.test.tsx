@@ -5,6 +5,14 @@ import type { ReactNode } from 'react'
 import App from './App'
 import AuthProvider, { authSessionTimeoutMs } from './auth/AuthProvider'
 import {
+  createDateOnly,
+  createDistanceMeters,
+  createIanaTimeZone,
+  createUserId,
+  createUtcDateTime,
+  type UserProfile
+} from './domain/training'
+import {
   logOut,
   subscribeToAuthState,
   type AuthUser
@@ -30,15 +38,23 @@ vi.mock('./training/TrainingDataProvider', () => ({
   default: ({ children }: { children: ReactNode }) => children
 }))
 
+const trainingMock = vi.hoisted(() => ({
+  profile: null as object | null,
+  saveProfile: vi.fn(),
+  reload: vi.fn()
+}))
+
 vi.mock('./training/useTrainingData', () => ({
   useTrainingData: () => ({
     status: 'ready',
     error: null,
+    profile: trainingMock.profile,
     plans: [],
     workouts: [],
     runs: [],
     shoes: [],
-    reload: vi.fn(),
+    reload: trainingMock.reload,
+    saveProfile: trainingMock.saveProfile,
     createShoe: vi.fn(),
     createRun: vi.fn(),
     updateRun: vi.fn(),
@@ -51,6 +67,22 @@ const mockedSubscribeToAuthState = vi.mocked(subscribeToAuthState)
 const signedInUser: AuthUser = {
   uid: 'runner-1',
   email: 'runner@example.com'
+}
+const timestamp = createUtcDateTime('2026-10-05T12:00:00Z')
+const completeRunnerProfile: UserProfile = {
+  id: createUserId('runner-1'),
+  preferredDistanceUnit: 'mile',
+  timeZone: createIanaTimeZone('America/Los_Angeles'),
+  experienceLevel: 'consistent',
+  targetRace: { kind: 'date', date: createDateOnly('2027-05-02') },
+  currentWeeklyDistance: createDistanceMeters(32_187),
+  currentRunningFrequencyDaysPerWeek: 4,
+  longestRecentRunDistance: createDistanceMeters(16_093),
+  availableTrainingDays: ['tuesday', 'thursday', 'saturday', 'sunday'],
+  preferredLongRunDay: 'sunday',
+  completionGoal: 'complete_first_marathon',
+  createdAt: timestamp,
+  updatedAt: timestamp
 }
 
 let emitAuthState: (user: AuthUser | null) => void
@@ -83,6 +115,8 @@ function renderSignedInApp() {
 
 beforeEach(() => {
   vi.clearAllMocks()
+  trainingMock.profile = completeRunnerProfile
+  trainingMock.saveProfile.mockResolvedValue(completeRunnerProfile)
   unsubscribe = vi.fn()
   mockedLogOut.mockResolvedValue()
   mockedSubscribeToAuthState.mockImplementation((onChange, onError) => {
@@ -238,6 +272,32 @@ describe('App authentication state', () => {
 })
 
 describe('App training sections', () => {
+  it('opens incomplete runner setup on entry and lets the runner resume later', async () => {
+    const user = userEvent.setup()
+    trainingMock.profile = null
+    renderSignedInApp()
+
+    expect(
+      screen.getByRole('dialog', { name: 'Tell us where you are starting' })
+    ).toBeInTheDocument()
+    expect(
+      screen.queryByRole('navigation', { name: 'Training sections' })
+    ).not.toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'Continue later' }))
+
+    expect(screen.getByRole('button', { name: 'Resume runner setup' })).toBeInTheDocument()
+    expect(
+      screen.getByRole('navigation', { name: 'Training sections' })
+    ).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'Resume runner setup' }))
+
+    expect(
+      screen.getByRole('dialog', { name: 'Tell us where you are starting' })
+    ).toBeInTheDocument()
+  })
+
   it('renders the signed-in training companion screen', () => {
     renderSignedInApp()
 
