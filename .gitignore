@@ -13,6 +13,7 @@ dist-ios
 dist-ssr
 functions/lib
 *.local
+ios/App/App/GoogleService-Info.plist
 
 # Terraform working data and local state must never enter the repository.
 **/.terraform/*

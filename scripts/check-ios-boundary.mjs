@@ -8,6 +8,10 @@ import {
   findCopiedBundleViolations,
   findIosProjectViolations,
 } from './ios-boundary-policy.mjs'
+import {
+  findIosFirebaseConfigurationViolations,
+  iosFirebaseConfigurationBoundary,
+} from './ios-firebase-config-policy.mjs'
 
 const executeFile = promisify(execFile)
 const repositoryRoot = path.resolve(
@@ -45,6 +49,14 @@ async function filesBelow(directory) {
 }
 
 async function run() {
+  const firebaseConfigurationEntries = await Promise.all(
+    Object.entries(iosFirebaseConfigurationBoundary.environments).map(
+      async ([candidateEnvironment, boundary]) => [
+        candidateEnvironment,
+        await readFile(path.join(repositoryRoot, boundary.sourcePath), 'utf8'),
+      ],
+    ),
+  )
   const [
     capacitorConfig,
     bridgeViewController,
@@ -61,6 +73,7 @@ async function run() {
     tracked,
     builtFiles,
     copiedFiles,
+    selectedFirebaseConfiguration,
   ] = await Promise.all([
     readFile(path.join(repositoryRoot, 'capacitor.config.ts'), 'utf8'),
     readFile(
@@ -113,6 +126,13 @@ async function run() {
     ),
     filesBelow(path.join(repositoryRoot, 'dist-ios')),
     filesBelow(path.join(repositoryRoot, 'ios/App/App/public')),
+    readFile(
+      path.join(
+        repositoryRoot,
+        iosFirebaseConfigurationBoundary.destinationPath,
+      ),
+      'utf8',
+    ),
   ])
 
   const violations = [
@@ -135,6 +155,11 @@ async function run() {
       capacitorRuntimeConfig: runtimeConfig,
       copiedFiles,
       environmentName,
+    }),
+    ...findIosFirebaseConfigurationViolations({
+      configurationSources: Object.fromEntries(firebaseConfigurationEntries),
+      environmentName,
+      selectedSource: selectedFirebaseConfiguration,
     }),
   ]
 

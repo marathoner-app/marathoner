@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>API_KEY</key>
+	<string>AIzaSyCfLCSgwMoqqEV3gmkLOApTsxkTs8vyvwk</string>
+	<key>GCM_SENDER_ID</key>
+	<string>156851031272</string>
+	<key>PLIST_VERSION</key>
+	<string>1</string>
+	<key>BUNDLE_ID</key>
+	<string>com.marathonerapp.marathoner</string>
+	<key>PROJECT_ID</key>
+	<string>marathonerapp-beta</string>
+	<key>STORAGE_BUCKET</key>
+	<string>marathonerapp-beta.firebasestorage.app</string>
+	<key>IS_ADS_ENABLED</key>
+	<false/>
+	<key>IS_ANALYTICS_ENABLED</key>
+	<false/>
+	<key>IS_APPINVITE_ENABLED</key>
+	<true/>
+	<key>IS_GCM_ENABLED</key>
+	<true/>
+	<key>IS_SIGNIN_ENABLED</key>
+	<true/>
+	<key>GOOGLE_APP_ID</key>
+	<string>1:156851031272:ios:8ad247902c872823084d5d</string>
+</dict>
+</plist>

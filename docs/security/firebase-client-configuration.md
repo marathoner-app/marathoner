@@ -1,7 +1,7 @@
 # Firebase client configuration audit
 
-- **Status:** Verified browser plus selected iOS development and beta configuration
-- **Audit dates:** 2026-09-30 browser audit; 2026-10-05 development and beta iOS audits
+- **Status:** Verified browser, selected iOS, and registered App Check environment boundaries
+- **Audit dates:** 2026-09-30 browser audit; 2026-10-05 development and beta iOS audits; 2026-10-06 App Check registration audit
 - **Owner:** Kevin Tulloch
 - **Tracking issues:** [#22](https://github.com/marathoner-app/marathoner/issues/22),
   [#178](https://github.com/marathoner-app/marathoner/issues/178),
@@ -42,7 +42,7 @@ would not turn them into secrets.
 | Cloud Firestore | The default `nam5` database is active. The live rule editor is byte-equivalent after whitespace normalization to the tracked `firestore.rules`. | Current rules enforce owner-path access and schema version 1. The separate [beta membership candidate](firebase-beta-membership.md) adds verified-email and approved-membership access but remains undeployed; #121 and the server-command migration must close the remaining beta rule boundary. |
 | Realtime Database | The console offers **Create Database**; no database exists. | Remain disabled. |
 | Cloud Storage | Storage is not configured and the Spark project cannot enable it without billing. | Remain disabled unless a future approved feature and ruleset require it. |
-| App Check | The console shows **Get started**; no app or API enforcement is configured. | Implement and observe it through #161 after environment and mobile decisions, then enforce it before external invitations. |
+| App Check | Development and beta each have a distinct Fraud Defense web registration and App Attest iOS registration. No debug token was created, the clients do not initialize App Check yet, and API enforcement remains off. | The [registration record](app-check-provider-registration.md) is the authority for provider identity, native configuration selection, debug-token custody, and the #204–#206 rollout gates. |
 | GitHub Pages | The workflow serves `https://marathoner-app.github.io/marathoner/` with HTTPS. No Pages custom domain is configured. | The GitHub Pages host is the only current production origin. Issue #162 owns the coordinated custom-domain migration. |
 | Repository credentials | Current tracked files and historical filenames contain no Marathoner service-account file, private key, password, Firebase CLI token, or administrative credential. | Continue to prohibit privileged credentials in source. Use workload identity or provider-managed operator sessions. |
 | GitHub secret controls | Secret scanning and push protection were disabled at audit start and are now enabled for the public repository. Alert #1 identified the development browser key; alert #2 identified the beta browser key when its isolated registration was committed. | Both alerts were resolved as documented false positives after their project identity, API allowlist, and website restrictions were verified. |
@@ -138,21 +138,24 @@ fixtures were removed before the copied bundle was restored to development.
 
 ## App Check decision
 
-App Check is required before external invitations, but enabling enforcement in
-the shared prototype project today would be premature. The mobile ADR selects
-Capacitor. Issue #202 approved and compiled the pinned native App Attest bridge,
-but no provider is registered or initialized and no live token has been proven.
-The selected development/beta boundary (#125), production shell (#177), and
-local material-command foundation (#158) are now proven. Live command
-deployment and workflow migration remain separate dependencies.
+App Check is required before external invitations, but enabling enforcement
+before client and observation evidence would be premature. The mobile ADR
+selects Capacitor. Issue #202 approved and compiled the pinned native App Attest
+bridge. Issue #203 then registered distinct development and beta Fraud Defense
+web providers plus App Attest iOS providers and added fail-closed native
+configuration selection. No client initializes App Check yet, no live token has
+been proven, and enforcement remains off. The
+[registration record](app-check-provider-registration.md) distinguishes those
+facts from the remaining rollout.
 
 Issue [#161](https://github.com/marathoner-app/marathoner/issues/161) is now an
 epic with #201 through #206. Those slices own:
 
 1. bounded beta billing and the exact Functions deployment guard (#201);
 2. the reviewed Firebase 12 and native bridge dependency graph (#202);
-3. App Check registrations that preserve the distinct development and beta
-   web/iOS boundary plus protected debug-token ownership (#203);
+3. the completed App Check registrations that preserve the distinct
+   development and beta web/iOS boundary plus protected debug-token ownership
+   (#203);
 4. reCAPTCHA Enterprise and App Attest initialization before Firebase services
    are used (#204);
 5. a monitoring-only observation window and rollback rehearsal (#205); and
@@ -275,5 +278,6 @@ setting is not complete merely because the application still builds locally.
 - [Firebase security checklist](https://firebase.google.com/support/guides/security-checklist)
 - [Google Cloud API-key restrictions](https://cloud.google.com/docs/authentication/api-keys)
 - [Firebase App Check for web](https://firebase.google.com/docs/app-check/web/recaptcha-provider)
+- [Marathoner App Check provider registration](app-check-provider-registration.md)
 - [GitHub secret scanning](https://docs.github.com/en/code-security/concepts/secret-security/secret-scanning)
 - [GitHub Pages custom domains](https://docs.github.com/en/pages/configuring-a-custom-domain-for-your-github-pages-site)

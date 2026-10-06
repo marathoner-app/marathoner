@@ -81,8 +81,9 @@ The reviewed bridge behavior is narrow:
 The plugin is linked into the iOS target but is not imported or invoked by the
 application in this issue. A compiled simulator launch succeeded without a
 native Firebase configuration because no App Check call is made. Issue #203
-must add distinct development and beta native registrations and a fail-closed
-configuration selection before #204 invokes the plugin.
+subsequently added distinct development and beta native registrations plus
+fail-closed configuration selection. Issue #204 still owns the first plugin
+invocation.
 
 ## Native dependency footprint
 

@@ -1,6 +1,6 @@
 # Firebase environment selection
 
-- **Status:** Distinct projects provisioned; explicit web and iOS selection boundaries verified
+- **Status:** Distinct projects provisioned; explicit web, iOS, and App Check registration boundaries verified
 - **Tracking issues:** [#164](https://github.com/marathoner-app/marathoner/issues/164),
   [#168](https://github.com/marathoner-app/marathoner/issues/168),
   parent [#125](https://github.com/marathoner-app/marathoner/issues/125)
@@ -59,6 +59,13 @@ identity appears in the built bundle. Running it replaces the copied Xcode web
 bundle with beta, so an operator must run `npm run check:ios` afterward before
 returning to development-device work.
 
+Both iOS commands also require the distinct, versioned public native Firebase
+configurations. They validate the exact project, sender, bundle, storage
+bucket, and registered iOS app ID before copying the chosen configuration to
+the ignored Xcode resource. The
+[App Check registration record](app-check-provider-registration.md) defines
+that boundary and the separate debug-token policy.
+
 ## Beta activation sequence
 
 The distinct project, web registration, rules deployment, web selection, and
@@ -78,6 +85,7 @@ this sequence through separately reviewed changes:
 Local development, CI defaults, the selected iOS development build, and the
 current GitHub Pages deployment remain explicitly pinned to development. The
 pull-request iOS job checks both environment bundles with non-live placeholder
-keys, but it does not contact beta. App Check, custom-domain publication, and
-the remaining invitation controls stay separate gates; failing closed remains
-the intended behavior until each is complete.
+keys, but it does not contact beta. App Check providers are registered but the
+clients are not initialized and enforcement remains off; #204 through #206,
+custom-domain publication, and the remaining invitation controls stay separate
+gates.

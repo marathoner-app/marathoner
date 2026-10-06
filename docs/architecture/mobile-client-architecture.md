@@ -72,8 +72,10 @@ team-neutral SPM Xcode project produced by issue
 removed the candidate runtimes, proof rule, and temporary key; only historical
 evidence remains under `spikes/mobile/`. Issue #181 proved continuous physical-
 device startup, and issue #125 proved explicit beta selection plus approved and
-denied beta access. The shell is still not a shipping iOS client: App Check,
-daily-use failure states, accessibility, and TestFlight remain unproven.
+denied beta access. The shell is still not a shipping iOS client: App Check
+providers and native configuration are registered, but initialization,
+observation, enforcement, daily-use failure states, accessibility, and
+TestFlight remain unproven.
 
 ## Repository boundary
 
@@ -207,10 +209,14 @@ records:
   observation, and enforcement evidence.
 
 Marathoner supports iOS 15 and later, so the bridge's iOS 13 DeviceCheck path is
-not a founding-beta fallback. Issue #203 must register distinct development and
-beta native apps plus web providers. Issue #204 must initialize the native
-provider before the JavaScript Firebase clients and fail closed on provider
-errors. Issues #205 and #206 own observation, rollback, and staged enforcement.
+not a founding-beta fallback. Issue #203 registered distinct development and
+beta native apps plus web providers and added exact native-configuration
+selection. The
+[registration record](../security/app-check-provider-registration.md) captures
+the public identities, debug-token custody, and unenforced console state. Issue
+#204 must initialize the native provider before the JavaScript Firebase clients
+and fail closed on provider errors. Issues #205 and #206 own observation,
+rollback, and staged enforcement.
 
 A custom App Check provider and token-minting backend are outside this decision
 because they create a new security service. Do not build one without a separate

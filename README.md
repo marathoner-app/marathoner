@@ -233,6 +233,9 @@ commit service-account files, private keys, passwords, or other secrets.
 The verified client-key, provider, domain, data-service, and App Check posture is
 documented in
 [`docs/security/firebase-client-configuration.md`](docs/security/firebase-client-configuration.md).
+The distinct development/beta provider registrations, native configuration
+selection, debug-token custody, and enforcement gates are documented in
+[`docs/security/app-check-provider-registration.md`](docs/security/app-check-provider-registration.md).
 The selection contract and provisioned beta controls are documented in
 [`docs/security/firebase-environment-selection.md`](docs/security/firebase-environment-selection.md)
 and
