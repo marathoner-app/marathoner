@@ -4,6 +4,7 @@ import { loadEnv } from 'vite'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import {
+  assertFunctionsEmulatorForMode,
   resolveFirebaseEnvironmentForMode,
 } from './src/firebaseEnvironment'
 import { firebaseProjectConfigurations } from './src/firebaseConfig'
@@ -14,6 +15,10 @@ const repositoryRoot = path.dirname(fileURLToPath(import.meta.url))
 export default defineConfig(({ mode }) => {
   const isIosBuild = mode === 'ios-development' || mode === 'ios-beta'
   const environment = loadEnv(mode, repositoryRoot, 'VITE_')
+  assertFunctionsEmulatorForMode(
+    mode,
+    environment.VITE_FIREBASE_FUNCTIONS_EMULATOR === 'true',
+  )
   resolveFirebaseEnvironmentForMode({
     mode,
     requestedEnvironment: environment.VITE_FIREBASE_ENVIRONMENT,
@@ -30,7 +35,7 @@ export default defineConfig(({ mode }) => {
     },
     test: {
       environment: 'jsdom',
-      exclude: configDefaults.exclude,
+      exclude: [...configDefaults.exclude, 'functions/lib/**'],
       setupFiles: './src/test/setup.ts',
     },
   }

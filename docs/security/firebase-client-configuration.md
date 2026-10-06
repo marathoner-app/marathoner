@@ -141,8 +141,9 @@ fixtures were removed before the copied bundle was restored to development.
 App Check is required before external invitations, but enabling enforcement in
 the shared prototype project today would be premature. The mobile ADR selects
 Capacitor and explicitly leaves its native App Attest bridge unproven.
-The selected development/beta boundary (#125) and production shell (#177) are
-now proven. The material-command endpoint (#158) remains a separate dependency.
+The selected development/beta boundary (#125), production shell (#177), and
+local material-command foundation (#158) are now proven. Live command
+deployment and workflow migration remain separate dependencies.
 
 Issue [#161](https://github.com/marathoner-app/marathoner/issues/161) then owns:
 

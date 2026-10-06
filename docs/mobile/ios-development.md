@@ -7,8 +7,9 @@ there is no second feature application under `ios/`.
 The ordinary workflow proves the selected development shell. A separate,
 explicit beta proof below verifies environment selection without changing the
 development, CI, Pages, or production-web defaults. Neither workflow activates
-App Check, material mobile writes, TestFlight, or Android. Those remain in
-#161, #158–#159, #122, and #90.
+App Check, migrated material mobile workflows, TestFlight, or Android. The
+local command foundation is proved in #158; workflow migration, live reads,
+and release work remain in #72, #115, #138, #159, #161, #122, and #90.
 
 ## Prerequisites
 

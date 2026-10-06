@@ -4,6 +4,7 @@ import {
   type FirebaseConfigurationRegistry,
 } from './firebaseConfig'
 import {
+  assertFunctionsEmulatorForMode,
   assertFirebaseEnvironmentForMode,
   resolveFirebaseEnvironment as resolveFirebaseEnvironmentWithRegistry,
   resolveFirebaseEnvironmentForMode as resolveFirebaseEnvironmentForModeWithRegistry,
@@ -35,6 +36,21 @@ const developmentConfig = firebaseProjectConfigurations.development
 const betaConfig = firebaseProjectConfigurations.beta
 
 describe('Firebase environment selection', () => {
+  it('allows the Functions emulator only in local development mode', () => {
+    expect(() =>
+      assertFunctionsEmulatorForMode('development', true),
+    ).not.toThrow()
+    expect(() =>
+      assertFunctionsEmulatorForMode('production', true),
+    ).toThrow('available only to local development')
+    expect(() =>
+      assertFunctionsEmulatorForMode('ios-development', true),
+    ).toThrow('available only to local development')
+    expect(() =>
+      assertFunctionsEmulatorForMode('production', false),
+    ).not.toThrow()
+  })
+
   it('selects the audited development project explicitly', () => {
     expect(resolveFirebaseEnvironment('development')).toEqual({
       name: 'development',

@@ -1,6 +1,6 @@
 # Training data synchronization
 
-- **Status:** Accepted target architecture; implementation work remains open
+- **Status:** Accepted target architecture; local command boundary proved, workflow migration remains open
 - **Decision date:** 2026-09-30
 - **Decision owner:** Marathoner maintainer
 - **Tracking issue:** [#80](https://github.com/marathoner-app/marathoner/issues/80)
@@ -258,11 +258,14 @@ the write boundary.
 
 ## Migration sequence and gates
 
-1. Define the portable synchronization-state and material-command types without
-   importing Firebase or React.
-2. Establish the authenticated command boundary and its emulator proof in issue
-   #158, then implement the atomic, idempotent, revision-safe workflows in their
-   owning feature issues, including #72 and #115.
+1. The portable material-command envelope and typed outcomes now exist without
+   importing Firebase or React. Shared synchronization-state work remains in
+   #159.
+2. Issue #158 established the authenticated command boundary, transactional
+   receipt, offline behavior, ambiguous-response resolution, and emulator
+   proof. The proof runtime remains deliberately undeployed. Implement the
+   atomic, idempotent, revision-safe workflows in their owning feature issues,
+   including #72 and #115.
 3. Tighten Firestore Security Rules so clients can read their owned records but
    cannot directly write material collections after the endpoints are ready.
 4. Add listener adapters, completeness guards, freshness translation, teardown,
@@ -282,9 +285,9 @@ work and the live-read/cache-isolation implementation named by this decision.
 
 ## Follow-up ownership
 
-- [#158](https://github.com/marathoner-app/marathoner/issues/158) owns the shared
-  authenticated command envelope, server endpoint foundation, idempotency
-  receipt, typed outcomes, and offline/ambiguous-response proof.
+- [#158](https://github.com/marathoner-app/marathoner/issues/158) established the
+  shared authenticated command envelope, local server endpoint foundation,
+  idempotency receipt, typed outcomes, and offline/ambiguous-response proof.
 - [#72](https://github.com/marathoner-app/marathoner/issues/72) owns atomic and
   idempotent initial-plan activation through that command boundary.
 - [#115](https://github.com/marathoner-app/marathoner/issues/115) owns atomic,
