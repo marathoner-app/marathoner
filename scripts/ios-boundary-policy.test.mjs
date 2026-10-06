@@ -9,7 +9,7 @@ import {
 const validProject = {
   bridgeViewController:
     'installStartupOverlay() registerPluginInstance(StartupOverlayPlugin()) DispatchQueue.main.asyncAfter(deadline: .now() + 10',
-  capacitorConfig: `appId: 'com.marathonerapp.marathoner'\nappName: 'Marathoner'\nwebDir: 'dist-ios'\nbackgroundColor: '#ffffff'\nerrorPath: 'startup-error.html'\nlaunchAutoHide: true\nlaunchShowDuration: 10_000\nbackgroundColor: '#ffffffff'`,
+  capacitorConfig: `appId: 'com.marathonerapp.marathoner'\nappName: 'Marathoner'\nwebDir: 'dist-ios'\nbackgroundColor: '#ffffff'\nerrorPath: 'startup-error.html'\nlaunchAutoHide: true\nlaunchShowDuration: 10_000\nbackgroundColor: '#ffffffff'\n'@capacitor-firebase/app-check'\nsymlink: true`,
   debugConfig: '#include? "local.xcconfig"',
   infoPlist:
     '<string>Marathoner</string><key>UIUserInterfaceStyle</key><string>Light</string>',
@@ -20,12 +20,20 @@ const validProject = {
   packageJson: {
     dependencies: {
       '@capacitor/core': '8.5.2',
+      '@capacitor-firebase/app-check': '8.5.2',
       '@capacitor/ios': '8.5.2',
       '@capacitor/splash-screen': '8.0.2',
+      firebase: '^12.19.0',
     },
-    devDependencies: { '@capacitor/cli': '8.5.2' },
+    devDependencies: {
+      '@capacitor/cli': '8.5.2',
+      '@firebase/rules-unit-testing': '^5.0.2',
+    },
   },
-  packageManifest: 'exact: "8.5.2"',
+  packageManifest:
+    'exact: "8.5.2"\n.package(name: "CapacitorFirebaseAppCheck", path: "symlinks/CapacitorFirebaseAppCheck")\n.product(name: "CapacitorFirebaseAppCheck", package: "CapacitorFirebaseAppCheck")',
+  packageResolution:
+    '"identity" : "firebase-ios-sdk"\n"version" : "12.19.2"',
   sceneDelegate: 'guard let sceneWindow = window',
   trackedPaths: ['ios/App/App/AppDelegate.swift'],
   xcodeProject:
@@ -52,6 +60,40 @@ describe('iOS boundary policy', () => {
         'Xcode project commits a development team',
         'ios/App/App/public/index.html is generated or account-local data',
         'ios/signing.mobileprovision is a forbidden signing artifact',
+      ]),
+    )
+  })
+
+  it('rejects App Check dependency drift and generated SPM symlinks', () => {
+    expect(
+      findIosProjectViolations({
+        ...validProject,
+        capacitorConfig: validProject.capacitorConfig.replace(
+          'symlink: true',
+          'symlink: false',
+        ),
+        packageJson: {
+          ...validProject.packageJson,
+          dependencies: {
+            ...validProject.packageJson.dependencies,
+            '@capacitor-firebase/app-check': '^8.5.2',
+            firebase: '^11.10.0',
+          },
+        },
+        packageManifest: 'exact: "8.5.2"',
+        packageResolution: '{}',
+        trackedPaths: [
+          'ios/App/CapApp-SPM/symlinks/CapacitorFirebaseAppCheck',
+        ],
+      }),
+    ).toEqual(
+      expect.arrayContaining([
+        'capacitor.config.ts is missing symlink: true',
+        '@capacitor-firebase/app-check must be pinned to 8.5.2',
+        'firebase must use ^12.19.0',
+        'CapApp-SPM Package.swift is missing .package(name: "CapacitorFirebaseAppCheck", path: "symlinks/CapacitorFirebaseAppCheck")',
+        'Package.resolved is missing "identity" : "firebase-ios-sdk"',
+        'ios/App/CapApp-SPM/symlinks/CapacitorFirebaseAppCheck is generated or account-local data',
       ]),
     )
   })

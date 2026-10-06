@@ -19,6 +19,17 @@ const config: CapacitorConfig = {
       showSpinner: false,
     },
   },
+  experimental: {
+    ios: {
+      spm: {
+        packageOptions: {
+          '@capacitor-firebase/app-check': {
+            symlink: true,
+          },
+        },
+      },
+    },
+  },
 }
 
 export default config

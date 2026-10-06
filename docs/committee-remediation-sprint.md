@@ -5,8 +5,8 @@
 - **Owner:** Kevin Tulloch
 - **Review scope:** The Marathoner product repository, excluding Creator Radar
 - **Parent tracker:** [GitHub issue #104](https://github.com/marathoner-app/marathoner/issues/104)
-- **Current delivery slice:** [GitHub issue #78](https://github.com/marathoner-app/marathoner/issues/78)
-- **Pending external gate:** [GitHub issue #191](https://github.com/marathoner-app/marathoner/issues/191)
+- **Current delivery slice:** [GitHub issue #202](https://github.com/marathoner-app/marathoner/issues/202)
+- **Pending external gate:** [GitHub issue #201](https://github.com/marathoner-app/marathoner/issues/201)
 - **Related plans:** [Zero-to-beta plan](zero-to-beta-plan.md),
   [product vision](product-vision.md), and
   [founding cohort plan](founding-cohort-plan.md)
@@ -110,17 +110,17 @@ Critical items can have prerequisites in earlier high-priority work.
 | CR-07 | High | Quality | Run lint, tests, typecheck/build, and Firestore emulator checks on pull requests and make required checks visible before merge. | #56, #57 | Wave 00 | Complete |
 | CR-08 | High | Mobile | Compare Capacitor, Expo with Firebase JS, and Expo with React Native Firebase on a physical-iPhone vertical slice; approve the ADR from evidence. | #33, #83–#89, #177–#178 | Wave 01 | Complete; Capacitor selected, promoted, and spike runtimes retired |
 | CR-09 | High | Architecture | Make completion, plan approval, and adjustment writes atomic and idempotent; enforce one active plan and stale-write rejection. | #72, #105, #107 | Invitations | Not started |
-| CR-10 | High | Security | Enforce allowlisted beta access, verified-email writes, supported schema/rules versions, bounded fields, immutable ownership, and negative rules tests. | #87, #107, #109 | Invitations | In progress; beta membership, shared-record proof, and owned profile boundaries have negative tests |
+| CR-10 | High | Security | Enforce allowlisted beta access, verified-email writes, supported schema/rules versions, bounded fields, immutable ownership, negative rules tests, and staged App Check. | #87, #107, #109, #121, #161, #201–#206 | Invitations | In progress; beta membership, shared-record proof, and owned profile boundaries have negative tests; App Check dependency proof active |
 | CR-11 | High | Operations | Separate development and beta Firebase environments and prevent local or spike commands from reaching participant data. | #22, #83, #109, #125 | Wave 01 | Complete; web and selected-iOS beta boundaries proved |
 | CR-12 | High | Safety | Store versioned recommendation evidence and provide a rehearsed remote generation, guidance, and adaptation kill switch. | #105, #107 | Invitations | Not started |
-| CR-13 | High | Privacy | Provide consent, limitations, password reset, support, withdrawal, deletion initiation, and a rehearsed complete deletion procedure. | #78, #79, #109, #195–#197 | Invitations | Password recovery and deletion design complete; local request, account-lock, runner, and manifest evidence ready; private-store activation, UI, live activation, and rehearsal pending |
-| CR-14 | High | Recovery | Document and rehearse export/restore, incident response, participant support, recruitment pause, and critical-failure visibility. | #107, #109 | Invitations | Not started |
+| CR-13 | High | Privacy | Provide consent, limitations, password reset, support, withdrawal, deletion initiation, and a rehearsed complete deletion procedure. | #78, #79, #109, #124, #195–#197 | Invitations | Password recovery, deletion design, local request/lock/runner, and shared UI complete; live activation and rehearsal wait on #161 |
+| CR-14 | High | Recovery | Document and rehearse export/restore, incident response, participant support, recruitment pause, and critical-failure visibility. | #107, #109, #124 | Invitations | Not started; live rehearsal waits on #161 |
 | CR-15 | High | Release | Establish Apple ownership and signing early; obtain an external-testable build and complete a non-owner journey before readiness week. | #108 | Invitations | Not started |
 | CR-16 | High | Validation | Precommit activation, comprehension, trust, safety, engagement, support-burden, and pause thresholds before observing cohort results. | #35, #110 | Invitations | Not started |
 | CR-17 | Medium | Trust | Make the public surface explain the product's current readiness and route prospective users to an honest waitlist or bounded beta path. | #23, #109 | Recruitment | Complete; registration closed honestly |
 | CR-18 | Medium | Maintainability | Use additive schema compatibility, current/previous-version fixtures, and one documented migration pattern without building a generalized platform. | #69, #80, #83 | Invitations | Not started |
 | CR-19 | Medium | Economics | Record support cost, acquisition assumptions, retention hypotheses, pricing tests, and bounded lifetime-value logic. | #35, #110 | Investment review | Not started |
-| CR-20 | Medium | Governance | Add missing contribution, security, ownership, and repository metadata appropriate to a public investor-visible project. | #19, #58, #59 | Wave 00 | Evidence ready; #19 merge pending |
+| CR-20 | Medium | Governance | Add missing contribution, security, ownership, and repository metadata appropriate to a public investor-visible project. | #19, #58, #59 | Wave 00 | Complete |
 
 Some existing issues do not yet cover the complete required outcome. The first
 administrative task is to add focused child issues rather than silently expand
