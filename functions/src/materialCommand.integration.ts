@@ -17,6 +17,7 @@ import {
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
 import {
+  createAccountDeletionRequest,
   createProofMaterialCommand,
   type MaterialCommandEnvelope,
 } from '../../src/domain/materialCommands/contract.js'
@@ -36,6 +37,9 @@ let auth: Auth
 let ownerId: string
 let submit: ReturnType<typeof httpsCallable<MaterialCommandEnvelope, unknown>>
 let resolve: ReturnType<typeof httpsCallable<{ commandId: string }, unknown>>
+let requestDeletion: ReturnType<
+  typeof httpsCallable<MaterialCommandEnvelope, unknown>
+>
 const adminApp = initializeAdminApp({ projectId }, 'material-command-integration')
 const database = getAdminFirestore(adminApp)
 
@@ -68,6 +72,7 @@ beforeAll(async () => {
   connectFunctionsEmulator(functions, '127.0.0.1', 5001)
   submit = httpsCallable(functions, 'submitMaterialCommand')
   resolve = httpsCallable(functions, 'resolveMaterialCommand')
+  requestDeletion = httpsCallable(functions, 'requestAccountDeletion')
 
   const credential = await createUserWithEmailAndPassword(auth, email, password)
   ownerId = credential.user.uid
@@ -86,6 +91,30 @@ afterAll(async () => {
 })
 
 describe('material-command emulator boundary', () => {
+  it('returns typed authentication and App Check rejections for deletion requests', async () => {
+    const command = createAccountDeletionRequest('delete-command-app-check')
+
+    const anonymous = await requestDeletion(command)
+    expect(anonymous.data).toEqual(
+      expect.objectContaining({
+        status: 'authentication_error',
+        code: 'authentication-required',
+      }),
+    )
+
+    await signInOwner()
+    const missingAppCheck = await requestDeletion(command)
+    expect(missingAppCheck.data).toEqual(
+      expect.objectContaining({
+        status: 'authorization_error',
+        code: 'app-check-required',
+      }),
+    )
+    await expect(
+      database.collection('accountDeletionRequests').get(),
+    ).resolves.toEqual(expect.objectContaining({ empty: true }))
+  })
+
   it('rejects unauthenticated and payload-supplied foreign ownership', async () => {
     const unauthenticated = await submit(
       createProofMaterialCommand('proof-command-anonymous'),

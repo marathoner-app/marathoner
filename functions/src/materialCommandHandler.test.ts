@@ -4,7 +4,7 @@ import {
   createProofMaterialCommand,
   materialCommandSignature,
   type MaterialCommandCommittedResult,
-  type MaterialCommandEnvelope,
+  type ProofMaterialCommandEnvelope,
 } from '../../src/domain/materialCommands/contract.js'
 import {
   executeMaterialCommand,
@@ -24,7 +24,7 @@ class InMemoryMaterialCommandStore implements MaterialCommandStore {
   failure: unknown = null
 
   async commitProof(options: {
-    envelope: MaterialCommandEnvelope
+    envelope: ProofMaterialCommandEnvelope
     ownerId: string
   }) {
     if (this.failure) throw this.failure

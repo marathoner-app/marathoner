@@ -1,27 +1,31 @@
 # Material-command boundary
 
-- **Status:** Local boundary and emulator evidence complete; live deployment blocked
+- **Status:** Local proof and deletion-request boundaries complete; live deployment blocked
 - **Decision date:** 2026-10-05
 - **Owner:** Marathoner maintainer
-- **Tracking issue:** [#158](https://github.com/marathoner-app/marathoner/issues/158)
+- **Proof issue:** [#158](https://github.com/marathoner-app/marathoner/issues/158)
+- **Deletion-request issue:** [#195](https://github.com/marathoner-app/marathoner/issues/195)
 
 ## Purpose and scope
 
-Marathoner has one authenticated, online-only command boundary for material
-writes. Issue #158 proves the boundary with a harmless counter command; it does
-not migrate plan approval, run completion, adaptation, consent, or deletion.
-Those workflows remain in their owning issues.
+Marathoner has one shared authenticated, online-only contract for material
+writes. Issue #158 proves the boundary with a harmless counter command. Issue
+#195 adds the first security-sensitive workflow: requesting deletion and
+locking account access. Plan approval, run completion, adaptation, consent, the
+destructive deletion runner, and the deletion UI remain in their owning issues.
 
 The browser and server share the portable contract in
 `src/domain/materialCommands/contract.ts`. It imports neither React nor
-Firebase. The only supported proof envelope contains:
+Firebase. Every supported envelope contains:
 
 - envelope version `1`;
 - app protocol version `1`;
 - a client-generated command ID;
-- command type `proof.material-command`; and
-- command schema version `1`; and
-- one of two fixed, non-sensitive proof variants used to exercise ID conflicts.
+- a supported command type and schema version `1`.
+
+`proof.material-command` includes one of two fixed, non-sensitive variants used
+to exercise ID conflicts. `account.request-deletion` has no payload. The shared
+parser rejects caller-supplied UID, owner, email, path, and project fields.
 
 No user, owner, or UID field is accepted anywhere in the envelope. The callable
 wrapper derives ownership only from the verified Firebase Authentication
@@ -43,9 +47,25 @@ with the same ID and signature returns that result without a second effect. The
 same ID with a different supported command signature returns a conflict. Client
 security rules expose neither server-only collection.
 
-The result union distinguishes committed, validation, authentication,
-unsupported-version, conflict, retryable, and outcome-unknown states. An
-outcome-unknown client must call `resolveMaterialCommand` with the same command
+The deletion endpoint creates these protected records while atomically changing
+the authenticated owner's approved membership to `deletion_pending`:
+
+```text
+accountDeletionRequests/{randomRequestId}
+materialCommandReceipts/{authenticatedUserId}/commands/{commandId}
+betaMemberships/{authenticatedUserId}
+```
+
+It requires a verified email, a trusted `auth_time` no more than five minutes
+old, an approved membership, and a verified, unconsumed App Check token. After
+the transaction locks training-data access, it disables the Authentication user
+and revokes refresh tokens. An Admin failure remains visible on the protected
+request and a same-command retry safely attempts the Auth lock again. It never
+deletes participant data or the Authentication user.
+
+The result union distinguishes committed or accepted outcomes plus validation,
+authentication, authorization, unsupported-version, conflict, retryable, and
+outcome-unknown states. An outcome-unknown client must resolve the same command
 ID before deciding whether to retry.
 
 ## Client and offline behavior
@@ -80,11 +100,15 @@ The command builds the Functions source, starts Authentication, Functions, and
 Firestore emulators for the synthetic `demo-marathoner` project, and proves:
 
 1. anonymous calls are rejected;
-2. a request-supplied foreign user ID is rejected without an effect;
+2. a request-supplied foreign user ID or deletion target is rejected without an
+   effect;
 3. duplicate command IDs return the original result and one effect;
 4. unsupported app and command-schema versions return typed outcomes;
-5. an intentionally lost response is resolved by ID before retry; and
-6. emitted application logs contain outcome metadata only.
+5. an intentionally lost response is resolved by ID before retry;
+6. deletion requests require verified email, recent authentication, approved
+   membership, and App Check;
+7. an accepted request locks one owner without changing another; and
+8. emitted application logs contain outcome metadata only.
 
 Pull-request CI provisions Java 21 and runs the same command.
 
@@ -99,7 +123,7 @@ from Marathoner's logger.
 
 ## Deployment ownership
 
-This issue does not deploy a live function. `firebase.json` contains the local
+These issues do not deploy a live function. `firebase.json` contains the local
 runtime definition, while `assert-material-command-deploy-target.mjs` has an
 empty approved-project list and blocks every deployment. `firebase.beta.json`
 does not define a Functions source.
@@ -117,5 +141,7 @@ command succeed is not approved.
 - #121 removes direct client material writes after every owning workflow moves.
 - #159 adds live reads, freshness, and account cache isolation.
 - #138 may use the boundary on iOS only after its required workflow migrations.
-- #79 applies the same ownership, idempotency, outcome-resolution, and private
-  logging rules to the account-deletion request before operator completion.
+- #197 adds the fixed, idempotent account-deletion runner and manifest
+  verification after the #195 request lock.
+- #196 adds recent password reauthentication and the user-facing deletion
+  experience without changing ownership or target selection.

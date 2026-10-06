@@ -172,6 +172,10 @@ describe("founding-beta membership rules", () => {
     await seedMembership(firstUserId, { status: "revoked" });
     await assertFails(setDoc(reference, planDocument()));
 
+    await seedMembership(firstUserId, { status: "deletion_pending" });
+    await assertFails(setDoc(reference, planDocument()));
+    await assertFails(getDoc(reference));
+
     await seedMembership(firstUserId, { schemaVersion: 2 });
     await assertFails(setDoc(reference, planDocument()));
 
@@ -241,5 +245,30 @@ describe("founding-beta membership rules", () => {
     );
     await assertFails(updateDoc(ownMembership, { status: "revoked" }));
     await assertFails(deleteDoc(ownMembership));
+  });
+
+  it("keeps account-deletion workflow records server-only", async () => {
+    const requestPath = "accountDeletionRequests/request-fixture";
+    await testEnvironment.withSecurityRulesDisabled(async (context) => {
+      await setDoc(doc(context.firestore(), requestPath), {
+        schemaVersion: 1,
+        requestId: "request-fixture",
+        userId: firstUserId,
+        status: "auth_lock_pending",
+      });
+    });
+
+    const ownerDatabase = authenticatedContext(firstUserId).firestore();
+    const otherDatabase = authenticatedContext(secondUserId).firestore();
+    const anonymousDatabase = testEnvironment.unauthenticatedContext().firestore();
+
+    await assertFails(getDoc(doc(ownerDatabase, requestPath)));
+    await assertFails(getDoc(doc(otherDatabase, requestPath)));
+    await assertFails(getDoc(doc(anonymousDatabase, requestPath)));
+    await assertFails(
+      setDoc(doc(ownerDatabase, "accountDeletionRequests/self-created"), {
+        userId: firstUserId,
+      }),
+    );
   });
 });

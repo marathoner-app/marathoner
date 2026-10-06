@@ -1,9 +1,12 @@
 # Account and training-data deletion
 
-- **Status:** Accepted design boundary; implementation and rehearsal remain open
+- **Status:** Local request/account-lock boundary complete; runner, UI, live deployment, and rehearsal remain open
 - **Decision date:** 2026-10-05
 - **Decision owner:** Marathoner maintainer
 - **Tracking issue:** [#79](https://github.com/marathoner-app/marathoner/issues/79)
+- **Request implementation:** [#195](https://github.com/marathoner-app/marathoner/issues/195)
+- **Deletion runner:** [#197](https://github.com/marathoner-app/marathoner/issues/197)
+- **Client experience:** [#196](https://github.com/marathoner-app/marathoner/issues/196)
 - **Readiness rehearsal:** [#124](https://github.com/marathoner-app/marathoner/issues/124)
 
 ## Decision
@@ -18,11 +21,13 @@ fully automatic deletion service. The founding cohort is small enough for a
 rehearsed operator procedure, but the security-sensitive request, access lock,
 and deletion authority still require trusted server code.
 
-Merging this decision approves the design only. No deletion endpoint, destructive
-runner, Firebase deployment, billing change, or user interface exists yet. The
-current public support path can receive a request, but Marathoner is not ready to
-claim complete in-product account deletion until the implementation and issue
-#124 rehearsal both pass.
+Issue #195 implements the request contract, protected request and receipt,
+immediate membership lock, and Authentication disable/revocation locally. It
+does not deploy a Firebase Function, change billing, expose a user interface, or
+delete participant records or the Authentication user. The fixed deletion
+runner (#197), client experience (#196), live activation gates, and issue #124
+rehearsal must all pass before Marathoner can claim complete in-product account
+deletion.
 
 ## Why a backend is required
 
@@ -61,7 +66,7 @@ table and the deletion runner in the same pull request.
 | `betaMemberships/{uid}` | Allowlist status and approval metadata | Change to `deletion_pending` to lock access, then delete during completion. |
 | `materialCommandReceipts/{uid}/commands/{commandId}` | Server idempotency receipts | Recursively delete the owner document path and descendants. This store is currently local proof infrastructure, not deployed. |
 | `materialCommandProofs/{uid}` | Local server-boundary proof state | Delete. This store is currently local proof infrastructure, not deployed. |
-| Proposed `accountDeletionRequests/{requestId}` | Protected workflow state, including the UID only while work is pending | Remove all identity fields after completion, retain the anonymous completion receipt for 30 days, then delete it. |
+| `accountDeletionRequests/{requestId}` | Server-only workflow state, including the UID only while work is pending; implemented locally and not deployed | Remove all identity fields after completion, retain the anonymous completion receipt for 30 days, then delete it. |
 | Current client memory | Current-session authentication and training state | Clear immediately when the request is accepted; persistent participant-data caching remains prohibited. |
 
 The retired `users/{uid}/mobileSpikeProofs/issue-87-shared-record` path is not a
@@ -239,19 +244,18 @@ data.
 
 ## Dependencies and implementation split
 
-After this design is accepted, replace the former large implementation issue
-with focused child issues in this order:
+The accepted design is split into focused child issues in this order:
 
-1. **Implement the deletion-request contract and account lock.** Add the shared
-   command, callable handler, recent-authentication check, protected request
-   schema, beta membership transition, App Check enforcement, emulator tests,
-   and guarded beta deployment plan. This builds on completed issue #158,
-   coordinates the beta-rule changes with #121, depends on #161, and requires
-   an explicit Blaze/budget decision.
-2. **Implement the idempotent deletion runner and manifest tests.** Add the
+1. **#195 — implement the deletion-request contract and account lock.** The
+   shared payload-free command, callable handler, five-minute authentication
+   check, protected request schema, atomic membership transition, App Check
+   gate, Auth disable/revocation, and local tests are complete. Live deployment
+   remains blocked by #161, #121 coordination, the empty deployment allowlist,
+   and an explicit Blaze/budget decision.
+2. **#197 — implement the idempotent deletion runner and manifest tests.** Add the
    fixed-path Admin command, stage checkpoints, failure injection, verification,
    anonymized receipt, cleanup, and operator documentation.
-3. **Add the calm account-deletion experience.** Add the shared responsive UI,
+3. **#196 — add the calm account-deletion experience.** Add the shared responsive UI,
    password reauthentication, typed outcomes, ambiguous-response resolution,
    immediate state clearing, accessibility coverage, and accurate participant
    copy. The Capacitor shell uses the same root interface.

@@ -6,6 +6,10 @@ service cloud.firestore {
       return request.auth != null && request.auth.uid == userId;
     }
 
+    match /accountDeletionRequests/{requestId} {
+      allow read, write: if false;
+    }
+
     function isValidOwnedWrite(userId) {
       return request.resource.data.schemaVersion == 1
         && request.resource.data.userId == userId;
