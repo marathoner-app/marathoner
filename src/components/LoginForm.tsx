@@ -10,13 +10,20 @@ const LoginForm = ({ onClose }: { onClose: () => void }) => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(null);
     try {
       await signIn(username, password);
       onClose();
     } catch (error) {
-      setError(error instanceof Error ? error.message : "An unexpected error occurred");
+      setError(
+        error instanceof Error
+          ? error.message
+          : "We could not complete that request. Please try again.",
+      );
     }
   };
+
+  const clearError = () => setError(null);
 
   useEffect(() => {
     emailRef.current?.focus();
@@ -76,7 +83,10 @@ const LoginForm = ({ onClose }: { onClose: () => void }) => {
           type="email"
           autoComplete="email"
           value={username}
-          onChange={(e) => setUsername(e.target.value)}
+          onChange={(e) => {
+            setUsername(e.target.value);
+            clearError();
+          }}
           required
         />
         <label htmlFor="login-password">Password</label>
@@ -86,7 +96,10 @@ const LoginForm = ({ onClose }: { onClose: () => void }) => {
           type="password"
           autoComplete="current-password"
           value={password}
-          onChange={(e) => setPassword(e.target.value)}
+          onChange={(e) => {
+            setPassword(e.target.value);
+            clearError();
+          }}
           required
         />
         <button className="login-submit" type="submit">

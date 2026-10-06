@@ -15,9 +15,11 @@ beforeEach(() => {
 })
 
 describe('authentication forms', () => {
-  it('shows a rejected login attempt without contacting Firebase', async () => {
+  it('shows a safe rejected-login message and clears it when credentials change', async () => {
     const user = userEvent.setup()
-    mockedSignIn.mockRejectedValue(new Error('Invalid credentials'))
+    mockedSignIn.mockRejectedValue(
+      new Error('The email or password is incorrect.')
+    )
     render(<LoginButton />)
 
     const loginButton = screen.getByRole('button', { name: 'Log in' })
@@ -34,11 +36,19 @@ describe('authentication forms', () => {
     )
     await user.type(screen.getByLabelText('Password'), 'bad-password{Enter}')
 
-    expect(await screen.findByText('Invalid credentials')).toBeInTheDocument()
+    expect(
+      await screen.findByText('The email or password is incorrect.')
+    ).toBeInTheDocument()
     expect(mockedSignIn).toHaveBeenCalledWith(
       'runner@example.com',
       'bad-password'
     )
+
+    await user.type(screen.getByLabelText('Password'), '!')
+
+    expect(
+      screen.queryByText('The email or password is incorrect.')
+    ).not.toBeInTheDocument()
   })
 
   it('closes with Escape and restores focus to the login trigger', async () => {

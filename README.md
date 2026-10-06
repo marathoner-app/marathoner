@@ -95,7 +95,7 @@ accessibility, and TestFlight remain explicit release gates.
 | `src/training/` | Owns authenticated training-data loading, shared feature state, and cross-feature mutations. |
 | `src/onboarding/` | Owns the resumable runner-profile intake, validation, unit conversion, and completion checks. |
 | `src/services/firebaseClient.ts` | Initializes the shared Firebase app and Authentication instance. |
-| `src/services/authService.ts` | Contains authentication operations against the shared Firebase client. |
+| `src/services/authService.ts` | Contains authentication operations and safe Firebase error mapping against the shared client. |
 | `src/firebaseConfig.ts` | Identifies the Firebase web project used by the client. |
 | `src/**/*.test.ts(x)` | Keeps unit and component tests beside the code they verify. |
 | `src/test/` | Contains shared test setup and environment-level tests. |
