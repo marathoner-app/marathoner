@@ -128,6 +128,9 @@ Cross-feature behavior is documented in
 The accepted live-read, online-write, conflict, and local-cache contract is
 documented in
 [`docs/architecture/training-data-synchronization.md`](docs/architecture/training-data-synchronization.md).
+The approved account and training-data deletion boundary, complete data
+inventory, failure-recovery model, and implementation split are documented in
+[`docs/architecture/account-deletion.md`](docs/architecture/account-deletion.md).
 The selected Capacitor iOS boundary, rejected alternatives, App Check reopen
 rule, and release ownership are documented in
 [`docs/architecture/mobile-client-architecture.md`](docs/architecture/mobile-client-architecture.md).
@@ -148,6 +151,9 @@ The development/test-only Creator Radar boundary is documented in
 - Training data currently loads as a persisted snapshot. Mutations remain
   synchronized inside the current session, while the accepted real-time read
   and server-confirmed write architecture remains implementation work.
+- Complete account deletion is designed but not implemented or rehearsed. The
+  beta project also lacks the approved Blaze/budget and live backend boundary
+  required to accept an in-product deletion request.
 - The first Track form captures date, distance, elapsed time, shoe, and optional
   planned-workout association. Perceived effort and the remaining coaching
   inputs will be added in later product slices.

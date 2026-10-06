@@ -117,3 +117,5 @@ command succeed is not approved.
 - #121 removes direct client material writes after every owning workflow moves.
 - #159 adds live reads, freshness, and account cache isolation.
 - #138 may use the boundary on iOS only after its required workflow migrations.
+- #79 applies the same ownership, idempotency, outcome-resolution, and private
+  logging rules to the account-deletion request before operator completion.
