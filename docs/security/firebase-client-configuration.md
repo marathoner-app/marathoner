@@ -45,7 +45,7 @@ would not turn them into secrets.
 | App Check | Development and beta each have a distinct Fraud Defense web registration and App Attest iOS registration. No debug token was created, the clients do not initialize App Check yet, and API enforcement remains off. | The [registration record](app-check-provider-registration.md) is the authority for provider identity, native configuration selection, debug-token custody, and the #204–#206 rollout gates. |
 | GitHub Pages | The workflow serves `https://marathoner-app.github.io/marathoner/` with HTTPS. No Pages custom domain is configured. | The GitHub Pages host is the only current production origin. Issue #162 owns the coordinated custom-domain migration. |
 | Repository credentials | Current tracked files and historical filenames contain no Marathoner service-account file, private key, password, Firebase CLI token, or administrative credential. | Continue to prohibit privileged credentials in source. Use workload identity or provider-managed operator sessions. |
-| GitHub secret controls | Secret scanning and push protection were disabled at audit start and are now enabled for the public repository. Alert #1 identified the development browser key; alert #2 identified the beta browser key when its isolated registration was committed. | Both alerts were resolved as documented false positives after their project identity, API allowlist, and website restrictions were verified. |
+| GitHub secret controls | Secret scanning and push protection were disabled at audit start and are now enabled for the public repository. Alerts #1 and #2 identify the development and beta browser keys; alerts #3 and #4 identify the versioned beta and development Apple client keys. | All four were resolved as documented false positives after their exact public-client locations and intended Firebase registrations were verified. |
 
 No secret value, participant identifier, or account email belongs in this
 record. Console screenshots and logs used as evidence must be redacted before
@@ -185,7 +185,7 @@ and recovery process. Public support uses `kevin@marathonerapp.com` and must not
 hold cloud-administration authority. Development credentials, debug tokens, and
 service identities must not be shared with beta.
 
-## Secret-scanning alerts #1 and #2
+## Secret-scanning alerts #1 through #4
 
 Alert #1 reports a Google API key first committed in the original Firebase
 configuration and repeated in historical compiled assets. GitHub marks it
@@ -199,6 +199,13 @@ is restricted to the same eight required Firebase APIs and only
 `marathonerapp.com` and `www.marathonerapp.com`; it is unavailable from
 localhost and GitHub Pages. The beta project remains an explicit, non-default
 selection with membership-gated Firestore rules.
+
+Alerts #3 and #4 report the beta and development API keys inside the versioned
+Apple `GoogleService-Info.plist` files added by #203. Each location matches one
+intended Firebase iOS registration and its exact project, bundle, sender, and
+app ID are enforced by the build policy. These keys are necessarily delivered
+inside the app bundle; neither file contains an administrator credential,
+private key, or App Check debug token.
 
 Alert #1 was resolved as **false positive** on 2026-09-30 after the live API and
 website restrictions were saved and the deployed client passed Auth and
@@ -214,6 +221,13 @@ historical location was matched to the isolated beta registration and the
 already recorded API and website restrictions were reviewed. The resolution
 does not classify the value as secret, does not broaden its permissions, and
 does not activate beta.
+
+Alerts #3 and #4 were resolved as **false positive** on 2026-10-06 after each
+single location was matched to the intended beta or development Apple client
+configuration and the exact registration validation passed. The resolutions
+record that public Firebase Apple keys are shipped client identifiers, not
+privileged credentials; they do not claim App Check initialization or
+enforcement.
 
 Rotation becomes necessary if the key belongs to the wrong project, permits an
 unrelated or billable non-Firebase API, restrictions cannot be applied, abuse is

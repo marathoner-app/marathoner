@@ -99,6 +99,12 @@ Registered**. The development API table showed Authentication and Firestore as
 Firestore as not yet receiving eligible App Check traffic, and no Functions
 enforcement control. No enforcement action or debug-token creation was taken.
 
+GitHub secret scanning opened alerts #3 and #4 for the public Firebase Apple
+API keys at the two new plist locations. Each alert had exactly one expected
+location and was resolved as a documented false positive after the project,
+bundle, sender, and app identity checks passed. No detector alert was dismissed
+for a private credential or debug token.
+
 ## References
 
 - [Firebase App Check with App Attest](https://firebase.google.com/docs/app-check/ios/app-attest-provider)
