@@ -1,5 +1,8 @@
 import {
+  EmailAuthProvider,
+  getIdToken,
   onAuthStateChanged,
+  reauthenticateWithCredential,
   sendPasswordResetEmail,
   signInWithEmailAndPassword,
   signOut,
@@ -113,6 +116,24 @@ export const requestPasswordReset = async (email: string): Promise<void> => {
 export const logOut = async (): Promise<void> => {
   try {
     await signOut(auth);
+  } catch (error) {
+    throw toAuthenticationError(error);
+  }
+};
+
+export const reauthenticateWithPassword = async (
+  password: string,
+): Promise<void> => {
+  const user = auth.currentUser;
+
+  if (!user?.email) {
+    throw new AuthenticationError("unknown");
+  }
+
+  try {
+    const credential = EmailAuthProvider.credential(user.email, password);
+    const userCredential = await reauthenticateWithCredential(user, credential);
+    await getIdToken(userCredential.user, true);
   } catch (error) {
     throw toAuthenticationError(error);
   }

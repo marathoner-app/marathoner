@@ -1,6 +1,6 @@
 # Account and training-data deletion
 
-- **Status:** Local request/account-lock and deletion runner complete; private-store activation, UI, live deployment, and rehearsal remain open
+- **Status:** Local request/account-lock, deletion runner, and shared client experience complete; private-store activation, live deployment, and rehearsal remain open
 - **Decision date:** 2026-10-05
 - **Decision owner:** Marathoner maintainer
 - **Tracking issue:** [#79](https://github.com/marathoner-app/marathoner/issues/79)
@@ -25,11 +25,13 @@ Issue #195 implements the request contract, protected request and receipt,
 immediate membership lock, and Authentication disable/revocation locally.
 Issue #197 implements the fixed deletion runner, manifest verification,
 failure recovery, anonymized receipt, and exact-ID expiry cleanup against the
-emulators. Neither issue deploys a Firebase Function, changes billing, exposes
-a user interface, or authorizes deletion against a live project. Private-store
-activation, the client experience (#196), live activation gates, and issue #124
-rehearsal must all pass before Marathoner can claim complete in-product account
-deletion.
+emulators. Issue #196 implements the shared responsive account-settings flow,
+recent password authentication, original-command resolution, pending receipt,
+and immediate client-state clearing for web and the Capacitor bundle. These
+changes do not deploy a Firebase Function, change billing, or authorize
+deletion against a live project. Private-store activation, live activation
+gates, and issue #124 rehearsal must all pass before Marathoner can claim
+complete in-product account deletion.
 
 ## Why a backend is required
 
@@ -264,10 +266,12 @@ The accepted design is split into focused child issues in this order:
    verification, anonymized receipt, exact-ID cleanup, and operator runbook are
    complete against fictional emulator records. Live projects remain blocked
    until #124 supplies the declared private-record adapter and rehearsal.
-3. **#196 — add the calm account-deletion experience.** Add the shared responsive UI,
-   password reauthentication, typed outcomes, ambiguous-response resolution,
-   immediate state clearing, accessibility coverage, and accurate participant
-   copy. The Capacitor shell uses the same root interface.
+3. **#196 — add the calm account-deletion experience.** The shared responsive UI,
+   password reauthentication and token refresh, typed outcomes,
+   original-command resolution, immediate state clearing, accessibility
+   coverage, and accurate participant copy are implemented. The Capacitor
+   shell builds and synchronizes the same root interface; live acceptance
+   remains gated by #161 and the deployment controls above.
 4. **Rehearse the complete procedure in #124.** Name the private participant
    system, include its records in the manifest, run the development and beta
    rehearsals, and record the invitation-gate result.

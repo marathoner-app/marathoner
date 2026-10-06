@@ -12,6 +12,11 @@ import { useTrainingData } from "./training/useTrainingData";
 import { releaseNativeStartupOverlayAfterPaint } from "./services/nativeStartup";
 import RunnerOnboarding from "./onboarding/RunnerOnboarding";
 import { isRunnerProfileOnboardingComplete } from "./onboarding/runnerProfileDraft";
+import {
+  AccountDeletionDialog,
+  AccountDeletionReceipt,
+} from "./components/AccountDeletion";
+import type { AccountDeletionRequestAcceptedResult } from "./domain/materialCommands/contract";
 
 const publicSupportEmail = "kevin@marathonerapp.com";
 
@@ -28,7 +33,18 @@ function App() {
   const reduceMotion = useReducedMotion();
   const [activeSection, setActiveSection] = useState<Section | null>(null);
   const [logoutError, setLogoutError] = useState<string | null>(null);
+  const [accountSettingsOpen, setAccountSettingsOpen] = useState(false);
+  const [unresolvedDeletionCommandId, setUnresolvedDeletionCommandId] =
+    useState<string | null>(null);
+  const [deletionReceipt, setDeletionReceipt] =
+    useState<AccountDeletionRequestAcceptedResult | null>(null);
+  const [deletionSignOutError, setDeletionSignOutError] = useState<string | null>(
+    null,
+  );
+  const [deletionSignOutAttempt, setDeletionSignOutAttempt] = useState(0);
   const lastActiveSection = useRef<Section | null>(null);
+  const accountSettingsTriggerRef = useRef<HTMLButtonElement | null>(null);
+  const restoreAccountSettingsFocus = useRef(false);
   const triggerRefs = useRef<Record<Section, HTMLButtonElement | null>>({
     plan: null,
     track: null,
@@ -48,8 +64,39 @@ function App() {
     if (auth.status !== "signedIn") {
       setActiveSection(null);
       setLogoutError(null);
+      setAccountSettingsOpen(false);
+      if (deletionReceipt === null) setUnresolvedDeletionCommandId(null);
     }
-  }, [auth.status]);
+  }, [auth.status, deletionReceipt]);
+
+  useEffect(() => {
+    if (
+      !accountSettingsOpen &&
+      restoreAccountSettingsFocus.current &&
+      deletionReceipt === null
+    ) {
+      accountSettingsTriggerRef.current?.focus();
+      restoreAccountSettingsFocus.current = false;
+    }
+  }, [accountSettingsOpen, deletionReceipt]);
+
+  useEffect(() => {
+    if (deletionReceipt === null || auth.status !== "signedIn") return;
+
+    let active = true;
+    setDeletionSignOutError(null);
+    void auth.logout().catch(() => {
+      if (active) {
+        setDeletionSignOutError(
+          "Your deletion request was accepted, but this device could not finish signing out. Your training data remains hidden; try signing out again.",
+        );
+      }
+    });
+
+    return () => {
+      active = false;
+    };
+  }, [auth, deletionReceipt, deletionSignOutAttempt]);
 
   const openSection = (section: Section) => {
     lastActiveSection.current = section;
@@ -72,6 +119,17 @@ function App() {
 
   const activeSectionDetails = sections.find(({ id }) => id === activeSection);
 
+  const closeAccountSettings = () => {
+    restoreAccountSettingsFocus.current = true;
+    setAccountSettingsOpen(false);
+  };
+
+  const acceptDeletion = (receipt: AccountDeletionRequestAcceptedResult) => {
+    restoreAccountSettingsFocus.current = false;
+    setAccountSettingsOpen(false);
+    setDeletionReceipt(receipt);
+  };
+
   return (
     <motion.main
       className={`main${auth.status === "signedOut" ? " public-entry" : ""}`}
@@ -79,7 +137,20 @@ function App() {
       animate={{ opacity: 1 }}
       transition={{ duration: reduceMotion ? 0 : 1, ease: "easeOut" }}
     >
-      {auth.status === "loading" && (
+      {deletionReceipt && (
+        <AccountDeletionReceipt
+          receipt={deletionReceipt}
+          supportEmail={publicSupportEmail}
+          signedOut={auth.status === "signedOut"}
+          signOutError={deletionSignOutError}
+          onRetrySignOut={() =>
+            setDeletionSignOutAttempt((attempt) => attempt + 1)
+          }
+          onDone={() => setDeletionReceipt(null)}
+        />
+      )}
+
+      {!deletionReceipt && auth.status === "loading" && (
         <>
           <Title />
           <p className="auth-message" role="status">
@@ -88,7 +159,7 @@ function App() {
         </>
       )}
 
-      {auth.status === "error" && (
+      {!deletionReceipt && auth.status === "error" && (
         <>
           <Title />
           <div className="startup-error" role="alert">
@@ -100,7 +171,8 @@ function App() {
         </>
       )}
 
-      {(auth.status === "signedIn" || auth.status === "signedOut") &&
+      {!deletionReceipt &&
+        (auth.status === "signedIn" || auth.status === "signedOut") &&
         !activeSection && (
           <>
             {auth.status === "signedIn" && (
@@ -108,6 +180,14 @@ function App() {
                 <p className="session-user">
                   Signed in as {auth.user.email ?? "Marathoner user"}
                 </p>
+                <button
+                  ref={accountSettingsTriggerRef}
+                  type="button"
+                  className="account-settings-btn"
+                  onClick={() => setAccountSettingsOpen(true)}
+                >
+                  Account settings
+                </button>
                 <button
                   type="button"
                   className="logout-btn"
@@ -130,7 +210,7 @@ function App() {
           </>
         )}
 
-      {auth.status === "signedIn" && (
+      {!deletionReceipt && auth.status === "signedIn" && (
         <TrainingDataProvider userId={auth.user.uid}>
           <AuthenticatedExperience
             activeSection={activeSection}
@@ -142,6 +222,17 @@ function App() {
             }}
           />
         </TrainingDataProvider>
+      )}
+
+      {!deletionReceipt && auth.status === "signedIn" && accountSettingsOpen && (
+        <AccountDeletionDialog
+          email={auth.user.email}
+          supportEmail={publicSupportEmail}
+          unresolvedCommandId={unresolvedDeletionCommandId}
+          onAccepted={acceptDeletion}
+          onClose={closeAccountSettings}
+          onUnresolvedCommandChange={setUnresolvedDeletionCommandId}
+        />
       )}
     </motion.main>
   );
