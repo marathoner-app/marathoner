@@ -1,49 +1,65 @@
 # Capacity-based founding-beta forecast
 
-- **Status:** Baseline forecast for owner decision
-- **As of:** September 22, 2026
+- **Status:** Active recalibrated forecast
+- **As of:** October 6, 2026
 - **Owner:** Kevin Tulloch
-- **Forecast issue:** [#116](https://github.com/marathoner-app/marathoner/issues/116)
+- **Baseline issue:** [#116](https://github.com/marathoner-app/marathoner/issues/116)
+- **Recalibration issue:** [#208](https://github.com/marathoner-app/marathoner/issues/208)
 - **Master tracker:** [#104](https://github.com/marathoner-app/marathoner/issues/104)
 - **Scope:** Marathoner beta critical path; Creator Radar is excluded
 
 ## Decision summary
 
-The current founding-beta scope is not supportable by the January 15, 2027
-invitation target at the repository's stated solo-owner capacity.
+The first two weeks of committee-remediation delivery retired substantially
+more of the September estimate than the baseline model anticipated. The
+selected Capacitor architecture is now running in the production-shaped root
+application, Waves 00 and 01 have passed, and implementation has advanced into
+runner intake, deletion, and App Check work.
 
-With the assumptions below, the current scope forecasts:
+The observation window is short and unusually concentrated, so the forecast
+does not extend its raw rate linearly. It uses only one-fifth to just under
+one-half of the observed likely-estimate burn, adds newly exposed App Check and
+live-synchronization scope, and keeps qualified review, TestFlight review,
+non-owner rehearsal, and participant scheduling as independent gates.
+
+With those controls, the current scope forecasts:
 
 | Scenario | Earliest invitation decision | Meaning |
 | --- | --- | --- |
-| Optimistic | March 14, 2027 | Ten planned session-equivalents land most work at the low estimate, external waits overlap, and no material rework occurs. |
-| Likely | August 22, 2027 | Eight planned session-equivalents land work near the likely estimate and the first external TestFlight review receives one week of calendar buffer. |
-| Conservative | April 30, 2028 | Seven planned session-equivalents land work near the high estimate and external review or rework consumes two additional weeks. |
+| Optimistic | December 13, 2026 | Twenty-four legacy estimate units land per week, methodology engagement completes at the short end of its range, external waits overlap, and little rework occurs. |
+| Likely | March 14, 2027 | Sixteen legacy estimate units land per week, the reviewer path consumes six weeks, and normal integration and correction work occur. |
+| Conservative | September 26, 2027 | Ten legacy estimate units land per week, high estimates govern, and reviewer plus TestFlight waits reach their planning bounds. |
 
 These are forecasts, not promises. Invitations remain blocked until the
-evidence gates pass, even if a forecast date arrives. January 15, 2027 remains
-an explicit scope-or-date decision checkpoint, not a capacity-backed launch or
-invitation date.
+evidence gates pass, even if a forecast date arrives. January 15, 2027 now falls
+between the optimistic and likely scenarios. It remains an explicit
+scope-or-date decision checkpoint, not a capacity-backed promise.
 
-The recommended decision is to move the invitation expectation and keep the
-ratified safety, integrity, privacy, and review gates. If an earlier research
-study is strategically necessary, use the already approved non-prescriptive
-fallback instead of silently weakening those gates.
+The recommended planning expectation is March 14, 2027 while preserving every
+ratified safety, integrity, privacy, and review gate. December is possible only
+under the full optimistic scenario, not by treating current velocity as a
+promise. If earlier external learning becomes strategically necessary, use the
+already approved non-prescriptive fallback instead of silently weakening those
+gates.
 
-## Capacity model
+## Recalibrated capacity model
 
-A focused session is 60 to 90 minutes of owner attention; forecast conversion
-uses a 75-minute midpoint. Estimates include implementation, tests,
-documentation, review preparation, and the normal issue-to-pull-request
-handoff. They do not include unattended CI time, Codex tool time that does not
-require active supervision, or an external party's elapsed time.
+A focused session remains 60 to 90 minutes of owner attention. The September
+estimates used those sessions directly. The repository did not record enough
+owner-attention hours or unattended Codex time to claim a new hours-per-issue
+conversion. This recalibration therefore treats the old estimates as **legacy
+estimate units** and calibrates their weekly retirement against observed
+delivery. It does not call merged pull requests owner hours.
 
-| Input | Baseline |
+| Input | Recalibrated model |
 | --- | --- |
 | Sustainable owner capacity | At least 14 hours per week, based on at least two flexible hours per day |
-| Likely planned delivery allocation | 8 average session-equivalents, or about 10 hours per week |
-| Likely reserve | About 4.2 hours per week, or 30% of stated minimum capacity |
-| Scenario capacity | 10 optimistic, 8 likely, and 7 conservative planned session-equivalents per week |
+| Observed window | September 22 through October 6, 2026; two delivery weeks |
+| Observed delivery | 41 merged pull requests, 44 linked issue closures, 18 of 57 baseline rows closed, and 100 likely legacy estimate units retired |
+| Forecast delivery rate | 24 optimistic, 16 likely, and 10 conservative legacy estimate units per week |
+| Rate haircut | Forecast rates retain only 48%, 32%, and 20% of the observed 50 likely-unit weekly burn |
+| Likely owner allocation | About 10 planned owner hours from the 14-hour minimum; additional flexibility belongs only in the optimistic case |
+| Reserve | At least 30% of the stated minimum capacity remains for review, support, defects, operations, and estimate error |
 | Reserve use | Review, support, defects, operational work, and estimate uncertainty |
 | Work in progress | One active implementation issue plus one externally blocked issue |
 | Forecast week | Ends Sunday; partial work is rounded to the next forecast week |
@@ -56,14 +72,17 @@ additional flexibility, not every potentially available hour. Personal
 blackout details do not belong in the public repository. A future blackout
 should be represented only as a reduced session count for the affected week.
 
-Codex leverage is intentionally measured rather than guessed. Background
-implementation, checks, and research may let one owner-review hour advance more
-than one traditional development hour, but decisions, final diff review,
-physical-device work, and external coordination remain owner work.
+The rate haircut is deliberate. The observed work was partly documentation,
+architecture, environment setup, and bounded infrastructure; the remaining
+work contains the generator, atomic mutations, adaptation, cross-client daily
+loop, accessibility, and live operations. Those are expected to require more
+owner judgment and correction. The likely model assumes roughly a twofold gain
+over the original eight-unit weekly plan, not the sixfold gain suggested by a
+literal extension of the two-week sample.
 
-The baseline begins with the week ending September 27, 2026. Issue #116 is
-estimated and recorded below for completeness, but its completed forecast work
-is excluded from remaining-capacity totals.
+The baseline began with the week ending September 27, 2026. Its issue estimates
+remain below as an auditable source. Issue #116 is recorded for completeness
+but excluded from both the old and recalibrated remaining totals.
 
 ## Estimate rules
 
@@ -81,7 +100,11 @@ is excluded from remaining-capacity totals.
   in a live beta milestone. Deferring it requires an explicit milestone and
   gate decision.
 
-## Three-point estimates
+## September 22 baseline estimates
+
+These tables preserve the original inventory and estimates. Their totals are
+not the current remaining-work claim; the October 6 reconciliation following
+the Wave 06A table is authoritative.
 
 ### Wave 00 — Solo Delivery and Beta Contract
 
@@ -191,6 +214,47 @@ is first required rather than charged again under epic #107.
 | [#129](https://github.com/marathoner-app/marathoner/issues/129) | Record the invitation readiness decision | Gate | 2 | 3 | 5 |
 | **Wave 06A total** |  |  | **19** | **27** | **39** |
 
+## October 6 remaining-work reconciliation
+
+The September baseline contained 57 pre-invitation rows totaling 236
+optimistic, 374 likely, and 571 conservative units. Eighteen of those rows are
+now closed. Their original weights total 64, 100, and 155 units, leaving 39
+open baseline rows at 172, 274, and 416 units.
+
+The live hierarchy also exposes work that was required by the beta gates but
+was not represented as a separate estimate on September 22:
+
+| Issue | Added work | Optimistic | Likely | Conservative |
+| --- | --- | ---: | ---: | ---: |
+| [#159](https://github.com/marathoner-app/marathoner/issues/159) | Implement live synchronization and account-cache isolation after the #80 decision | 6 | 10 | 15 |
+| [#201](https://github.com/marathoner-app/marathoner/issues/201) | Establish the beta billing and Functions deployment boundary | 2 | 4 | 6 |
+| [#203](https://github.com/marathoner-app/marathoner/issues/203) | Register distinct development and beta App Check providers | 3 | 5 | 8 |
+| [#204](https://github.com/marathoner-app/marathoner/issues/204) | Initialize App Check before Firebase client services | 4 | 6 | 9 |
+| [#205](https://github.com/marathoner-app/marathoner/issues/205) | Deploy App Check in observation mode and rehearse rollback | 5 | 8 | 12 |
+| [#206](https://github.com/marathoner-app/marathoner/issues/206) | Enforce beta App Check and prove rejected-client behavior | 4 | 6 | 9 |
+| **Added-scope total** |  | **24** | **39** | **59** |
+
+No extra estimate is added for #191 because reviewer engagement is contained
+within the existing #119 estimate and external-wait allowance. Issues #195
+through #197 are the completed decomposition of #79. Issue #162 remains within
+the #23 public-surface residual. Issue #161 is an epic represented by #201
+through #206. Issue #202 is completed added scope and contributes to the
+observed-delivery record rather than remaining work. Production-shell and
+material-command foundation children are likewise represented by their
+original Wave 01 or downstream parent estimates. These containment rules avoid
+charging both a parent and its focused slices.
+
+The authoritative remaining work by wave is therefore:
+
+| Wave | Optimistic | Likely | Conservative |
+| --- | ---: | ---: | ---: |
+| 02 Intake and Initial Plan | 25 | 40 | 60 |
+| 03 Track, Learn, and Adapt, including #159 | 64 | 106 | 162 |
+| 04 iOS Daily Companion | 27 | 43 | 65 |
+| 05 Trust and External-Beta Readiness, including #201 and #203–#206 | 61 | 97 | 149 |
+| 06A Founding Cohort Invitations | 19 | 27 | 39 |
+| **Remaining through invitation decision** | **196** | **313** | **475** |
+
 ### Post-invitation reviews
 
 | Issue | Work | Earliest evidence window | Optimistic | Likely | Conservative |
@@ -204,15 +268,14 @@ is first required rather than charged again under epic #107.
 
 | Boundary | Optimistic | Likely | Conservative |
 | --- | ---: | ---: | ---: |
-| Remaining owner sessions through invitation decision | 236 | 374 | 571 |
-| Additional owner sessions through the eight-week decision | 7 | 12 | 19 |
-| Total through the eight-week decision | 243 | 386 | 590 |
+| Remaining legacy estimate units through invitation decision | 196 | 313 | 475 |
+| Additional units through the eight-week decision | 7 | 12 | 19 |
+| Total through the eight-week decision | 203 | 325 | 494 |
 
-The invitation total covers 57 remaining leaf or residual work items across
-Waves 00 through 06A. Issue #116 is the fifty-eighth item in the inventory but
-is excluded from remaining totals because this document completes it. The
-three post-invitation review issues bring the complete estimated set to 61
-items.
+These are planning weights, not measured owner hours. The current inventory is
+the 39 open baseline rows plus six added-scope rows. Issue #116 and completed
+work are excluded. The three post-invitation review issues remain separate
+because their evidence windows cannot begin before invitations.
 
 ## External elapsed time
 
@@ -221,7 +284,7 @@ They must be started as early as their input package allows.
 
 | External dependency | Planning range | How it is modeled | Stop condition |
 | --- | --- | --- | --- |
-| Qualified reviewer availability | 2–6 calendar weeks to identify and schedule | Start #119 before generator work; overlap the wait with contracts, profile, and onboarding work | If no qualified reviewer is committed when #70 is ready, choose the non-prescriptive fallback or move the date |
+| Qualified reviewer availability | 2–6 calendar weeks to identify and schedule | Start #191 immediately; overlap the wait with non-prescriptive implementation and trust work | If no qualified reviewer is committed when #70 is ready, choose the non-prescriptive fallback or move the date |
 | Rules and content review | 1–3 calendar weeks per complete review packet | Owner preparation is in #119, #134, and #135 estimates; reviewer elapsed time is separate | Unapproved high-risk rules or content cannot ship |
 | Apple account, signing, and App Store Connect setup | 1–3 calendar weeks as a planning allowance | Begin during the mobile-foundation work; do not wait for Wave 04 | Unresolved ownership or recovery blocks external distribution |
 | First external TestFlight review | 1 week likely; 2 weeks conservative including correction allowance | Prioritize #122 early enough to overlap review with the remaining iOS work | No external invitation without an approved build |
@@ -237,25 +300,32 @@ and [external tester workflow](https://developer.apple.com/help/app-store-connec
 
 ## Gate forecast
 
-The forecast serializes planned owner session-equivalents because the working
-agreement limits active implementation work. It uses 10 per week for the
-optimistic column, 8 for likely, and 7 for conservative. External waits may
-overlap when the listed input package is ready. Dates are rounded to the end of
-a capacity week. The Wave 04 and later dates include the applicable TestFlight
-buffer.
+The forecast serializes the remaining legacy estimate units because the
+working agreement limits active implementation work. It uses 24 per week for
+the optimistic column, 16 for likely, and 10 for conservative. Dates are
+rounded to a Sunday capacity-week boundary beginning October 11, 2026.
+
+The raw capacity dates are then shifted when an external dependency is binding.
+The methodology path uses three optimistic, six likely, and nine conservative
+weeks for reviewer engagement plus the first decision. Because #70 is blocked
+by that decision, the resulting one- or three-week delay is carried through
+later waves. Wave 04 includes one optimistic/likely or two conservative weeks
+for the first external TestFlight review. Non-owner rehearsal and participant
+scheduling begin as soon as their inputs exist and fit inside the later trust
+work in all three scenarios.
 
 | Evidence gate | Repository target | Optimistic | Likely | Conservative |
 | --- | --- | --- | --- | --- |
-| Wave 00 Solo Delivery and Beta Contract | October 4, 2026 | September 27, 2026 | October 4, 2026 | October 4, 2026 |
-| Wave 01 Shared Mobile Foundation | October 18, 2026 | October 25, 2026 | November 15, 2026 | December 27, 2026 |
-| Wave 02 Intake and Initial Plan | November 15, 2026 | November 15, 2026 | January 10, 2027 | March 28, 2027 |
-| Wave 03 Track, Learn, and Adapt | December 6, 2026 | December 27, 2026 | April 4, 2027 | August 22, 2027 |
-| Wave 04 iOS Daily Companion | December 20, 2026 | January 24, 2027 | May 16, 2027 | November 7, 2027 |
-| Wave 05 Trust and External-Beta Readiness | January 8, 2027 | February 28, 2027 | August 1, 2027 | March 19, 2028 |
-| Wave 06A Invitation decision | January 15, 2027 | March 14, 2027 | August 22, 2027 | April 30, 2028 |
-| Wave 06B Two-week operating review | January 29, 2027 | April 4, 2027 | September 12, 2027 | May 21, 2028 |
-| Wave 06B Four-week validation review | February 12, 2027 | April 18, 2027 | September 26, 2027 | June 4, 2028 |
-| Wave 06C Eight-week validation review | March 12, 2027 | May 16, 2027 | October 24, 2027 | July 9, 2028 |
+| Wave 00 Solo Delivery and Beta Contract | October 4, 2026 | Passed September 23 | Passed September 23 | Passed September 23 |
+| Wave 01 Shared Mobile Foundation | October 18, 2026 | Passed October 5 | Passed October 5 | Passed October 5 |
+| Wave 02 Intake and Initial Plan | November 15, 2026 | October 25, 2026 | November 15, 2026 | December 6, 2026 |
+| Wave 03 Track, Learn, and Adapt | December 6, 2026 | November 8, 2026 | January 3, 2027 | April 4, 2027 |
+| Wave 04 iOS Daily Companion and external TestFlight review | December 20, 2026 | November 22, 2026 | January 24, 2027 | May 30, 2027 |
+| Wave 05 Trust and External-Beta Readiness | January 8, 2027 | December 6, 2026 | February 28, 2027 | August 29, 2027 |
+| Wave 06A Invitation decision | January 15, 2027 | December 13, 2026 | March 14, 2027 | September 26, 2027 |
+| Wave 06B Two-week operating review | January 29, 2027 | December 27, 2026 | March 28, 2027 | October 10, 2027 |
+| Wave 06B Four-week validation review | February 12, 2027 | January 10, 2027 | April 11, 2027 | October 24, 2027 |
+| Wave 06C Eight-week validation review | March 12, 2027 | February 7, 2027 | May 9, 2027 | November 21, 2027 |
 
 Review dates include the required observation window and enough planned
 sessions to prepare the decision. They are not obtained by relabeling the
@@ -263,29 +333,29 @@ invitation date as completed validation.
 
 ## Scope-or-date decision
 
-The January target is not supported for the complete current scope even after
-correcting the owner's capacity upward. Meeting January 15 with the likely
-scope would require roughly 23 planned session-equivalents per week. At the
-75-minute midpoint, that is about 29 planned owner hours or about 42 total
-hours with a 30% reserve. The optimistic scope would require about 15 planned
-session-equivalents, or roughly 19 planned owner hours, every week.
+The original January 15 checkpoint is now inside the forecast range, but it is
+not the likely case. It follows the optimistic December 13 invitation decision
+and precedes the likely March 14 decision. Treating January as a commitment
+would require the optimistic delivery rate, the short reviewer path, successful
+external TestFlight review, and no binding correction cycle to occur together.
+The two-week sample is not strong enough to make that combination the plan.
 
 The recommended response is therefore:
 
 1. keep all invitation gates in force;
 2. treat January 15 as a decision checkpoint rather than an invitation
    expectation;
-3. use August 22, 2027 as the current likely forecast and April 30, 2028 as the
-   conservative forecast until measured throughput replaces assumptions;
-4. record the ADR's scope effect immediately, then quantitatively reforecast
-   after #177 supplies production-shell implementation throughput; and
-5. choose explicitly among a later date, the non-prescriptive research
+3. use March 14, 2027 as the current likely forecast and September 26, 2027 as
+   the conservative bound;
+4. start #191 and #122 early enough for their external waits to overlap product
+   delivery, and recalibrate again when their real schedules exist; and
+5. choose explicitly among the likely date, the non-prescriptive research
    fallback, or a materially narrower gate contract.
 
 Moving #8, #9, #76, and #77 out of beta milestones would remove only 13 likely
-sessions. It would improve the forecast by about three weeks, not rescue the
-January date. No safety, integrity, privacy, qualified-review, deletion,
-recovery, or TestFlight gate is a schedule buffer.
+units, less than one likely delivery week. It does not make January the likely
+case. No safety, integrity, privacy, qualified-review, deletion, recovery, or
+TestFlight gate is a schedule buffer.
 
 ## Tiered path to first external learning
 
@@ -294,9 +364,9 @@ responsible product experiment.
 
 | Tier | Participant promise | Preliminary owner effort | Forecast at likely capacity |
 | --- | --- | ---: | --- |
-| Non-prescriptive research pilot | Three to five private participants use the web product with a participant-supplied or individually human-reviewed plan; guidance and adaptation remain manual and explicitly non-prescriptive | 40–70 session-equivalents, pending focused decomposition | Five to nine delivery weeks plus trust-path and participant-scheduling elapsed time; approximately late November 2026 through January 2027 |
-| Functional founding beta | The ratified bounded product works for five to eight participants, with iOS, deterministic rules, and the mandatory safety, privacy, integrity, deletion, and support gates | Must be reclassified from the current inventory after #177 and representative measured throughput | Earlier than the diligence-ready scope only if non-gate polish, public acquisition, and investment evidence move later |
-| Diligence-ready founding beta | The complete current milestone scope, including public positioning, market evidence, operational rehearsals, and repository-quality work | 374 likely session-equivalents through invitations | August 22, 2027 likely |
+| Non-prescriptive research pilot | Three to five private participants use the web product with a participant-supplied or individually human-reviewed plan; guidance and adaptation remain manual and explicitly non-prescriptive | 40–70 legacy units, pending focused decomposition | Three to five likely delivery weeks plus trust-path and participant-scheduling elapsed time; it still requires its own gate inventory before scheduling |
+| Functional founding beta | The ratified bounded product works for five to eight participants, with iOS, deterministic rules, and the mandatory safety, privacy, integrity, deletion, and support gates | Must be separated explicitly from non-gate polish before claiming an earlier date | Earlier than March 14 only if the live hierarchy moves non-gate scope without weakening an invitation requirement |
+| Diligence-ready founding beta | The complete current milestone scope, including public positioning, market evidence, operational rehearsals, and repository-quality work | 313 likely legacy units remain through invitations | March 14, 2027 likely |
 
 The research pilot is the approved fallback already described in the beta
 contract. It is not permission to label unreviewed algorithmic coaching as a
@@ -306,41 +376,55 @@ and deletion requirements.
 
 ## Measured-velocity calibration
 
-The next four delivery weeks replace planning assumptions with evidence.
-Record, without private calendar details:
+The September 22 through October 6 observation window contains:
 
-- owner-review hours available and used;
-- planned session-equivalents completed;
-- unattended Codex implementation and check time;
-- estimate at issue start and actual effort at merge;
-- rework caused by unclear scope, failed checks, or owner-understanding gaps;
-  and
-- external wait time.
+- 41 merged pull requests and 44 linked issue closures;
+- governance, CI, Firebase-boundary, mobile-spike, physical-iPhone,
+  production-shell, typed-persistence, onboarding, trust, deletion, and
+  dependency work;
+- 18 closed baseline estimate rows totaling 64 optimistic, 100 likely, and 155
+  conservative units; and
+- two passed evidence gates: Wave 00 and Wave 01.
 
-Use at least one small UI/workflow issue, one medium persistence or trust issue,
-and the first complex mobile or cross-client issue. Reforecast after three
-representative completions or four weeks, whichever comes first. Do not reduce
-the owner-understanding requirement to improve the metric.
+The sample proves that the original eight-unit likely rate understated
+AI-assisted delivery. It does not prove a sustainable 50-unit rate. Work was
+clustered into seven merge days, owner-attention hours were not consistently
+recorded, and the remaining feature and operations work is deeper. The 16-unit
+likely rate is therefore a conservative calibration judgment, not an
+hours-derived productivity claim.
+
+For the next calibration window, record without private calendar details:
+
+- planned owner-review hours available and used;
+- legacy units retired and whether the issue was implementation, device,
+  operations, or documentation work;
+- material rework or failed acceptance criteria;
+- external wait time; and
+- whether the 30% reserve was preserved.
+
+Reforecast after Wave 02 passes or four additional delivery weeks, whichever
+comes first. The next sample must include #70–#72 or comparable end-to-end
+feature work; another documentation-heavy sample may not justify a higher
+rate. Do not reduce the owner-understanding requirement to improve the metric.
 
 ## Reforecast rules
 
 Reforecast #104 and this document when any of the following occurs:
 
-- #177 promotes the selected mobile architecture and replaces spike uncertainty
-  with measured production-shell implementation throughput;
-- three representative issues or four delivery weeks provide measured
-  AI-assisted throughput;
+- Wave 02 passes or four additional delivery weeks provide a feature-heavy
+  sample;
 - #119 identifies the reviewer and a real review calendar;
-- two consecutive weeks deliver fewer than six planned session-equivalents;
+- two consecutive weeks retire fewer than ten likely legacy units;
 - an external wait reaches its conservative bound;
 - an issue's likely estimate changes by more than 25%;
 - milestone scope is added, removed, or moved;
 - another active maintainer demonstrates sustainable capacity; or
 - an evidence gate misses its recorded date.
 
-Each weekly update should record planned sessions completed, reserve sessions
-used, active issue, externally blocked issue, and remaining likely sessions.
-Do not record private calendar details.
+Each weekly update should record legacy units retired, reserve use, the active
+issue, the externally blocked issue, and remaining likely units. Where
+available, record aggregate owner-review hours without private calendar
+details.
 
 When a gate misses, #104 must record one of: reduce nonessential scope, move the
 date, use the research fallback, or change the product contract. Silence is not
@@ -348,18 +432,23 @@ a schedule decision.
 
 ## Verification against live milestones
 
-This forecast was built from the live subissue hierarchy and open milestone
-contents on September 22, 2026.
+The baseline was built from the live subissue hierarchy and open milestone
+contents on September 22, 2026. The reconciliation uses issue and pull-request
+state through the merge of #207 on October 6, 2026.
 
-- All open critical-path leaves through the invitation decision have a
-  three-point estimate.
+- All open baseline rows and newly exposed critical-path leaves through the
+  invitation decision have a three-point estimate or an explicit containment
+  rule.
 - #4 and #23 retain estimated residual rows because their open parent scope is
   not fully represented by their current children.
-- #79 is estimated but must be split after its deletion design is approved.
+- The completed #79 decomposition is not charged again through #195–#197.
+- #191 is contained within #119, #162 within the #23 residual, and #161 within
+  #201–#206.
 - External elapsed time is separate from owner effort.
 - Every repository evidence gate has likely and conservative dates.
 - Post-invitation reviews are scheduled from the forecast invitation date, not
   from the historical January target.
 
-Closing or adding an issue without updating this inventory invalidates the
-forecast and triggers the reforecast rule.
+Adding a required leaf outside these containment rules, moving milestone scope,
+or changing a three-point estimate by more than 25% invalidates the forecast
+and triggers the reforecast rule.

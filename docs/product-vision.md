@@ -397,8 +397,9 @@ applications, or integrations.
 The exact wave contract and evidence gates are maintained in the
 [zero-to-beta plan](zero-to-beta-plan.md). The
 [capacity forecast](capacity-forecast.md) is the scheduling source of truth;
-it concludes that the current scope and solo-owner capacity do not support the
-original January 2027 invitation target.
+its October 6 recalibration places the original January target between the
+optimistic and likely invitation scenarios rather than treating it as the
+planning expectation.
 
 ### Invite-only external beta: after the invitation gates pass
 

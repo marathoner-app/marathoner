@@ -42,8 +42,9 @@ reporting path and safe-research boundaries.
 The canonical [zero-to-beta plan](docs/zero-to-beta-plan.md) defines the product
 commitments, delivery waves, monthly evidence gates, safety boundary, and solo
 working model. The [capacity forecast](docs/capacity-forecast.md) tests those
-gates against owner sessions and external waits; it concludes that the current
-scope does not support January 2027 invitations.
+gates against measured AI-assisted delivery and external waits; its October 6
+recalibration places January between the optimistic and likely invitation
+scenarios rather than treating it as the planning expectation.
 [GitHub issue #104](https://github.com/marathoner-app/marathoner/issues/104)
 is its live execution tracker, and
 [issue #117](https://github.com/marathoner-app/marathoner/issues/117) records
