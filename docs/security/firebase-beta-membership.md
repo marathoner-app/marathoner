@@ -41,13 +41,24 @@ membership collection are denied. A dedicated operator workflow must create
 memberships with privileged server or console authority; participant clients
 must never receive that authority.
 
+The deletion-request boundary introduced by issue #195 is the only currently
+implemented server transition from `approved` to `deletion_pending`. It derives
+the membership document from the verified Authentication UID and changes only
+the status field in the same transaction that creates the protected deletion
+request and idempotency receipt. `deletion_pending` is deliberately not an
+approved membership state: it blocks all subsequent participant-training-data
+access while preserving the approval evidence needed by the operator runner.
+Clients cannot create, select, or reverse that state.
+
 ## Revocation
 
 Deleting the membership or changing its status from `approved` immediately
 denies subsequent participant-data requests because the rules read membership
-state for each protected request. Revoking membership does not delete an Auth
-account or participant records; the complete suspension, deletion, audit, and
-communication procedures remain owned by #124 and #121.
+state for each protected request. An accepted deletion request atomically sets
+`deletion_pending`, then the trusted handler disables the Authentication user
+and revokes refresh tokens. The local boundary does not delete participant
+records or the Authentication user; the fixed runner, audit, communication,
+and rehearsal remain owned by #197 and #124.
 
 ## Operator approval and revocation procedure
 
@@ -85,10 +96,12 @@ revocation alone does not perform those actions.
   beta suites run together without sharing data or rules.
 
 The beta suite covers approved verified access plus anonymous, unverified,
-absent, pending, malformed, cross-owner, and client membership-mutation denial.
-It deliberately preserves the current training-write schema checks. Broader
-field bounds, immutable metadata, revision checks, and server-only material
-writes remain in #121 after their command migrations.
+absent, pending, deletion-pending, malformed, cross-owner, and client
+membership-mutation denial. It also proves that protected deletion requests
+cannot be read or written through a participant client. It deliberately
+preserves the current training-write schema checks. Broader field bounds,
+immutable metadata, revision checks, and server-only material writes remain in
+#121 after their command migrations.
 
 ## Live verification evidence
 
@@ -107,6 +120,6 @@ then proved:
 The exact command, HTTP outcomes, cleanup guarantee, project controls, and
 quota procedure are recorded in
 [the founding-beta project record](firebase-beta-project.md). App Check,
-support, incident, deletion, command deployment, and workflow migration remain
-owned by #161, #124, #121, #72, and #115. The local #158 proof does not bypass
-those invitation gates.
+support, incident response, deletion completion, command deployment, and
+workflow migration remain owned by #161, #124, #197, #121, #72, and #115. The
+local #158 and #195 boundaries do not bypass those invitation gates.

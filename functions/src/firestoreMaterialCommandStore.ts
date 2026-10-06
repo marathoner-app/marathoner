@@ -3,8 +3,9 @@ import type { Firestore } from 'firebase-admin/firestore'
 import {
   isMaterialCommandResult,
   materialCommandSignature,
+  type AccountDeletionRequestAcceptedResult,
   type MaterialCommandCommittedResult,
-  type MaterialCommandEnvelope,
+  type ProofMaterialCommandEnvelope,
 } from '../../src/domain/materialCommands/contract.js'
 import type { MaterialCommandStore } from './materialCommandHandler.js'
 
@@ -19,18 +20,31 @@ function proofPath(ownerId: string) {
   return `materialCommandProofs/${ownerId}`
 }
 
-function storedCommittedResult(data: unknown): MaterialCommandCommittedResult {
-  if (!isMaterialCommandResult(data) || data.status !== 'committed') {
+function storedMaterialCommandResult(
+  data: unknown,
+): MaterialCommandCommittedResult | AccountDeletionRequestAcceptedResult {
+  if (
+    !isMaterialCommandResult(data) ||
+    (data.status !== 'committed' && data.status !== 'accepted')
+  ) {
     throw new Error('A stored material-command receipt is invalid.')
   }
   return data
+}
+
+function storedProofResult(data: unknown): MaterialCommandCommittedResult {
+  const result = storedMaterialCommandResult(data)
+  if (result.status !== 'committed') {
+    throw new Error('A stored proof-command receipt is invalid.')
+  }
+  return result
 }
 
 export class FirestoreMaterialCommandStore implements MaterialCommandStore {
   constructor(private readonly database: Firestore) {}
 
   async commitProof(options: {
-    envelope: MaterialCommandEnvelope
+    envelope: ProofMaterialCommandEnvelope
     ownerId: string
   }) {
     const receiptReference = this.database.doc(
@@ -53,7 +67,7 @@ export class FirestoreMaterialCommandStore implements MaterialCommandStore {
         if (receipt.signature !== signature) return { kind: 'conflict' as const }
         return {
           kind: 'committed' as const,
-          result: storedCommittedResult(receipt.result),
+          result: storedProofResult(receipt.result),
         }
       }
 
@@ -92,6 +106,6 @@ export class FirestoreMaterialCommandStore implements MaterialCommandStore {
       .doc(receiptPath(options.ownerId, options.commandId))
       .get()
     if (!snapshot.exists) return null
-    return storedCommittedResult(snapshot.data()?.result)
+    return storedMaterialCommandResult(snapshot.data()?.result)
   }
 }

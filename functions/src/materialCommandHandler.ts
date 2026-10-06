@@ -1,21 +1,26 @@
 import {
+  isProofMaterialCommandEnvelope,
   isMaterialCommandResult,
   materialCommandIdFrom,
   parseMaterialCommand,
+  type AccountDeletionRequestAcceptedResult,
   type MaterialCommandCommittedResult,
-  type MaterialCommandEnvelope,
   type MaterialCommandResult,
+  type ProofMaterialCommandEnvelope,
 } from '../../src/domain/materialCommands/contract.js'
 
 export type MaterialCommandLogEntry = Readonly<{
   event: 'material-command-result' | 'material-command-resolution'
-  commandType: 'proof.material-command' | 'unknown'
+  commandType:
+    | 'proof.material-command'
+    | 'account.request-deletion'
+    | 'unknown'
   status: MaterialCommandResult['status']
 }>
 
 export interface MaterialCommandStore {
   commitProof(options: {
-    envelope: MaterialCommandEnvelope
+    envelope: ProofMaterialCommandEnvelope
     ownerId: string
   }): Promise<
     | { kind: 'committed'; result: MaterialCommandCommittedResult }
@@ -24,7 +29,9 @@ export interface MaterialCommandStore {
   resolve(options: {
     commandId: string
     ownerId: string
-  }): Promise<MaterialCommandCommittedResult | null>
+  }): Promise<
+    MaterialCommandCommittedResult | AccountDeletionRequestAcceptedResult | null
+  >
 }
 
 interface HandlerDependencies {
@@ -120,6 +127,16 @@ export async function executeMaterialCommand(
     logResult(dependencies, 'material-command-result', parsed.result, 'unknown')
     return parsed.result
   }
+  if (!isProofMaterialCommandEnvelope(parsed.envelope)) {
+    const result: MaterialCommandResult = {
+      status: 'validation_error',
+      commandId: parsed.envelope.commandId,
+      code: 'invalid-envelope',
+      message: 'Use the account-deletion endpoint for this command.',
+    }
+    logResult(dependencies, 'material-command-result', result, 'unknown')
+    return result
+  }
 
   try {
     const stored = await dependencies.store.commitProof({
@@ -186,7 +203,11 @@ export async function resolveMaterialCommand(
       dependencies,
       'material-command-resolution',
       result,
-      stored ? 'proof.material-command' : 'unknown',
+      stored?.status === 'accepted'
+        ? 'account.request-deletion'
+        : stored
+          ? 'proof.material-command'
+          : 'unknown',
     )
     return result
   } catch (error) {

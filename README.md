@@ -151,9 +151,11 @@ The development/test-only Creator Radar boundary is documented in
 - Training data currently loads as a persisted snapshot. Mutations remain
   synchronized inside the current session, while the accepted real-time read
   and server-confirmed write architecture remains implementation work.
-- Complete account deletion is designed but not implemented or rehearsed. The
-  beta project also lacks the approved Blaze/budget and live backend boundary
-  required to accept an in-product deletion request.
+- The deletion-request contract and immediate account lock are implemented and
+  tested locally, but are not deployed or exposed in the UI. The deletion
+  runner, complete rehearsal, approved Blaze/budget decision, and live backend
+  boundary remain required before Marathoner can claim complete in-product
+  account deletion.
 - The first Track form captures date, distance, elapsed time, shoe, and optional
   planned-workout association. Perceived effort and the remaining coaching
   inputs will be added in later product slices.

@@ -1,9 +1,16 @@
 import { getApps, initializeApp } from 'firebase-admin/app'
+import { getAuth } from 'firebase-admin/auth'
 import { getFirestore } from 'firebase-admin/firestore'
 import { logger } from 'firebase-functions'
 import { setGlobalOptions } from 'firebase-functions/v2'
 import { onCall } from 'firebase-functions/v2/https'
 
+import {
+  executeAccountDeletionRequest,
+  type AccountDeletionRequestLogEntry,
+} from './accountDeletionRequestHandler.js'
+import { FirebaseAccountAccessManager } from './firebaseAccountAccessManager.js'
+import { FirestoreAccountDeletionRequestStore } from './firestoreAccountDeletionRequestStore.js'
 import { FirestoreMaterialCommandStore } from './firestoreMaterialCommandStore.js'
 import {
   executeMaterialCommand,
@@ -27,6 +34,15 @@ const dependencies = {
   },
 }
 
+const accountDeletionDependencies = {
+  accountAccess: new FirebaseAccountAccessManager(getAuth()),
+  store: new FirestoreAccountDeletionRequestStore(getFirestore()),
+  nowEpochSeconds: () => Math.floor(Date.now() / 1_000),
+  log: (entry: AccountDeletionRequestLogEntry) => {
+    logger.info('Account deletion request boundary event', entry)
+  },
+}
+
 export const submitMaterialCommand = onCall((request) =>
   executeMaterialCommand(
     {
@@ -45,4 +61,31 @@ export const resolveMaterialCommand = onCall((request) =>
     },
     dependencies,
   ),
+)
+
+// The verified request.app value is enforced inside the handler so unsupported
+// clients receive a typed result. Invalid or missing tokens cannot populate it.
+// Live attestation and deployment remain blocked by issue #161 and the empty
+// project allowlist.
+export const requestAccountDeletion = onCall(
+  { enforceAppCheck: false, consumeAppCheckToken: true },
+  (request) =>
+    executeAccountDeletionRequest(
+      {
+        authenticatedUser: request.auth
+          ? {
+              uid: request.auth.uid,
+              emailVerified: request.auth.token.email_verified === true,
+              authTimeSeconds:
+                typeof request.auth.token.auth_time === 'number'
+                  ? request.auth.token.auth_time
+                  : null,
+            }
+          : null,
+        appCheckVerified: request.app !== undefined,
+        appCheckAlreadyConsumed: request.app?.alreadyConsumed === true,
+        data: request.data,
+      },
+      accountDeletionDependencies,
+    ),
 )
