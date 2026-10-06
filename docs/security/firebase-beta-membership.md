@@ -57,8 +57,9 @@ denies subsequent participant-data requests because the rules read membership
 state for each protected request. An accepted deletion request atomically sets
 `deletion_pending`, then the trusted handler disables the Authentication user
 and revokes refresh tokens. The local boundary does not delete participant
-records or the Authentication user; the fixed runner, audit, communication,
-and rehearsal remain owned by #197 and #124.
+records or the Authentication user. The #197 runner completes those Firebase
+stages in emulator evidence, while private-store activation, audit,
+communication, and rehearsal remain owned by #124.
 
 ## Operator approval and revocation procedure
 
@@ -120,6 +121,7 @@ then proved:
 The exact command, HTTP outcomes, cleanup guarantee, project controls, and
 quota procedure are recorded in
 [the founding-beta project record](firebase-beta-project.md). App Check,
-support, incident response, deletion completion, command deployment, and
-workflow migration remain owned by #161, #124, #197, #121, #72, and #115. The
-local #158 and #195 boundaries do not bypass those invitation gates.
+support, incident response, deletion activation and rehearsal, command
+deployment, and workflow migration remain owned by #161, #124, #121, #72, and
+#115. The local #158, #195, and #197 boundaries do not bypass those invitation
+gates.

@@ -34,4 +34,30 @@ describe('Firebase account access manager', () => {
     )
     expect(revokeRefreshTokens).not.toHaveBeenCalled()
   })
+
+  it('deletes an existing user and treats user-not-found as retry success', async () => {
+    const deleteUser = vi
+      .fn()
+      .mockResolvedValueOnce(undefined)
+      .mockRejectedValueOnce({ code: 'auth/user-not-found' })
+    const manager = new FirebaseAccountAccessManager({
+      deleteUser,
+    } as unknown as Auth)
+
+    await manager.deleteIfExists('runner-one')
+    await manager.deleteIfExists('runner-one')
+
+    expect(deleteUser).toHaveBeenCalledTimes(2)
+  })
+
+  it('does not hide an unexpected Authentication deletion failure', async () => {
+    const deleteUser = vi.fn().mockRejectedValue({ code: 'auth/internal-error' })
+    const manager = new FirebaseAccountAccessManager({
+      deleteUser,
+    } as unknown as Auth)
+
+    await expect(manager.deleteIfExists('runner-one')).rejects.toEqual({
+      code: 'auth/internal-error',
+    })
+  })
 })

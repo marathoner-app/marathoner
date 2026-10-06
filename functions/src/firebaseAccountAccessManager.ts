@@ -9,4 +9,19 @@ export class FirebaseAccountAccessManager implements AccountAccessManager {
     await this.auth.updateUser(ownerId, { disabled: true })
     await this.auth.revokeRefreshTokens(ownerId)
   }
+
+  async deleteIfExists(ownerId: string): Promise<void> {
+    try {
+      await this.auth.deleteUser(ownerId)
+    } catch (error) {
+      if (
+        typeof error !== 'object' ||
+        error === null ||
+        !('code' in error) ||
+        error.code !== 'auth/user-not-found'
+      ) {
+        throw error
+      }
+    }
+  }
 }

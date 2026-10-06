@@ -131,6 +131,9 @@ documented in
 The approved account and training-data deletion boundary, complete data
 inventory, failure-recovery model, and implementation split are documented in
 [`docs/architecture/account-deletion.md`](docs/architecture/account-deletion.md).
+The guarded emulator-only deletion command, fixed stages, retry procedure, and
+30-day receipt cleanup are documented in
+[`docs/operations/account-deletion-runbook.md`](docs/operations/account-deletion-runbook.md).
 The selected Capacitor iOS boundary, rejected alternatives, App Check reopen
 rule, and release ownership are documented in
 [`docs/architecture/mobile-client-architecture.md`](docs/architecture/mobile-client-architecture.md).
@@ -151,11 +154,11 @@ The development/test-only Creator Radar boundary is documented in
 - Training data currently loads as a persisted snapshot. Mutations remain
   synchronized inside the current session, while the accepted real-time read
   and server-confirmed write architecture remains implementation work.
-- The deletion-request contract and immediate account lock are implemented and
-  tested locally, but are not deployed or exposed in the UI. The deletion
-  runner, complete rehearsal, approved Blaze/budget decision, and live backend
-  boundary remain required before Marathoner can claim complete in-product
-  account deletion.
+- The deletion-request lock and fixed, idempotent deletion runner are
+  implemented and tested locally. Live projects remain deliberately blocked;
+  the private-record adapter, user interface, complete rehearsal, approved
+  Blaze/budget decision, and live backend boundary remain required before
+  Marathoner can claim complete in-product account deletion.
 - The first Track form captures date, distance, elapsed time, shoe, and optional
   planned-workout association. Perceived effort and the remaining coaching
   inputs will be added in later product slices.

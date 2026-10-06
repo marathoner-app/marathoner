@@ -18,6 +18,7 @@
     "check:ios:beta": "npm run build:ios:beta && npm run sync:ios && node scripts/check-ios-boundary.mjs --environment beta",
     "prepare:beta-ios-smoke": "node scripts/manage-beta-ios-smoke.mjs prepare",
     "cleanup:beta-ios-smoke": "node scripts/manage-beta-ios-smoke.mjs cleanup",
+    "delete-account:emulator": "npm run build:functions && node scripts/run-account-deletion.mjs",
     "build:functions": "npm run build --workspace @marathoner/functions",
     "lint": "eslint .",
     "test": "vitest run",
