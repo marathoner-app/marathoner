@@ -59,6 +59,12 @@ its `userId`, allowing converters to reject a document whose data disagrees with
 its path. Workouts similarly store `planId` and are rejected when it disagrees
 with the parent plan path.
 
+The complete participant-linked path inventory and trusted deletion order are
+maintained in
+[`account-deletion.md`](account-deletion.md). Adding a new owned store requires
+updating that inventory and the deletion runner in the same change; placing a
+document outside `users/{userId}` does not make it exempt from deletion.
+
 Repositories are created for one `UserId`. Callers do not supply another user ID
 to individual operations, which reduces the chance of constructing a cross-user
 request.

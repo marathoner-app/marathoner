@@ -270,7 +270,9 @@ gate triggers scope or date review before external invitations are promised.
 
 ### Wave 05: Trust and External-Beta Readiness
 
-- Complete account recovery and account/training-data deletion paths.
+- Complete account recovery and the accepted
+  [account/training-data deletion](architecture/account-deletion.md) request,
+  operator-runner, and rehearsal paths.
 - Publish truthful beta consent, privacy, data-use, limitations, and support
   language.
 - Provide incident triage, rollback or feature-disable, participant support,
