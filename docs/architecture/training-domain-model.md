@@ -14,6 +14,8 @@ belong here.
 | `PlannedWorkout` | Describes a rest, run, or walk-run assignment on a local calendar day. | Belongs to one user and one training plan. |
 | `CompletedRun` | Records what the runner actually completed. | Belongs to one user and may reference one planned workout, its parent plan, and one shoe. |
 | `Shoe` | Represents a pair of shoes that can accumulate run distance. | Belongs to one user and may be referenced by many completed runs. |
+| `PlanGenerationInputV1` | Normalizes only the runner context needed by a versioned generator. | Derived from approved profile and safety inputs without UI or ownership state. |
+| `GeneratedPlanV1` | Represents a proposed, explained phase/week/workout schedule before approval. | Becomes persisted plan data only through the future atomic approval command. |
 
 A user may eventually have multiple plans, but only one should be active at a
 time. A completed run does not need a planned workout because runners may record
@@ -77,6 +79,11 @@ data arrives from a form, network request, or database:
 Future persistence code must also ensure that every referenced entity belongs to
 the authenticated user. Database security rules remain the final authority for
 cross-user access.
+
+Plan-generation input, output, provenance, results, and structural invariants
+are defined separately in the
+[plan-generation contract](plan-generation-contract.md). Contract validation
+does not approve training methodology or activate a plan.
 
 ## Calculated data
 

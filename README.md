@@ -115,6 +115,9 @@ The current application flow is deliberately small:
 
 The shared training domain model is documented in
 [`docs/architecture/training-domain-model.md`](docs/architecture/training-domain-model.md).
+The versioned, methodology-neutral input, proposed-plan, unsupported-result,
+validation, provenance, and fixture boundary is documented in
+[`docs/architecture/plan-generation-contract.md`](docs/architecture/plan-generation-contract.md).
 The owned, versioned runner-profile contract is documented in
 [`docs/architecture/runner-profile-persistence.md`](docs/architecture/runner-profile-persistence.md).
 Cross-feature behavior is documented in
@@ -134,6 +137,8 @@ The development/test-only Creator Radar boundary is documented in
 
 - Completing runner setup stores context only. It does not yet determine
   eligibility or generate, approve, or activate a training plan.
+- Versioned plan-generation contracts and synthetic conformance fixtures exist,
+  but no generator or training rules are implemented or approved yet.
 - Personalized plan generation and plan-creation UI are not implemented yet.
   Accounts without a plan receive an honest empty state. This work is tracked in
   [issue #29](https://github.com/marathoner-app/marathoner/issues/29).
