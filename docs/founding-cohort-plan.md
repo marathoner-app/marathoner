@@ -9,6 +9,7 @@
 - **Eight-week milestone:** [06C Founding Cohort Eight-Week Review](https://github.com/marathoner-app/marathoner/milestone/11)
 - **Delivery plan:** [Marathoner zero-to-beta plan](zero-to-beta-plan.md)
 - **Capacity forecast:** [Owner-session and gate forecast](capacity-forecast.md)
+- **Commercial discovery:** [Commercial proof sprint](commercial-proof-sprint.md)
 
 ## Purpose
 
@@ -22,7 +23,7 @@ and timing should change when participant evidence shows that a different
 approach would be more responsible or effective.
 
 The January 15, 2027 milestone is a scope-or-date decision checkpoint. It falls
-between the December 13 optimistic and March 14 likely invitation forecasts;
+between the January 10 optimistic and April 4 likely invitation forecasts;
 cohort timing follows the invitation gates and the forecast rather than the
 historical milestone alone.
 
@@ -35,6 +36,26 @@ training and feel prepared and in control.
 The first objective is learning, not download volume or revenue. A small group
 that uses the product for several weeks and provides honest feedback is more
 valuable than a large number of unqualified registrations.
+
+## Commercial discovery before the live cohort
+
+The [commercial proof sprint](commercial-proof-sprint.md) precedes founding
+beta invitations. It uses 15–20 fictional-artifact interviews, at least ten
+fixed reservation requests, and—only after the earlier gates pass—a
+five-person constrained concierge experiment.
+
+Commercial discovery intentionally reaches beyond the narrow live-beta
+eligibility boundary. A person may describe a lower starting base,
+inconsistency, or a disrupted plan because the study gives no individualized
+training advice. That evidence tests the addressable problem and may create a
+future qualified-review question. It does not make the person eligible for the
+live beta.
+
+The concierge experiment is also separate from the founding beta. Before
+applicable methodology approval, it may use participant-supplied plans,
+fictional decision tasks, or decisions supplied by a qualified reviewer. The
+founder and software may not originate live hold, repeat, reschedule, pain,
+fueling, hydration, sleep, or recovery recommendations.
 
 ## Founding participant
 
@@ -264,14 +285,16 @@ benchmark or growth quota:
 
 | Stage | Initial target |
 | --- | ---: |
-| Focused discovery conversations in the approved segment | At least 10 |
-| Concrete workarounds or costly/confusing failure modes | At least 5 |
-| Credible commitments to test the bounded beta | At least 5 |
+| Commercial-discovery interviews using frozen artifacts | 15–20 |
+| Recurring consequential workarounds in the first 15 | At least 5 |
+| Concrete eight-week commitments in the first 15 | At least 5 |
+| Qualified prospects receiving the fixed reservation request | At least 10 |
+| Confirmed refundable reservations | At least 3 |
+| Constrained concierge commitments after the earlier gates pass | 5 |
 | First invitation batch | 5–8 |
 | Maximum active before the two-week review | 8 |
 | Maximum accepted before the eight-week review | 15 |
 | Maximum concurrently active before the eight-week review | 12 |
-| Credible willingness-to-pay signals or explicit objections | At least 3 |
 
 Every difference from these numbers is evidence. High interest with poor
 onboarding indicates a product or expectation problem, while weak commitment

@@ -43,8 +43,11 @@ The canonical [zero-to-beta plan](docs/zero-to-beta-plan.md) defines the product
 commitments, delivery waves, monthly evidence gates, safety boundary, and solo
 working model. The [capacity forecast](docs/capacity-forecast.md) tests those
 gates against measured AI-assisted delivery and external waits; its October 6
-recalibration places January between the optimistic and likely invitation
-scenarios rather than treating it as the planning expectation.
+recalibration is now commercially conditioned by the expanded evidence work.
+The [commercial proof sprint](docs/commercial-proof-sprint.md) makes problem,
+differentiation, behavioral payment, comprehension, support burden, and
+acquisition evidence the next product-priority layer before nonessential
+feature breadth.
 [GitHub issue #104](https://github.com/marathoner-app/marathoner/issues/104)
 is its live execution tracker, and
 [issue #117](https://github.com/marathoner-app/marathoner/issues/117) records
