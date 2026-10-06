@@ -118,7 +118,8 @@ The promotion begins from the versions that passed the physical spike:
 | Native runtime | `@capacitor/core` and `@capacitor/ios` 8.5.2 | Keep core, CLI, and platform packages on one compatible version. |
 | Native dependency manager | Swift Package Manager | CocoaPods is not added without a plugin requirement and recorded change. |
 | Web build | Existing root Vite and React application | Do not introduce a mobile-only presentation build. |
-| Auth and Firestore | Existing root Firebase JavaScript SDK | The lockfile is authoritative; upgrades require web, copied-bundle, Auth, rules, and device evidence. |
+| Auth, Firestore, and Functions | Root Firebase JavaScript SDK 12.19.0 | The lockfile is authoritative; upgrades require web, copied-bundle, Auth, rules, and device evidence. |
+| Apple App Check bridge | `@capacitor-firebase/app-check` 8.5.2 | Approved by #202 as a pinned native-to-JavaScript token bridge; registration, initialization, observation, and enforcement remain separate gates. |
 | Portable contracts | `@marathoner/training-contract` | Expand only for an implemented cross-boundary consumer. |
 
 Version upgrades are ordinary reviewed issues, not automatic permission to
@@ -188,19 +189,28 @@ Firebase JavaScript proof did not exercise App Attest or DeviceCheck. Firebase's
 built-in Web SDK provider is reCAPTCHA Enterprise; its built-in Apple providers
 belong to the native Apple SDK.
 
-The first permitted implementation candidate is a Capacitor 8-compatible
-native App Check bridge that exposes Apple's App Attest with the reviewed
-fallback and integrates its token with the selected Firebase calls. The current
-third-party candidate is `@capacitor-firebase/app-check`; it is not approved by
-this ADR merely because it exists. Before adoption, #161 must review:
+Issue #202 approved `@capacitor-firebase/app-check` 8.5.2 as the pinned
+Capacitor 8-compatible bridge. It exposes Apple's App Attest token to the
+Firebase JavaScript SDK through a `CustomProvider`, so the selected JavaScript
+Auth, Firestore, and Functions boundary does not need to be replaced with
+parallel native service adapters. The approval is limited to the dependency
+and compiled native graph; [the dependency review](../security/app-check-bridge-review.md)
+records:
 
 - maintainer and release health;
 - transitive and native dependencies;
 - Firebase SDK version alignment;
 - token attachment to Authentication, Firestore, and callable Functions;
-- App Attest, approved fallback, debug-provider, expiry, revocation, and
-  enforcement behavior; and
-- physical-iPhone, web, local, emulator, and CI evidence.
+- App Attest and debug-provider behavior;
+- the native and JavaScript dependency footprint; and
+- the remaining physical-iPhone, web, local, emulator, CI, refresh, revocation,
+  observation, and enforcement evidence.
+
+Marathoner supports iOS 15 and later, so the bridge's iOS 13 DeviceCheck path is
+not a founding-beta fallback. Issue #203 must register distinct development and
+beta native apps plus web providers. Issue #204 must initialize the native
+provider before the JavaScript Firebase clients and fail closed on provider
+errors. Issues #205 and #206 own observation, rollback, and staged enforcement.
 
 A custom App Check provider and token-minting backend are outside this decision
 because they create a new security service. Do not build one without a separate

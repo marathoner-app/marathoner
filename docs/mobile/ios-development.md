@@ -318,3 +318,16 @@ Use `npm run sync:ios` after any reviewed Capacitor or plugin change. Commit the
 resulting SPM manifest and resolution changes, run the unsigned native compile,
 and repeat physical-device evidence when the Firebase bootstrap, Auth
 persistence, lifecycle, or native dependency graph changes.
+
+The current native plugin graph includes
+`@capacitor-firebase/app-check` 8.5.2. Capacitor's Swift Package Manager
+integration creates `ios/App/CapApp-SPM/symlinks/CapacitorFirebaseAppCheck` as
+an absolute link into local `node_modules`. That directory is generated and
+ignored; never commit it. A clean checkout recreates it with `npm ci` followed
+by `npm run sync:ios`. Commit `Package.swift` and `Package.resolved`, because
+they define and pin the reproducible native graph.
+
+Issue #202 links but does not invoke App Check. Distinct native Firebase
+registrations and configuration selection belong to #203, and client
+initialization belongs to #204. Until those issues close, installing this
+plugin does not claim App Attest or enforcement is active.

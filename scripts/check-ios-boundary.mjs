@@ -54,6 +54,7 @@ async function run() {
     mainStoryboard,
     packageJson,
     packageManifest,
+    packageResolution,
     sceneDelegate,
     xcodeProject,
     runtimeConfig,
@@ -87,6 +88,13 @@ async function run() {
       path.join(repositoryRoot, 'ios/App/CapApp-SPM/Package.swift'),
       'utf8',
     ),
+    readFile(
+      path.join(
+        repositoryRoot,
+        'ios/App/App.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved',
+      ),
+      'utf8',
+    ),
     readFile(path.join(repositoryRoot, 'ios/App/App/SceneDelegate.swift'), 'utf8'),
     readFile(
       path.join(repositoryRoot, 'ios/App/App.xcodeproj/project.pbxproj'),
@@ -117,6 +125,7 @@ async function run() {
       mainStoryboard,
       packageJson,
       packageManifest,
+      packageResolution,
       sceneDelegate,
       trackedPaths: tracked,
       xcodeProject,

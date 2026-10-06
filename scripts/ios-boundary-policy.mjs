@@ -1,7 +1,11 @@
 export const expectedIosBoundary = {
   appId: 'com.marathonerapp.marathoner',
   appName: 'Marathoner',
+  appCheckBridgeVersion: '8.5.2',
   capacitorVersion: '8.5.2',
+  firebaseIosVersion: '12.19.2',
+  firebaseJsVersion: '^12.19.0',
+  firebaseRulesTestVersion: '^5.0.2',
   splashScreenVersion: '8.0.2',
   developmentProjectId: 'marathoner-d9bf9',
   betaProjectId: 'marathonerapp-beta',
@@ -57,6 +61,7 @@ export function findIosProjectViolations({
   mainStoryboard,
   packageJson,
   packageManifest,
+  packageResolution,
   sceneDelegate,
   trackedPaths,
   xcodeProject,
@@ -200,6 +205,39 @@ export function findIosProjectViolations({
     `exact: "${expectedIosBoundary.capacitorVersion}"`,
     'CapApp-SPM Package.swift',
   )
+  for (const appCheckPackageValue of [
+    '.package(name: "CapacitorFirebaseAppCheck", path: "symlinks/CapacitorFirebaseAppCheck")',
+    '.product(name: "CapacitorFirebaseAppCheck", package: "CapacitorFirebaseAppCheck")',
+  ]) {
+    requireText(
+      violations,
+      packageManifest,
+      appCheckPackageValue,
+      'CapApp-SPM Package.swift',
+    )
+  }
+  for (const appCheckConfigValue of [
+    "'@capacitor-firebase/app-check'",
+    'symlink: true',
+  ]) {
+    requireText(
+      violations,
+      capacitorConfig,
+      appCheckConfigValue,
+      'capacitor.config.ts',
+    )
+  }
+  for (const packageResolutionValue of [
+    '"identity" : "firebase-ios-sdk"',
+    `"version" : "${expectedIosBoundary.firebaseIosVersion}"`,
+  ]) {
+    requireText(
+      violations,
+      packageResolution,
+      packageResolutionValue,
+      'Package.resolved',
+    )
+  }
 
   const dependencies = {
     ...packageJson.dependencies,
@@ -224,6 +262,27 @@ export function findIosProjectViolations({
       `@capacitor/splash-screen must be pinned to ${expectedIosBoundary.splashScreenVersion}`,
     )
   }
+  if (
+    dependencies['@capacitor-firebase/app-check'] !==
+    expectedIosBoundary.appCheckBridgeVersion
+  ) {
+    violations.push(
+      `@capacitor-firebase/app-check must be pinned to ${expectedIosBoundary.appCheckBridgeVersion}`,
+    )
+  }
+  if (dependencies.firebase !== expectedIosBoundary.firebaseJsVersion) {
+    violations.push(
+      `firebase must use ${expectedIosBoundary.firebaseJsVersion}`,
+    )
+  }
+  if (
+    dependencies['@firebase/rules-unit-testing'] !==
+    expectedIosBoundary.firebaseRulesTestVersion
+  ) {
+    violations.push(
+      `@firebase/rules-unit-testing must use ${expectedIosBoundary.firebaseRulesTestVersion}`,
+    )
+  }
 
   if (/\bDEVELOPMENT_TEAM\s*=\s*[^;\s]+\s*;/u.test(xcodeProject)) {
     violations.push('Xcode project commits a development team')
@@ -243,6 +302,7 @@ export function findIosProjectViolations({
     }
     if (
       normalizedPath.includes('/xcuserdata/') ||
+      normalizedPath.includes('/capapp-spm/symlinks/') ||
       normalizedPath.endsWith('/local.xcconfig') ||
       normalizedPath.includes('/app/app/public/') ||
       normalizedPath.endsWith('/capacitor.config.json') ||

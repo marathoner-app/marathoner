@@ -140,21 +140,24 @@ fixtures were removed before the copied bundle was restored to development.
 
 App Check is required before external invitations, but enabling enforcement in
 the shared prototype project today would be premature. The mobile ADR selects
-Capacitor and explicitly leaves its native App Attest bridge unproven.
+Capacitor. Issue #202 approved and compiled the pinned native App Attest bridge,
+but no provider is registered or initialized and no live token has been proven.
 The selected development/beta boundary (#125), production shell (#177), and
 local material-command foundation (#158) are now proven. Live command
 deployment and workflow migration remain separate dependencies.
 
-Issue [#161](https://github.com/marathoner-app/marathoner/issues/161) then owns:
+Issue [#161](https://github.com/marathoner-app/marathoner/issues/161) is now an
+epic with #201 through #206. Those slices own:
 
-1. App Check registrations that preserve the distinct development and beta
-   client boundary;
-2. reCAPTCHA Enterprise for beta web and the selected Apple attestation path;
-3. protected debug tokens for local, emulator, and CI use;
-4. a monitoring-only observation window;
-5. negative and rollback rehearsals; and
-6. enforcement for beta Authentication, Firestore, and Functions before the
-   invitation decision.
+1. bounded beta billing and the exact Functions deployment guard (#201);
+2. the reviewed Firebase 12 and native bridge dependency graph (#202);
+3. App Check registrations that preserve the distinct development and beta
+   web/iOS boundary plus protected debug-token ownership (#203);
+4. reCAPTCHA Enterprise and App Attest initialization before Firebase services
+   are used (#204);
+5. a monitoring-only observation window and rollback rehearsal (#205); and
+6. staged enforcement and negative proof for beta Authentication, Firestore,
+   and Functions before the invitation decision (#206).
 
 App Check complements Authentication and Security Rules. It does not replace
 ownership checks, membership enforcement, request validation, revision
