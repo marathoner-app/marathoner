@@ -5,11 +5,13 @@
 - **Owner:** Kevin Tulloch
 - **Review scope:** The Marathoner product repository, excluding Creator Radar
 - **Parent tracker:** [GitHub issue #104](https://github.com/marathoner-app/marathoner/issues/104)
-- **Current delivery slice:** [GitHub issue #203](https://github.com/marathoner-app/marathoner/issues/203)
+- **Current trust slice:** [GitHub issue #204](https://github.com/marathoner-app/marathoner/issues/204)
+- **Current product-priority slice:** [GitHub issue #211](https://github.com/marathoner-app/marathoner/issues/211)
 - **Pending external gates:** [GitHub issue #191](https://github.com/marathoner-app/marathoner/issues/191) and [GitHub issue #201](https://github.com/marathoner-app/marathoner/issues/201)
 - **Related plans:** [Zero-to-beta plan](zero-to-beta-plan.md),
-  [product vision](product-vision.md), and
-  [founding cohort plan](founding-cohort-plan.md)
+  [product vision](product-vision.md),
+  [founding cohort plan](founding-cohort-plan.md), and
+  [commercial proof sprint](commercial-proof-sprint.md)
 
 ## Purpose
 
@@ -49,6 +51,9 @@ The current investment and release posture is:
 - The first beta should prove one narrow first-marathon workflow before adding
   more starting segments, broad adaptation, native depth, integrations, or
   acquisition scale.
+- Commercial proof now precedes product payments, the full adaptation engine,
+  and other nonessential feature breadth. Security, privacy, deletion,
+  evidence-integrity, and qualified-review work may continue.
 
 ## Ratified founding-beta contract
 
@@ -103,10 +108,10 @@ Critical items can have prerequisites in earlier high-priority work.
 | --- | --- | --- | --- | --- | --- | --- |
 | CR-01 | Critical | Safety | Name the qualified reviewer role and obtain dated approval for the supported rules, eligibility, escalation boundaries, and guidance. | #70, #107, #119, #148 | Invitations | Protocol ready; reviewers and approval pending |
 | CR-02 | Critical | Product | Ratify one narrow beta segment, participant count, adaptation boundary, client capability matrix, and explicit exclusions. | #117, #104 | Wave 00 | Complete |
-| CR-03 | Critical | Investment | Record problem evidence, alternatives, differentiation, participant commitments, and willingness-to-pay signals. | #35, #110 | Cohort expansion | Not started |
+| CR-03 | Critical | Investment | Record problem evidence, alternatives, differentiation, participant commitments, and willingness-to-pay signals. | #110, #126, #211–#218 | Before nonessential feature breadth | Plan and issue graph ready; participant evidence pending |
 | CR-04 | High | Governance | Repair contradictory platform, parent, milestone, design, audit, and current-state sources. | #118, #104 | Wave 00 | Complete |
 | CR-05 | High | Delivery | Decompose #105 through #110 into owner-sized child issues with dependencies and evidence-based exit criteria. | #104–#140 | Wave 00 | Complete |
-| CR-06 | High | Delivery | Produce a capacity model and likely/conservative forecast using focused sessions, external wait time, and 60–70% planned utilization. | #54, #104, #208 | Wave 00 | Recalibrated October 6 from two measured delivery weeks; next calibration follows Wave 02 or four more weeks |
+| CR-06 | High | Delivery | Produce a capacity model and likely/conservative forecast using focused sessions, external wait time, and 60–70% planned utilization. | #54, #104, #208, #211 | Wave 00 | Recalibrated October 6 and corrected for completed #203 plus commercial-proof scope; next calibration follows #218, Wave 02, or four more weeks |
 | CR-07 | High | Quality | Run lint, tests, typecheck/build, and Firestore emulator checks on pull requests and make required checks visible before merge. | #56, #57 | Wave 00 | Complete |
 | CR-08 | High | Mobile | Compare Capacitor, Expo with Firebase JS, and Expo with React Native Firebase on a physical-iPhone vertical slice; approve the ADR from evidence. | #33, #83–#89, #177–#178 | Wave 01 | Complete; Capacitor selected, promoted, and spike runtimes retired |
 | CR-09 | High | Architecture | Make completion, plan approval, and adjustment writes atomic and idempotent; enforce one active plan and stale-write rejection. | #72, #105, #107 | Invitations | Not started |
@@ -116,10 +121,10 @@ Critical items can have prerequisites in earlier high-priority work.
 | CR-13 | High | Privacy | Provide consent, limitations, password reset, support, withdrawal, deletion initiation, and a rehearsed complete deletion procedure. | #78, #79, #109, #124, #195–#197 | Invitations | Password recovery, deletion design, local request/lock/runner, and shared UI complete; live activation and rehearsal wait on #161 |
 | CR-14 | High | Recovery | Document and rehearse export/restore, incident response, participant support, recruitment pause, and critical-failure visibility. | #107, #109, #124 | Invitations | Not started; live rehearsal waits on #161 |
 | CR-15 | High | Release | Establish Apple ownership and signing early; obtain an external-testable build and complete a non-owner journey before readiness week. | #108 | Invitations | Not started |
-| CR-16 | High | Validation | Precommit activation, comprehension, trust, safety, engagement, support-burden, and pause thresholds before observing cohort results. | #35, #110 | Invitations | Not started |
+| CR-16 | High | Validation | Precommit activation, comprehension, trust, safety, engagement, support-burden, and pause thresholds before observing cohort results. | #110, #127, #211, #214 | Commercial evidence and invitations | Commercial gates drafted; merge, protocol evidence, and cohort metrics pending |
 | CR-17 | Medium | Trust | Make the public surface explain the product's current readiness and route prospective users to an honest waitlist or bounded beta path. | #23, #109 | Recruitment | Complete; registration closed honestly |
 | CR-18 | Medium | Maintainability | Use additive schema compatibility, current/previous-version fixtures, and one documented migration pattern without building a generalized platform. | #69, #80, #83 | Invitations | Not started |
-| CR-19 | Medium | Economics | Record support cost, acquisition assumptions, retention hypotheses, pricing tests, and bounded lifetime-value logic. | #35, #110 | Investment review | Not started |
+| CR-19 | Medium | Economics | Record support cost, acquisition assumptions, retention hypotheses, pricing tests, and bounded lifetime-value logic. | #110, #126, #211–#218 | Commercial decision | Offers and measures drafted; behavioral evidence pending |
 | CR-20 | Medium | Governance | Add missing contribution, security, ownership, and repository metadata appropriate to a public investor-visible project. | #19, #58, #59 | Wave 00 | Complete |
 
 Some existing issues do not yet cover the complete required outcome. The first
@@ -183,10 +188,10 @@ unrelated implementation issues.
      content and triggers, safety controls, iOS delivery, beta operations, and
      post-invitation reviews.
 10. **Record the first validation plan.**
-    - Issues: #126 and #127.
-    - Choose one initial segment; define interview evidence, beta commitment,
-      willingness-to-pay questions, metric thresholds, and private research
-      storage.
+    - Issues: #126, #127, and #211–#218.
+    - Separate commercial discovery from live-beta eligibility; define
+      interview evidence, behavioral reservations, beta commitment, metric
+      thresholds, and private research storage.
 
 ### Sprint 01 exit evidence
 
@@ -292,22 +297,16 @@ mistake recruitment for completed validation.
 
 ## Market and investment evidence track
 
-Product delivery does not prove demand. Before cohort expansion, record:
+Product delivery does not prove demand. The
+[commercial proof sprint](commercial-proof-sprint.md) now owns the exact
+segment distinction, 15–20-interview protocol, fixed reservation request,
+constrained concierge entry, metric definitions, privacy boundary, stop gates,
+and source limits.
 
-- At least ten focused discovery conversations in the chosen segment.
-- At least five examples of an existing, costly, confusing, or unsafe
-  workaround for the problem.
-- At least five credible commitments to test the supported beta when ready.
-- At least three credible willingness-to-pay signals or explicit reasons the
-  product would not be purchased.
-- A comparison of Marathoner's wedge against the alternatives participants
-  actually considered.
-- Initial hypotheses for acquisition effort, support cost, retention, price,
-  and bounded lifetime value.
-
-These are directional learning thresholds, not statistical proof. Names,
-contact information, health details, consent records, and raw interview notes
-must remain in an approved private system rather than this public repository.
+The public repository receives only aggregate, non-identifying evidence. The
+study is directional and may support a proceed, reposition, stop, or
+operating-model-redesign decision; it cannot establish population conversion
+or product-market fit.
 
 ## Proportionate architecture boundary
 
