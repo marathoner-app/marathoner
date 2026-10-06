@@ -54,6 +54,9 @@ product, investor, architecture, delivery, and operations review. The
 [qualified methodology review](docs/methodology/README.md) defines who may
 approve the founding-beta training and safety behavior, the versioned review
 inventory, and the evidence required before prescriptive use. The
+[founding-beta endurance-rules draft](docs/methodology/artifacts/beta-rules/0.1.0-draft/README.md)
+is the exact unapproved packet awaiting independent endurance-methodology
+review; it is not used by the application. The
 [public prototype access decision](docs/public-prototype-access.md) records why
 open registration is disabled and which trust paths must exist before access
 expands. The

@@ -1,0 +1,38 @@
+{
+  "schemaVersion": "beta-rules-fixtures@1",
+  "artifactVersion": "beta-rules@0.1.0-draft",
+  "status": "draft_not_approved",
+  "defaults": {
+    "cohortEligibilityConfirmed": true,
+    "experienceLevel": "consistent",
+    "consistentRunningWeeks": 12,
+    "currentWeeklyDistanceMeters": 42000,
+    "currentRunningFrequencyDaysPerWeek": 4,
+    "longestRecentRunDistanceMeters": 16000,
+    "targetRaceKind": "date",
+    "wholeWeeksFromPlanStartToRace": 18,
+    "raceAlignmentValid": true,
+    "availablePatternValid": true,
+    "scheduleConstraints": null,
+    "safetySignal": "none_reported"
+  },
+  "cases": [
+    {"id": "supported-interior", "changes": {}, "expectedKind": "generated", "expectedReasonCodes": [], "expectedPlan": {"leadInWeeks": 0, "raceWeek": 18, "recoveryWeek": 19, "totalGeneratedWeeks": 19, "peakTrainingWeekDistanceMeters": 54000, "peakLongRunDistanceMeters": 28000}},
+    {"id": "supported-lower-boundary", "changes": {"consistentRunningWeeks": 8, "currentWeeklyDistanceMeters": 40000, "currentRunningFrequencyDaysPerWeek": 4, "longestRecentRunDistanceMeters": 14000, "wholeWeeksFromPlanStartToRace": 18}, "expectedKind": "generated", "expectedReasonCodes": [], "expectedPlan": {"leadInWeeks": 0, "raceWeek": 18, "recoveryWeek": 19, "totalGeneratedWeeks": 19, "peakTrainingWeekDistanceMeters": 54000, "peakLongRunDistanceMeters": 28000}},
+    {"id": "supported-upper-boundary", "changes": {"currentWeeklyDistanceMeters": 45000, "currentRunningFrequencyDaysPerWeek": 5, "longestRecentRunDistanceMeters": 20000, "wholeWeeksFromPlanStartToRace": 22}, "expectedKind": "generated", "expectedReasonCodes": [], "expectedPlan": {"leadInWeeks": 4, "raceWeek": 22, "recoveryWeek": 23, "totalGeneratedWeeks": 23, "peakTrainingWeekDistanceMeters": 54000, "peakLongRunDistanceMeters": 28000}},
+    {"id": "reject-cohort-gate", "changes": {"cohortEligibilityConfirmed": false}, "expectedKind": "unsupported", "expectedReasonCodes": ["UNSUPPORTED-COHORT-GATE"]},
+    {"id": "reject-inconsistent-runner", "changes": {"experienceLevel": "inconsistent"}, "expectedKind": "unsupported", "expectedReasonCodes": ["UNSUPPORTED-EXPERIENCE"]},
+    {"id": "reject-consistency-below-boundary", "changes": {"consistentRunningWeeks": 7}, "expectedKind": "unsupported", "expectedReasonCodes": ["UNSUPPORTED-CONSISTENCY-DURATION"]},
+    {"id": "reject-distance-below-boundary", "changes": {"currentWeeklyDistanceMeters": 39999}, "expectedKind": "unsupported", "expectedReasonCodes": ["UNSUPPORTED-WEEKLY-DISTANCE"]},
+    {"id": "reject-distance-above-boundary", "changes": {"currentWeeklyDistanceMeters": 45001}, "expectedKind": "unsupported", "expectedReasonCodes": ["UNSUPPORTED-WEEKLY-DISTANCE"]},
+    {"id": "reject-frequency-below-boundary", "changes": {"currentRunningFrequencyDaysPerWeek": 3}, "expectedKind": "unsupported", "expectedReasonCodes": ["UNSUPPORTED-RUN-FREQUENCY"]},
+    {"id": "reject-long-run-below-boundary", "changes": {"longestRecentRunDistanceMeters": 13999}, "expectedKind": "unsupported", "expectedReasonCodes": ["UNSUPPORTED-LONGEST-RUN"]},
+    {"id": "reject-target-window", "changes": {"targetRaceKind": "window"}, "expectedKind": "unsupported", "expectedReasonCodes": ["UNSUPPORTED-RACE-DATE-REQUIRED"]},
+    {"id": "reject-short-race-horizon", "changes": {"wholeWeeksFromPlanStartToRace": 17}, "expectedKind": "unsupported", "expectedReasonCodes": ["UNSUPPORTED-RACE-HORIZON"]},
+    {"id": "reject-long-race-horizon", "changes": {"wholeWeeksFromPlanStartToRace": 23}, "expectedKind": "unsupported", "expectedReasonCodes": ["UNSUPPORTED-RACE-HORIZON"]},
+    {"id": "reject-race-alignment", "changes": {"raceAlignmentValid": false}, "expectedKind": "unsupported", "expectedReasonCodes": ["UNSUPPORTED-RACE-ALIGNMENT"]},
+    {"id": "reject-availability", "changes": {"availablePatternValid": false}, "expectedKind": "unsupported", "expectedReasonCodes": ["UNSUPPORTED-AVAILABILITY"]},
+    {"id": "reject-free-text-constraint", "changes": {"scheduleConstraints": "No running on alternating Wednesdays"}, "expectedKind": "unsupported", "expectedReasonCodes": ["UNSUPPORTED-SCHEDULE-CONSTRAINT"]},
+    {"id": "reject-multiple-in-stable-order", "changes": {"cohortEligibilityConfirmed": false, "experienceLevel": "returning", "currentWeeklyDistanceMeters": 12000, "currentRunningFrequencyDaysPerWeek": 2, "longestRecentRunDistanceMeters": 5000}, "expectedKind": "unsupported", "expectedReasonCodes": ["UNSUPPORTED-COHORT-GATE", "UNSUPPORTED-EXPERIENCE", "UNSUPPORTED-WEEKLY-DISTANCE", "UNSUPPORTED-RUN-FREQUENCY", "UNSUPPORTED-LONGEST-RUN"]}
+  ]
+}

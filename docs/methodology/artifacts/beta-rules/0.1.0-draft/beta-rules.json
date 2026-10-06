@@ -1,0 +1,253 @@
+{
+  "schemaVersion": "beta-rules-review-packet@1",
+  "artifactVersion": "beta-rules@0.1.0-draft",
+  "status": "draft_not_approved",
+  "runtimeUseAllowed": false,
+  "owner": "Kevin Tulloch",
+  "requiredReviewerRole": "EMR",
+  "inventoryIds": [
+    "ELIG-001",
+    "ELIG-002",
+    "FEAS-001",
+    "PLAN-001",
+    "PROG-001",
+    "UNSUP-001",
+    "UNSUP-002"
+  ],
+  "scope": {
+    "goal": "complete_first_marathon",
+    "minimumAgeYears": 18,
+    "language": "en",
+    "country": "US",
+    "priorMarathons": 0,
+    "runnerSegment": "consistent",
+    "finishTimeTargetAllowed": false,
+    "adaptationAllowed": false,
+    "cohortGate": {
+      "record": "founding-beta membership",
+      "requiredSegmentVersion": "founding-beta-segment@1",
+      "enforcement": "The authenticated server caller verifies the allowlisted adult, English-language, US, first-marathon cohort record before invoking the pure generator. The generator must not infer these facts from identity or locale data."
+    }
+  },
+  "eligibility": {
+    "experienceLevel": "consistent",
+    "consistentRunningWeeks": {
+      "minimum": 8,
+      "sourceType": "product_judgment_for_review",
+      "implementationGap": "The approved value requires a new normalized input field; the current plan-generation contract does not collect consistency duration."
+    },
+    "currentWeeklyDistanceMeters": {
+      "minimum": 40000,
+      "maximum": 45000,
+      "measurementWindowDays": 28,
+      "calculation": "completed running distance during the prior 28 complete days divided by 4",
+      "sourceType": "product_judgment_informed_by_comparable_plans"
+    },
+    "currentRunningFrequencyDaysPerWeek": {
+      "minimum": 4,
+      "maximum": 5,
+      "measurementWindowDays": 28,
+      "calculation": "count of distinct run days during the prior 28 complete days divided by 4",
+      "sourceType": "product_judgment_informed_by_comparable_plans"
+    },
+    "longestRecentRunDistanceMeters": {
+      "minimum": 14000,
+      "maximum": 20000,
+      "measurementWindowDays": 28,
+      "sourceType": "product_judgment_informed_by_comparable_plans"
+    },
+    "availableTrainingDays": {
+      "minimum": 4,
+      "requiredPattern": "preferred long-run day plus weekdays 2, 4, and 6 days after it, modulo seven",
+      "sourceType": "product_design_constraint"
+    },
+    "scheduleConstraints": {
+      "supported": "omitted",
+      "nonblankDisposition": "unsupported_manual_review_required",
+      "sourceType": "product_integrity_constraint"
+    },
+    "recentPerformance": {
+      "required": false,
+      "usedForPaceOrFinishTime": false
+    },
+    "safetySignal": {
+      "requiredUpstreamState": "none_reported",
+      "otherStates": "not_decided_in_this_bundle",
+      "owningBundle": "beta-safety",
+      "enforcement": "The authenticated caller may invoke this ruleset only after an approved beta-safety artifact handles every other state."
+    }
+  },
+  "feasibility": {
+    "targetRaceKind": "date",
+    "targetWindowDisposition": "unsupported_exact_date_required",
+    "minimumWholeWeeksFromPlanStartToRace": 18,
+    "maximumWholeWeeksFromPlanStartToRace": 22,
+    "alignment": "target race date equals plan start date plus (whole weeks times 7) minus 1 day",
+    "leadInWeeks": "whole weeks from plan start to race minus 18",
+    "raceDateSelectionAllowed": false
+  },
+  "planFamily": {
+    "name": "Founding beta completion plan",
+    "coreTrainingWeeks": 18,
+    "minimumLeadInWeeks": 0,
+    "maximumLeadInWeeks": 4,
+    "postRaceRecoveryDays": 7,
+    "trainingRunsPerWeek": 4,
+    "trainingDayPositionsRelativeToPreferredLongRunDay": [2, 4, 6, 0],
+    "positionPurposes": ["easy", "easy", "recovery", "long"],
+    "effortBoundary": "All non-race running is conversational easy effort. The draft contains no pace, heart-rate, finish-time, interval, tempo, hill, or threshold prescription.",
+    "leadInWeek": {
+      "phase": "base_building",
+      "reasonCodes": ["PLAN-LEAD-IN-WEEK"],
+      "distancesMetersByPosition": [10000, 9000, 7000, 14000]
+    },
+    "coreWeeks": [
+      {"week": 1, "phase": "base_building", "kind": "load", "distancesMetersByPosition": [10000, 9000, 7000, 14000]},
+      {"week": 2, "phase": "base_building", "kind": "load", "distancesMetersByPosition": [10000, 9000, 7000, 16000]},
+      {"week": 3, "phase": "base_building", "kind": "load", "distancesMetersByPosition": [10000, 10000, 6000, 18000]},
+      {"week": 4, "phase": "base_building", "kind": "cutback", "distancesMetersByPosition": [8000, 8000, 6000, 14000]},
+      {"week": 5, "phase": "marathon_training", "kind": "load", "distancesMetersByPosition": [10000, 9000, 7000, 18000]},
+      {"week": 6, "phase": "marathon_training", "kind": "load", "distancesMetersByPosition": [10000, 9000, 7000, 20000]},
+      {"week": 7, "phase": "marathon_training", "kind": "load", "distancesMetersByPosition": [10000, 9000, 7000, 22000]},
+      {"week": 8, "phase": "marathon_training", "kind": "cutback", "distancesMetersByPosition": [9000, 8000, 7000, 16000]},
+      {"week": 9, "phase": "marathon_training", "kind": "load", "distancesMetersByPosition": [10000, 9000, 7000, 22000]},
+      {"week": 10, "phase": "marathon_training", "kind": "load", "distancesMetersByPosition": [10000, 9000, 7000, 24000]},
+      {"week": 11, "phase": "marathon_training", "kind": "load", "distancesMetersByPosition": [10000, 9000, 7000, 26000]},
+      {"week": 12, "phase": "marathon_training", "kind": "cutback", "distancesMetersByPosition": [9000, 8000, 7000, 18000]},
+      {"week": 13, "phase": "marathon_training", "kind": "load", "distancesMetersByPosition": [10000, 9000, 7000, 26000]},
+      {"week": 14, "phase": "marathon_training", "kind": "peak", "distancesMetersByPosition": [10000, 9000, 7000, 28000]},
+      {"week": 15, "phase": "race_preparation", "kind": "taper", "distancesMetersByPosition": [9000, 8000, 7000, 24000]},
+      {"week": 16, "phase": "race_preparation", "kind": "taper", "distancesMetersByPosition": [8000, 8000, 6000, 18000]},
+      {"week": 17, "phase": "race_preparation", "kind": "taper", "distancesMetersByPosition": [6000, 6000, 6000, 10000]},
+      {"week": 18, "phase": "race_preparation", "kind": "race", "distancesMetersByPosition": [4000, 3000, 2000, 42195]}
+    ],
+    "raceWeek": {
+      "finalPositionPurpose": "race",
+      "finalPositionDate": "targetRaceDate",
+      "raceDistanceMeters": 42195,
+      "paceTarget": null,
+      "finishTimeTarget": null
+    },
+    "recoveryWeek": {
+      "phase": "recovery",
+      "days": 7,
+      "workouts": "one rest assignment on each day",
+      "runningPrescription": null,
+      "reasonCodes": ["PLAN-POST-RACE-REST"]
+    }
+  },
+  "progression": {
+    "maximumTrainingWeekDistanceMeters": 54000,
+    "maximumLongRunDistanceMeters": 28000,
+    "newHighWeeklyDistanceIncrementMeters": 2000,
+    "newHighLongRunIncrementMeters": 2000,
+    "cutbackCoreWeeks": [4, 8, 12],
+    "taperCoreWeeks": [15, 16, 17],
+    "rules": [
+      "A load week may return to a previously completed high after a cutback.",
+      "A new pre-race weekly-distance high may exceed the prior high by no more than 2000 meters.",
+      "A new pre-race long-run high may exceed the prior high by no more than 2000 meters.",
+      "Race distance is not treated as a training-load increase or used to justify a later progression.",
+      "The generator never adds intensity, a fifth training run, or distance beyond the frozen table."
+    ]
+  },
+  "unsupportedEvaluation": {
+    "mode": "collect_all_failed_rules",
+    "order": [
+      "UNSUPPORTED-COHORT-GATE",
+      "UNSUPPORTED-EXPERIENCE",
+      "UNSUPPORTED-CONSISTENCY-DURATION",
+      "UNSUPPORTED-WEEKLY-DISTANCE",
+      "UNSUPPORTED-RUN-FREQUENCY",
+      "UNSUPPORTED-LONGEST-RUN",
+      "UNSUPPORTED-RACE-DATE-REQUIRED",
+      "UNSUPPORTED-RACE-HORIZON",
+      "UNSUPPORTED-RACE-ALIGNMENT",
+      "UNSUPPORTED-AVAILABILITY",
+      "UNSUPPORTED-SCHEDULE-CONSTRAINT"
+    ],
+    "rule": "If any reason applies, return unsupported with all applicable reason codes in this order and no generated plan."
+  },
+  "reasonCodes": [
+    {"code": "ELIG-CONSISTENT-RUNNER", "inventoryId": "ELIG-001", "kind": "generated"},
+    {"code": "ELIG-BASE-WITHIN-BOUNDS", "inventoryId": "ELIG-002", "kind": "generated"},
+    {"code": "FEAS-RACE-HORIZON-SUPPORTED", "inventoryId": "FEAS-001", "kind": "generated"},
+    {"code": "PLAN-COMPLETION-GOAL", "inventoryId": "PLAN-001", "kind": "generated"},
+    {"code": "PLAN-FOUR-DAY-RHYTHM", "inventoryId": "PLAN-001", "kind": "generated"},
+    {"code": "PLAN-LEAD-IN-WEEK", "inventoryId": "PLAN-001", "kind": "generated"},
+    {"code": "PLAN-LOAD-WEEK", "inventoryId": "PROG-001", "kind": "generated"},
+    {"code": "PLAN-CUTBACK-WEEK", "inventoryId": "PROG-001", "kind": "generated"},
+    {"code": "PLAN-TAPER-WEEK", "inventoryId": "PROG-001", "kind": "generated"},
+    {"code": "PLAN-RACE-WEEK", "inventoryId": "PLAN-001", "kind": "generated"},
+    {"code": "PLAN-POST-RACE-REST", "inventoryId": "PLAN-001", "kind": "generated"},
+    {"code": "UNSUPPORTED-COHORT-GATE", "inventoryId": "ELIG-001", "kind": "unsupported"},
+    {"code": "UNSUPPORTED-EXPERIENCE", "inventoryId": "UNSUP-001", "kind": "unsupported"},
+    {"code": "UNSUPPORTED-CONSISTENCY-DURATION", "inventoryId": "ELIG-002", "kind": "unsupported"},
+    {"code": "UNSUPPORTED-WEEKLY-DISTANCE", "inventoryId": "ELIG-002", "kind": "unsupported"},
+    {"code": "UNSUPPORTED-RUN-FREQUENCY", "inventoryId": "ELIG-002", "kind": "unsupported"},
+    {"code": "UNSUPPORTED-LONGEST-RUN", "inventoryId": "ELIG-002", "kind": "unsupported"},
+    {"code": "UNSUPPORTED-RACE-DATE-REQUIRED", "inventoryId": "UNSUP-002", "kind": "unsupported"},
+    {"code": "UNSUPPORTED-RACE-HORIZON", "inventoryId": "FEAS-001", "kind": "unsupported"},
+    {"code": "UNSUPPORTED-RACE-ALIGNMENT", "inventoryId": "FEAS-001", "kind": "unsupported"},
+    {"code": "UNSUPPORTED-AVAILABILITY", "inventoryId": "UNSUP-002", "kind": "unsupported"},
+    {"code": "UNSUPPORTED-SCHEDULE-CONSTRAINT", "inventoryId": "UNSUP-002", "kind": "unsupported"}
+  ],
+  "sources": [
+    {
+      "id": "SRC-NYRR-CONSERVATIVE-2024",
+      "type": "official_comparable_plan",
+      "url": "https://webassets.nyrr.org/nyrrsitecoreblob/nyrr/pdf/training-guides/2024/nyrr-marathon-conservative-training-plan_rd5.pdf",
+      "observed": "An 18-week conservative plan intended for runners averaging four to five running days per week with a longest run around 40 minutes; it uses conversational regular and long running and reaches a 165-minute long run.",
+      "use": "Supports reviewing an 18-week, four-day-or-more completion-oriented family; it does not validate Marathoner's numeric eligibility thresholds."
+    },
+    {
+      "id": "SRC-BAA-LEVEL-ONE",
+      "type": "official_comparable_plan",
+      "url": "https://www.baa.org/races/boston-marathon/info-for-athletes/boston-marathon-training/",
+      "observed": "The B.A.A. novice plan averages four running days, begins near 25 miles per week, peaks near 40 miles per week, and uses 16-to-18-mile long runs.",
+      "use": "Informs review of the proposed starting volume, frequency, peak volume, and 28-kilometer peak long run without copying the B.A.A. schedule."
+    },
+    {
+      "id": "SRC-KOK-2020",
+      "type": "peer_reviewed_observational_study",
+      "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC7496388/",
+      "observed": "Among 441 marathon runners, less than 40 kilometers per week and a longest run below 25 kilometers were associated with slower finish times; measured training variables were not associated with new running-related injuries in this cohort.",
+      "use": "Supports scrutiny of training sufficiency and a long run above 25 kilometers, but does not establish a safety threshold or causal prescription."
+    },
+    {
+      "id": "SRC-TORESDAHL-2023",
+      "type": "peer_reviewed_prospective_cohort",
+      "url": "https://pubmed.ncbi.nlm.nih.gov/36113976/",
+      "observed": "Among 735 New York City Marathon entrants, training injury incidence was 40 percent and more days at an acute-to-chronic distance ratio of at least 1.5 were associated with injury.",
+      "use": "Supports avoiding large training-load spikes; it does not validate one universal week-to-week cap."
+    },
+    {
+      "id": "SRC-NIELSEN-2014",
+      "type": "peer_reviewed_prospective_cohort",
+      "url": "https://pubmed.ncbi.nlm.nih.gov/25155475/",
+      "observed": "Novice runners increasing distance by more than 30 percent over two weeks appeared more vulnerable to distance-related injury than runners increasing by less than 10 percent.",
+      "use": "Supports reviewer scrutiny of progression spikes; the population and exploratory design do not validate Marathoner's exact increments."
+    },
+    {
+      "id": "SRC-BUIST-2008",
+      "type": "peer_reviewed_randomized_trial",
+      "url": "https://pubmed.ncbi.nlm.nih.gov/17940147/",
+      "observed": "A novice-runner program applying the 10-percent rule did not reduce running-related injury versus a shorter standard program.",
+      "use": "Prevents representing a 10-percent rule as proven injury prevention. Marathoner's two-kilometer increments remain a product proposal requiring review."
+    },
+    {
+      "id": "SRC-SMYTH-LAWLOR-2021",
+      "type": "peer_reviewed_observational_study",
+      "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC8506252/",
+      "observed": "In more than 158,000 recreational marathon training histories, disciplined tapers up to three weeks were associated with better performance than shorter or less disciplined tapers.",
+      "use": "Informs the proposed three-week progressive taper; it does not prove the exact distances are optimal for this beta segment."
+    }
+  ],
+  "reviewState": {
+    "submitted": false,
+    "reviewer": null,
+    "decision": "pending",
+    "approvalRecord": null,
+    "approvedArtifactVersion": null
+  }
+}

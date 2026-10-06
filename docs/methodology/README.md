@@ -131,7 +131,7 @@ changes. The current planned bundles are:
 
 | Bundle | Planned version | Contents | Current state |
 | --- | --- | --- | --- |
-| `beta-rules` | `0.1.0-draft` | Eligibility, feasibility, plan construction, progression, and adaptation rules | Not authored or approved |
+| `beta-rules` | `0.1.0-draft` | Eligibility, feasibility, plan construction, and progression rules | [Draft packet authored](artifacts/beta-rules/0.1.0-draft/README.md); not submitted or approved |
 | `beta-safety` | `0.1.0-draft` | Pain and unusual-symptom decisions, escalation language, and safety fixtures | Not authored or approved |
 | `beta-guidance` | `0.1.0-draft` | Easy effort, shoes, fueling, hydration, sleep, recovery, change explanations, and limitations | Not authored or approved |
 
@@ -239,6 +239,12 @@ Issue #119 can close only when:
 - every required inventory row is approved for a pinned non-draft version;
 - approval records are dated, attributable, linked, and complete;
 - every condition or rejection is resolved or its feature is removed;
-- #70, #134, and #135 link their implementation evidence to the approved rows;
-  and
-- the product owner records the invitation-gate trace.
+- #70, #134, and #135 are explicitly bound to the approved versions and retain
+  their separate implementation-and-test traceability gates; and
+- the product owner records the approval decision without representing later
+  implementation or invitation gates as complete.
+
+The final invitation-gate trace occurs after the approved artifacts are
+implemented and tested. It is not a prerequisite for obtaining or recording
+independent approval; making it one would create a circular dependency between
+review and implementation.
