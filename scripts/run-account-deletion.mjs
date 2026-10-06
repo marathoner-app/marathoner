@@ -91,6 +91,14 @@ async function run() {
   assertAccountDeletionOptions(options)
   assertAccountDeletionEmulators()
 
+  const runnerModuleUrl = new URL(
+    '../functions/lib/functions/src/accountDeletionRunner.js',
+    import.meta.url,
+  ).href
+  const accountAccessModuleUrl = new URL(
+    '../functions/lib/functions/src/firebaseAccountAccessManager.js',
+    import.meta.url,
+  ).href
   const [
     { deleteApp, initializeApp },
     { getAuth },
@@ -101,8 +109,8 @@ async function run() {
       import('firebase-admin/app'),
       import('firebase-admin/auth'),
       import('firebase-admin/firestore'),
-      import('../functions/lib/functions/src/accountDeletionRunner.js'),
-      import('../functions/lib/functions/src/firebaseAccountAccessManager.js'),
+      import(/* @vite-ignore */ runnerModuleUrl),
+      import(/* @vite-ignore */ accountAccessModuleUrl),
     ])
   const app = initializeApp(
     { projectId: options.projectId },
