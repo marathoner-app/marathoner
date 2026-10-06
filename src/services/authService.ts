@@ -1,5 +1,6 @@
 import {
   onAuthStateChanged,
+  sendPasswordResetEmail,
   signInWithEmailAndPassword,
   signOut,
   type Unsubscribe,
@@ -92,6 +93,20 @@ export const signIn = async (
     return userCredential.user;
   } catch (error) {
     throw toAuthenticationError(error);
+  }
+};
+
+export const requestPasswordReset = async (email: string): Promise<void> => {
+  try {
+    await sendPasswordResetEmail(auth, email);
+  } catch (error) {
+    const authenticationError = toAuthenticationError(error);
+
+    if (authenticationError.firebaseCode === "auth/user-not-found") {
+      return;
+    }
+
+    throw authenticationError;
   }
 };
 

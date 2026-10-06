@@ -155,9 +155,42 @@
   margin-top: 0.25rem;
 }
 
+.login-submit:disabled,
+.login-secondary:disabled,
+.login-close:disabled,
+.login-popup input:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.login-secondary {
+  justify-self: start;
+  min-height: 2.75rem;
+  padding: 0.4rem 0;
+  background: transparent;
+  color: #1d4ed8;
+  font-weight: 650;
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
+.login-secondary:hover {
+  background: transparent;
+  color: #1e3a8a;
+}
+
 .login-popup .error {
   margin: 0;
   color: #9f1d1d;
+  font-weight: 600;
+}
+
+.login-success {
+  margin: 0;
+  padding: 0.85rem;
+  border-radius: 0.5rem;
+  background: #ecfdf5;
+  color: #065f46;
   font-weight: 600;
 }
 

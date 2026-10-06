@@ -22,9 +22,9 @@ includes:
 - **Analyze:** calculate mileage, pace, and run counts from completed-run history.
 - **Runner setup:** save and revise the minimum first-marathon context, including
   target timing, recent running, availability, constraints, and unit preference.
-- **Authentication:** existing accounts can sign in with Firebase
-  email/password authentication. Public account creation is disabled while the
-  beta trust and access controls are incomplete.
+- **Authentication:** existing accounts can sign in or request a password reset
+  through Firebase email/password authentication. Public account creation is
+  disabled while the beta trust and access controls are incomplete.
 
 The visible features share the typed Firestore persistence layer. Follow the
 [open issues](https://github.com/marathoner-app/marathoner/issues) to see what is
@@ -202,10 +202,10 @@ configuration is defined in `src/firebaseConfig.ts`. Importing
 the Authentication instance. The persistence entry point creates Firestore from
 that same app only when training repositories are requested.
 
-The authentication service exports operations for sign in, sign out, reading
-the current user, and subscribing to authentication changes. Public account
-creation is disabled. The training-data provider uses the authenticated UID as
-its ownership boundary.
+The authentication service exports operations for sign in, password reset,
+sign out, reading the current user, and subscribing to authentication changes.
+Public account creation is disabled. The training-data provider uses the
+authenticated UID as its ownership boundary.
 
 The committed registry contains visibly distinct development and founding-beta
 projects. `.env`, local development, CI, the selected iOS development build,
