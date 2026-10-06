@@ -1,9 +1,9 @@
 # Marathoner zero-to-beta plan
 
 - **Status:** Active delivery plan
-- **Last updated:** September 22, 2026
+- **Last updated:** October 6, 2026
 - **Product owner and current implementer:** Kevin Tulloch
-- **Decision checkpoint:** January 15, 2027; the current capacity forecast does not support invitations by that date
+- **Decision checkpoint:** January 15, 2027; it falls between the optimistic and likely invitation forecasts and is not a delivery promise
 - **Master tracker:** [GitHub issue #104](https://github.com/marathoner-app/marathoner/issues/104)
 - **Active remediation:** [Committee remediation sprint](committee-remediation-sprint.md)
 - **Founding-beta contract:** [GitHub issue #117](https://github.com/marathoner-app/marathoner/issues/117)
@@ -18,10 +18,11 @@ loop: intake, a reviewed plan family, daily use, completed-run feedback,
 deterministic hold/repeat/reschedule recommendations, timely reviewed guidance,
 and informed approval of material plan changes.
 
-January 15, 2027 was the original conditional target. The September 22
-[capacity forecast](capacity-forecast.md) concludes that the current scope and
-solo-owner capacity cannot support invitations by that date. It is now a
-scope-or-date decision checkpoint, not a promise of beta access, public launch,
+January 15, 2027 was the original conditional target. The October 6
+[capacity recalibration](capacity-forecast.md) places the invitation decision
+at December 13, 2026 optimistic, March 14, 2027 likely, and September 26, 2027
+conservative. January therefore remains a scope-or-date decision checkpoint,
+not the planning expectation or a promise of beta access, public launch,
 completed cohort validation, or an Android external release.
 
 The September 2026 committee review found that the target remains conditional

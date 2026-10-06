@@ -1,7 +1,7 @@
 # Founding cohort recruitment and validation plan
 
 - **Status:** Active founding-beta plan
-- **Last updated:** September 22, 2026
+- **Last updated:** October 6, 2026
 - **Product owner:** Kevin Tulloch
 - **Related issue:** [#35](https://github.com/marathoner-app/marathoner/issues/35)
 - **Invitation milestone:** [06A Founding Cohort Invitations](https://github.com/marathoner-app/marathoner/milestone/2)
@@ -21,10 +21,10 @@ issues and milestones define scheduled work. Recruitment channels, targets,
 and timing should change when participant evidence shows that a different
 approach would be more responsible or effective.
 
-The January 15, 2027 milestone is a scope-or-date decision checkpoint. The
-current capacity forecast does not support invitations by that date; cohort
-timing follows the invitation gates and the forecast rather than the historical
-milestone alone.
+The January 15, 2027 milestone is a scope-or-date decision checkpoint. It falls
+between the December 13 optimistic and March 14 likely invitation forecasts;
+cohort timing follows the invitation gates and the forecast rather than the
+historical milestone alone.
 
 ## Objective
 

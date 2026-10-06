@@ -5,8 +5,8 @@
 - **Owner:** Kevin Tulloch
 - **Review scope:** The Marathoner product repository, excluding Creator Radar
 - **Parent tracker:** [GitHub issue #104](https://github.com/marathoner-app/marathoner/issues/104)
-- **Current delivery slice:** [GitHub issue #202](https://github.com/marathoner-app/marathoner/issues/202)
-- **Pending external gate:** [GitHub issue #201](https://github.com/marathoner-app/marathoner/issues/201)
+- **Current delivery slice:** [GitHub issue #203](https://github.com/marathoner-app/marathoner/issues/203)
+- **Pending external gates:** [GitHub issue #191](https://github.com/marathoner-app/marathoner/issues/191) and [GitHub issue #201](https://github.com/marathoner-app/marathoner/issues/201)
 - **Related plans:** [Zero-to-beta plan](zero-to-beta-plan.md),
   [product vision](product-vision.md), and
   [founding cohort plan](founding-cohort-plan.md)
@@ -106,11 +106,11 @@ Critical items can have prerequisites in earlier high-priority work.
 | CR-03 | Critical | Investment | Record problem evidence, alternatives, differentiation, participant commitments, and willingness-to-pay signals. | #35, #110 | Cohort expansion | Not started |
 | CR-04 | High | Governance | Repair contradictory platform, parent, milestone, design, audit, and current-state sources. | #118, #104 | Wave 00 | Complete |
 | CR-05 | High | Delivery | Decompose #105 through #110 into owner-sized child issues with dependencies and evidence-based exit criteria. | #104–#140 | Wave 00 | Complete |
-| CR-06 | High | Delivery | Produce a capacity model and likely/conservative forecast using focused sessions, external wait time, and 60–70% planned utilization. | #54, #104 | Wave 00 | Evidence ready |
+| CR-06 | High | Delivery | Produce a capacity model and likely/conservative forecast using focused sessions, external wait time, and 60–70% planned utilization. | #54, #104, #208 | Wave 00 | Recalibrated October 6 from two measured delivery weeks; next calibration follows Wave 02 or four more weeks |
 | CR-07 | High | Quality | Run lint, tests, typecheck/build, and Firestore emulator checks on pull requests and make required checks visible before merge. | #56, #57 | Wave 00 | Complete |
 | CR-08 | High | Mobile | Compare Capacitor, Expo with Firebase JS, and Expo with React Native Firebase on a physical-iPhone vertical slice; approve the ADR from evidence. | #33, #83–#89, #177–#178 | Wave 01 | Complete; Capacitor selected, promoted, and spike runtimes retired |
 | CR-09 | High | Architecture | Make completion, plan approval, and adjustment writes atomic and idempotent; enforce one active plan and stale-write rejection. | #72, #105, #107 | Invitations | Not started |
-| CR-10 | High | Security | Enforce allowlisted beta access, verified-email writes, supported schema/rules versions, bounded fields, immutable ownership, negative rules tests, and staged App Check. | #87, #107, #109, #121, #161, #201–#206 | Invitations | In progress; beta membership, shared-record proof, and owned profile boundaries have negative tests; App Check dependency proof active |
+| CR-10 | High | Security | Enforce allowlisted beta access, verified-email writes, supported schema/rules versions, bounded fields, immutable ownership, negative rules tests, and staged App Check. | #87, #107, #109, #121, #161, #201–#206 | Invitations | In progress; beta membership, shared-record proof, owned profile boundaries, and App Check dependency compatibility are proved; registration is next |
 | CR-11 | High | Operations | Separate development and beta Firebase environments and prevent local or spike commands from reaching participant data. | #22, #83, #109, #125 | Wave 01 | Complete; web and selected-iOS beta boundaries proved |
 | CR-12 | High | Safety | Store versioned recommendation evidence and provide a rehearsed remote generation, guidance, and adaptation kill switch. | #105, #107 | Invitations | Not started |
 | CR-13 | High | Privacy | Provide consent, limitations, password reset, support, withdrawal, deletion initiation, and a rehearsed complete deletion procedure. | #78, #79, #109, #124, #195–#197 | Invitations | Password recovery, deletion design, local request/lock/runner, and shared UI complete; live activation and rehearsal wait on #161 |
