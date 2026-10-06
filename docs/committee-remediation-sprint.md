@@ -5,7 +5,7 @@
 - **Owner:** Kevin Tulloch
 - **Review scope:** The Marathoner product repository, excluding Creator Radar
 - **Parent tracker:** [GitHub issue #104](https://github.com/marathoner-app/marathoner/issues/104)
-- **Current delivery slice:** [GitHub issue #67](https://github.com/marathoner-app/marathoner/issues/67)
+- **Current delivery slice:** [GitHub issue #69](https://github.com/marathoner-app/marathoner/issues/69)
 - **Related plans:** [Zero-to-beta plan](zero-to-beta-plan.md),
   [product vision](product-vision.md), and
   [founding cohort plan](founding-cohort-plan.md)
