@@ -401,7 +401,8 @@ their name.
 ## Open questions
 
 - Which qualified experts will review the training rules and safety guidance?
-- What private tool will manage outreach, consent, and interview notes?
+- When should the single-operator Google Workspace research boundary expand,
+  and what additional live-product adapter will #124 require?
 - Which local clubs, stores, and races are appropriate first partners?
 - What evidence should permit the first paid acquisition experiment?
 - How should participation end when a runner graduates, withdraws, or changes

@@ -83,12 +83,17 @@ store, app-managed export, or app-managed backup. Issue #124 may add a
 proportionate backup and restore procedure; it must update this inventory and
 define how deletion reaches backups before invitations open.
 
-The private system for cohort contacts, consent evidence, support messages, and
-research notes has not been selected. That is an explicit readiness blocker,
-not an implied exclusion. Issue #124 must name that system, its owner, retention
-period, and its withdrawal/deletion steps. Complete deletion cannot be rehearsed
-or promised while a participant-linked private store is absent from the
-manifest.
+The commercial-research boundary selects a restricted, organization-controlled
+Google Workspace account in the
+[research operations runbook](../operations/commercial-research-operations.md).
+The organization now has an owner-only research root and active Drive storage;
+its October 6 synthetic withdrawal rehearsal passed and is recorded in the
+[research evidence](../operations/evidence/2026-10-06-commercial-research-withdrawal-rehearsal.md).
+That operational boundary does not silently activate the live-product adapter:
+issue #124 must incorporate every applicable Workspace record, its owner,
+retention period, and verified deletion step into the complete participant
+manifest. Complete product deletion cannot be rehearsed or promised while that
+adapter and its live-system rehearsal remain absent.
 
 ## Request contract
 

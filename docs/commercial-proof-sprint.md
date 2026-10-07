@@ -150,8 +150,16 @@ Issue [#212](https://github.com/marathoner-app/marathoner/issues/212) must:
   optional recordings, reservations, and refunds;
 - define access, minimum collection, retention, withdrawal, deletion, and
   incident response;
-- provide equivalent recording and no-recording paths; and
+- prohibit recording for this sprint; any later recording proposal must add
+  separate optional consent and preserve an equivalent no-recording path; and
 - rehearse withdrawal and deletion using synthetic data.
+
+The selected, owner-only Workspace design is recorded in the
+[commercial research operations runbook](operations/commercial-research-operations.md),
+and its
+[dated synthetic withdrawal rehearsal](operations/evidence/2026-10-06-commercial-research-withdrawal-rehearsal.md)
+passed. That result proves the small-study operating path; it does not by
+itself authorize real recruitment, payment, or a product pilot.
 
 ### Artifact and claim gate
 
