@@ -48,6 +48,9 @@ The [commercial proof sprint](docs/commercial-proof-sprint.md) makes problem,
 differentiation, behavioral payment, comprehension, support burden, and
 acquisition evidence the next product-priority layer before nonessential
 feature breadth.
+Its selected private-system boundary, consent separation, retention schedule,
+public aggregation rule, and activation state are documented in the
+[commercial research operations runbook](docs/operations/commercial-research-operations.md).
 [GitHub issue #104](https://github.com/marathoner-app/marathoner/issues/104)
 is its live execution tracker, and
 [issue #117](https://github.com/marathoner-app/marathoner/issues/117) records
