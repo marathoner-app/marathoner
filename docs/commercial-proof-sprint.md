@@ -178,8 +178,10 @@ outcome, or imply that the draft methodology has been approved.
 The versioned
 [readiness and adaptation research artifacts](design/commercial-research-artifacts/README.md)
 include the facilitator path, claim boundary, accessibility contract, and
-local-only source files. They remain blocked from real interviews until #213
-passes review and #214 freezes the complete protocol and evidence rubric.
+local-only source files. They passed #213 review. Real interviews remain
+blocked until the #214 protocol is merged, #215 approves and rehearses the
+reservation path, and the research collection boundary is intentionally
+activated.
 
 ### Protocol and metric gate
 
@@ -190,6 +192,16 @@ the first participant response.
 
 Protocol revisions retain the original version, the date, and the reason.
 Results from materially different protocols are reported separately.
+
+The frozen
+[commercial interview protocol and evidence rubric](operations/commercial-interview-protocol.md)
+defines the exact screener, non-leading prompts, source attribution, atomic
+ledger fields, classifications, observation windows, decision metrics, private
+note templates, and public aggregate format. Its
+[synthetic rehearsal](operations/evidence/2026-10-06-commercial-interview-protocol-rehearsal.md)
+reproduces enthusiastic, ambiguous, and negative classifications without
+treating sentiment as evidence. Real collection remains blocked by the
+activation and reservation gates.
 
 ### Reservation gate
 

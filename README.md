@@ -53,7 +53,11 @@ public aggregation rule, and activation state are documented in the
 [commercial research operations runbook](docs/operations/commercial-research-operations.md).
 The versioned
 [fictional readiness and adaptation concepts](docs/design/commercial-research-artifacts/README.md)
-provide the non-prescriptive artifacts for the next protocol gate.
+provide the non-prescriptive artifacts used by the frozen protocol.
+The frozen
+[commercial interview protocol and evidence rubric](docs/operations/commercial-interview-protocol.md)
+defines how those concepts are screened, facilitated, classified, and reduced
+to privacy-safe directional evidence before any real response is collected.
 [GitHub issue #104](https://github.com/marathoner-app/marathoner/issues/104)
 is its live execution tracker, and
 [issue #117](https://github.com/marathoner-app/marathoner/issues/117) records

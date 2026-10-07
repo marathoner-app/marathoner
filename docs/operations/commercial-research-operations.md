@@ -56,7 +56,7 @@ Until the remaining commercial-proof recruitment gates pass:
 - no screener, consent form, or participant ledger may collect responses;
 - no interview or recording may begin;
 - no reservation link may be sent; and
-- issue #212 must remain open.
+- the real-participant activation state must remain closed.
 
 ## Selected private boundary
 
@@ -143,6 +143,12 @@ The exact participant-facing language is versioned in the
 [consent template](templates/commercial-research-consent.md). A live Form must
 display the version and effective date and preserve separate affirmative
 choices. A bundled checkbox is invalid.
+
+The frozen
+[commercial interview protocol](commercial-interview-protocol.md) owns the
+screener, question order, artifact tasks, classification rules, source tags,
+observation windows, and public decision format. Completed notes and ledger
+rows use its private templates but remain inside the restricted Workspace.
 
 ## Retention and deletion
 
