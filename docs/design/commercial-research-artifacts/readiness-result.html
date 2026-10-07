@@ -1,0 +1,209 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="referrer" content="no-referrer" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; style-src 'self'; script-src 'self'; img-src 'none'; connect-src 'none'; font-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'"
+    />
+    <meta name="artifact-version" content="commercial-research-artifacts@0.1.0" />
+    <title>Fictional readiness result — Marathoner research concept</title>
+    <link rel="stylesheet" href="artifact.css" />
+    <script src="artifact.js" defer></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main-content">Skip to concept</a>
+
+    <header class="site-header">
+      <nav class="site-nav" aria-label="Research artifact navigation">
+        <a class="wordmark" href="readiness-result.html" aria-label="Marathoner research artifacts">
+          Marathoner<span class="wordmark-dot">.</span>
+        </a>
+        <ul class="artifact-switcher" role="list">
+          <li role="listitem">
+            <a href="readiness-result.html" aria-current="page">Readiness concept</a>
+          </li>
+          <li role="listitem"><a href="adaptation-decision.html">Adaptation concept</a></li>
+        </ul>
+      </nav>
+    </header>
+
+    <main id="main-content" class="page-shell">
+      <section class="hero" aria-labelledby="page-title">
+        <div>
+          <p class="eyebrow">Fictional research concept · Version 0.1.0</p>
+          <h1 id="page-title">Is this race window worth exploring?</h1>
+          <p class="lede">
+            This example shows how Marathoner might separate available evidence from missing
+            evidence before asking a runner what to do next.
+          </p>
+        </div>
+
+        <aside class="concept-boundary" role="note" aria-label="Research concept boundary">
+          <strong>Not a real readiness result</strong>
+          <p>
+            This fictional screen is not evaluating you. It is not a training plan,
+            recommendation, medical guidance, or statement that a race is appropriate.
+          </p>
+        </aside>
+      </section>
+
+      <div class="artifact-grid">
+        <article class="panel" aria-labelledby="result-heading">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">Fictional runner A · Synthetic data</p>
+              <h2 id="result-heading">Readiness result</h2>
+              <p>Example race date: March 21, 2027</p>
+            </div>
+            <span class="badge">Needs a decision</span>
+          </div>
+
+          <div class="result-callout">
+            <span class="result-label">Current concept state</span>
+            <p>More evidence is needed before a real readiness decision.</p>
+          </div>
+
+          <section aria-labelledby="considered-heading">
+            <h3 id="considered-heading">Evidence this concept considered</h3>
+            <ul class="fact-list" role="list">
+              <li role="listitem">
+                <span class="fact-label">Race horizon</span>
+                <span class="fact-value">24 weeks</span>
+              </li>
+              <li role="listitem">
+                <span class="fact-label">Recent running</span>
+                <span class="fact-value">3 days most weeks</span>
+              </li>
+              <li role="listitem">
+                <span class="fact-label">Weekly distance</span>
+                <span class="fact-value">About 15 miles</span>
+              </li>
+              <li role="listitem">
+                <span class="fact-label">Longest recent run</span>
+                <span class="fact-value">6 miles</span>
+              </li>
+              <li role="listitem">
+                <span class="fact-label">Available days</span>
+                <span class="fact-value">Up to 4 per week</span>
+              </li>
+              <li role="listitem">
+                <span class="fact-label">Current plan</span>
+                <span class="fact-value">Selected, not reviewed</span>
+              </li>
+            </ul>
+          </section>
+
+          <hr class="section-divider" />
+
+          <section aria-labelledby="missing-heading">
+            <h3 id="missing-heading">What this concept does not know</h3>
+            <ul class="plain-list">
+              <li>Whether the synthetic history is complete or representative.</li>
+              <li>Whether the selected plan fits the available schedule.</li>
+              <li>Whether any expert-reviewed rule supports a real decision.</li>
+              <li>Whether the race date or goal should remain unchanged.</li>
+            </ul>
+          </section>
+
+          <hr class="section-divider" />
+
+          <section aria-labelledby="meaning-heading">
+            <h3 id="meaning-heading">What the state means</h3>
+            <p>
+              The fictional inputs are visible, but they are not enough to produce a real
+              feasibility conclusion. No schedule or training action has been created.
+            </p>
+            <div class="uncertainty">
+              <h3>Uncertainty remains explicit</h3>
+              <p>
+                Marathoner's training methodology is still awaiting qualified review. This
+                concept cannot convert draft thresholds into personal guidance.
+              </p>
+            </div>
+          </section>
+        </article>
+
+        <div class="stack">
+          <section class="panel panel-soft" aria-labelledby="decision-heading">
+            <div class="panel-heading">
+              <div>
+                <p class="eyebrow">Next decision</p>
+                <h2 id="decision-heading">What should this concept show next?</h2>
+                <p>No option changes a real plan or evaluates the viewer.</p>
+              </div>
+              <span class="badge badge-neutral">No default</span>
+            </div>
+
+            <form class="choice-form" data-concept-form>
+              <fieldset>
+                <legend>Choose one fictional response</legend>
+
+                <label class="choice" for="readiness-missing">
+                  <input
+                    id="readiness-missing"
+                    name="readiness-choice"
+                    type="radio"
+                    value="Explain the missing evidence"
+                  />
+                  <span>
+                    Explain the missing evidence
+                    <small>Show why the concept stopped before a conclusion.</small>
+                  </span>
+                </label>
+
+                <label class="choice" for="readiness-later">
+                  <input
+                    id="readiness-later"
+                    name="readiness-choice"
+                    type="radio"
+                    value="Revisit the question later"
+                  />
+                  <span>
+                    Revisit the question later
+                    <small>Keep the example unresolved and collect nothing else now.</small>
+                  </span>
+                </label>
+
+                <label class="choice" for="readiness-exit">
+                  <input
+                    id="readiness-exit"
+                    name="readiness-choice"
+                    type="radio"
+                    value="Leave this concept"
+                  />
+                  <span>
+                    Leave this concept
+                    <small>Make no decision and return to the research discussion.</small>
+                  </span>
+                </label>
+              </fieldset>
+
+              <div class="form-actions">
+                <button class="primary-button" type="submit">Continue fictional example</button>
+                <p class="form-note">Nothing on this page is saved or sent.</p>
+              </div>
+              <p class="form-status" role="status" aria-live="polite"></p>
+            </form>
+          </section>
+
+          <aside class="panel research-prompt" aria-labelledby="prompt-heading">
+            <p class="eyebrow">Research prompt</p>
+            <h2 id="prompt-heading">In your own words</h2>
+            <p>
+              What do you believe this screen knows, what remains uncertain, and what it is
+              asking the fictional runner to decide?
+            </p>
+          </aside>
+        </div>
+      </div>
+    </main>
+
+    <footer class="footer-note">
+      Fictional research concept using synthetic data. Not connected to the Marathoner app,
+      an account, analytics, or a training engine.
+    </footer>
+  </body>
+</html>

@@ -51,6 +51,9 @@ feature breadth.
 Its selected private-system boundary, consent separation, retention schedule,
 public aggregation rule, and activation state are documented in the
 [commercial research operations runbook](docs/operations/commercial-research-operations.md).
+The versioned
+[fictional readiness and adaptation concepts](docs/design/commercial-research-artifacts/README.md)
+provide the non-prescriptive artifacts for the next protocol gate.
 [GitHub issue #104](https://github.com/marathoner-app/marathoner/issues/104)
 is its live execution tracker, and
 [issue #117](https://github.com/marathoner-app/marathoner/issues/117) records
