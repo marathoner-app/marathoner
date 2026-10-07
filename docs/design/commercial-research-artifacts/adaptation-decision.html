@@ -1,0 +1,221 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="referrer" content="no-referrer" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; style-src 'self'; script-src 'self'; img-src 'none'; connect-src 'none'; font-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'"
+    />
+    <meta name="artifact-version" content="commercial-research-artifacts@0.1.0" />
+    <title>Fictional adaptation decision — Marathoner research concept</title>
+    <link rel="stylesheet" href="artifact.css" />
+    <script src="artifact.js" defer></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main-content">Skip to concept</a>
+
+    <header class="site-header">
+      <nav class="site-nav" aria-label="Research artifact navigation">
+        <a class="wordmark" href="readiness-result.html" aria-label="Marathoner research artifacts">
+          Marathoner<span class="wordmark-dot">.</span>
+        </a>
+        <ul class="artifact-switcher" role="list">
+          <li role="listitem"><a href="readiness-result.html">Readiness concept</a></li>
+          <li role="listitem">
+            <a href="adaptation-decision.html" aria-current="page">Adaptation concept</a>
+          </li>
+        </ul>
+      </nav>
+    </header>
+
+    <main id="main-content" class="page-shell">
+      <section class="hero" aria-labelledby="page-title">
+        <div>
+          <p class="eyebrow">Fictional research concept · Version 0.1.0</p>
+          <h1 id="page-title">A schedule conflict changed the week.</h1>
+          <p class="lede">
+            This example shows how Marathoner might explain a consequential schedule change
+            and wait for the fictional runner's approval.
+          </p>
+        </div>
+
+        <aside class="concept-boundary" role="note" aria-label="Research concept boundary">
+          <strong>Not a training recommendation</strong>
+          <p>
+            This fictional screen is not evaluating you. The options are not medical guidance,
+            an approved plan, or instructions for a real runner.
+          </p>
+        </aside>
+      </section>
+
+      <div class="artifact-grid">
+        <article class="panel" aria-labelledby="change-heading">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">Fictional week 7 · Synthetic schedule</p>
+              <h2 id="change-heading">Review a proposed change</h2>
+              <p>Reason shown by this concept: a work trip conflicts with Thursday.</p>
+            </div>
+            <span class="badge">Approval required</span>
+          </div>
+
+          <section aria-labelledby="original-heading">
+            <h3 id="original-heading">Original fictional schedule</h3>
+            <ol class="timeline" role="list">
+              <li role="listitem">
+                <span class="time-label">Tuesday</span>
+                <div><strong>Easy session A</strong><span>Unchanged in this example</span></div>
+              </li>
+              <li role="listitem">
+                <span class="time-label">Thursday</span>
+                <div><strong>Easy session B</strong><span>Conflicts with the work trip</span></div>
+              </li>
+              <li role="listitem">
+                <span class="time-label">Sunday</span>
+                <div><strong>Long session C</strong><span>Unchanged in this example</span></div>
+              </li>
+            </ol>
+          </section>
+
+          <hr class="section-divider" />
+
+          <section aria-labelledby="options-heading">
+            <h3 id="options-heading">Bounded concept options</h3>
+            <ul class="option-list" role="list">
+              <li class="proposed" role="listitem">
+                <strong>Reschedule</strong>
+                <span>Move fictional easy session B from Thursday to Friday.</span>
+              </li>
+              <li role="listitem">
+                <strong>Hold</strong>
+                <span>Show no progression while the fictional week is reviewed.</span>
+              </li>
+              <li role="listitem">
+                <strong>Repeat</strong>
+                <span>Show the prior fictional week again instead of advancing.</span>
+              </li>
+              <li role="listitem">
+                <strong>Reconsider</strong>
+                <span>Stop this example and revisit whether its plan or timeline still fits.</span>
+              </li>
+              <li role="listitem">
+                <strong>Keep as planned</strong>
+                <span>Leave the original fictional schedule unchanged.</span>
+              </li>
+            </ul>
+          </section>
+
+          <hr class="section-divider" />
+
+          <section aria-labelledby="consequence-heading">
+            <h3 id="consequence-heading">What would change in the proposed example</h3>
+            <p>
+              Only easy session B moves from Thursday to Friday. The example shows no change
+              to the other sessions, no new session, and no automatic approval.
+            </p>
+            <div class="uncertainty">
+              <h3>What remains uncertain</h3>
+              <p>
+                This concept uses only a calendar conflict. It has not evaluated a real
+                runner, training response, health information, or an expert-reviewed rule.
+              </p>
+            </div>
+          </section>
+        </article>
+
+        <div class="stack">
+          <section class="panel panel-soft" aria-labelledby="approval-heading">
+            <div class="panel-heading">
+              <div>
+                <p class="eyebrow">Fictional approval</p>
+                <h2 id="approval-heading">Nothing changes until a choice is made.</h2>
+                <p>The concept does not select an option by default.</p>
+              </div>
+              <span class="badge badge-neutral">Pending</span>
+            </div>
+
+            <form class="choice-form" data-concept-form>
+              <fieldset>
+                <legend>Choose one response for this fictional example</legend>
+
+                <label class="choice" for="adapt-approve">
+                  <input
+                    id="adapt-approve"
+                    name="adaptation-choice"
+                    type="radio"
+                    value="Approve the fictional reschedule"
+                  />
+                  <span>
+                    Approve the fictional reschedule
+                    <small>Session B would move from Thursday to Friday in this example.</small>
+                  </span>
+                </label>
+
+                <label class="choice" for="adapt-keep">
+                  <input
+                    id="adapt-keep"
+                    name="adaptation-choice"
+                    type="radio"
+                    value="Keep the fictional schedule unchanged"
+                  />
+                  <span>
+                    Keep the fictional schedule unchanged
+                    <small>The proposed reschedule would not be applied.</small>
+                  </span>
+                </label>
+
+                <label class="choice" for="adapt-review">
+                  <input
+                    id="adapt-review"
+                    name="adaptation-choice"
+                    type="radio"
+                    value="Review another option before deciding"
+                  />
+                  <span>
+                    Review another option before deciding
+                    <small>No fictional change would take effect yet.</small>
+                  </span>
+                </label>
+
+                <label class="choice" for="adapt-exit">
+                  <input
+                    id="adapt-exit"
+                    name="adaptation-choice"
+                    type="radio"
+                    value="Leave this concept without a decision"
+                  />
+                  <span>
+                    Leave this concept without a decision
+                    <small>Return to the research discussion with no change.</small>
+                  </span>
+                </label>
+              </fieldset>
+
+              <div class="form-actions">
+                <button class="primary-button" type="submit">Record fictional choice</button>
+                <p class="form-note">Nothing on this page is saved or sent.</p>
+              </div>
+              <p class="form-status" role="status" aria-live="polite"></p>
+            </form>
+          </section>
+
+          <aside class="panel research-prompt" aria-labelledby="prompt-heading">
+            <p class="eyebrow">Research prompt</p>
+            <h2 id="prompt-heading">In your own words</h2>
+            <p>
+              What would change, why was it proposed, what remains uncertain, and when would
+              the change take effect?
+            </p>
+          </aside>
+        </div>
+      </div>
+    </main>
+
+    <footer class="footer-note">
+      Fictional research concept using synthetic data. Not connected to the Marathoner app,
+      an account, analytics, or a training engine.
+    </footer>
+  </body>
+</html>

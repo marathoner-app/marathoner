@@ -175,6 +175,12 @@ Each artifact must say that it is a research concept, not an individualized
 plan. It may not diagnose, prescribe, promise injury prevention, guarantee an
 outcome, or imply that the draft methodology has been approved.
 
+The versioned
+[readiness and adaptation research artifacts](design/commercial-research-artifacts/README.md)
+include the facilitator path, claim boundary, accessibility contract, and
+local-only source files. They remain blocked from real interviews until #213
+passes review and #214 freezes the complete protocol and evidence rubric.
+
 ### Protocol and metric gate
 
 Issue [#214](https://github.com/marathoner-app/marathoner/issues/214) must
