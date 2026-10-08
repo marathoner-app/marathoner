@@ -10,6 +10,7 @@
 @import "./components/Authentication.css";
 @import "./components/AccountDeletion.css";
 @import "./components/Calendar.css";
+@import "./components/ProposedPlanSummary.css";
 @import "./components/ShoeTracker.css";
 @import "./components/Analyze.css";
 @import "./onboarding/RunnerOnboarding.css";

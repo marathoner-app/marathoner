@@ -1,0 +1,140 @@
+.proposed-plan {
+  width: min(100%, 54rem);
+  margin: 0 auto;
+  color: #17202a;
+  line-height: 1.5;
+  text-align: left;
+}
+
+.proposed-plan-header {
+  text-align: center;
+}
+
+.proposed-plan-header h2,
+.proposed-plan h3,
+.proposed-plan h4 {
+  line-height: 1.25;
+}
+
+.proposed-plan-status {
+  display: inline-block;
+  margin: 0 0 0.75rem;
+  padding: 0.35rem 0.75rem;
+  border: 1px solid #7b5800;
+  border-radius: 999px;
+  background: #fff4cc;
+  color: #573e00;
+  font-weight: 700;
+}
+
+.proposed-plan-dates,
+.proposed-plan-provenance dl {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin: 1.5rem 0;
+}
+
+.proposed-plan-dates div,
+.proposed-plan-provenance dl div {
+  padding: 0.75rem;
+  border: 1px solid #d7dde4;
+  border-radius: 0.5rem;
+  background: #f8fafc;
+}
+
+.proposed-plan dt {
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.proposed-plan dd {
+  margin: 0.2rem 0 0;
+  overflow-wrap: anywhere;
+}
+
+.proposed-plan-phase-list,
+.proposed-plan-workouts {
+  padding: 0;
+  list-style: none;
+}
+
+.proposed-plan-phase-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.proposed-plan-phase-list li {
+  padding: 0.55rem 0.75rem;
+  border-radius: 0.5rem;
+  background: #eef4fb;
+}
+
+.proposed-plan-week-list {
+  display: grid;
+  gap: 1rem;
+}
+
+.proposed-plan-week {
+  padding: 1rem;
+  border: 1px solid #d7dde4;
+  border-radius: 0.75rem;
+}
+
+.proposed-plan-week h4,
+.proposed-plan-week p {
+  margin-top: 0;
+}
+
+.proposed-plan-workouts {
+  display: grid;
+  gap: 0.6rem;
+  margin-bottom: 0;
+}
+
+.proposed-plan-workouts li {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+  padding-top: 0.6rem;
+  border-top: 1px solid #e6eaf0;
+}
+
+.proposed-plan-provenance {
+  margin-top: 1.5rem;
+}
+
+.proposed-plan-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+}
+
+.proposed-plan-actions button {
+  min-height: 2.75rem;
+  padding: 0.65rem 1rem;
+}
+
+.proposed-plan-actions .secondary {
+  border: 1px solid #17202a;
+  background: #ffffff;
+  color: #17202a;
+}
+
+@media (max-width: 600px) {
+  .proposed-plan-dates,
+  .proposed-plan-provenance dl {
+    grid-template-columns: 1fr;
+  }
+
+  .proposed-plan-actions {
+    flex-direction: column-reverse;
+  }
+
+  .proposed-plan-actions button {
+    width: 100%;
+  }
+}
