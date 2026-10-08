@@ -1,0 +1,46 @@
+.plan-result-state {
+  box-sizing: border-box;
+  width: min(100%, 36rem);
+  margin: 0 auto;
+  padding: clamp(1.25rem, 4vw, 2rem);
+  border: 1px solid #d7dde4;
+  border-radius: 0.75rem;
+  background: #f8fafc;
+  color: #17202a;
+  line-height: 1.5;
+  text-align: center;
+}
+
+.plan-result-state.unsupported {
+  border-color: #7b5800;
+  background: #fffaf0;
+}
+
+.plan-result-state.invalid-input {
+  border-color: #8b2635;
+  background: #fff7f8;
+}
+
+.plan-result-state h2 {
+  margin: 0.5rem 0;
+  line-height: 1.25;
+}
+
+.plan-result-state-label {
+  margin: 0;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.plan-result-state button {
+  min-height: 2.75rem;
+  margin-top: 0.75rem;
+  padding: 0.65rem 1rem;
+}
+
+@media (max-width: 600px) {
+  .plan-result-state button {
+    width: 100%;
+  }
+}
