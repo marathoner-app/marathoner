@@ -1,0 +1,78 @@
+{
+  "schemaVersion": "endurance-review-outreach-packet@1",
+  "status": "prepared-not-sent",
+  "preparedOn": "2026-10-08",
+  "reviewRole": "EMR",
+  "protocolVersion": "methodology-review@0.1.0",
+  "pinnedRepositoryCommit": "1ef241ac5b6bdbe52d819e7107b25d9ba9347b23",
+  "bundle": {
+    "name": "beta-rules",
+    "version": "beta-rules@0.1.0-draft",
+    "state": "draft-not-approved-not-runtime-eligible"
+  },
+  "artifacts": [
+    {
+      "path": "docs/methodology/README.md",
+      "version": "methodology-review@0.1.0",
+      "sha256": "2e644e24f009bdb4f5573ea3fdc7ee9172b5de1b54f95dfcdddd10eabaffd1b4"
+    },
+    {
+      "path": "docs/methodology/beta-review-inventory.md",
+      "version": "founding-beta-inventory@2026-10-08",
+      "sha256": "332c3e7fd03ec47abf2f6ba07cf408d4a26268aaced6cd384659cefe45d05bfa"
+    },
+    {
+      "path": "docs/methodology/approval-record-template.md",
+      "version": "methodology-approval-record@2026-10-08",
+      "sha256": "8ecc59f8f881ef6fc0bc7d29a693ae00860bd60927b85021d7c23ae28a1fa3b6"
+    },
+    {
+      "path": "docs/methodology/artifacts/beta-rules/0.1.0-draft/README.md",
+      "version": "beta-rules@0.1.0-draft",
+      "sha256": "477fd2474d3a6eab06b4a75f32119d1027ab43715b571bb726abe8396f26bb5f"
+    },
+    {
+      "path": "docs/methodology/artifacts/beta-rules/0.1.0-draft/beta-rules.json",
+      "version": "beta-rules@0.1.0-draft",
+      "sha256": "dd5f7a00a9bcfae7c833a6ebd869e43c96dee91c2884603286bf3f14512b2657"
+    },
+    {
+      "path": "docs/methodology/artifacts/beta-rules/0.1.0-draft/fixtures.json",
+      "version": "beta-rules@0.1.0-draft",
+      "sha256": "c54c5ca4a06fdcf8f675da93c368186645c39005739815bcaf9dffb116a64f49"
+    },
+    {
+      "path": "docs/methodology/artifacts/beta-rules/0.1.0-draft/SHA256SUMS",
+      "version": "beta-rules@0.1.0-draft-manifest",
+      "sha256": "26c48038d075febe24045f5fea39ad4816c7f97fa33132284c82d9ae5a040b69"
+    }
+  ],
+  "inventoryIds": [
+    "ELIG-001",
+    "ELIG-002",
+    "FEAS-001",
+    "PLAN-001",
+    "PROG-001",
+    "UNSUP-001",
+    "UNSUP-002"
+  ],
+  "rowDecisionOptions": [
+    "Approve for non-draft finalization",
+    "Conditional",
+    "Reject",
+    "Outside competence"
+  ],
+  "overallDecisionOptions": [
+    "Approve for non-draft finalization",
+    "Conditional",
+    "Reject",
+    "Partially reviewed"
+  ],
+  "screening": {
+    "privateCandidateCount": 3,
+    "contactedCount": 0,
+    "acceptedScopeCount": 0,
+    "scheduledCount": 0,
+    "engagedCount": 0
+  }
+}
