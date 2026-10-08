@@ -9,7 +9,7 @@ export interface MaterialCommandTransport {
   resolve(commandId: string): Promise<unknown>
 }
 
-interface MaterialCommandClientOptions {
+export interface MaterialCommandClientOptions {
   isOnline: () => boolean
   transport: MaterialCommandTransport
 }
