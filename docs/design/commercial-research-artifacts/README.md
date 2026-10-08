@@ -1,6 +1,8 @@
 # Commercial research artifacts
 
-- **Status:** Ready for synthetic artifact interviews; not product guidance
+- **Status:** Dormant optional research artifacts; not product guidance
+- **Moved off the beta critical path:** October 8, 2026 by
+  [#223](https://github.com/marathoner-app/marathoner/issues/223)
 - **Artifact version:** `commercial-research-artifacts@0.1.0`
 - **Decision date:** October 6, 2026
 - **Owner:** Kevin Tulloch
@@ -10,6 +12,10 @@
   [#214](https://github.com/marathoner-app/marathoner/issues/214)
 
 ## Purpose
+
+The [product-first free-beta decision](../../product-first-beta-decision.md)
+preserves these concepts for optional future research. They are not required
+before the free beta and have not produced real participant evidence.
 
 These two static concepts let prospective first-time marathoners react to
 Marathoner's proposed readiness and adaptation experience without receiving a

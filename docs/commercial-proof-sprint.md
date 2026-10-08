@@ -1,7 +1,9 @@
 # Commercial proof sprint
 
-- **Status:** Active preparation plan; no participant evidence collected yet
+- **Status:** Dormant optional plan; no participant evidence collected
 - **Ratified:** October 6, 2026
+- **Moved off the beta critical path:** October 8, 2026 by
+  [#223](https://github.com/marathoner-app/marathoner/issues/223)
 - **Owner:** Kevin Tulloch
 - **Commercial evidence epic:** [#126](https://github.com/marathoner-app/marathoner/issues/126)
 - **Plan issue:** [#211](https://github.com/marathoner-app/marathoner/issues/211)
@@ -9,7 +11,21 @@
 - **Safety authority:** [#119](https://github.com/marathoner-app/marathoner/issues/119)
 - **Founding-beta contract:** [#117](https://github.com/marathoner-app/marathoner/issues/117)
 
-## Decision
+## Current decision
+
+The [product-first free-beta decision](product-first-beta-decision.md)
+supersedes this sprint's priority and gating effect. Marathoner will build and
+release a functional free beta before requiring formal interviews,
+reservations, or paid concierge evidence. Issues #211–#214 and the artifacts in
+this document remain reusable preparation, but they do not prove demand and do
+not block product delivery or founding-beta invitations. Issues #215–#218 are
+retired from the active beta plan unless a later recorded decision reactivates
+commercial validation.
+
+The remainder of this document preserves the frozen research design so it can
+be used without retroactively changing its rules if the optional track resumes.
+
+## Original October 6 decision
 
 Marathoner remains a conditional go, but feature completeness is not the next
 business uncertainty to retire.
@@ -20,7 +36,7 @@ evidence that a market exists. It is not evidence that someone will pay for
 Marathoner, that the proposed price is right, or that Marathoner can acquire and
 support customers economically.
 
-Before nonessential feature breadth continues, Marathoner will test this
+The October 6 plan proposed testing this
 working proposition:
 
 > Your first marathon, responsibly adjusted when real life happens—with every
@@ -30,12 +46,13 @@ The target moment is after a first-time marathoner chooses a race or plan and
 then discovers that illness, pain signals, missed training, work, family, or
 another disruption has made the original schedule uncertain.
 
-This sprint does not pause work that is necessary to conduct responsible
+Under the original plan, this sprint did not pause work necessary to conduct responsible
 research or protect future participants. Qualified-review engagement, security,
 privacy, deletion, evidence integrity, and the active App Check slice may
-continue. It does pause product payments, a full adaptation engine, acquisition
-scale, and other feature breadth until the first commercial decision is
-recorded.
+continue. The October 8 decision removes its hold on the full bounded adaptation
+engine and other beta functionality. Product payments and acquisition-scale
+work remain outside beta scope for product and operational reasons, not because
+this optional study must run first.
 
 ## What the research supports
 
@@ -322,19 +339,19 @@ The public repository must not contain:
 
 ## Capacity and roadmap effect
 
-The prior capacity forecast assigned 14 optimistic, 19 likely, and 26
-conservative units to issue #126. This decomposition replaces that placeholder
-with 41, 63, and 95 units. The net addition is therefore 27, 44, and 69 units.
+The October 6 capacity forecast assigned 41 optimistic, 63 likely, and 95
+conservative units to this sprint, replacing a smaller #126 placeholder. The
+October 8 product-first decision removes all 41 / 63 / 95 units from the beta
+critical path. They remain a reference estimate only if this optional track is
+reactivated.
 
-At the current forecast rates, the added owner work is approximately two
-optimistic, three likely, or seven conservative capacity weeks if it lands
-fully on the serialized critical path. Recruitment and scheduling can still
-control elapsed time. The current product invitation dates are therefore
-provisional until issue #218 records observed evidence and allocation.
+Recruitment and scheduling would still control elapsed time if the track
+resumes. They no longer control the free-beta invitation forecast, and issue
+#218 is not the next beta reforecast gate.
 
-The commercial sprint is intended to reduce the chance of spending the larger
-product budget on the wrong proposition. An earlier commercial stop is a
-successful risk-reduction result, not a failed sprint.
+The sprint remains a valid way to reduce commercial risk. The owner has chosen
+to accept that risk for now in order to prioritize product realization and
+motivation.
 
 ## Sources and limits
 
@@ -359,9 +376,9 @@ success or category data as proof by analogy.
 
 ## Completion
 
-Issue #126 completes only when issue #218 publishes an anonymized decision
-that applies the frozen rules and reconciles the roadmap. The allowed outcomes
-are:
+If this optional track is reactivated, issue #126 completes only when a later
+decision issue publishes an anonymized result that applies the frozen rules
+and reconciles the roadmap. The allowed outcomes remain:
 
 - **Proceed:** the problem, commitment, reservation, trust, and operating
   signals justify the next bounded product experiment.

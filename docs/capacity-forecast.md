@@ -1,10 +1,11 @@
 # Capacity-based founding-beta forecast
 
-- **Status:** Active commercially conditioned forecast
-- **As of:** October 6, 2026
+- **Status:** Active product-first forecast
+- **As of:** October 8, 2026
 - **Owner:** Kevin Tulloch
 - **Baseline issue:** [#116](https://github.com/marathoner-app/marathoner/issues/116)
 - **Recalibration issue:** [#208](https://github.com/marathoner-app/marathoner/issues/208)
+- **Strategy realignment:** [#223](https://github.com/marathoner-app/marathoner/issues/223)
 - **Master tracker:** [#104](https://github.com/marathoner-app/marathoner/issues/104)
 - **Scope:** Marathoner beta critical path; Creator Radar is excluded
 
@@ -22,36 +23,36 @@ one-half of the observed likely-estimate burn, adds newly exposed App Check and
 live-synchronization scope, and keeps qualified review, TestFlight review,
 non-owner rehearsal, and participant scheduling as independent gates.
 
-The October 6 commercial review also replaces the original 14 / 19 / 26-unit
-placeholder for issue #126 with the 41 / 63 / 95-unit
-[commercial proof sprint](commercial-proof-sprint.md). The sprint begins now,
-uses the external-review wait where possible, and conditions the full
-adaptation engine on problem, commitment, and reservation evidence.
+The October 8 [product-first decision](product-first-beta-decision.md) removes
+the optional 41 / 63 / 95-unit
+[commercial proof sprint](commercial-proof-sprint.md) from the beta critical
+path. Formal interviews, refundable reservations, and paid concierge evidence
+remain unresolved commercial questions, but they no longer control product
+implementation or founding-beta invitations.
 
 With those controls, the corrected scope forecasts:
 
 | Scenario | Earliest invitation decision | Meaning |
 | --- | --- | --- |
-| Optimistic | January 10, 2027 | Commercial interviews and the initial concierge proof complete at the short end of their scheduling range, twenty-four units land per week, external waits overlap, and little rework occurs. |
-| Likely | April 4, 2027 | Commercial proof reaches its December 6 checkpoint, sixteen units land per week, the reviewer path consumes six weeks, and normal integration and correction work occur. |
-| Conservative | November 14, 2027 | Commercial scheduling reaches its planning bound, ten units land per week, high estimates govern, and reviewer plus TestFlight waits reach their planning bounds. |
+| Optimistic | December 6, 2026 product-ready; January 15, 2027 invitation floor | Twenty-four units land per week, external waits overlap, and little rework occurs. The existing contract still prevents invitations before January 15. |
+| Likely | February 21, 2027 | Sixteen units land per week, the reviewer path consumes up to six weeks, and normal integration and correction work occur. |
+| Conservative | August 22, 2027 | Ten units land per week, high estimates govern, and reviewer plus TestFlight waits reach their planning bounds. |
 
 These are forecasts, not promises. Invitations remain blocked until the
-evidence gates pass, even if a forecast date arrives. January 15, 2027 still
-falls between the optimistic and likely scenarios. It remains an explicit
-scope-or-date decision checkpoint, not a capacity-backed promise.
+product and responsibility gates pass, even if a forecast date arrives.
+January 15, 2027 falls after the optimistic product-readiness estimate and
+before the likely scenario. It remains an explicit invitation floor and
+scope-or-date checkpoint, not a capacity-backed promise.
 
-The optimistic January 10 date means the invitation-readiness decision could
-pass before the invitation floor. It does not authorize invitations before
-January 15 in #104. Opening earlier would require an explicit founding-beta
-contract change; this forecast changes the planning evidence, not the
-participant promise.
+The optimistic December 6 date means product-readiness work could finish before
+the invitation floor. It does not authorize invitations before January 15 in
+#104. Opening earlier would require an explicit founding-beta contract change;
+this forecast changes planning evidence, not the participant promise.
 
-The recommended planning expectation is April 4, 2027 while preserving every
-ratified safety, integrity, privacy, and review gate. December is possible only
-for commercial learning, not for founding-beta invitations. If earlier product
-learning becomes strategically necessary, use the approved non-prescriptive
-fallback instead of silently weakening those gates.
+The recommended planning expectation is February 21, 2027 while preserving
+every ratified safety, integrity, privacy, and review gate. If the product work
+finishes before qualified approval, use the approved non-prescriptive fallback
+or wait rather than silently weakening those gates.
 
 ## Recalibrated capacity model
 
@@ -221,11 +222,10 @@ is first required rather than charged again under epic #107.
 | Issue | Work | Type | Optimistic | Likely | Conservative |
 | --- | --- | --- | ---: | ---: | ---: |
 | [#32](https://github.com/marathoner-app/marathoner/issues/32) | Close the cross-client release checklist | Gate residual | 3 | 5 | 8 |
-| [#126](https://github.com/marathoner-app/marathoner/issues/126) | Collect and summarize demand and willingness-to-pay evidence | Gate plus participant scheduling | 14 | 19 | 26 |
 | [#129](https://github.com/marathoner-app/marathoner/issues/129) | Record the invitation readiness decision | Gate | 2 | 3 | 5 |
-| **Wave 06A total** |  |  | **19** | **27** | **39** |
+| **Wave 06A total** |  |  | **5** | **8** | **13** |
 
-## October 6 remaining-work reconciliation
+## October 8 critical-path reconciliation
 
 The September baseline contained 57 pre-invitation rows totaling 236
 optimistic, 374 likely, and 571 conservative units. Eighteen of those rows are
@@ -267,14 +267,13 @@ The authoritative remaining work by wave is therefore:
 | 03 Track, Learn, and Adapt, including #159 | 64 | 106 | 162 |
 | 04 iOS Daily Companion | 27 | 43 | 65 |
 | 05 Trust and External-Beta Readiness, including #201 and #204–#206 | 58 | 92 | 141 |
-| Commercial Proof 01, replacing the #126 placeholder | 41 | 63 | 95 |
-| 06A Founding Cohort Invitations, excluding moved #126 | 5 | 8 | 13 |
-| **Remaining through invitation decision** | **220** | **352** | **536** |
+| 06A Founding Cohort Invitations | 5 | 8 | 13 |
+| **Remaining through invitation decision** | **179** | **289** | **441** |
 
-The commercial-proof total is the sum of #211–#218. It replaces rather than
-adds to the old #126 row, increasing the remaining scope by 27 optimistic, 44
-likely, and 69 conservative units. Issue #126 is therefore represented by its
-children and is not charged again.
+The optional commercial-proof total of 41 / 63 / 95 units is excluded from
+these beta totals by #223. Issues #211–#214 are completed preparation and
+#215–#218 are retired from this critical path. The estimates remain documented
+in the dormant commercial plan if that work is reactivated later.
 
 ### Post-invitation reviews
 
@@ -289,14 +288,15 @@ children and is not charged again.
 
 | Boundary | Optimistic | Likely | Conservative |
 | --- | ---: | ---: | ---: |
-| Remaining legacy estimate units through invitation decision | 220 | 352 | 536 |
+| Remaining legacy estimate units through invitation decision | 179 | 289 | 441 |
 | Additional units through the eight-week decision | 7 | 12 | 19 |
-| Total through the eight-week decision | 227 | 364 | 555 |
+| Total through the eight-week decision | 186 | 301 | 460 |
 
 These are planning weights, not measured owner hours. The inventory retains the
-open baseline and added-scope rows, with #126 decomposed into #211–#218. Issue
-#116 and completed work are excluded. The three post-invitation review issues
-remain separate because their evidence windows cannot begin before invitations.
+open product baseline and added-scope rows. Optional commercial-research issues
+are not charged. Issue #116 and completed work are excluded. The three
+post-invitation review issues remain separate because their evidence windows
+cannot begin before invitations.
 
 ## External elapsed time
 
@@ -310,7 +310,6 @@ They must be started as early as their input package allows.
 | Apple account, signing, and App Store Connect setup | 1–3 calendar weeks as a planning allowance | Begin during the mobile-foundation work; do not wait for Wave 04 | Unresolved ownership or recovery blocks external distribution |
 | First external TestFlight review | 1 week likely; 2 weeks conservative including correction allowance | Prioritize #122 early enough to overlap review with the remaining iOS work | No external invitation without an approved build |
 | Non-owner device rehearsal | 1–3 calendar weeks to schedule | Book after the first installable candidate exists; owner execution effort is in #122 and #140 | A failed critical journey creates a blocking issue |
-| Discovery and participant scheduling | 4–12 calendar weeks | Run #126 across earlier waves while counting every owner session against planned capacity | Invitation readiness cannot claim demand evidence that was not collected |
 
 Apple documents that the first build submitted for external testing receives a
 full TestFlight App Review and that later builds may not require one. Apple does
@@ -326,27 +325,24 @@ overlap. It uses 24 units per week for the optimistic column, 16 for likely,
 and 10 for conservative. Dates are rounded to Sunday capacity-week boundaries
 beginning October 11, 2026.
 
-The commercial sprint uses four, eight, and twelve calendar weeks for
-participant scheduling in the optimistic, likely, and conservative cases. Its
-preparation can occupy the existing methodology-review wait, and the Wave 02
-foundation may continue when it is safety, research, or trust enabling. The
-full adaptation engine waits for both the commercial decision and applicable
-qualified approval. Wave 04 retains one optimistic/likely or two conservative
-weeks for the first external TestFlight review.
+The product waves serialize owner capacity while qualified-review and Apple
+elapsed time overlap as their inputs become ready. The bounded adaptation
+engine waits for applicable qualified approval, not a commercial decision.
+Wave 04 retains one optimistic/likely or two conservative weeks for the first
+external TestFlight review.
 
 | Evidence gate | Repository target | Optimistic | Likely | Conservative |
 | --- | --- | --- | --- | --- |
 | Wave 00 Solo Delivery and Beta Contract | October 4, 2026 | Passed September 23 | Passed September 23 | Passed September 23 |
 | Wave 01 Shared Mobile Foundation | October 18, 2026 | Passed October 5 | Passed October 5 | Passed October 5 |
-| Commercial Proof 01 decision | December 6, 2026 | November 8, 2026 | December 6, 2026 | January 3, 2027 |
-| Wave 02 Intake and Initial Plan | November 15, 2026 | October 25, 2026 | November 22, 2026 | January 24, 2027 |
-| Wave 03 Track, Learn, and Adapt | December 6, 2026 | November 29, 2026 | January 24, 2027 | May 23, 2027 |
-| Wave 04 iOS Daily Companion and external TestFlight review | December 20, 2026 | December 13, 2026 | February 14, 2027 | July 18, 2027 |
-| Wave 05 Trust and External-Beta Readiness | January 8, 2027 | January 3, 2027 | March 28, 2027 | October 31, 2027 |
-| Wave 06A Invitation decision | January 15, 2027 | January 10, 2027 | April 4, 2027 | November 14, 2027 |
-| Wave 06B Two-week operating review | January 29, 2027 | January 24, 2027 | April 18, 2027 | November 28, 2027 |
-| Wave 06B Four-week validation review | February 12, 2027 | February 7, 2027 | May 2, 2027 | December 12, 2027 |
-| Wave 06C Eight-week validation review | March 12, 2027 | March 7, 2027 | May 30, 2027 | January 9, 2028 |
+| Wave 02 Intake and Initial Plan | November 15, 2026 | October 25, 2026 | November 1, 2026 | November 22, 2026 |
+| Wave 03 Track, Learn, and Adapt | December 6, 2026 | November 8, 2026 | December 20, 2026 | March 21, 2027 |
+| Wave 04 iOS Daily Companion and external TestFlight review | December 20, 2026 | November 22, 2026 | January 10, 2027 | May 16, 2027 |
+| Wave 05 Trust and External-Beta Readiness | January 8, 2027 | December 6, 2026 | February 14, 2027 | August 8, 2027 |
+| Wave 06A Invitation decision | January 15, 2027 | December 6 product-ready; January 15 floor | February 21, 2027 | August 22, 2027 |
+| Wave 06B Two-week operating review | January 29, 2027 | January 29, 2027 | March 7, 2027 | September 5, 2027 |
+| Wave 06B Four-week validation review | February 12, 2027 | February 12, 2027 | March 21, 2027 | September 19, 2027 |
+| Wave 06C Eight-week validation review | March 12, 2027 | March 12, 2027 | April 18, 2027 | October 17, 2027 |
 
 Review dates include the required observation window and enough planned
 sessions to prepare the decision. They are not obtained by relabeling the
@@ -354,27 +350,25 @@ invitation date as completed validation.
 
 ## Scope-or-date decision
 
-The original January 15 checkpoint is now inside the forecast range, but it is
-not the likely case. It follows the optimistic January 10 invitation decision
-and precedes the likely April 4 decision. Treating January as a commitment
-would require the optimistic delivery rate, the short reviewer path, successful
-commercial recruitment and reservations, external TestFlight review, and no
-binding correction cycle to occur together. The delivery and commercial
-samples do not support making that combination the plan.
+The original January 15 checkpoint remains inside the forecast range. It
+follows the optimistic December 6 capacity date and precedes the likely
+February 21 decision. Treating January as a commitment would require the
+optimistic delivery rate, the short reviewer path, external TestFlight review,
+and no binding correction cycle to occur together. The short delivery sample
+does not support making that combination the plan.
 
 The recommended response is therefore:
 
 1. keep all invitation gates in force;
 2. treat January 15 as a decision checkpoint rather than an invitation
    expectation;
-3. use April 4, 2027 as the current likely forecast and November 14, 2027 as
+3. use February 21, 2027 as the current likely forecast and August 22, 2027 as
    the conservative bound;
-4. execute #211–#218 now, while #191, #204, and #122 advance when their
+4. prioritize the product waves while #191, #204, and #122 advance when their
    trust and external dependencies permit;
-5. condition product payments and the full adaptation engine on the commercial
-   gates; and
-6. reforecast in #218 from observed participant scheduling, support time, and
-   the resulting product decision.
+5. keep product payments outside beta and condition bounded adaptation on
+   qualified review rather than payment evidence; and
+6. reforecast after Wave 02 or four additional delivery weeks.
 
 Moving #8, #9, #76, and #77 out of beta milestones would remove only 13 likely
 units, less than one likely delivery week. It does not make January the likely
@@ -388,15 +382,13 @@ responsible product experiment.
 
 | Tier | Participant promise | Preliminary owner effort | Forecast at likely capacity |
 | --- | --- | ---: | --- |
-| Artifact interview and reservation decision | Fifteen to twenty prospects react to fictional concepts; at least ten receive one fixed hosted reservation request | 49 likely units through #211–#216 | December 6 commercial checkpoint, with an earlier stop when a gate fails |
-| Constrained concierge entry | Five participants use supplied plans, fictional decisions, or decisions owned by a qualified reviewer; no unreviewed coaching | 11 likely units within the 63-unit commercial total through the first two operating weeks | Included in the December 6 likely commercial checkpoint |
-| Functional founding beta | The ratified bounded product works for five to eight participants, with iOS, deterministic rules, and the mandatory safety, privacy, integrity, deletion, and support gates | Product work remains conditional on the commercial and qualified-review decisions | April 4, 2027 likely |
-| Diligence-ready founding beta | The complete current milestone scope, including public positioning, market evidence, operational rehearsals, and repository-quality work | 352 likely legacy units remain through invitations | April 4, 2027 likely |
+| Internal functional candidate | The end-to-end product journey works for the owner on web and iOS, without claiming external readiness | Included in Waves 02–04 | January 10, 2027 likely after the first TestFlight review allowance |
+| Functional founding beta | The ratified bounded product works for five to eight participants, with iOS, deterministic rules, and the mandatory safety, privacy, integrity, deletion, and support gates | 289 likely legacy units remain through invitations | February 21, 2027 likely |
+| Optional commercial evidence | Formal interviews, payment behavior, and acquisition evidence are collected only after a later activation decision | Excluded from beta totals; prior reference estimate is 63 likely units | No active date and no beta dependency |
 
-Neither research tier permits unreviewed algorithmic or founder-originated
-coaching. The exact trust, access, consent, artifact, refund, support,
-withdrawal, and deletion boundaries now live in #211–#217 rather than an
-undecomposed placeholder.
+No tier permits unreviewed algorithmic or founder-originated coaching. Optional
+commercial research does not substitute for live-product safety, privacy,
+integrity, deletion, release, or support evidence.
 
 ## Measured-velocity calibration
 
@@ -458,8 +450,9 @@ a schedule decision.
 
 The baseline was built from the live subissue hierarchy and open milestone
 contents on September 22, 2026. The first recalibration used state through the
-merge of #207 on October 6. This same-day correction also removes completed
-#203 and incorporates the #211–#218 commercial-proof hierarchy and milestone.
+merge of #207 on October 6. The October 8 strategy correction preserves that
+measured product inventory, removes completed #203, and excludes the optional
+#211–#218 commercial-proof hierarchy from beta totals.
 
 - All open baseline rows and newly exposed critical-path leaves through the
   invitation decision have a three-point estimate or an explicit containment
@@ -467,7 +460,8 @@ merge of #207 on October 6. This same-day correction also removes completed
 - #4 and #23 retain estimated residual rows because their open parent scope is
   not fully represented by their current children.
 - The completed #79 decomposition is not charged again through #195–#197.
-- Completed #203 is excluded, and #126 is charged only through #211–#218.
+- Completed #203 is excluded, and #126 plus #211–#218 carry no beta-critical
+  capacity.
 - #191 is contained within #119, #162 within the #23 residual, and #161 within
   #201–#206.
 - External elapsed time is separate from owner effort.

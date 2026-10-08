@@ -1,7 +1,7 @@
 # Founding cohort recruitment and validation plan
 
 - **Status:** Active founding-beta plan
-- **Last updated:** October 6, 2026
+- **Last updated:** October 8, 2026
 - **Product owner:** Kevin Tulloch
 - **Related issue:** [#35](https://github.com/marathoner-app/marathoner/issues/35)
 - **Invitation milestone:** [06A Founding Cohort Invitations](https://github.com/marathoner-app/marathoner/milestone/2)
@@ -9,7 +9,8 @@
 - **Eight-week milestone:** [06C Founding Cohort Eight-Week Review](https://github.com/marathoner-app/marathoner/milestone/11)
 - **Delivery plan:** [Marathoner zero-to-beta plan](zero-to-beta-plan.md)
 - **Capacity forecast:** [Owner-session and gate forecast](capacity-forecast.md)
-- **Commercial discovery:** [Commercial proof sprint](commercial-proof-sprint.md)
+- **Product strategy:** [Product-first free-beta decision](product-first-beta-decision.md)
+- **Optional commercial discovery:** [Dormant commercial proof sprint](commercial-proof-sprint.md)
 
 ## Purpose
 
@@ -22,10 +23,10 @@ issues and milestones define scheduled work. Recruitment channels, targets,
 and timing should change when participant evidence shows that a different
 approach would be more responsible or effective.
 
-The January 15, 2027 milestone is a scope-or-date decision checkpoint. It falls
-between the January 10 optimistic and April 4 likely invitation forecasts;
-cohort timing follows the invitation gates and the forecast rather than the
-historical milestone alone.
+January 15, 2027 remains the invitation floor and scope-or-date checkpoint. It
+falls after the December 6 optimistic product-readiness estimate and before
+the February 21 likely invitation forecast; cohort timing follows the product
+and responsibility gates rather than the historical milestone alone.
 
 ## Objective
 
@@ -37,25 +38,19 @@ The first objective is learning, not download volume or revenue. A small group
 that uses the product for several weeks and provides honest feedback is more
 valuable than a large number of unqualified registrations.
 
-## Commercial discovery before the live cohort
+## Product use before commercial proof
 
-The [commercial proof sprint](commercial-proof-sprint.md) precedes founding
-beta invitations. It uses 15–20 fictional-artifact interviews, at least ten
-fixed reservation requests, and—only after the earlier gates pass—a
-five-person constrained concierge experiment.
+The [product-first decision](product-first-beta-decision.md) allows founding
+beta invitations after the functional, methodology, safety, privacy, security,
+integrity, support, and distribution gates pass. Formal interviews,
+refundable reservations, and a paid concierge experiment are optional future
+commercial research, not prerequisites for the cohort.
 
-Commercial discovery intentionally reaches beyond the narrow live-beta
-eligibility boundary. A person may describe a lower starting base,
-inconsistency, or a disrupted plan because the study gives no individualized
-training advice. That evidence tests the addressable problem and may create a
-future qualified-review question. It does not make the person eligible for the
-live beta.
-
-The concierge experiment is also separate from the founding beta. Before
-applicable methodology approval, it may use participant-supplied plans,
-fictional decision tasks, or decisions supplied by a qualified reviewer. The
-founder and software may not originate live hold, repeat, reschedule, pain,
-fueling, hydration, sleep, or recovery recommendations.
+The live cohort supplies product evidence: defects, onboarding completion,
+comprehension, usefulness, adaptation trust, safety signals, engagement, and
+support burden. It does not by itself prove willingness to pay, repeatable
+acquisition, or product-market fit. Any later commercial study remains separate
+from beta eligibility and cannot authorize an unreviewed training boundary.
 
 ## Founding participant
 
@@ -285,12 +280,6 @@ benchmark or growth quota:
 
 | Stage | Initial target |
 | --- | ---: |
-| Commercial-discovery interviews using frozen artifacts | 15–20 |
-| Recurring consequential workarounds in the first 15 | At least 5 |
-| Concrete eight-week commitments in the first 15 | At least 5 |
-| Qualified prospects receiving the fixed reservation request | At least 10 |
-| Confirmed refundable reservations | At least 3 |
-| Constrained concierge commitments after the earlier gates pass | 5 |
 | First invitation batch | 5–8 |
 | Maximum active before the two-week review | 8 |
 | Maximum accepted before the eight-week review | 15 |
@@ -388,7 +377,7 @@ The public repository must not contain:
 
 - participant names, email addresses, phone numbers, or account identifiers;
 - individual health or training records;
-- private interview notes or recordings;
+- private interview notes or recordings, if optional research later occurs;
 - credentials, consent records, or access tokens;
 - private partner conversations or contracts; or
 - sensitive budgets and acquisition-account information.
