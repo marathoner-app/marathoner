@@ -1,10 +1,11 @@
 # Material-command boundary
 
-- **Status:** Local proof and deletion-request boundaries complete; live deployment blocked
+- **Status:** Local proof and deletion-request boundaries complete; plan-approval contract defined; live plan handler and deployment blocked
 - **Decision date:** 2026-10-05
 - **Owner:** Marathoner maintainer
 - **Proof issue:** [#158](https://github.com/marathoner-app/marathoner/issues/158)
 - **Deletion-request issue:** [#195](https://github.com/marathoner-app/marathoner/issues/195)
+- **Plan-approval contract issue:** [#227](https://github.com/marathoner-app/marathoner/issues/227)
 
 ## Purpose and scope
 
@@ -13,6 +14,9 @@ writes. Issue #158 proves the boundary with a harmless counter command. Issue
 #195 adds the first security-sensitive workflow: requesting deletion and
 locking account access. Plan approval, run completion, adaptation, consent, the
 destructive deletion runner, and the deletion UI remain in their owning issues.
+Issue #227 defines the shared plan-approval envelope and outcomes without
+claiming that its server transaction, client adapter, or participant workflow
+exists yet.
 
 The browser and server share the portable contract in
 `src/domain/materialCommands/contract.ts`. It imports neither React nor
@@ -24,8 +28,13 @@ Firebase. Every supported envelope contains:
 - a supported command type and schema version `1`.
 
 `proof.material-command` includes one of two fixed, non-sensitive variants used
-to exercise ID conflicts. `account.request-deletion` has no payload. The shared
-parser rejects caller-supplied UID, owner, email, path, and project fields.
+to exercise ID conflicts. `account.request-deletion` has no payload.
+`plan.approve-generated` carries the normalized generation input, the
+structurally valid generated proposal, and the expected active-plan revision;
+`null` means the client observed no active plan. Its canonical signature changes
+when the expected revision, input, or proposal changes while ignoring object-key
+order. The shared parser rejects caller-supplied UID, owner, email, path, and
+project fields anywhere in an envelope.
 
 No user, owner, or UID field is accepted anywhere in the envelope. The callable
 wrapper derives ownership only from the verified Firebase Authentication
@@ -47,6 +56,13 @@ with the same ID and signature returns that result without a second effect. The
 same ID with a different supported command signature returns a conflict. Client
 security rules expose neither server-only collection.
 
+The plan-approval parser preserves the proposal's end date, reason codes, and
+input/generator/ruleset/schema provenance. It validates structural consistency
+only. The live handler owned by #72 must still reject draft, unknown, retired,
+conditional, or rejected methodology artifacts before committing anything.
+Until that handler exists, the generic proof endpoint does not execute plan
+approval commands.
+
 The deletion endpoint creates these protected records while atomically changing
 the authenticated owner's approved membership to `deletion_pending`:
 
@@ -63,10 +79,11 @@ and revokes refresh tokens. An Admin failure remains visible on the protected
 request and a same-command retry safely attempts the Auth lock again. It never
 deletes participant data or the Authentication user.
 
-The result union distinguishes committed or accepted outcomes plus validation,
-authentication, authorization, unsupported-version, conflict, retryable, and
-outcome-unknown states. An outcome-unknown client must resolve the same command
-ID before deciding whether to retry.
+The result union distinguishes proof commits, accepted deletion requests, a
+replayable plan-approval receipt, and stale active-plan revisions plus
+validation, authentication, authorization, unsupported-version, conflict,
+retryable, and outcome-unknown states. An outcome-unknown client must resolve
+the same command ID before deciding whether to retry.
 
 ## Client and offline behavior
 
@@ -137,6 +154,7 @@ command succeed is not approved.
 ## Follow-up migrations
 
 - #72 moves initial-plan activation onto this boundary.
+- #230 adds the plan-approval client adapter without bypassing #72's server gate.
 - #115 adds atomic, revision-safe completion and adaptation commands.
 - #121 removes direct client material writes after every owning workflow moves.
 - #159 adds live reads, freshness, and account cache isolation.
