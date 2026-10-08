@@ -405,6 +405,17 @@ describe('material-command contract', () => {
     ).toBe(true)
   })
 
+  it('recognizes the fail-closed plan-artifact policy result', () => {
+    expect(
+      isMaterialCommandResult({
+        status: 'authorization_error',
+        commandId: approvalCommandId,
+        code: 'plan-artifact-not-approved',
+        message: 'This generated plan is not approved.',
+      }),
+    ).toBe(true)
+  })
+
   it('rejects malformed command IDs and unknown command fields', () => {
     expect(
       parseMaterialCommand({

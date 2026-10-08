@@ -141,6 +141,7 @@ export interface MaterialCommandAuthorizationResult
     | 'app-check-required'
     | 'app-check-token-replayed'
     | 'approved-beta-membership-required'
+    | 'plan-artifact-not-approved'
 }
 
 export interface MaterialCommandUnsupportedVersionResult
@@ -817,6 +818,7 @@ export function isMaterialCommandResult(
         'app-check-required',
         'app-check-token-replayed',
         'approved-beta-membership-required',
+        'plan-artifact-not-approved',
       ].includes(value.code)
     case 'unsupported_version':
       return (

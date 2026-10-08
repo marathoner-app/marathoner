@@ -1,19 +1,29 @@
 import {
   isProofMaterialCommandEnvelope,
+  isPlanApprovalCommandEnvelope,
   isMaterialCommandResult,
   materialCommandIdFrom,
   parseMaterialCommand,
   type AccountDeletionRequestAcceptedResult,
   type MaterialCommandCommittedResult,
   type MaterialCommandResult,
+  type PlanApprovalCommandEnvelope,
+  type PlanApprovalReceiptResult,
+  type PlanApprovalStaleRevisionResult,
   type ProofMaterialCommandEnvelope,
 } from '../../src/domain/materialCommands/contract.js'
+import {
+  evaluatePlanApprovalArtifactPolicy,
+  PRODUCTION_PLAN_APPROVAL_ARTIFACT_POLICY,
+  type PlanApprovalArtifactPolicyRecord,
+} from './planApprovalArtifactPolicy.js'
 
 export type MaterialCommandLogEntry = Readonly<{
   event: 'material-command-result' | 'material-command-resolution'
   commandType:
     | 'proof.material-command'
     | 'account.request-deletion'
+    | 'plan.approve-generated'
     | 'unknown'
   status: MaterialCommandResult['status']
 }>
@@ -34,8 +44,26 @@ export interface MaterialCommandStore {
   >
 }
 
-interface HandlerDependencies {
+export interface PlanApprovalStore {
+  commit(options: {
+    envelope: PlanApprovalCommandEnvelope
+    ownerId: string
+  }): Promise<
+    | { kind: 'approved'; result: PlanApprovalReceiptResult }
+    | { kind: 'stale'; result: PlanApprovalStaleRevisionResult }
+    | { kind: 'conflict' }
+  >
+}
+
+export interface PlanApprovalHandlerDependencies {
+  policyRecords: readonly PlanApprovalArtifactPolicyRecord[]
+  store: PlanApprovalStore
+  supportedScopeId: string | null
+}
+
+export interface HandlerDependencies {
   log: (entry: MaterialCommandLogEntry) => void
+  planApproval?: PlanApprovalHandlerDependencies
   store: MaterialCommandStore
 }
 
@@ -54,6 +82,15 @@ function conflictResult(commandId: string): MaterialCommandResult {
     commandId,
     code: 'command-id-reused',
     message: 'This command ID was already used for a different command.',
+  }
+}
+
+function artifactNotApprovedResult(commandId: string): MaterialCommandResult {
+  return {
+    status: 'authorization_error',
+    commandId,
+    code: 'plan-artifact-not-approved',
+    message: 'This generated plan is not approved for the active participant scope.',
   }
 }
 
@@ -126,6 +163,52 @@ export async function executeMaterialCommand(
   if (!parsed.ok) {
     logResult(dependencies, 'material-command-result', parsed.result, 'unknown')
     return parsed.result
+  }
+  if (isPlanApprovalCommandEnvelope(parsed.envelope)) {
+    const planApproval = dependencies.planApproval
+    const policyDecision = evaluatePlanApprovalArtifactPolicy(parsed.envelope, {
+      supportedScopeId: planApproval?.supportedScopeId ?? null,
+      records:
+        planApproval?.policyRecords ??
+        PRODUCTION_PLAN_APPROVAL_ARTIFACT_POLICY,
+    })
+    if (!policyDecision.allowed || !planApproval) {
+      const result = artifactNotApprovedResult(parsed.envelope.commandId)
+      logResult(
+        dependencies,
+        'material-command-result',
+        result,
+        parsed.envelope.command.type,
+      )
+      return result
+    }
+
+    try {
+      const stored = await planApproval.store.commit({
+        envelope: parsed.envelope,
+        ownerId: options.authenticatedUserId,
+      })
+      const result =
+        stored.kind === 'conflict'
+          ? conflictResult(parsed.envelope.commandId)
+          : stored.result
+      logResult(
+        dependencies,
+        'material-command-result',
+        result,
+        parsed.envelope.command.type,
+      )
+      return result
+    } catch (error) {
+      const result = failureFor(error, parsed.envelope.commandId)
+      logResult(
+        dependencies,
+        'material-command-result',
+        result,
+        parsed.envelope.command.type,
+      )
+      return result
+    }
   }
   if (!isProofMaterialCommandEnvelope(parsed.envelope)) {
     const result: MaterialCommandResult = {

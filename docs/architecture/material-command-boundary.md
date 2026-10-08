@@ -1,12 +1,13 @@
 # Material-command boundary
 
-- **Status:** Local proof and deletion-request boundaries complete; plan-approval contract and client adapter defined; live plan handler and deployment blocked
+- **Status:** Local proof and deletion-request boundaries complete; plan approval is contract-defined and fail-closed on an empty production artifact policy; persistence and deployment blocked
 - **Decision date:** 2026-10-05
 - **Owner:** Marathoner maintainer
 - **Proof issue:** [#158](https://github.com/marathoner-app/marathoner/issues/158)
 - **Deletion-request issue:** [#195](https://github.com/marathoner-app/marathoner/issues/195)
 - **Plan-approval contract issue:** [#227](https://github.com/marathoner-app/marathoner/issues/227)
 - **Plan-approval client issue:** [#230](https://github.com/marathoner-app/marathoner/issues/230)
+- **Plan-approval artifact-policy issue:** [#239](https://github.com/marathoner-app/marathoner/issues/239)
 
 ## Purpose and scope
 
@@ -17,7 +18,10 @@ locking account access. Plan approval, run completion, adaptation, consent, the
 destructive deletion runner, and the deletion UI remain in their owning issues.
 Issue #227 defines the shared plan-approval envelope and outcomes. Issue #230
 adds the transport-injected, online-only client adapter without claiming that
-the server transaction or participant workflow exists yet.
+the server transaction or participant workflow exists yet. Issue #239 makes
+the authenticated handler recognize the command while rejecting every
+production proposal before persistence until an exact artifact tuple is
+deliberately activated.
 
 The browser and server share the portable contract in
 `src/domain/materialCommands/contract.ts`. It imports neither React nor
@@ -59,10 +63,55 @@ security rules expose neither server-only collection.
 
 The plan-approval parser preserves the proposal's end date, reason codes, and
 input/generator/ruleset/schema provenance. It validates structural consistency
-only. The live handler owned by #72 must still reject draft, unknown, retired,
-conditional, or rejected methodology artifacts before committing anything.
-Until that handler exists, the generic proof endpoint does not execute plan
-approval commands.
+only. The material-command handler now applies the server-owned artifact policy
+before a plan store can be called. Issues #240 and #241 still own the storage
+projection and atomic Firestore transaction, so the empty production policy
+keeps live plan approval unavailable.
+
+## Plan-approval artifact policy
+
+The server policy in `functions/src/planApprovalArtifactPolicy.ts` compares one
+plan-approval command with one complete policy record. A match pins all of the
+following values together:
+
+- the server-supplied supported-scope identifier;
+- plan-generation input schema version;
+- generator artifact version;
+- ruleset artifact version, shared by the input and proposal provenance;
+- generated-plan schema version; and
+- plan-generation result schema version.
+
+Only one unambiguous record with review state `approved` can pass. Missing,
+draft, ready-for-review, conditional, rejected, retired, unknown, malformed,
+mismatched, and duplicate records all produce the same typed
+`plan-artifact-not-approved` authorization result before a plan store is
+called. A `-draft` generator or ruleset remains blocked even if a malformed
+record labels it approved. Application logs record only the fixed command type
+and outcome status; they never record the scope, versions, command ID, input,
+proposal, authenticated owner, or policy record.
+
+`PRODUCTION_PLAN_APPROVAL_ARTIFACT_POLICY` is intentionally an empty frozen
+registry. Unit tests inject one synthetic, non-draft approved tuple and a fake
+plan store to prove the positive wiring without approving any real methodology
+or creating Firestore records. The supported scope is also injected from the
+server boundary rather than accepted in the command payload. Ownership is
+always the verified Authentication UID passed separately to the store.
+
+Activating a real tuple requires a later reviewed issue and pull request that:
+
+1. cites the attributable approval record and exact non-draft artifact hashes;
+2. adds one exact `approved` registry record for the reviewed scope;
+3. derives that scope from protected server-side membership evidence;
+4. runs the approved interior, boundary, unsupported, and retirement tests;
+5. confirms plan persistence, App Check, beta membership, and deployment gates;
+   and
+6. records the release and rollback owner.
+
+Retirement is fail-safe: remove the record or change its review state to
+`retired`, verify that the same proposal returns
+`plan-artifact-not-approved` before storage, and deploy that safer change
+without waiting for a replacement approval. Re-enabling requires a new active
+approval record; a retired decision cannot be silently reused.
 
 The deletion endpoint creates these protected records while atomically changing
 the authenticated owner's approved membership to `deletion_pending`:
@@ -122,22 +171,26 @@ proof-command UI ships in this issue.
 The Firebase emulator requires Java 21 and Node 22. Run:
 
 ```bash
+npm test
 npm run test:material-commands
 ```
 
-The command builds the Functions source, starts Authentication, Functions, and
-Firestore emulators for the synthetic `demo-marathoner` project, and proves:
+The emulator command builds the Functions source and starts Authentication,
+Functions, and Firestore for the synthetic `demo-marathoner` project. Together,
+the unit, contract, and emulator checks prove:
 
 1. anonymous calls are rejected;
 2. a request-supplied foreign user ID or deletion target is rejected without an
    effect;
 3. duplicate command IDs return the original result and one effect;
 4. unsupported app and command-schema versions return typed outcomes;
-5. an intentionally lost response is resolved by ID before retry;
-6. deletion requests require verified email, recent authentication, approved
+5. the empty production artifact policy rejects plan approval before storage;
+6. a synthetic exact approved tuple alone reaches the injected plan store;
+7. an intentionally lost response is resolved by ID before retry;
+8. deletion requests require verified email, recent authentication, approved
    membership, and App Check;
-7. an accepted request locks one owner without changing another; and
-8. emitted application logs contain outcome metadata only.
+9. an accepted request locks one owner without changing another; and
+10. emitted application logs contain outcome metadata only.
 
 Pull-request CI provisions Java 21 and runs the same command.
 
