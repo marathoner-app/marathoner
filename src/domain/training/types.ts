@@ -1,12 +1,12 @@
-import type { DateOnly, IanaTimeZone, UtcDateTime } from "./dates";
+import type { DateOnly, IanaTimeZone, UtcDateTime } from "./dates.js";
 import type {
   CompletedRunId,
   PlannedWorkoutId,
   ShoeId,
   TrainingPlanId,
   UserId,
-} from "./identifiers";
-import type { DistanceMeters, DistanceUnit, DurationSeconds } from "./units";
+} from "./identifiers.js";
+import type { DistanceMeters, DistanceUnit, DurationSeconds } from "./units.js";
 
 export interface EntityTimestamps {
   readonly createdAt: UtcDateTime;

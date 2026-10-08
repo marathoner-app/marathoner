@@ -1,5 +1,5 @@
-import { isDateOnly, type DateOnly } from "./dates";
-import { isIdentifierValue, type PlannedWorkoutId } from "./identifiers";
+import { isDateOnly, type DateOnly } from "./dates.js";
+import { isIdentifierValue, type PlannedWorkoutId } from "./identifiers.js";
 import type {
   CompletionGoal,
   RecentRunPerformance,
@@ -8,8 +8,8 @@ import type {
   TargetRaceTiming,
   TrainingPhase,
   Weekday,
-} from "./types";
-import type { DistanceMeters, DurationSeconds } from "./units";
+} from "./types.js";
+import type { DistanceMeters, DurationSeconds } from "./units.js";
 
 export const PLAN_GENERATION_INPUT_SCHEMA_VERSION =
   "plan-generation-input@1" as const;
