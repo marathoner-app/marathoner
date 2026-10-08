@@ -8,8 +8,12 @@ import {
   createDateOnly,
   createDistanceMeters,
   createIanaTimeZone,
+  createPlannedWorkoutId,
+  createTrainingPlanId,
   createUserId,
   createUtcDateTime,
+  type PlannedWorkout,
+  type TrainingPlan,
   type UserProfile
 } from './domain/training'
 import {
@@ -55,6 +59,8 @@ vi.mock('./training/TrainingDataProvider', () => ({
 
 const trainingMock = vi.hoisted(() => ({
   profile: null as object | null,
+  plans: [] as object[],
+  workouts: [] as object[],
   saveProfile: vi.fn(),
   reload: vi.fn()
 }))
@@ -64,8 +70,8 @@ vi.mock('./training/useTrainingData', () => ({
     status: 'ready',
     error: null,
     profile: trainingMock.profile,
-    plans: [],
-    workouts: [],
+    plans: trainingMock.plans,
+    workouts: trainingMock.workouts,
     runs: [],
     shoes: [],
     reload: trainingMock.reload,
@@ -101,6 +107,29 @@ const completeRunnerProfile: UserProfile = {
   availableTrainingDays: ['tuesday', 'thursday', 'saturday', 'sunday'],
   preferredLongRunDay: 'sunday',
   completionGoal: 'complete_first_marathon',
+  createdAt: timestamp,
+  updatedAt: timestamp
+}
+const activePlan: TrainingPlan = {
+  id: createTrainingPlanId('plan-1'),
+  userId: createUserId('runner-1'),
+  name: 'First Marathon Journey',
+  startDate: createDateOnly('2030-01-01'),
+  targetRaceDate: createDateOnly('2030-05-05'),
+  status: 'active',
+  createdAt: timestamp,
+  updatedAt: timestamp
+}
+const upcomingWorkout: PlannedWorkout = {
+  id: createPlannedWorkoutId('workout-1'),
+  userId: createUserId('runner-1'),
+  planId: activePlan.id,
+  scheduledDate: createDateOnly('2030-01-02'),
+  phase: 'base_building',
+  status: 'planned',
+  kind: 'run',
+  purpose: 'easy',
+  targetDistance: createDistanceMeters(5_000),
   createdAt: timestamp,
   updatedAt: timestamp
 }
@@ -144,6 +173,8 @@ function renderSignedInApp() {
 beforeEach(() => {
   vi.clearAllMocks()
   trainingMock.profile = completeRunnerProfile
+  trainingMock.plans = []
+  trainingMock.workouts = []
   trainingMock.saveProfile.mockResolvedValue(completeRunnerProfile)
   unsubscribe = vi.fn()
   mockedLogOut.mockResolvedValue()
@@ -460,6 +491,24 @@ describe('App training sections', () => {
     expect(screen.getByRole('button', { name: 'Analyze' })).toBeInTheDocument()
   })
 
+  it('opens Plan from the persisted next-workout summary', async () => {
+    const user = userEvent.setup()
+    trainingMock.plans = [activePlan]
+    trainingMock.workouts = [upcomingWorkout]
+    renderSignedInApp()
+
+    expect(
+      screen.getByRole('heading', { name: 'Easy run' })
+    ).toBeInTheDocument()
+    expect(screen.getByText('3.1 mi')).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'Open Plan' }))
+
+    expect(
+      screen.getByRole('region', { name: 'Plan Your Workouts' })
+    ).toBeInTheDocument()
+  })
+
   it.each(sectionTransitions)(
     'opens and closes the %s section',
     async (sectionName, sectionHeading) => {
@@ -510,7 +559,9 @@ describe('App training sections', () => {
 
     await user.keyboard('{Escape}')
 
-    expect(screen.queryByRole('region')).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole('region', { name: 'Plan Your Workouts' })
+    ).not.toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Plan' })).toHaveFocus()
   })
 

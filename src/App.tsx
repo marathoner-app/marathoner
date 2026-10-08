@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import Title from "./components/Title";
 import Subtitle from "./components/Subtitle";
@@ -17,6 +17,8 @@ import {
   AccountDeletionReceipt,
 } from "./components/AccountDeletion";
 import type { AccountDeletionRequestAcceptedResult } from "./domain/materialCommands/contract";
+import { selectNextPlannedWorkout } from "./domain/training";
+import NextWorkoutSummary from "./components/NextWorkoutSummary";
 
 const publicSupportEmail = "kevin@marathonerapp.com";
 
@@ -260,6 +262,21 @@ function AuthenticatedExperience({
   const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
   const [onboardingDeferred, setOnboardingDeferred] = useState(false);
   const onboardingComplete = isRunnerProfileOnboardingComplete(training.profile);
+  const activePlan = useMemo(
+    () => training.plans.find((plan) => plan.status === "active") ?? null,
+    [training.plans],
+  );
+  const nextWorkout = useMemo(
+    () =>
+      training.profile === null
+        ? null
+        : selectNextPlannedWorkout(
+            activePlan,
+            training.workouts,
+            training.profile.timeZone,
+          ),
+    [activePlan, training.profile, training.workouts],
+  );
   const showOnboarding =
     training.status === "ready" &&
     (isOnboardingOpen || (!onboardingComplete && !onboardingDeferred));
@@ -309,6 +326,12 @@ function AuthenticatedExperience({
                 : "Your saved progress is safe; finish setup before a plan can be evaluated."}
             </p>
           </div>
+          <NextWorkoutSummary
+            plan={activePlan}
+            workout={nextWorkout}
+            distanceUnit={training.profile?.preferredDistanceUnit ?? "mile"}
+            onOpenPlan={() => onOpenSection("plan")}
+          />
           <nav className="section-navigation" aria-label="Training sections">
             {sections.map(({ id, label }) => (
               <motion.button
