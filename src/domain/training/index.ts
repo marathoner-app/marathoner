@@ -1,6 +1,7 @@
 export * from "./calculations";
 export * from "./dates";
 export * from "./identifiers";
+export * from "./nextWorkout";
 export * from "./planGeneration";
 export * from "./planGenerationFixtures";
 export * from "./types";
