@@ -1,11 +1,12 @@
 # Material-command boundary
 
-- **Status:** Local proof and deletion-request boundaries complete; plan-approval contract defined; live plan handler and deployment blocked
+- **Status:** Local proof and deletion-request boundaries complete; plan-approval contract and client adapter defined; live plan handler and deployment blocked
 - **Decision date:** 2026-10-05
 - **Owner:** Marathoner maintainer
 - **Proof issue:** [#158](https://github.com/marathoner-app/marathoner/issues/158)
 - **Deletion-request issue:** [#195](https://github.com/marathoner-app/marathoner/issues/195)
 - **Plan-approval contract issue:** [#227](https://github.com/marathoner-app/marathoner/issues/227)
+- **Plan-approval client issue:** [#230](https://github.com/marathoner-app/marathoner/issues/230)
 
 ## Purpose and scope
 
@@ -14,9 +15,9 @@ writes. Issue #158 proves the boundary with a harmless counter command. Issue
 #195 adds the first security-sensitive workflow: requesting deletion and
 locking account access. Plan approval, run completion, adaptation, consent, the
 destructive deletion runner, and the deletion UI remain in their owning issues.
-Issue #227 defines the shared plan-approval envelope and outcomes without
-claiming that its server transaction, client adapter, or participant workflow
-exists yet.
+Issue #227 defines the shared plan-approval envelope and outcomes. Issue #230
+adds the transport-injected, online-only client adapter without claiming that
+the server transaction or participant workflow exists yet.
 
 The browser and server share the portable contract in
 `src/domain/materialCommands/contract.ts`. It imports neither React nor
@@ -93,6 +94,17 @@ the transport. Reconnection never replays it. Transport timeouts and malformed
 responses become outcome-unknown results; the caller must resolve the command
 ID explicitly.
 
+`createPlanApprovalClient` builds that shared client around the same transport.
+Its caller creates and retains the command ID, supplies the exact normalized
+input and generated proposal already reviewed by the participant, and passes
+the expected active-plan revision. It preserves typed approval receipts, stale
+revisions, invalid proposals, authentication and authorization failures, App
+Check failures, unsupported versions, ID conflicts, retryable failures, and
+unknown outcomes. An unrelated material-command success or malformed response
+is treated as outcome unknown, never as plan approval. Known-offline submission
+is not queued, and an unknown result must be resolved with the original command
+ID before any retry.
+
 `firebaseMaterialCommandClient.ts` is the browser transport. It attaches the
 current Firebase Authentication token through the callable SDK. Local browser
 work can opt into the Functions emulator with:
@@ -154,7 +166,6 @@ command succeed is not approved.
 ## Follow-up migrations
 
 - #72 moves initial-plan activation onto this boundary.
-- #230 adds the plan-approval client adapter without bypassing #72's server gate.
 - #115 adds atomic, revision-safe completion and adaptation commands.
 - #121 removes direct client material writes after every owning workflow moves.
 - #159 adds live reads, freshness, and account cache isolation.
