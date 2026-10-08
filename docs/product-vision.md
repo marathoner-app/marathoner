@@ -2,7 +2,7 @@
 
 **Status:** Active direction
 
-**Last updated:** October 6, 2026
+**Last updated:** October 8, 2026
 
 **Product owner:** Kevin Tulloch
 
@@ -96,7 +96,7 @@ understand:
 - why a plan changes; and
 - when a race date or goal no longer fits the available preparation.
 
-## Commercial wedge under test
+## Unproven commercial wedge
 
 The broad vision is not yet a proven commercial proposition. Free and paid
 products already provide static or adaptive marathon plans. Marathoner is
@@ -109,18 +109,18 @@ The proposed target moment is after a first-time marathoner chooses a race or
 plan and then finds that illness, pain signals, missed training, work, family,
 or another disruption has made the original schedule uncertain.
 
-The [commercial proof sprint](commercial-proof-sprint.md) tests whether this is
-a recurring consequential problem, whether the readiness and adaptation
-experience is understood, and whether qualified prospects make a refundable
-payment commitment. Category spending, competitor success, and acquisition
-precedents justify the test but do not prove Marathoner-specific demand.
+The [product-first free-beta decision](product-first-beta-decision.md) records
+that this wedge will be expressed through a functional product before formal
+interviews or refundable-payment tests are required. Category spending,
+competitor success, and acquisition precedents make the hypothesis plausible;
+they do not prove Marathoner-specific demand.
 
-Commercial discovery may include a broader first-time-marathon segment than
-the live founding beta because fictional artifact interviews provide no
-individualized training advice. Live product use remains limited to the
-qualified-review-approved beta segment. Evidence that the current draft
-segment is too advanced may trigger a new methodology-review question; it
-cannot silently weaken eligibility or safety boundaries.
+Live product use remains limited to the qualified-review-approved beta segment.
+Optional later commercial discovery may include a broader
+first-time-marathon segment when it provides no individualized training advice.
+Evidence that the current draft segment is too advanced may trigger a new
+methodology-review question; it cannot silently weaken eligibility or safety
+boundaries.
 
 ## Product promise
 
@@ -402,22 +402,19 @@ applications, or integrations.
 - preservation of the responsive web application; and
 - authentication plus a shared-record round trip on a physical iPhone.
 
-### Commercial proof: October to December 2026
+### Optional commercial preparation: completed October 2026
 
 - private, consented research operations;
 - fictional readiness and adaptation artifacts;
-- 15–20 artifact-based interviews;
-- at least ten fixed, refundable reservation requests;
-- five constrained concierge commitments only inside the approved
-  non-prescriptive or qualified-review boundary; and
-- a proceed, reposition, stop, or operating-model-redesign decision.
+- a frozen artifact-interview protocol and evidence rubric; and
+- a reusable plan for later interviews, reservations, and concierge evidence
+  if commercial validation becomes an active priority.
 
 Security, privacy, deletion, evidence-integrity, and qualified-review work may
-continue because they enable trustworthy research and future participants.
-Product payments, a full adaptation engine, and other nonessential feature
-breadth wait for the first commercial decision. The
-[commercial proof sprint](commercial-proof-sprint.md) is the source of truth
-for sequence and stop gates.
+continue because they enable trustworthy product use and future participants.
+The [commercial proof sprint](commercial-proof-sprint.md) is dormant and does
+not gate the functional free beta. Product payments remain deferred; the
+bounded adaptation engine depends on qualified review and product evidence.
 
 ### Intake and initial plan: November 2026
 
@@ -440,9 +437,9 @@ for sequence and stop gates.
 The exact wave contract and evidence gates are maintained in the
 [zero-to-beta plan](zero-to-beta-plan.md). The
 [capacity forecast](capacity-forecast.md) is the scheduling source of truth;
-its October 6 recalibration places the original January target between the
-optimistic and likely invitation scenarios rather than treating it as the
-planning expectation.
+its October 8 product-first recalibration places the January invitation floor
+after the optimistic product-readiness estimate and before the likely
+invitation scenario.
 
 ### Invite-only external beta: after the invitation gates pass
 
@@ -461,9 +458,8 @@ integrity, privacy, methodology, or release gate.
 The proposed recruitment sequence, participant offer, and early learning gates
 are described in the
 [founding cohort recruitment and validation plan](founding-cohort-plan.md).
-Commercial discovery and refundable reservations occur earlier under the
-[commercial proof sprint](commercial-proof-sprint.md); they are not founding
-beta invitations.
+Optional commercial discovery and refundable reservations, if reactivated,
+remain separate from founding-beta invitations.
 
 The beta requires iOS and preserves the responsive web application. Material
 writes require a network connection, and adaptation is limited to reviewed
@@ -556,12 +552,10 @@ A possible long-term model is:
 4. personalized planning, adaptation, education, and graduation; and
 5. no indefinite automatic renewal.
 
-The first behavioral test uses a $25 fully refundable reservation credited
-toward one $99 fixed journey. The $79 and $129 self-serve figures are
-qualitative sensitivity prompts rather than a statistically powered price
-test. A separate concierge hypothesis starts at $249 and must measure human
-support time. These are protocol-bound research offers, not launch prices.
-Product payments remain out of beta scope, and automatic renewal remains off.
+The prior research plan preserved a $25 refundable reservation toward a $99
+fixed journey and a separate $249 concierge hypothesis. Those figures are
+dormant protocol hypotheses, not launch prices or current work. Product
+payments remain out of beta scope, and automatic renewal remains off.
 
 ## Risks and dependencies
 

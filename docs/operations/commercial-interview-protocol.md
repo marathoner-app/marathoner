@@ -1,6 +1,9 @@
 # Commercial interview protocol and evidence rubric
 
-- **Status:** Frozen for synthetic rehearsal; real-participant collection remains disabled
+- **Status:** Dormant optional protocol; synthetic rehearsal passed and
+  real-participant collection remains disabled
+- **Moved off the beta critical path:** October 8, 2026 by
+  [#223](https://github.com/marathoner-app/marathoner/issues/223)
 - **Protocol version:** `commercial-interview-protocol@1.0.0`
 - **Effective date:** October 6, 2026
 - **Owner and evidence owner:** Kevin Tulloch
@@ -10,6 +13,11 @@
 - **Consent version:** `commercial-research-consent@1.0.0`
 
 ## Decision and boundary
+
+The [product-first free-beta decision](../product-first-beta-decision.md)
+keeps this protocol available for a later commercial-priority decision. It
+does not block the functional free beta, and no real participant has been run
+through it.
 
 This protocol freezes the commercial screener, interview prompts, observation
 fields, classifications, source attribution, evidence windows, and public

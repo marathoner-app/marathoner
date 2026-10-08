@@ -6,12 +6,13 @@
 - **Review scope:** The Marathoner product repository, excluding Creator Radar
 - **Parent tracker:** [GitHub issue #104](https://github.com/marathoner-app/marathoner/issues/104)
 - **Current trust slice:** [GitHub issue #204](https://github.com/marathoner-app/marathoner/issues/204)
-- **Current product-priority slice:** [GitHub issue #211](https://github.com/marathoner-app/marathoner/issues/211)
+- **Strategy realignment:** [GitHub issue #223](https://github.com/marathoner-app/marathoner/issues/223)
 - **Pending external gates:** [GitHub issue #191](https://github.com/marathoner-app/marathoner/issues/191) and [GitHub issue #201](https://github.com/marathoner-app/marathoner/issues/201)
 - **Related plans:** [Zero-to-beta plan](zero-to-beta-plan.md),
   [product vision](product-vision.md),
-  [founding cohort plan](founding-cohort-plan.md), and
-  [commercial proof sprint](commercial-proof-sprint.md)
+  [founding cohort plan](founding-cohort-plan.md),
+  [product-first free-beta decision](product-first-beta-decision.md), and
+  [dormant commercial proof sprint](commercial-proof-sprint.md)
 
 ## Purpose
 
@@ -51,9 +52,10 @@ The current investment and release posture is:
 - The first beta should prove one narrow first-marathon workflow before adding
   more starting segments, broad adaptation, native depth, integrations, or
   acquisition scale.
-- Commercial proof now precedes product payments, the full adaptation engine,
-  and other nonessential feature breadth. Security, privacy, deletion,
-  evidence-integrity, and qualified-review work may continue.
+- A functional, responsibly testable free beta is now the critical path.
+  Commercial proof remains an unresolved investment risk but no longer
+  precedes bounded product delivery or invitations. Product payments remain
+  deferred, and qualified review still governs live methodology.
 
 ## Ratified founding-beta contract
 
@@ -96,8 +98,8 @@ This remediation sprint is complete when:
 4. The Wave 01 and invitation gates below have passed with recorded evidence.
 5. The four-week and eight-week reviews are scheduled after invitations rather
    than represented as January 15 launch deliverables.
-6. Market and participant evidence has replaced the most important demand,
-   differentiation, and willingness-to-pay assumptions.
+6. Remaining market assumptions are either replaced by evidence or explicitly
+   accepted as unresolved under a dated product decision.
 
 ## Remediation register
 
@@ -108,10 +110,10 @@ Critical items can have prerequisites in earlier high-priority work.
 | --- | --- | --- | --- | --- | --- | --- |
 | CR-01 | Critical | Safety | Name the qualified reviewer role and obtain dated approval for the supported rules, eligibility, escalation boundaries, and guidance. | #70, #107, #119, #148 | Invitations | Protocol ready; reviewers and approval pending |
 | CR-02 | Critical | Product | Ratify one narrow beta segment, participant count, adaptation boundary, client capability matrix, and explicit exclusions. | #117, #104 | Wave 00 | Complete |
-| CR-03 | Critical | Investment | Record problem evidence, alternatives, differentiation, participant commitments, and willingness-to-pay signals. | #110, #126, #211–#218 | Before nonessential feature breadth | Plan and issue graph ready; participant evidence pending |
+| CR-03 | Critical | Investment | Record problem evidence, alternatives, differentiation, participant commitments, and willingness-to-pay signals. | #110, #126, #211–#218, #223 | Optional post-beta commercial decision | Risk explicitly accepted October 8; participant evidence not collected |
 | CR-04 | High | Governance | Repair contradictory platform, parent, milestone, design, audit, and current-state sources. | #118, #104 | Wave 00 | Complete |
 | CR-05 | High | Delivery | Decompose #105 through #110 into owner-sized child issues with dependencies and evidence-based exit criteria. | #104–#140 | Wave 00 | Complete |
-| CR-06 | High | Delivery | Produce a capacity model and likely/conservative forecast using focused sessions, external wait time, and 60–70% planned utilization. | #54, #104, #208, #211 | Wave 00 | Recalibrated October 6 and corrected for completed #203 plus commercial-proof scope; next calibration follows #218, Wave 02, or four more weeks |
+| CR-06 | High | Delivery | Produce a capacity model and likely/conservative forecast using focused sessions, external wait time, and 60–70% planned utilization. | #54, #104, #208, #223 | Wave 00 | Recalibrated October 8 for product-first scope; next calibration follows Wave 02 or four more weeks |
 | CR-07 | High | Quality | Run lint, tests, typecheck/build, and Firestore emulator checks on pull requests and make required checks visible before merge. | #56, #57 | Wave 00 | Complete |
 | CR-08 | High | Mobile | Compare Capacitor, Expo with Firebase JS, and Expo with React Native Firebase on a physical-iPhone vertical slice; approve the ADR from evidence. | #33, #83–#89, #177–#178 | Wave 01 | Complete; Capacitor selected, promoted, and spike runtimes retired |
 | CR-09 | High | Architecture | Make completion, plan approval, and adjustment writes atomic and idempotent; enforce one active plan and stale-write rejection. | #72, #105, #107 | Invitations | Not started |
@@ -121,10 +123,10 @@ Critical items can have prerequisites in earlier high-priority work.
 | CR-13 | High | Privacy | Provide consent, limitations, password reset, support, withdrawal, deletion initiation, and a rehearsed complete deletion procedure. | #78, #79, #109, #124, #195–#197 | Invitations | Password recovery, deletion design, local request/lock/runner, and shared UI complete; live activation and rehearsal wait on #161 |
 | CR-14 | High | Recovery | Document and rehearse export/restore, incident response, participant support, recruitment pause, and critical-failure visibility. | #107, #109, #124 | Invitations | Not started; live rehearsal waits on #161 |
 | CR-15 | High | Release | Establish Apple ownership and signing early; obtain an external-testable build and complete a non-owner journey before readiness week. | #108 | Invitations | Not started |
-| CR-16 | High | Validation | Precommit activation, comprehension, trust, safety, engagement, support-burden, and pause thresholds before observing cohort results. | #110, #127, #211, #214 | Commercial evidence and invitations | Commercial gates drafted; merge, protocol evidence, and cohort metrics pending |
+| CR-16 | High | Validation | Precommit activation, comprehension, trust, safety, engagement, support-burden, and pause thresholds before observing cohort results. | #110, #127; optional #211, #214 | Invitations | Commercial protocol complete but dormant; live-cohort product metrics pending |
 | CR-17 | Medium | Trust | Make the public surface explain the product's current readiness and route prospective users to an honest waitlist or bounded beta path. | #23, #109 | Recruitment | Complete; registration closed honestly |
 | CR-18 | Medium | Maintainability | Use additive schema compatibility, current/previous-version fixtures, and one documented migration pattern without building a generalized platform. | #69, #80, #83 | Invitations | Not started |
-| CR-19 | Medium | Economics | Record support cost, acquisition assumptions, retention hypotheses, pricing tests, and bounded lifetime-value logic. | #110, #126, #211–#218 | Commercial decision | Offers and measures drafted; behavioral evidence pending |
+| CR-19 | Medium | Economics | Record support cost, acquisition assumptions, retention hypotheses, pricing tests, and bounded lifetime-value logic. | #110, #126, #211–#218, #223 | Optional post-beta commercial decision | Hypotheses preserved; behavioral evidence intentionally deferred |
 | CR-20 | Medium | Governance | Add missing contribution, security, ownership, and repository metadata appropriate to a public investor-visible project. | #19, #58, #59 | Wave 00 | Complete |
 
 Some existing issues do not yet cover the complete required outcome. The first
@@ -187,11 +189,11 @@ unrelated implementation issues.
    - Add child issues and dependencies for adaptation rules and audit, guidance
      content and triggers, safety controls, iOS delivery, beta operations, and
      post-invitation reviews.
-10. **Record the first validation plan.**
+10. **Record the first validation plans.**
     - Issues: #126, #127, and #211–#218.
-    - Separate commercial discovery from live-beta eligibility; define
-      interview evidence, behavioral reservations, beta commitment, metric
-      thresholds, and private research storage.
+    - Separate optional commercial discovery from live-beta eligibility;
+      preserve its protocol while defining the product cohort's commitment,
+      metric thresholds, and private operations.
 
 ### Sprint 01 exit evidence
 
@@ -295,18 +297,19 @@ Issue #110 should remain the operating epic. Launch readiness and each review
 need separate dated child issues or milestones so a future reader cannot
 mistake recruitment for completed validation.
 
-## Market and investment evidence track
+## Optional market and investment evidence track
 
 Product delivery does not prove demand. The
-[commercial proof sprint](commercial-proof-sprint.md) now owns the exact
+[commercial proof sprint](commercial-proof-sprint.md) preserves the exact
 segment distinction, 15–20-interview protocol, fixed reservation request,
 constrained concierge entry, metric definitions, privacy boundary, stop gates,
-and source limits.
+and source limits if this optional track is later reactivated.
 
-The public repository receives only aggregate, non-identifying evidence. The
-study is directional and may support a proceed, reposition, stop, or
-operating-model-redesign decision; it cannot establish population conversion
-or product-market fit.
+No real participant evidence has been collected. The October 8
+[product-first decision](product-first-beta-decision.md) accepts that open
+investment risk and keeps this track outside the beta critical path. If it later
+runs, the public repository receives only aggregate, non-identifying evidence;
+the study cannot establish population conversion or product-market fit.
 
 ## Proportionate architecture boundary
 

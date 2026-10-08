@@ -1,14 +1,15 @@
 # Marathoner zero-to-beta plan
 
 - **Status:** Active delivery plan
-- **Last updated:** October 6, 2026
+- **Last updated:** October 8, 2026
 - **Product owner and current implementer:** Kevin Tulloch
-- **Decision checkpoint:** January 15, 2027; it falls between the optimistic and likely invitation forecasts and is not a delivery promise
+- **Decision checkpoint:** January 15, 2027; it is the optimistic invitation floor, precedes the likely forecast, and is not a delivery promise
 - **Master tracker:** [GitHub issue #104](https://github.com/marathoner-app/marathoner/issues/104)
 - **Active remediation:** [Committee remediation sprint](committee-remediation-sprint.md)
 - **Founding-beta contract:** [GitHub issue #117](https://github.com/marathoner-app/marathoner/issues/117)
 - **Capacity forecast:** [Owner-session and gate forecast](capacity-forecast.md)
-- **Commercial proof:** [Problem, reservation, and operating-model sprint](commercial-proof-sprint.md)
+- **Product strategy:** [Product-first free-beta decision](product-first-beta-decision.md)
+- **Optional commercial research:** [Dormant commercial proof sprint](commercial-proof-sprint.md)
 - **Methodology review:** [Qualified review protocol](methodology/README.md)
 
 ## Outcome
@@ -19,13 +20,14 @@ loop: intake, a reviewed plan family, daily use, completed-run feedback,
 deterministic hold/repeat/reschedule recommendations, timely reviewed guidance,
 and informed approval of material plan changes.
 
-January 15, 2027 was the original conditional target. The October 6
-[capacity recalibration](capacity-forecast.md) places the invitation decision
-at January 10, 2027 optimistic, April 4, 2027 likely, and November 14, 2027
-conservative after the commercial-proof decomposition. January therefore
-remains a scope-or-date decision checkpoint, not the planning expectation or a
-promise of beta access, public launch, completed cohort validation, or an
-Android external release.
+January 15, 2027 remains the contractual invitation floor and scope-or-date
+checkpoint. The October 8 [capacity recalibration](capacity-forecast.md)
+places product readiness at December 6, 2026 optimistic, February 21, 2027
+likely, and August 22, 2027 conservative after removing optional commercial
+research from the critical path. The optimistic capacity date does not permit
+invitations before January 15 without a separate contract change. None of
+these dates promises beta access, public launch, completed cohort validation,
+or an Android external release.
 
 The September 2026 committee review found that the target remains conditional
 on methodology authority, executable issue decomposition, client data
@@ -33,11 +35,11 @@ integrity, operational readiness, and participant evidence. The
 [committee remediation sprint](committee-remediation-sprint.md) is the
 canonical backlog for closing those gaps.
 
-The October 6 commercial review makes issue #126 an earlier priority rather
-than a late invitation task. Static discovery, a hosted refundable reservation,
-and a constrained concierge experiment can test the proposition without
-waiting for feature completeness. Product payments and live unreviewed
-recommendations remain prohibited.
+The October 8 [product-first decision](product-first-beta-decision.md) removes
+formal interviews, hosted reservations, and a paid concierge experiment from
+the beta critical path. That choice accepts unresolved commercial uncertainty
+so owner attention can go to the functional product. Product payments and live
+unreviewed recommendations remain outside the beta boundary.
 
 ## Founding-beta contract
 
@@ -76,10 +78,9 @@ support, and product evidence.
   data-integrity evidence fails its threshold.
 - The beta remains free in exchange for structured feedback.
 
-Earlier commercial-discovery reservations and concierge commitments are
-separate research offers governed by the
-[commercial proof sprint](commercial-proof-sprint.md). They are not founding
-beta invitations and do not convert the free founding beta into a paid launch.
+The founding beta is free. Any later interviews, reservations, or concierge
+offers remain separate optional commercial research governed by a newly
+recorded activation decision; they do not convert the beta into a paid launch.
 
 ### Plan and adaptation boundary
 
@@ -122,10 +123,9 @@ a first-class product surface and is not replaced by the iOS work.
   push notifications, and health-platform data are excluded.
 - No delivery commitment assumes another contributor joins.
 
-“Payments” here means payment functionality inside the Marathoner product. A
-hosted, fully refundable research reservation may be operated outside the app
-after its seller, consent, terms, refund, and private-record gates pass. It may
-not introduce recurring billing or client-side card handling.
+No payment or refundable-reservation flow is required for the founding beta.
+Any future payment research requires a separate activation decision and the
+appropriate seller, consent, terms, refund, and private-record controls.
 
 ### Methodology fallback
 
@@ -135,31 +135,21 @@ individually human-reviewed plan. That fallback may test planning interfaces,
 logging, comprehension, and feedback, but it may not generate algorithmic
 training, adaptation, pain, fueling, hydration, or recovery recommendations.
 
-## Commercial proof before feature breadth
+## Product-first validation boundary
 
-The [commercial proof sprint](commercial-proof-sprint.md) runs before product
-payments, the full adaptation engine, or acquisition-scale work:
+The [product-first free-beta decision](product-first-beta-decision.md) makes
+functional and responsible product evidence the prerequisite for invitations.
+The beta must prove the supported account, intake, plan, daily-use, logging,
+bounded-adaptation, support, and deletion journeys on the responsive web and
+iOS clients. It must also pass the methodology, safety, security, privacy,
+integrity, reliability, accessibility, support, and external-distribution
+gates in this plan.
 
-1. establish private research and consent operations;
-2. create synthetic, non-prescriptive readiness and adaptation artifacts;
-3. freeze the screener, interview protocol, metrics, and evidence ledger;
-4. rehearse one hosted $25 reservation and full refund;
-5. conduct 15–20 interviews and make the same reservation request to at least
-   ten qualified prospects;
-6. enroll five constrained concierge participants only if the problem,
-   commitment, and reservation gates pass; and
-7. record proceed, reposition, stop, or operating-model-redesign and reforecast
-   the roadmap.
-
-The commercial-discovery segment is broader than live-beta eligibility because
-artifact interviews give no individualized advice. The draft live-beta
-thresholds remain subject to qualified review. Commercial evidence can create
-a new segment-review question but cannot approve a training boundary.
-
-Security, privacy, deletion, decision-provenance, and qualified-review work may
-continue while research runs. The active App Check slice remains legitimate
-trust work; the commercial sprint does not require a complete app before
-interviews begin.
+The completed #211–#214 materials are retained as optional future commercial
+research infrastructure. No real participant evidence has been collected.
+Issues #126 and #215–#218 do not block the beta or the bounded adaptation work
+permitted by qualified review. Product payments and acquisition-scale work
+remain deferred until a later commercial-priority decision.
 
 ## Architecture decision boundary
 
@@ -195,7 +185,6 @@ scope or measured throughput changes.
 | 00 Solo Delivery and Beta Contract | October 4, 2026 | [#54](https://github.com/marathoner-app/marathoner/issues/54) | One canonical beta promise, solo delivery workflow, issue hierarchy, and approved scope boundaries. |
 | 01 Shared Mobile Foundation | October 18, 2026 | [#33](https://github.com/marathoner-app/marathoner/issues/33) | A physical iPhone can authenticate and exchange one typed training record with the preserved web application through the approved least-duplicated client boundary. |
 | 02 Intake and Initial Plan | November 15, 2026 | [#65](https://github.com/marathoner-app/marathoner/issues/65) | A representative supported runner can complete intake, receive an approved deterministic plan or honest unsupported result, approve the plan, and identify the next workout. |
-| CP Commercial Proof 01 | December 6, 2026 | [#126](https://github.com/marathoner-app/marathoner/issues/126) | Artifact interviews, a behavioral reservation test, and constrained concierge entry produce the first commercial proceed, reposition, stop, or redesign decision. |
 | 03 Track, Learn, and Adapt | December 6, 2026 | [#105](https://github.com/marathoner-app/marathoner/issues/105), [#106](https://github.com/marathoner-app/marathoner/issues/106) | A runner can log what happened, receive an authored explanation and deterministic adjustment recommendation, and approve or decline a material change. |
 | 04 iOS Daily Companion | December 20, 2026 | [#108](https://github.com/marathoner-app/marathoner/issues/108) | The complete daily loop is usable on a physical iPhone and an internal/TestFlight candidate can be installed and exercised. |
 | 05 Trust and External-Beta Readiness | January 8, 2027 | [#107](https://github.com/marathoner-app/marathoner/issues/107), [#109](https://github.com/marathoner-app/marathoner/issues/109) | Safety boundaries, privacy and deletion, accessibility, reliability, support, consent, instrumentation, and TestFlight operations satisfy the beta checklist. |
@@ -205,20 +194,13 @@ scope or measured throughput changes.
 
 ## Evidence gates
 
-### Commercial proof: test the proposition before feature completeness
+### Product evidence: prove a functional and responsible beta
 
-Issue #126 and its children #211–#218 own the private-operations, artifact,
-protocol, refund, interview, reservation, concierge, and decision evidence.
-Fewer than five recurring consequential workarounds in the first fifteen
-qualified interviews triggers repositioning. Fewer than five concrete
-eight-week commitments stops the current proposition. Fewer than three
-reservations from ten qualified prospects blocks product payments and the full
-adaptation engine.
-
-The exact definitions, override failures, and small-sample limits live in the
-[commercial proof sprint](commercial-proof-sprint.md). No count overrides a
-critical privacy, consent, safety, integrity, provenance, or misleading-claim
-failure.
+The invitation gate tests whether the implemented product is complete enough,
+understandable enough, and responsibly operated for a small allowlisted cohort.
+It does not require pre-launch proof of demand or willingness to pay and does
+not claim product-market fit. Optional commercial research remains documented
+in the [dormant sprint](commercial-proof-sprint.md).
 
 ### October: prove the delivery and client foundation
 
@@ -403,13 +385,13 @@ The critical path is:
 
 ```text
 beta contract -> iOS/shared foundation -> bounded intake and initial plan
-                                    \-> commercial problem/payment proof --+
-                                                                            |
-                                         qualified review + proof decision --+
-                                                                            v
-                                      tracking and adaptation -> iOS daily companion
-                                      -> trust/readiness -> invitations
-                                      -> four/eight-week reviews
+                                        |                         |
+                                        |                         v
+                                        +-> qualified review -----+
+                                                                  v
+                         tracking and bounded adaptation -> iOS daily companion
+                         -> trust/readiness -> invitations
+                         -> four/eight-week reviews
 ```
 
 Android external distribution, generative AI, Garmin, payments, social

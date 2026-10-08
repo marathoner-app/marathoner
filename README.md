@@ -39,16 +39,18 @@ becomes active. [CONTRIBUTING.md](CONTRIBUTING.md) defines the issue-to-PR
 workflow, and [SECURITY.md](SECURITY.md) provides the private vulnerability
 reporting path and safe-research boundaries.
 
-The canonical [zero-to-beta plan](docs/zero-to-beta-plan.md) defines the product
+The active [product-first free-beta decision](docs/product-first-beta-decision.md)
+makes a functional, responsibly testable product the critical path. Formal
+interviews, refundable reservations, and payment evidence are optional future
+commercial work rather than release gates. The canonical
+[zero-to-beta plan](docs/zero-to-beta-plan.md) defines the product
 commitments, delivery waves, monthly evidence gates, safety boundary, and solo
 working model. The [capacity forecast](docs/capacity-forecast.md) tests those
-gates against measured AI-assisted delivery and external waits; its October 6
-recalibration is now commercially conditioned by the expanded evidence work.
-The [commercial proof sprint](docs/commercial-proof-sprint.md) makes problem,
-differentiation, behavioral payment, comprehension, support burden, and
-acquisition evidence the next product-priority layer before nonessential
-feature breadth.
-Its selected private-system boundary, consent separation, retention schedule,
+gates against measured AI-assisted delivery and external waits. The dormant
+[commercial proof sprint](docs/commercial-proof-sprint.md) and completed
+preparation artifacts remain available if commercial validation becomes a
+future priority; they do not contain real participant evidence.
+Their selected private-system boundary, consent separation, retention schedule,
 public aggregation rule, and activation state are documented in the
 [commercial research operations runbook](docs/operations/commercial-research-operations.md).
 The versioned

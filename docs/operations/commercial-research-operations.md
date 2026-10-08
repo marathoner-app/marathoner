@@ -1,7 +1,9 @@
 # Commercial research operations
 
-- **Status:** Workspace active; synthetic withdrawal/deletion rehearsal passed;
-  real-participant collection remains disabled
+- **Status:** Dormant optional operations; synthetic withdrawal/deletion
+  rehearsal passed; real-participant collection remains disabled
+- **Moved off the beta critical path:** October 8, 2026 by
+  [#223](https://github.com/marathoner-app/marathoner/issues/223)
 - **Decision date:** October 6, 2026
 - **Owner:** Kevin Tulloch
 - **Research-operations issue:**
@@ -12,6 +14,11 @@
   [Commercial research consent](templates/commercial-research-consent.md)
 
 ## Decision
+
+The [product-first free-beta decision](../product-first-beta-decision.md)
+preserves this runbook for optional future research but does not require the
+study, Stripe setup, or participant collection before product delivery. No
+real participant evidence or payment was collected.
 
 The small commercial-proof study will use an organization-controlled Google
 Workspace boundary for research operations and Stripe-hosted Payment Links for
