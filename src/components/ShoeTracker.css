@@ -70,6 +70,21 @@
   list-style-type: none;
 }
 
+.shoe-entry-form label {
+  display: grid;
+  gap: 0.35rem;
+  font-weight: 700;
+}
+
+.shoe-mileage-total {
+  font-weight: 700;
+}
+
+.shoe-mileage-breakdown {
+  color: #555;
+  font-size: 0.92rem;
+}
+
 .run-delete-backdrop {
   position: fixed;
   inset: 0;

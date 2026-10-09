@@ -3,6 +3,7 @@ import {
   calculateShoeDistance,
   COMPLETED_RUN_NOTES_MAX_LENGTH,
   createDateOnly,
+  createDistanceMeters,
   createPlannedWorkoutId,
   createShoeId,
   createTrainingPlanId,
@@ -10,11 +11,14 @@ import {
   createIanaTimeZone,
   createUtcDateTimeAtLocalNoon,
   getRunLocalDate,
+  kilometersToMeters,
+  metersToKilometers,
   metersToMiles,
   milesToMeters,
   type CompletedRun,
   type CompletedRunId,
   type DistanceMeters,
+  type DistanceUnit,
   type IanaTimeZone,
   type PerceivedEffort,
   type PlannedWorkout,
@@ -27,6 +31,7 @@ import type {
 } from "../persistence/trainingRepositories";
 
 type ShoeTrackerProps = {
+  readonly distanceUnit: DistanceUnit;
   readonly runs: readonly CompletedRun[];
   readonly shoes: readonly Shoe[];
   readonly plannedWorkouts: readonly PlannedWorkout[];
@@ -144,6 +149,31 @@ function formatMiles(meters: DistanceMeters): string {
   return Number(metersToMiles(meters).toFixed(2)).toString();
 }
 
+function distanceUnitName(unit: DistanceUnit) {
+  return unit === "mile" ? "miles" : "kilometers";
+}
+
+function distanceUnitAbbreviation(unit: DistanceUnit) {
+  return unit === "mile" ? "mi" : "km";
+}
+
+function formatDistance(meters: DistanceMeters, unit: DistanceUnit): string {
+  const value =
+    unit === "mile" ? metersToMiles(meters) : metersToKilometers(meters);
+  return `${Number(value.toFixed(2))} ${distanceUnitAbbreviation(unit)}`;
+}
+
+function parseStartingDistance(value: string, unit: DistanceUnit) {
+  const distance = Number(value);
+  if (value.trim() === "" || !Number.isFinite(distance) || distance < 0) {
+    throw new Error("Enter a starting distance of zero or greater.");
+  }
+
+  return unit === "mile"
+    ? milesToMeters(distance)
+    : kilometersToMeters(distance);
+}
+
 function workoutName(workout: PlannedWorkout): string {
   if (workout.kind === "walk_run") return "Walk/run";
   if (workout.kind === "rest") return "Rest";
@@ -151,6 +181,7 @@ function workoutName(workout: PlannedWorkout): string {
 }
 
 export default function ShoeTracker({
+  distanceUnit,
   runs,
   shoes,
   plannedWorkouts,
@@ -160,6 +191,7 @@ export default function ShoeTracker({
   onDeleteRun,
 }: ShoeTrackerProps) {
   const [newShoe, setNewShoe] = useState("");
+  const [startingDistance, setStartingDistance] = useState("0");
   const [runDate, setRunDate] = useState<string>(today);
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
@@ -249,15 +281,23 @@ export default function ShoeTracker({
     }
   };
 
-  const handleAddShoe = async () => {
+  const handleAddShoe = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
     const name = newShoe.trim();
-    if (name.length === 0) return;
+    if (name.length === 0) {
+      setError("Enter a name for the shoe.");
+      return;
+    }
 
     setError(null);
     setPending(true);
     try {
-      await onCreateShoe({ name });
+      await onCreateShoe({
+        name,
+        startingDistance: parseStartingDistance(startingDistance, distanceUnit),
+      });
       setNewShoe("");
+      setStartingDistance("0");
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "The shoe could not be saved.");
     } finally {
@@ -327,7 +367,10 @@ export default function ShoeTracker({
             <option value="">Select Shoes</option>
             {activeShoes.map((shoe) => (
               <option key={shoe.id} value={shoe.id}>
-                {shoe.name} ({formatMiles(shoeMileage.get(shoe.id) ?? shoe.startingDistance)} mi)
+                {shoe.name} ({formatDistance(
+                  shoeMileage.get(shoe.id) ?? shoe.startingDistance,
+                  distanceUnit,
+                )})
               </option>
             ))}
           </select>
@@ -579,17 +622,39 @@ export default function ShoeTracker({
 
       <div className="shoe-tracking">
         <h3 className="text-lg font-medium">Add New Shoes</h3>
-        <div className="flex space-x-2 mt-2">
-          <input
-            type="text"
-            value={newShoe}
-            onChange={(event) => setNewShoe(event.target.value)}
-            placeholder="Shoe Name"
-          />
-          <button type="button" onClick={handleAddShoe} disabled={pending}>
-            Add
+        <form
+          className="shoe-entry-form"
+          onSubmit={(event) => void handleAddShoe(event)}
+          noValidate
+        >
+          <label>
+            Shoe name
+            <input
+              type="text"
+              value={newShoe}
+              onChange={(event) => setNewShoe(event.target.value)}
+              placeholder="Shoe Name"
+            />
+          </label>
+          <label>
+            Distance already on this shoe ({distanceUnitName(distanceUnit)})
+            <input
+              aria-describedby="shoe-starting-distance-help"
+              type="number"
+              min="0"
+              step="0.01"
+              inputMode="decimal"
+              value={startingDistance}
+              onChange={(event) => setStartingDistance(event.target.value)}
+            />
+          </label>
+          <p id="shoe-starting-distance-help" className="training-field-hint">
+            Use 0 for new shoes. This stays separate from distance Marathoner records.
+          </p>
+          <button type="submit" disabled={pending}>
+            Add shoe
           </button>
-        </div>
+        </form>
 
         <div className="mt-4">
           <h3 className="text-lg font-medium">Shoe Mileage</h3>
@@ -597,11 +662,30 @@ export default function ShoeTracker({
             <p className="training-empty-state">No shoes added yet.</p>
           ) : (
             <ul>
-              {shoes.map((shoe) => (
-                <li key={shoe.id}>
-                  {shoe.name}: {formatMiles(shoeMileage.get(shoe.id) ?? shoe.startingDistance)} mi
-                </li>
-              ))}
+              {shoes.map((shoe) => {
+                const totalDistance =
+                  shoeMileage.get(shoe.id) ?? shoe.startingDistance;
+                const recordedDistance = createDistanceMeters(
+                  totalDistance - shoe.startingDistance,
+                );
+
+                return (
+                  <li key={shoe.id}>
+                    <strong>{shoe.name}</strong>
+                    <span className="shoe-mileage-total">
+                      Total: {formatDistance(totalDistance, distanceUnit)}
+                    </span>
+                    <span className="shoe-mileage-breakdown">
+                      Starting: {formatDistance(shoe.startingDistance, distanceUnit)}
+                      {" · "}
+                      Recorded by Marathoner: {formatDistance(
+                        recordedDistance,
+                        distanceUnit,
+                      )}
+                    </span>
+                  </li>
+                );
+              })}
             </ul>
           )}
         </div>

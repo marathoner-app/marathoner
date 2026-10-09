@@ -426,6 +426,7 @@ function SectionContent({ section, title, onClose }: SectionContentProps) {
       )}
       {training.status === "ready" && section === "track" && (
         <ShoeTracker
+          distanceUnit={training.profile?.preferredDistanceUnit ?? "mile"}
           runs={training.runs}
           shoes={training.shoes}
           plannedWorkouts={training.workouts.filter(
