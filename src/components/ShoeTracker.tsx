@@ -13,6 +13,7 @@ import {
   type CompletedRun,
   type CompletedRunId,
   type DistanceMeters,
+  type PerceivedEffort,
   type PlannedWorkout,
   type Shoe,
 } from "../domain/training";
@@ -34,6 +35,35 @@ type ShoeTrackerProps = {
   ) => Promise<CompletedRun>;
   readonly onDeleteRun: (id: CompletedRunId) => Promise<void>;
 };
+
+const perceivedEffortOptions = [
+  { value: "much_easier_than_expected", label: "Much easier than expected" },
+  { value: "easier_than_expected", label: "Easier than expected" },
+  { value: "about_right", label: "About as expected" },
+  { value: "harder_than_expected", label: "Harder than expected" },
+  { value: "much_harder_than_expected", label: "Much harder than expected" },
+] as const satisfies readonly {
+  readonly value: PerceivedEffort;
+  readonly label: string;
+}[];
+
+function parsePerceivedEffort(value: FormDataEntryValue | null) {
+  if (value === null || value === "") return undefined;
+
+  const option = perceivedEffortOptions.find(
+    (candidate) => candidate.value === value,
+  );
+  if (option === undefined) {
+    throw new Error("Choose a valid perceived effort, or leave it blank.");
+  }
+
+  return option.value;
+}
+
+function formatPerceivedEffort(value: PerceivedEffort | undefined) {
+  if (value === undefined) return "Not recorded";
+  return perceivedEffortOptions.find((option) => option.value === value)?.label;
+}
 
 function today(): string {
   const value = new Date();
@@ -155,6 +185,7 @@ export default function ShoeTracker({
         timeZone: currentTimeZone(),
         distance: milesToMeters(Number(formData.get("miles"))),
         duration: parseDuration(String(formData.get("time"))),
+        perceivedEffort: parsePerceivedEffort(formData.get("perceivedEffort")),
       });
       form.reset();
       setRunDate(today());
@@ -205,6 +236,14 @@ export default function ShoeTracker({
               </option>
             ))}
           </select>
+          <select name="perceivedEffort" aria-label="Perceived effort">
+            <option value="">How did it feel? (optional)</option>
+            {perceivedEffortOptions.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
           <button type="submit" disabled={pending || activeShoes.length === 0}>
             Log Run
           </button>
@@ -235,6 +274,8 @@ export default function ShoeTracker({
                               distance: milesToMeters(Number(data.get("miles"))),
                               duration: parseDuration(String(data.get("time"))),
                               shoeId: createShoeId(String(data.get("shoe"))),
+                              perceivedEffort:
+                                parsePerceivedEffort(data.get("perceivedEffort")) ?? null,
                             });
                             setEditingRunId(null);
                           } catch (caught) {
@@ -277,6 +318,18 @@ export default function ShoeTracker({
                             </option>
                             ))}
                         </select>
+                        <select
+                          aria-label="Edit perceived effort"
+                          name="perceivedEffort"
+                          defaultValue={run.perceivedEffort ?? ""}
+                        >
+                          <option value="">Not recorded</option>
+                          {perceivedEffortOptions.map((option) => (
+                            <option key={option.value} value={option.value}>
+                              {option.label}
+                            </option>
+                          ))}
+                        </select>
                         <button type="submit" disabled={pending}>Save</button>
                         <button type="button" onClick={() => setEditingRunId(null)}>
                           Cancel
@@ -285,7 +338,8 @@ export default function ShoeTracker({
                     ) : (
                       <>
                         {getRunLocalDate(run)}: {formatMiles(run.distance)} mi in{" "}
-                        {formatDuration(run.duration)} wearing {shoe?.name ?? "No shoe"}
+                        {formatDuration(run.duration)} wearing {shoe?.name ?? "No shoe"}. Effort:{" "}
+                        {formatPerceivedEffort(run.perceivedEffort)}
                         <button type="button" onClick={() => setEditingRunId(run.id)}>
                           Edit
                         </button>
