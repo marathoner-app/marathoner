@@ -36,8 +36,9 @@ import {
   type WorkoutStatus,
 } from "../../domain/training";
 import { PersistenceError } from "../errors";
+import { TRAINING_SCHEMA_VERSION } from "../trainingSchema";
 
-export const TRAINING_SCHEMA_VERSION = 1;
+export { TRAINING_SCHEMA_VERSION } from "../trainingSchema";
 
 const PLAN_STATUSES = ["draft", "active", "completed", "archived"] as const;
 const TRAINING_PHASES = [
@@ -425,7 +426,7 @@ export function userProfileFromDocument(
 }
 
 export function trainingPlanToDocument(plan: TrainingPlan): Record<string, unknown> {
-  return {
+  const document: Record<string, unknown> = {
     schemaVersion: TRAINING_SCHEMA_VERSION,
     userId: plan.userId,
     name: plan.name,
@@ -435,6 +436,16 @@ export function trainingPlanToDocument(plan: TrainingPlan): Record<string, unkno
     createdAt: timestampFromUtc(plan.createdAt),
     updatedAt: timestampFromUtc(plan.updatedAt),
   };
+
+  if (plan.endDate !== undefined) {
+    document.endDate = plan.endDate;
+  }
+
+  if (plan.completionGoal !== undefined) {
+    document.completionGoal = plan.completionGoal;
+  }
+
+  return document;
 }
 
 export function trainingPlanFromDocument(
@@ -444,12 +455,20 @@ export function trainingPlanFromDocument(
 ): TrainingPlan {
   verifySchemaVersion(data);
 
+  const endDate = readOptionalString(data, "endDate");
+
   const plan: TrainingPlan = {
     id: createTrainingPlanId(id),
     userId: verifyOwner(readString(data, "userId"), expectedUserId),
     name: readString(data, "name"),
     startDate: createDateOnly(readString(data, "startDate")),
     targetRaceDate: createDateOnly(readString(data, "targetRaceDate")),
+    endDate: endDate === undefined ? undefined : createDateOnly(endDate),
+    completionGoal: readOptionalEnum(
+      data,
+      "completionGoal",
+      COMPLETION_GOALS,
+    ) as CompletionGoal | undefined,
     status: readEnum(data, "status", PLAN_STATUSES) as TrainingPlanStatus,
     createdAt: readTimestamp(data, "createdAt"),
     updatedAt: readTimestamp(data, "updatedAt"),

@@ -1,6 +1,6 @@
 # Material-command boundary
 
-- **Status:** Local proof and deletion-request boundaries complete; plan approval is contract-defined and fail-closed on an empty production artifact policy; persistence and deployment blocked
+- **Status:** Local proof and deletion-request boundaries complete; plan approval is contract-defined, fail-closed, and projects validated records without writing them; Firestore transaction and deployment blocked
 - **Decision date:** 2026-10-05
 - **Owner:** Marathoner maintainer
 - **Proof issue:** [#158](https://github.com/marathoner-app/marathoner/issues/158)
@@ -8,6 +8,7 @@
 - **Plan-approval contract issue:** [#227](https://github.com/marathoner-app/marathoner/issues/227)
 - **Plan-approval client issue:** [#230](https://github.com/marathoner-app/marathoner/issues/230)
 - **Plan-approval artifact-policy issue:** [#239](https://github.com/marathoner-app/marathoner/issues/239)
+- **Plan-approval persistence-projection issue:** [#240](https://github.com/marathoner-app/marathoner/issues/240)
 
 ## Purpose and scope
 
@@ -21,7 +22,8 @@ adds the transport-injected, online-only client adapter without claiming that
 the server transaction or participant workflow exists yet. Issue #239 makes
 the authenticated handler recognize the command while rejecting every
 production proposal before persistence until an exact artifact tuple is
-deliberately activated.
+deliberately activated. Issue #240 defines the deterministic, owned projection
+that follows that gate without adding a Firestore operation.
 
 The browser and server share the portable contract in
 `src/domain/materialCommands/contract.ts`. It imports neither React nor
@@ -64,9 +66,10 @@ security rules expose neither server-only collection.
 The plan-approval parser preserves the proposal's end date, reason codes, and
 input/generator/ruleset/schema provenance. It validates structural consistency
 only. The material-command handler now applies the server-owned artifact policy
-before a plan store can be called. Issues #240 and #241 still own the storage
-projection and atomic Firestore transaction, so the empty production policy
-keeps live plan approval unavailable.
+before a plan store can be called. Issue #240 now validates and projects the
+active plan, complete workout set, current-plan state, and audit provenance.
+Issue #241 still owns the atomic Firestore transaction, so the empty production
+policy and absent store keep live plan approval unavailable.
 
 ## Plan-approval artifact policy
 
