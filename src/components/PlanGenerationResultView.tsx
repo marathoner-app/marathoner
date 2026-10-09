@@ -1,11 +1,21 @@
 import { useId } from "react";
-import type { PlanGenerationResultV1 } from "../domain/training";
-import ProposedPlanSummary from "./ProposedPlanSummary";
+import type { PlanApprovalReceiptResult } from "../domain/materialCommands/contract";
+import type {
+  PlanGenerationInputV1,
+  PlanGenerationResultV1,
+} from "../domain/training";
+import type { PlanApprovalClient } from "../services/planApprovalClient";
+import PlanApprovalReview from "./PlanApprovalReview";
 
 type PlanGenerationResultViewProps = {
   readonly result: PlanGenerationResultV1;
+  readonly input: PlanGenerationInputV1;
+  readonly expectedActivePlanRevision: number | null;
+  readonly approvalClient: PlanApprovalClient;
+  readonly reloadTrainingData: () => Promise<void>;
   readonly onReviewInputs: () => void;
-  readonly onContinueReview: () => void;
+  readonly onApproved: (receipt: PlanApprovalReceiptResult) => void;
+  readonly createCommandId?: () => string;
 };
 
 type NoPlanStateProps = {
@@ -44,18 +54,22 @@ function assertNever(result: never): never {
   throw new Error(`Unhandled plan-generation result: ${String(result)}`);
 }
 
-export default function PlanGenerationResultView({
-  result,
-  onReviewInputs,
-  onContinueReview,
-}: PlanGenerationResultViewProps) {
+export default function PlanGenerationResultView(
+  props: PlanGenerationResultViewProps,
+) {
+  const { result, onReviewInputs } = props;
   switch (result.kind) {
     case "generated":
       return (
-        <ProposedPlanSummary
+        <PlanApprovalReview
+          input={props.input}
           result={result}
+          expectedActivePlanRevision={props.expectedActivePlanRevision}
+          approvalClient={props.approvalClient}
+          reloadTrainingData={props.reloadTrainingData}
           onReviewInputs={onReviewInputs}
-          onContinueReview={onContinueReview}
+          onApproved={props.onApproved}
+          createCommandId={props.createCommandId}
         />
       );
     case "unsupported":
