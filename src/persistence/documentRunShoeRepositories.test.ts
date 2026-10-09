@@ -104,6 +104,7 @@ describe("completed run repository", () => {
       duration: createDurationSeconds(30 * 60),
       perceivedEffort: "about_right",
       unusualPain: false,
+      notes: "Warm afternoon; carried water.",
     });
 
     await expect(repositories.runs.get(run.id)).resolves.toEqual(run);
@@ -115,6 +116,7 @@ describe("completed run repository", () => {
       shoeId: shoe.id,
       distanceMeters: 4828,
       durationSeconds: 1800,
+      notes: "Warm afternoon; carried water.",
     });
   });
 

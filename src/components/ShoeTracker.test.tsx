@@ -4,6 +4,7 @@ import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
 import {
   createCompletedRunId,
+  COMPLETED_RUN_NOTES_MAX_LENGTH,
   createDistanceMeters,
   createDurationSeconds,
   createIanaTimeZone,
@@ -75,6 +76,8 @@ function Harness({
         changes.perceivedEffort === null
           ? undefined
           : changes.perceivedEffort ?? existing.perceivedEffort,
+      notes:
+        changes.notes === null ? undefined : changes.notes ?? existing.notes,
     };
     setRuns((current) =>
       current.map((run) => (run.id === updated.id ? updated : run)),
@@ -130,7 +133,98 @@ describe("ShoeTracker", () => {
 
     expect(await screen.findByText(/5 mi in 45:30 wearing Daily Trainer/)).toBeInTheDocument();
     expect(screen.getByText(/Effort: Not recorded/)).toBeInTheDocument();
+    expect(screen.queryByText(/^Notes:/)).not.toBeInTheDocument();
     expect(screen.getByText("Daily Trainer: 5 mi")).toBeInTheDocument();
+  });
+
+  it("records and displays optional run notes", async () => {
+    render(<Harness />);
+    const user = await addShoe("Daily Trainer");
+
+    await user.type(screen.getByPlaceholderText("Miles"), "5");
+    await user.type(screen.getByPlaceholderText("Time (e.g. 45:30)"), "45:30");
+    await user.selectOptions(
+      screen.getByRole("combobox", { name: "Running shoes" }),
+      "shoe-1",
+    );
+    await user.type(
+      screen.getByRole("textbox", { name: "Run notes" }),
+      "  Warm afternoon; carried water.  ",
+    );
+    await user.click(screen.getByRole("button", { name: "Log Run" }));
+
+    expect(
+      await screen.findByText("Warm afternoon; carried water."),
+    ).toBeInTheDocument();
+  });
+
+  it("accepts notes at the maximum length", async () => {
+    render(<Harness />);
+    const user = await addShoe("Daily Trainer");
+    const maximumNotes = "n".repeat(COMPLETED_RUN_NOTES_MAX_LENGTH);
+    const notes = screen.getByRole("textbox", { name: "Run notes" });
+
+    expect(notes).toHaveAttribute(
+      "maxlength",
+      String(COMPLETED_RUN_NOTES_MAX_LENGTH),
+    );
+    await user.type(screen.getByPlaceholderText("Miles"), "5");
+    await user.type(screen.getByPlaceholderText("Time (e.g. 45:30)"), "45:30");
+    await user.selectOptions(
+      screen.getByRole("combobox", { name: "Running shoes" }),
+      "shoe-1",
+    );
+    await user.type(notes, maximumNotes);
+    await user.click(screen.getByRole("button", { name: "Log Run" }));
+
+    expect(
+      await screen.findByText(maximumNotes),
+    ).toBeInTheDocument();
+  });
+
+  it("adds, changes, and clears run notes while editing", async () => {
+    const shoe: Shoe = {
+      id: createShoeId("shoe-1"),
+      userId,
+      name: "Daily Trainer",
+      startingDistance: createDistanceMeters(0),
+      status: "active",
+      createdAt: timestamp,
+      updatedAt: timestamp,
+    };
+    const run: CompletedRun = {
+      id: createCompletedRunId("run-1"),
+      userId,
+      shoeId: shoe.id,
+      startedAt: timestamp,
+      timeZone: createIanaTimeZone("America/Los_Angeles"),
+      distance: createDistanceMeters(5_000),
+      duration: createDurationSeconds(1_800),
+      createdAt: timestamp,
+      updatedAt: timestamp,
+    };
+    const user = userEvent.setup();
+    render(<Harness initialShoes={[shoe]} initialRuns={[run]} />);
+
+    await user.click(screen.getByRole("button", { name: "Edit" }));
+    await user.type(
+      screen.getByRole("textbox", { name: "Edit run notes" }),
+      "Light rain.",
+    );
+    await user.click(screen.getByRole("button", { name: "Save" }));
+    expect(await screen.findByText("Light rain.")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Edit" }));
+    const editNotes = screen.getByRole("textbox", { name: "Edit run notes" });
+    await user.clear(editNotes);
+    await user.type(editNotes, "Tried a new route.");
+    await user.click(screen.getByRole("button", { name: "Save" }));
+    expect(await screen.findByText("Tried a new route.")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Edit" }));
+    await user.clear(screen.getByRole("textbox", { name: "Edit run notes" }));
+    await user.click(screen.getByRole("button", { name: "Save" }));
+    expect(screen.queryByText(/^Notes:/)).not.toBeInTheDocument();
   });
 
   it("records and displays optional perceived effort", async () => {

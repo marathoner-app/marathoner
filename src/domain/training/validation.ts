@@ -1,5 +1,7 @@
 import type { TrainingPlan, PlannedWorkout, CompletedRun, Shoe, UserProfile } from "./types.js";
 
+export const COMPLETED_RUN_NOTES_MAX_LENGTH = 500;
+
 export interface ValidationIssue {
   readonly field: string;
   readonly message: string;
@@ -188,6 +190,16 @@ export function validateCompletedRun(run: CompletedRun): ValidationIssue[] {
 
   if (run.duration <= 0) {
     issues.push({ field: "duration", message: "Completed run duration must be positive." });
+  }
+
+  if (
+    run.notes !== undefined &&
+    run.notes.length > COMPLETED_RUN_NOTES_MAX_LENGTH
+  ) {
+    issues.push({
+      field: "notes",
+      message: `Run notes cannot exceed ${COMPLETED_RUN_NOTES_MAX_LENGTH} characters.`,
+    });
   }
 
   const hasPlannedWorkoutPlan = run.plannedWorkoutPlanId !== undefined;
