@@ -18,6 +18,7 @@ import { FirebaseAccountAccessManager } from './firebaseAccountAccessManager.js'
 import { FirestoreAccountDeletionRequestStore } from './firestoreAccountDeletionRequestStore.js'
 import { FirestoreMaterialCommandStore } from './firestoreMaterialCommandStore.js'
 import { FirestorePlanApprovalStore } from './firestorePlanApprovalStore.js'
+import { FirestoreRunCompletionStore } from './firestoreRunCompletionStore.js'
 import {
   executeMaterialCommand,
   resolveMaterialCommand as resolveMaterialCommandRequest,
@@ -52,6 +53,7 @@ const emulatorPlanApprovalPolicy: readonly PlanApprovalArtifactPolicyRecord[] = 
 ]
 const useEmulatorPlanApprovalPolicy =
   process.env.FUNCTIONS_EMULATOR === 'true'
+const useEmulatorRunCompletion = process.env.FUNCTIONS_EMULATOR === 'true'
 
 const dependencies = {
   store: new FirestoreMaterialCommandStore(database),
@@ -64,6 +66,9 @@ const dependencies = {
       ? emulatorPlanApprovalScopeId
       : null,
   },
+  ...(useEmulatorRunCompletion
+    ? { runCompletion: { store: new FirestoreRunCompletionStore(database) } }
+    : {}),
   log: (entry: MaterialCommandLogEntry) => {
     logger.info('Material command boundary event', entry)
   },

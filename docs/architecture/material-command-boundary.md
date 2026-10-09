@@ -1,6 +1,6 @@
 # Material-command boundary
 
-- **Status:** Local proof and deletion-request boundaries complete; plan approval is contract-defined, fail-closed, and atomically persisted in emulator proof; production artifact activation and deployment blocked
+- **Status:** Local proof and deletion-request boundaries complete; plan approval and run completion are atomically persisted in emulator proof; production activation and deployment blocked
 - **Decision date:** 2026-10-05
 - **Owner:** Marathoner maintainer
 - **Proof issue:** [#158](https://github.com/marathoner-app/marathoner/issues/158)
@@ -10,14 +10,17 @@
 - **Plan-approval artifact-policy issue:** [#239](https://github.com/marathoner-app/marathoner/issues/239)
 - **Plan-approval persistence-projection issue:** [#240](https://github.com/marathoner-app/marathoner/issues/240)
 - **Plan-approval transaction issue:** [#241](https://github.com/marathoner-app/marathoner/issues/241)
+- **Completed-run contract issue:** [#257](https://github.com/marathoner-app/marathoner/issues/257)
+- **Completed-run projection issue:** [#258](https://github.com/marathoner-app/marathoner/issues/258)
+- **Run-completion transaction issue:** [#259](https://github.com/marathoner-app/marathoner/issues/259)
 
 ## Purpose and scope
 
 Marathoner has one shared authenticated, online-only contract for material
 writes. Issue #158 proves the boundary with a harmless counter command. Issue
 #195 adds the first security-sensitive workflow: requesting deletion and
-locking account access. Run completion, adaptation, consent, the destructive
-deletion runner, and the deletion UI remain in their owning issues.
+locking account access. Adaptation, consent, completed-run deletion, the
+destructive deletion runner, and the deletion UI remain in their owning issues.
 Issue #227 defines the shared plan-approval envelope and outcomes. Issue #230
 adds the transport-injected, online-only client adapter without claiming that
 the server transaction or participant workflow exists yet. Issue #239 makes
@@ -25,7 +28,10 @@ the authenticated handler recognize the command while rejecting every
 production proposal before persistence until an exact artifact tuple is
 deliberately activated. Issue #240 defines the deterministic, owned projection.
 Issue #241 commits that projection through one idempotent Admin SDK transaction
-without activating a production methodology artifact.
+without activating a production methodology artifact. Issues #257 and #258
+define and project completed-run creation and deletion commands. Issue #259
+routes run completion through one emulator-only Admin SDK transaction; it does
+not activate a deployed client write path.
 
 The browser and server share the portable contract in
 `src/domain/materialCommands/contract.ts`. It imports neither React nor
@@ -82,6 +88,22 @@ valid replacement increments once and archives the prior active plan. Any
 failed create rolls back the plan, every workout, provenance, active state,
 prior-plan update, and receipt together. Resolution by command ID recognizes
 the exact plan-approval receipt through the shared receipt store.
+
+Run completion loads only the authenticated owner's referenced workout, shoe,
+uniqueness guard, and command receipt before any write. A valid planned
+completion creates the run, marks the workout completed, claims the
+deterministic guard, and records the exact replay receipt in one transaction.
+An unplanned completion creates only the run and receipt. The same command ID
+and signature returns the original run ID; changed content conflicts, and a
+second command cannot claim an existing workout guard. Missing, stale,
+cross-owner, rest-day, completed-workout, and retired-shoe inputs create neither
+a run nor a receipt. A failed create rolls back the run, workout, guard, and
+receipt together.
+
+The Functions entry point installs this store only when
+`FUNCTIONS_EMULATOR=true`. Deployed environments return a typed authorization
+failure before persistence. Production activation remains blocked by the
+deployment, App Check, membership, and client-migration work described below.
 
 ## Plan-approval artifact policy
 
@@ -146,8 +168,9 @@ and revokes refresh tokens. An Admin failure remains visible on the protected
 request and a same-command retry safely attempts the Auth lock again. It never
 deletes participant data or the Authentication user.
 
-The result union distinguishes proof commits, accepted deletion requests, a
-replayable plan-approval receipt, and stale active-plan revisions plus
+The result union distinguishes proof commits, accepted deletion requests,
+replayable plan-approval and run-completion receipts, run-completion duplicate
+guards, and stale plan, workout, and run revisions plus
 validation, authentication, authorization, unsupported-version, conflict,
 retryable, and outcome-unknown states. An outcome-unknown client must resolve
 the same command ID before deciding whether to retry.
@@ -221,8 +244,13 @@ the unit, contract, and emulator checks prove:
 7. an intentionally lost response is resolved by ID before retry;
 8. deletion requests require verified email, recent authentication, approved
    membership, and App Check;
-9. an accepted request locks one owner without changing another; and
-10. emitted application logs contain outcome metadata only.
+9. an accepted request locks one owner without changing another;
+10. planned and unplanned run completion return exact replayable receipts;
+11. stale, retired-shoe, and cross-owner completion attempts leave no run or
+    receipt;
+12. a second command cannot complete one workout twice, and an intentionally
+    failed transaction leaves no partial workout, guard, or receipt; and
+13. emitted application logs contain outcome metadata only.
 
 Pull-request CI provisions Java 21 and runs the same command.
 
@@ -251,7 +279,8 @@ command succeed is not approved.
 ## Follow-up migrations
 
 - #72 moves initial-plan activation onto this boundary.
-- #115 adds atomic, revision-safe completion and adaptation commands.
+- #115 continues the atomic workflow with completed-run deletion and adaptation
+  after the emulator-proven completion transaction.
 - #121 removes direct client material writes after every owning workflow moves.
 - #159 adds live reads, freshness, and account cache isolation.
 - #138 may use the boundary on iOS only after its required workflow migrations.

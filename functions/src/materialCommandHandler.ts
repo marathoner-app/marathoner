@@ -1,6 +1,7 @@
 import {
   isProofMaterialCommandEnvelope,
   isPlanApprovalCommandEnvelope,
+  isRunCompletionCommandEnvelope,
   isMaterialCommandResult,
   materialCommandIdFrom,
   parseMaterialCommand,
@@ -11,7 +12,10 @@ import {
   type PlanApprovalReceiptResult,
   type PlanApprovalStaleRevisionResult,
   type ProofMaterialCommandEnvelope,
+  type RunCompletionCommandEnvelope,
+  type RunCompletionReceiptResult,
 } from '../../src/domain/materialCommands/contract.js'
+import type { RunCommandProjectionFailureResult } from './completedRunCommandProjection.js'
 import {
   evaluatePlanApprovalArtifactPolicy,
   PRODUCTION_PLAN_APPROVAL_ARTIFACT_POLICY,
@@ -24,6 +28,7 @@ export type MaterialCommandLogEntry = Readonly<{
     | 'proof.material-command'
     | 'account.request-deletion'
     | 'plan.approve-generated'
+    | 'run.complete'
     | 'unknown'
   status: MaterialCommandResult['status']
 }>
@@ -43,7 +48,19 @@ export interface MaterialCommandStore {
     | MaterialCommandCommittedResult
     | AccountDeletionRequestAcceptedResult
     | PlanApprovalReceiptResult
+    | RunCompletionReceiptResult
     | null
+  >
+}
+
+export interface RunCompletionStore {
+  commit(options: {
+    envelope: RunCompletionCommandEnvelope
+    ownerId: string
+  }): Promise<
+    | { kind: 'completed'; result: RunCompletionReceiptResult }
+    | { kind: 'rejected'; result: RunCommandProjectionFailureResult }
+    | { kind: 'conflict' }
   >
 }
 
@@ -68,6 +85,7 @@ export interface PlanApprovalHandlerDependencies {
 export interface HandlerDependencies {
   log: (entry: MaterialCommandLogEntry) => void
   planApproval?: PlanApprovalHandlerDependencies
+  runCompletion?: { store: RunCompletionStore }
   store: MaterialCommandStore
 }
 
@@ -95,6 +113,15 @@ function artifactNotApprovedResult(commandId: string): MaterialCommandResult {
     commandId,
     code: 'plan-artifact-not-approved',
     message: 'This generated plan is not approved for the active participant scope.',
+  }
+}
+
+function runCompletionNotEnabledResult(commandId: string): MaterialCommandResult {
+  return {
+    status: 'authorization_error',
+    commandId,
+    code: 'approved-beta-membership-required',
+    message: 'Run completion commands are not enabled in this environment.',
   }
 }
 
@@ -215,6 +242,46 @@ export async function executeMaterialCommand(
       return result
     }
   }
+  if (isRunCompletionCommandEnvelope(parsed.envelope)) {
+    const runCompletion = dependencies.runCompletion
+    if (!runCompletion) {
+      const result = runCompletionNotEnabledResult(parsed.envelope.commandId)
+      logResult(
+        dependencies,
+        'material-command-result',
+        result,
+        parsed.envelope.command.type,
+      )
+      return result
+    }
+
+    try {
+      const stored = await runCompletion.store.commit({
+        envelope: parsed.envelope,
+        ownerId: options.authenticatedUserId,
+      })
+      const result =
+        stored.kind === 'conflict'
+          ? conflictResult(parsed.envelope.commandId)
+          : stored.result
+      logResult(
+        dependencies,
+        'material-command-result',
+        result,
+        parsed.envelope.command.type,
+      )
+      return result
+    } catch (error) {
+      const result = failureFor(error, parsed.envelope.commandId)
+      logResult(
+        dependencies,
+        'material-command-result',
+        result,
+        parsed.envelope.command.type,
+      )
+      return result
+    }
+  }
   if (!isProofMaterialCommandEnvelope(parsed.envelope)) {
     const result: MaterialCommandResult = {
       status: 'validation_error',
@@ -295,9 +362,11 @@ export async function resolveMaterialCommand(
         ? 'account.request-deletion'
         : stored?.status === 'plan_approved'
           ? 'plan.approve-generated'
-          : stored
-            ? 'proof.material-command'
-            : 'unknown',
+          : stored?.status === 'run_completed'
+            ? 'run.complete'
+            : stored
+              ? 'proof.material-command'
+              : 'unknown',
     )
     return result
   } catch (error) {

@@ -243,8 +243,8 @@ and shoes before saving the run.
 
 The server-owned projection for completed-run commands is pure: it receives a
 validated command plus records loaded by trusted server code and returns the
-exact run, workout, uniqueness-guard, and receipt effects that a later
-transaction may commit. It does not perform I/O. Authentication supplies the
+exact run, workout, uniqueness-guard, and receipt effects for the owning
+transaction. It does not perform I/O. Authentication supplies the
 owner, the server supplies the run ID and audit timestamp, and client-observed
 `updatedAt` values are used only as stale-write preconditions.
 
@@ -264,8 +264,13 @@ and never invent a plan or workout association.
 
 The projection rejects missing, rest-day, already-completed, stale,
 cross-owner, mismatched, and retired-shoe inputs with stable material-command
-results. Firebase transaction wiring and activation remain owned by the next
-implementation slices; this section does not describe a live write path yet.
+results. The Functions emulator now loads those records and commits a valid
+run, optional workout update, guard, and replay receipt atomically through the
+Admin SDK. A forced create collision proves that no partial state survives.
+The handler does not install that store in a deployed environment, and no
+browser or iOS client has migrated to this command yet. Completed-run deletion
+still has projection coverage only and remains owned by its next implementation
+slice.
 
 ## Shoe documents
 

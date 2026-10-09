@@ -3,21 +3,30 @@ import { describe, expect, it, vi } from 'vitest'
 import {
   createPlanApprovalCommand,
   createProofMaterialCommand,
+  createRunCompletionCommand,
   materialCommandSignature,
   type MaterialCommandCommittedResult,
   type PlanApprovalReceiptResult,
   type ProofMaterialCommandEnvelope,
+  type RunCompletionReceiptResult,
 } from '../../src/domain/materialCommands/contract.js'
+import { createIanaTimeZone, createUtcDateTime } from '../../src/domain/training/dates.js'
+import { createCompletedRunId } from '../../src/domain/training/identifiers.js'
 import {
   PLAN_GENERATION_RESULT_SCHEMA_VERSION,
   planGenerationContractFixtures,
 } from '../../src/domain/training/index.js'
+import {
+  createDistanceMeters,
+  createDurationSeconds,
+} from '../../src/domain/training/units.js'
 import {
   executeMaterialCommand,
   resolveMaterialCommand,
   type PlanApprovalHandlerDependencies,
   type PlanApprovalStore,
   type MaterialCommandStore,
+  type RunCompletionStore,
 } from './materialCommandHandler.js'
 import type {
   PlanApprovalArtifactPolicyRecord,
@@ -39,12 +48,26 @@ const planApprovalCommand = createPlanApprovalCommand(planApprovalCommandId, {
   input: generatedFixture.input,
   proposal: generatedFixture.result.plan,
 })
+const runCompletionCommand = createRunCompletionCommand(
+  'complete-run-command-0001',
+  {
+    plannedWorkout: null,
+    startedAt: createUtcDateTime('2026-10-08T12:00:00.000Z'),
+    timeZone: createIanaTimeZone('America/Los_Angeles'),
+    distance: createDistanceMeters(5_000),
+    duration: createDurationSeconds(1_800),
+  },
+)
 
 class InMemoryMaterialCommandStore implements MaterialCommandStore {
   proofCount = 0
   receipts = new Map<
     string,
     { signature: string; result: MaterialCommandCommittedResult }
+  >()
+  resolutionResults = new Map<
+    string,
+    MaterialCommandCommittedResult | RunCompletionReceiptResult
   >()
   failure: unknown = null
 
@@ -69,12 +92,15 @@ class InMemoryMaterialCommandStore implements MaterialCommandStore {
       proofCount: this.proofCount,
     }
     this.receipts.set(key, { signature, result })
+    this.resolutionResults.set(key, result)
     return { kind: 'committed' as const, result }
   }
 
   async resolve(options: { commandId: string; ownerId: string }) {
     if (this.failure) throw this.failure
-    return this.receipts.get(`${options.ownerId}:${options.commandId}`)?.result ?? null
+    return this.resolutionResults.get(
+      `${options.ownerId}:${options.commandId}`,
+    ) ?? null
   }
 }
 
@@ -88,6 +114,18 @@ class InMemoryPlanApprovalStore implements PlanApprovalStore {
   }
 
   commit = vi.fn(async () => ({ kind: 'approved' as const, result: this.result }))
+}
+
+class InMemoryRunCompletionStore implements RunCompletionStore {
+  readonly result: RunCompletionReceiptResult = {
+    status: 'run_completed',
+    commandId: runCompletionCommand.commandId,
+    completedRunId: createCompletedRunId('run-0001'),
+    completedRunUpdatedAt: createUtcDateTime('2026-10-08T13:00:00.000Z'),
+    completedPlannedWorkout: null,
+  }
+
+  commit = vi.fn(async () => ({ kind: 'completed' as const, result: this.result }))
 }
 
 function approvedPolicyRecord(): PlanApprovalArtifactPolicyRecord {
@@ -106,8 +144,9 @@ function approvedPolicyRecord(): PlanApprovalArtifactPolicyRecord {
 function dependencies(
   store = new InMemoryMaterialCommandStore(),
   planApproval?: PlanApprovalHandlerDependencies,
+  runCompletion?: { store: RunCompletionStore },
 ) {
-  return { store, planApproval, log: vi.fn() }
+  return { store, planApproval, runCompletion, log: vi.fn() }
 }
 
 describe('material-command handler', () => {
@@ -357,5 +396,84 @@ describe('material-command handler', () => {
     expect(serializedLogs).not.toContain('fixture-rules')
     expect(serializedLogs).not.toContain('input')
     expect(serializedLogs).not.toContain('proposal')
+  })
+
+  it('keeps run completion unavailable when the emulator-only store is absent', async () => {
+    const boundary = dependencies()
+
+    await expect(
+      executeMaterialCommand(
+        { authenticatedUserId: ownerId, data: runCompletionCommand },
+        boundary,
+      ),
+    ).resolves.toEqual({
+      status: 'authorization_error',
+      commandId: runCompletionCommand.commandId,
+      code: 'approved-beta-membership-required',
+      message: 'Run completion commands are not enabled in this environment.',
+    })
+    expect(boundary.log).toHaveBeenCalledWith({
+      event: 'material-command-result',
+      commandType: 'run.complete',
+      status: 'authorization_error',
+    })
+  })
+
+  it('passes run completion to persistence with authenticated ownership and redacted logs', async () => {
+    const materialStore = new InMemoryMaterialCommandStore()
+    const runStore = new InMemoryRunCompletionStore()
+    const boundary = dependencies(materialStore, undefined, { store: runStore })
+
+    await expect(
+      executeMaterialCommand(
+        { authenticatedUserId: ownerId, data: runCompletionCommand },
+        boundary,
+      ),
+    ).resolves.toEqual(runStore.result)
+    expect(runStore.commit).toHaveBeenCalledWith({
+      envelope: runCompletionCommand,
+      ownerId,
+    })
+    expect(JSON.stringify(boundary.log.mock.calls)).not.toContain(ownerId)
+    expect(JSON.stringify(boundary.log.mock.calls)).not.toContain(
+      runCompletionCommand.commandId,
+    )
+  })
+
+  it('maps run-completion conflicts and resolves stored completion receipts', async () => {
+    const materialStore = new InMemoryMaterialCommandStore()
+    const runStore: RunCompletionStore = {
+      commit: vi.fn(async () => ({ kind: 'conflict' as const })),
+    }
+    const boundary = dependencies(materialStore, undefined, { store: runStore })
+
+    await expect(
+      executeMaterialCommand(
+        { authenticatedUserId: ownerId, data: runCompletionCommand },
+        boundary,
+      ),
+    ).resolves.toEqual(
+      expect.objectContaining({
+        status: 'conflict',
+        code: 'command-id-reused',
+      }),
+    )
+
+    const receipt = new InMemoryRunCompletionStore().result
+    materialStore.resolutionResults.set(
+      `${ownerId}:${receipt.commandId}`,
+      receipt,
+    )
+    await expect(
+      resolveMaterialCommand(
+        { authenticatedUserId: ownerId, data: { commandId: receipt.commandId } },
+        boundary,
+      ),
+    ).resolves.toEqual(receipt)
+    expect(boundary.log).toHaveBeenLastCalledWith({
+      event: 'material-command-resolution',
+      commandType: 'run.complete',
+      status: 'run_completed',
+    })
   })
 })
