@@ -61,6 +61,7 @@ function IntegrationProbe() {
       <p>Profile: {training.profile?.displayName ?? "none"}</p>
       <p>Workout: {workout?.status ?? "none"}</p>
       <p>Total: {Number(metersToMiles(analytics.totalDistance).toFixed(1))}</p>
+      <p>Weekly: {Number(metersToMiles(analytics.weeklyDistance).toFixed(1))}</p>
       <p>Shoe: {Number(shoeMiles.toFixed(1))}</p>
       <button
         type="button"
@@ -106,6 +107,18 @@ function IntegrationProbe() {
       <button
         type="button"
         disabled={!run}
+        onClick={() =>
+          run &&
+          void training.updateRun(run.id, {
+            startedAt: createUtcDateTime("2026-08-10T14:00:00Z"),
+          })
+        }
+      >
+        Move run to next week
+      </button>
+      <button
+        type="button"
+        disabled={!run}
         onClick={() => run && void training.deleteRun(run.id)}
       >
         Delete run
@@ -128,6 +141,7 @@ describe("TrainingDataProvider", () => {
     expect(await screen.findByText("Runs: 0")).toBeInTheDocument();
     expect(screen.getByText("Workout: none")).toBeInTheDocument();
     expect(screen.getByText("Total: 0")).toBeInTheDocument();
+    expect(screen.getByText("Weekly: 0")).toBeInTheDocument();
     expect(screen.getByText("Profile: none")).toBeInTheDocument();
   });
 
@@ -187,6 +201,7 @@ describe("TrainingDataProvider", () => {
     expect(await screen.findByText("Runs: 1")).toBeInTheDocument();
     expect(screen.getByText("Workout: completed")).toBeInTheDocument();
     expect(screen.getByText("Total: 3")).toBeInTheDocument();
+    expect(screen.getByText("Weekly: 3")).toBeInTheDocument();
     expect(screen.getByText("Shoe: 3")).toBeInTheDocument();
     await expect(
       repositories.workouts.get(plan.id, plannedWorkout.id),
@@ -197,12 +212,26 @@ describe("TrainingDataProvider", () => {
 
     await user.click(screen.getByRole("button", { name: "Edit run" }));
     expect(await screen.findByText("Total: 4")).toBeInTheDocument();
+    expect(screen.getByText("Weekly: 4")).toBeInTheDocument();
     expect(screen.getByText("Shoe: 4")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Move run to next week" }));
+    expect(await screen.findByText("Weekly: 0")).toBeInTheDocument();
+    expect(screen.getByText("Total: 4")).toBeInTheDocument();
+    expect(screen.getByText("Workout: completed")).toBeInTheDocument();
+    await expect(repositories.runs.list()).resolves.toEqual([
+      expect.objectContaining({
+        startedAt: createUtcDateTime("2026-08-10T14:00:00Z"),
+        plannedWorkoutPlanId: plan.id,
+        plannedWorkoutId: plannedWorkout.id,
+      }),
+    ]);
 
     await user.click(screen.getByRole("button", { name: "Delete run" }));
     expect(await screen.findByText("Runs: 0")).toBeInTheDocument();
     expect(screen.getByText("Workout: planned")).toBeInTheDocument();
     expect(screen.getByText("Total: 0")).toBeInTheDocument();
+    expect(screen.getByText("Weekly: 0")).toBeInTheDocument();
     expect(screen.getByText("Shoe: 0")).toBeInTheDocument();
   });
 

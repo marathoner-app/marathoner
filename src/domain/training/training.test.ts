@@ -10,6 +10,7 @@ import {
   createDistanceMeters,
   createDurationSeconds,
   createIanaTimeZone,
+  createUtcDateTimeAtLocalNoon,
   createPlannedWorkoutId,
   createShoeId,
   createTrainingPlanId,
@@ -119,6 +120,21 @@ describe("training domain primitives", () => {
     expect(() => createUtcDateTime("2026-07-28T12:00:00-04:00")).toThrow(/UTC/);
     expect(() => createUtcDateTime("2027-02-29T12:00:00Z")).toThrow(/UTC/);
     expect(() => createUtcDateTime("2026-07-28Z")).toThrow(/UTC/);
+  });
+
+  it("represents a local run date at noon in its stored time zone", () => {
+    expect(
+      createUtcDateTimeAtLocalNoon(
+        createDateOnly("2026-08-03"),
+        createIanaTimeZone("America/Los_Angeles"),
+      ),
+    ).toBe("2026-08-03T19:00:00.000Z");
+    expect(
+      createUtcDateTimeAtLocalNoon(
+        createDateOnly("2026-08-03"),
+        createIanaTimeZone("Asia/Kathmandu"),
+      ),
+    ).toBe("2026-08-03T06:15:00.000Z");
   });
 
   it("converts display units to whole meters", () => {

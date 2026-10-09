@@ -85,3 +85,53 @@ export function createIanaTimeZone(value: string): IanaTimeZone {
 
   return value;
 }
+
+export function createUtcDateTimeAtLocalNoon(
+  date: DateOnly,
+  timeZone: IanaTimeZone,
+): UtcDateTime {
+  const [year, month, day] = date.split("-").map(Number);
+  const desiredWallTime = Date.UTC(year, month - 1, day, 12, 0, 0);
+  let candidate = new Date(desiredWallTime);
+  const formatter = new Intl.DateTimeFormat("en-US", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hourCycle: "h23",
+  });
+
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    const parts = Object.fromEntries(
+      formatter
+        .formatToParts(candidate)
+        .map((part) => [part.type, part.value]),
+    );
+    const representedWallTime = Date.UTC(
+      Number(parts.year),
+      Number(parts.month) - 1,
+      Number(parts.day),
+      Number(parts.hour),
+      Number(parts.minute),
+      Number(parts.second),
+    );
+    const adjustment = desiredWallTime - representedWallTime;
+    if (adjustment === 0) break;
+    candidate = new Date(candidate.getTime() + adjustment);
+  }
+
+  const resolvedParts = Object.fromEntries(
+    formatter
+      .formatToParts(candidate)
+      .map((part) => [part.type, part.value]),
+  );
+  const resolvedDate = `${resolvedParts.year}-${resolvedParts.month}-${resolvedParts.day}`;
+  if (resolvedDate !== date || resolvedParts.hour !== "12") {
+    throw new Error("The run date could not be represented in its time zone.");
+  }
+
+  return createUtcDateTime(candidate.toISOString());
+}
