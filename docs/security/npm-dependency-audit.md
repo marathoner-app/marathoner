@@ -42,10 +42,12 @@ include:
 The material-command code imports only Firebase Admin Firestore. Its active
 Firestore path resolves `@grpc/grpc-js@1.14.5`; it does not call Cloud Storage
 or UUID generation. Live Functions deployment is blocked by the repository
-guard, issue #201, and now explicitly by #143. These reachability limits reduce
-immediate exposure but do not meet the external-beta gate. Issue #143 must
-upgrade, override with tested patched versions, or explicitly replace the
-affected paths before the first live deployment in #205.
+guard until its exact beta target and operator-intent checks pass, and remains
+explicitly blocked by #143 and #204 plus #205 authorization. Issue #201 prepares
+that boundary but does not deploy. These reachability limits reduce immediate
+exposure but do not meet the external-beta gate. Issue #143 must upgrade,
+override with tested patched versions, or explicitly replace the affected
+paths before the first live deployment in #205.
 
 ## Current development findings
 
@@ -90,8 +92,8 @@ requires active remediation rather than a permanent blanket exception.
 The current development-only findings are accepted only while #143 remains an
 owned external-beta-readiness issue and all of these conditions hold:
 
-- the issue #158 Functions deployment guard remains closed while production
-  findings exist;
+- the beta Functions guard requires an explicit operator acknowledgement that
+  #143 is complete before issue #205 can authorize deployment;
 - the affected tools run only from reviewed repository commands and trusted
   configuration;
 - the Firestore emulator binds only to the local development environment and

@@ -185,9 +185,11 @@ The development/test-only Creator Radar boundary is documented in
   and server-confirmed write architecture remains implementation work.
 - The deletion-request lock and fixed, idempotent deletion runner are
   implemented and tested locally. Live projects remain deliberately blocked;
-  the private-record adapter, user interface, complete rehearsal, approved
-  Blaze/budget decision, and live backend boundary remain required before
-  Marathoner can claim complete in-product account deletion.
+  the private-record adapter, user interface, complete rehearsal, #204 live
+  App Check proof, and #205-authorized backend deployment remain required
+  before Marathoner can claim complete in-product account deletion. The
+  beta-only Blaze and budget boundary is verified but does not authorize that
+  deployment.
 - The Track flow captures date, distance, elapsed time, shoe, optional planned-
   workout association, perceived effort, and notes. Guidance entries remain
   disabled draft placeholders; no participant-facing coaching or safety

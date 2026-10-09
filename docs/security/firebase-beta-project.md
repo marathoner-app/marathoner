@@ -4,6 +4,13 @@
 - **Tracking issue:** [#168](https://github.com/marathoner-app/marathoner/issues/168)
 - **Parent:** [#125](https://github.com/marathoner-app/marathoner/issues/125)
 
+The live billing state was reverified on October 8, 2026. Issue
+[#201](https://github.com/marathoner-app/marathoner/issues/201) records the
+approved beta-only Blaze attachment, USD 10 monthly alerts-only budget, and
+repository-controlled Functions path. It does not authorize a deployment. The
+[beta Functions deployment boundary](../operations/beta-functions-deployment.md)
+keeps the verified cost controls and the later #205 deployment separate.
+
 ## Project boundary
 
 The founding beta uses `marathonerapp-beta`. It is visibly distinct from the
@@ -24,7 +31,7 @@ selected iOS client boundary was verified on October 5, 2026:
 
 | Control | Live setting |
 | --- | --- |
-| Billing | Spark plan; no billing account attached |
+| Billing | Blaze plan on the approved billing account; fixed USD 10 monthly alerts-only budget scoped to this project, with 50%, 90%, and 100% actual-spend alerts plus a 100% forecasted-spend alert; no enforced spend cap |
 | Analytics and AI assistance | Google Analytics and Gemini disabled during project creation |
 | Web registration | `Marathoner Beta Web`; Firebase Hosting not configured |
 | Authentication | Email/Password enabled; Google and every other provider disabled |
@@ -47,6 +54,14 @@ can initialize only when a production web build explicitly selects
 `VITE_FIREBASE_ENVIRONMENT=beta` or when the separately keyed `ios-beta` mode
 is invoked for its reviewed device proof.
 
+The beta Firebase configuration now also names the reviewed callable Functions
+codebase behind an exact-project, beta-config-only predeploy guard. The default
+development configuration remains blocked, and the beta guard additionally
+requires a non-secret operator-intent phrase that names the prerequisite #143
+and #204 gates. No Function was deployed, deleted, or invoked to establish this
+repository boundary. Runtime configuration scales each current export to zero
+and permits at most one instance per export.
+
 The beta browser key intentionally permits no localhost or GitHub Pages
 referrer. It will remain unusable from those origins. The custom-domain
 publication and Authentication authorized-domain changes remain owned by #162.
@@ -58,9 +73,10 @@ Service API. It has no application restriction because the selected shell uses
 the Firebase JavaScript SDK rather than the native Apple SDK. Its value exists
 only in the ignored mode-`0600` `.env.ios-beta.local`. The distinct web and
 Apple App Check providers are now registered, with public native configuration
-selected by the fail-closed build boundary. Client initialization, observation,
-rollback, and enforcement remain owned by #204 through #206 before external
-invitations. See the
+selected by the fail-closed build boundary. Client initialization and its
+automated retry boundary are implemented. Live localhost/browser and
+paid-Team physical-iPhone proof remain in #204, with observation and rollback
+in #205 and enforcement in #206 before external invitations. See the
 [provider registration record](app-check-provider-registration.md).
 
 The reviewed rules were deployed on October 1, 2026, with this explicit target:
@@ -123,18 +139,19 @@ storage, Authentication activity, API errors, and quota saturation. The review
 result belongs in the private operating log because it can contain participant
 and traffic information.
 
-The Spark plan cannot create paid overage. A quota warning, unexplained usage
-increase, or service-limit error pauses new invitations and the affected
-workflow while the operator investigates. Enabling billing or raising a paid
-quota requires a separately reviewed decision; it is not an incident
-workaround. Administrator recovery factors remain outside the repository, and
-the versioned project alias, rules, deployment guard, and this runbook provide
-the rebuild path after account recovery.
+The Blaze plan can create paid overage, and the alerts-only budget is not a hard
+cap. A budget alert, quota warning, unexplained usage increase, or service-limit
+error pauses new invitations and the affected workflow while the operator
+investigates. Raising the budget, enabling a spend cap, or raising a paid quota
+requires a separately reviewed decision; none is an incident workaround.
+Administrator recovery factors remain outside the repository, and the
+versioned project alias, rules, deployment guard, and this runbook provide the
+rebuild path after account recovery.
 
 ## Remaining participant-activation gates
 
-- Complete App Check initialization, observation, enforcement, and rollback
-  proof in #204 through #206.
+- Complete live App Check proof, observation, enforcement, and rollback in #204
+  through #206.
 - Publish the custom domain and authorized-domain configuration in #162.
 - Complete participant-data integrity, deletion, incident, and support controls
   before invitations.

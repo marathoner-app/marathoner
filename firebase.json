@@ -5,7 +5,7 @@
       "codebase": "material-commands",
       "runtime": "nodejs22",
       "predeploy": [
-        "node scripts/assert-material-command-deploy-target.mjs",
+        "node scripts/assert-beta-functions-deploy-target.mjs development",
         "npm run build:functions"
       ]
     }

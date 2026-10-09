@@ -36,7 +36,8 @@ setGlobalOptions({
   region: 'us-central1',
   memory: '256MiB',
   timeoutSeconds: 15,
-  maxInstances: 2,
+  minInstances: 0,
+  maxInstances: 1,
 })
 
 const database = getFirestore()
@@ -110,8 +111,9 @@ export const resolveMaterialCommand = onCall((request) =>
 
 // The verified request.app value is enforced inside the handler so unsupported
 // clients receive a typed result. Invalid or missing tokens cannot populate it.
-// Live attestation and deployment remain blocked by issue #161 and the empty
-// project allowlist.
+// Live attestation and deployment remain blocked by unresolved #143 and #204
+// gates plus #205 authorization. The exact beta-project guard is prepared but
+// does not authorize or perform that deployment.
 export const requestAccountDeletion = onCall(
   { enforceAppCheck: false, consumeAppCheckToken: true },
   (request) =>

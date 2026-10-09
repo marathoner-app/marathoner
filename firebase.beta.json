@@ -1,4 +1,15 @@
 {
+  "functions": [
+    {
+      "source": "functions",
+      "codebase": "material-commands",
+      "runtime": "nodejs22",
+      "predeploy": [
+        "node scripts/assert-beta-functions-deploy-target.mjs beta",
+        "npm run build:functions"
+      ]
+    }
+  ],
   "firestore": {
     "rules": "firestore.beta.rules",
     "indexes": "firestore.indexes.json",
