@@ -107,6 +107,7 @@ accessibility, and TestFlight remain explicit release gates.
 | `src/App.tsx` | Owns the active Plan, Track, or Analyze section and renders the application shell. |
 | `src/components/` | Contains the feature views, authentication forms, title, subtitle, and supporting UI. |
 | `src/domain/training/` | Defines shared training entities, identifiers, units, validation, and calculations without React or Firebase dependencies. |
+| `src/domain/guidance/` | Defines the shared versioned guidance, review, trigger, suppression, correction, and fail-closed presentation contract. |
 | `src/persistence/` | Defines typed training repositories, Firestore conversion, storage paths, ownership integration tests, and recoverable persistence errors. |
 | `src/training/` | Owns authenticated training-data loading, shared feature state, and cross-feature mutations. |
 | `src/onboarding/` | Owns the resumable runner-profile intake, validation, unit conversion, and completion checks. |
@@ -137,6 +138,9 @@ The shared training domain model is documented in
 The versioned, methodology-neutral input, proposed-plan, unsupported-result,
 validation, provenance, and fixture boundary is documented in
 [`docs/architecture/plan-generation-contract.md`](docs/architecture/plan-generation-contract.md).
+The versioned, fail-closed guidance lifecycle and cross-client selection
+contract is documented in
+[`docs/architecture/versioned-guidance-contract.md`](docs/architecture/versioned-guidance-contract.md).
 The owned, versioned runner-profile contract is documented in
 [`docs/architecture/runner-profile-persistence.md`](docs/architecture/runner-profile-persistence.md).
 Cross-feature behavior is documented in
@@ -179,9 +183,10 @@ The development/test-only Creator Radar boundary is documented in
   the private-record adapter, user interface, complete rehearsal, approved
   Blaze/budget decision, and live backend boundary remain required before
   Marathoner can claim complete in-product account deletion.
-- The first Track form captures date, distance, elapsed time, shoe, and optional
-  planned-workout association. Perceived effort and the remaining coaching
-  inputs will be added in later product slices.
+- The Track flow captures date, distance, elapsed time, shoe, optional planned-
+  workout association, perceived effort, and notes. Guidance entries remain
+  disabled draft placeholders; no participant-facing coaching or safety
+  guidance is approved or rendered.
 - Firestore structure and security behavior are documented in
   [`docs/architecture/training-data-persistence.md`](docs/architecture/training-data-persistence.md).
 
