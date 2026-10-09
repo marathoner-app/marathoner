@@ -217,6 +217,38 @@ describe('plan-approval client', () => {
       committedAt: '2026-10-08T00:00:00.000Z',
       proofCount: 1,
     },
+    {
+      status: 'run_completed',
+      commandId,
+      completedRunId: 'run-0001',
+      completedRunUpdatedAt: '2026-10-08T00:00:00.000Z',
+      completedPlannedWorkout: null,
+    },
+    {
+      status: 'run_deleted',
+      commandId,
+      completedRunId: 'run-0001',
+      deletedAt: '2026-10-08T00:00:00.000Z',
+      reopenedPlannedWorkout: null,
+    },
+    {
+      status: 'conflict',
+      commandId,
+      code: 'planned-workout-already-completed',
+      message: 'This workout already has a completed run.',
+      planId: 'plan-0001',
+      plannedWorkoutId: 'workout-0001',
+      completedRunId: 'run-0001',
+    },
+    {
+      status: 'stale_revision',
+      commandId,
+      code: 'completed-run-version-changed',
+      message: 'The completed run changed.',
+      completedRunId: 'run-0001',
+      expectedUpdatedAt: '2026-10-08T00:00:00.000Z',
+      actualUpdatedAt: '2026-10-08T00:01:00.000Z',
+    },
   ])('treats an unexpected response as outcome unknown', async (result) => {
     const client = createPlanApprovalClient({
       isOnline: () => true,

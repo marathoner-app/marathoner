@@ -1,9 +1,15 @@
 import {
   createPlanApprovalCommand,
+  isRunCommandStaleRevisionResult,
+  isRunCompletionDuplicateResult,
   type AccountDeletionRequestAcceptedResult,
   type MaterialCommandCommittedResult,
   type MaterialCommandOutcomeUnknownResult,
   type MaterialCommandResult,
+  type RunCompletionReceiptResult,
+  type RunCompletionDuplicateResult,
+  type RunCommandStaleRevisionResult,
+  type RunDeletionReceiptResult,
 } from '../domain/materialCommands/contract'
 import type {
   GeneratedPlanV1,
@@ -24,6 +30,10 @@ export interface PlanApprovalSubmission {
 type UnrelatedMaterialCommandSuccess =
   | MaterialCommandCommittedResult
   | AccountDeletionRequestAcceptedResult
+  | RunCompletionReceiptResult
+  | RunDeletionReceiptResult
+  | RunCompletionDuplicateResult
+  | RunCommandStaleRevisionResult
 
 export type PlanApprovalClientResult = Exclude<
   MaterialCommandResult,
@@ -49,7 +59,14 @@ function mapPlanApprovalResult(
   result: MaterialCommandResult,
   commandId: string,
 ): PlanApprovalClientResult {
-  if (result.status === 'committed' || result.status === 'accepted') {
+  if (
+    result.status === 'committed' ||
+    result.status === 'accepted' ||
+    result.status === 'run_completed' ||
+    result.status === 'run_deleted' ||
+    isRunCompletionDuplicateResult(result) ||
+    isRunCommandStaleRevisionResult(result)
+  ) {
     return unknownOutcome(commandId)
   }
   return result
