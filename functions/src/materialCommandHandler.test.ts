@@ -39,6 +39,7 @@ import type {
 const ownerId = 'runner-one'
 const commandId = 'proof-command-0001'
 const planApprovalCommandId = 'approve-plan-command-0001'
+const privateRunNote = 'private runner note for redaction proof'
 const supportedScopeId = 'synthetic-consistent-runner@1'
 const generatedFixture = planGenerationContractFixtures.find(
   (fixture) => fixture.id === 'generated-exact-date-distance-target',
@@ -59,6 +60,7 @@ const runCompletionCommand = createRunCompletionCommand(
     timeZone: createIanaTimeZone('America/Los_Angeles'),
     distance: createDistanceMeters(5_000),
     duration: createDurationSeconds(1_800),
+    notes: privateRunNote,
   },
 )
 const runDeletionCommand = createRunDeletionCommand(
@@ -466,6 +468,62 @@ describe('material-command handler', () => {
     expect(JSON.stringify(boundary.log.mock.calls)).not.toContain(
       runCompletionCommand.commandId,
     )
+    expect(JSON.stringify(boundary.log.mock.calls)).not.toContain(
+      privateRunNote,
+    )
+    expect(boundary.log).toHaveBeenCalledWith({
+      event: 'material-command-result',
+      commandType: 'run.complete',
+      status: 'run_completed',
+    })
+  })
+
+  it('keeps completion payloads and thrown error details out of logs', async () => {
+    const sensitiveError = {
+      code: 'unavailable',
+      message: 'private persistence failure detail',
+      ownerId,
+      payload: runCompletionCommand.command.input,
+    }
+    const runStore: RunCompletionStore = {
+      commit: vi.fn().mockRejectedValue(sensitiveError),
+    }
+    const boundary = dependencies(
+      new InMemoryMaterialCommandStore(),
+      undefined,
+      { store: runStore },
+    )
+
+    await expect(
+      executeMaterialCommand(
+        { authenticatedUserId: ownerId, data: runCompletionCommand },
+        boundary,
+      ),
+    ).resolves.toEqual(
+      expect.objectContaining({
+        status: 'retryable_error',
+        code: 'temporarily-unavailable',
+      }),
+    )
+    expect(boundary.log).toHaveBeenCalledWith({
+      event: 'material-command-result',
+      commandType: 'run.complete',
+      status: 'retryable_error',
+    })
+    const serializedLogs = JSON.stringify(boundary.log.mock.calls)
+    for (const sensitiveValue of [
+      ownerId,
+      runCompletionCommand.commandId,
+      privateRunNote,
+      sensitiveError.message,
+      sensitiveError,
+    ]) {
+      expect(serializedLogs).not.toContain(
+        typeof sensitiveValue === 'string'
+          ? sensitiveValue
+          : JSON.stringify(sensitiveValue),
+      )
+    }
   })
 
   it('maps run-completion conflicts and resolves stored completion receipts', async () => {
@@ -568,6 +626,9 @@ describe('material-command handler', () => {
     expect(JSON.stringify(boundary.log.mock.calls)).not.toContain(ownerId)
     expect(JSON.stringify(boundary.log.mock.calls)).not.toContain(
       runDeletionCommand.commandId,
+    )
+    expect(JSON.stringify(boundary.log.mock.calls)).not.toContain(
+      runDeletionCommand.command.completedRunId,
     )
   })
 

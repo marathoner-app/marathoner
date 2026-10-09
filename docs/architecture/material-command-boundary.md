@@ -1,6 +1,6 @@
 # Material-command boundary
 
-- **Status:** Local proof and deletion-request boundaries complete; plan approval, run completion, and completed-run deletion are atomically persisted in emulator proof; completed-run client adapter complete; production activation and deployment blocked
+- **Status:** Local proof and deletion-request boundaries complete; plan approval, run completion, and completed-run deletion are atomically persisted; two-client completed-run proof retained against emulators; production activation and deployment blocked
 - **Decision date:** 2026-10-05
 - **Owner:** Marathoner maintainer
 - **Proof issue:** [#158](https://github.com/marathoner-app/marathoner/issues/158)
@@ -15,6 +15,7 @@
 - **Run-completion transaction issue:** [#259](https://github.com/marathoner-app/marathoner/issues/259)
 - **Run-deletion transaction issue:** [#260](https://github.com/marathoner-app/marathoner/issues/260)
 - **Completed-run client issue:** [#261](https://github.com/marathoner-app/marathoner/issues/261)
+- **Two-client completed-run proof issue:** [#262](https://github.com/marathoner-app/marathoner/issues/262)
 
 ## Purpose and scope
 
@@ -37,7 +38,8 @@ not activate a deployed client write path. Issue #260 adds the symmetric
 emulator-only deletion transaction and safely reopens only the workout whose
 guard identifies the deleted run. Issue #261 adds the transport-injected,
 online-only completion and deletion client without switching the production
-provider or mounting a participant workflow.
+provider or mounting a participant workflow. Issue #262 retains the end-to-end
+two-client emulator evidence and records the remaining activation boundary.
 
 The browser and server share the portable contract in
 `src/domain/materialCommands/contract.ts`. It imports neither React nor
@@ -224,6 +226,30 @@ submission or resolution never calls the transport, queues work, or replays
 after reconnection; the caller must explicitly use the matching resolution
 method with the original command ID.
 
+Two independent Firebase app instances now prove the completed-run lane against
+the Authentication, Functions, and Firestore emulators. When both are signed in
+as the same runner and race to complete one planned workout, exactly one run,
+completed workout, uniqueness guard, and receipt survive. The losing command
+receives the existing-run conflict without a receipt. Either client can replay
+or resolve the winning command and receive its original receipt; changed
+content with that command ID conflicts.
+
+The retained deletion scenario proves that cross-owner, malformed,
+known-offline, and stale attempts leave the completed run, workout, guard, and
+receipt unchanged. An intentionally discarded successful response becomes
+outcome unknown, while resolving the same command ID recovers the committed
+deletion receipt. Replay remains exact, a changed signature conflicts, and the
+final state contains no run or guard and one reopened workout. Focused handler
+tests prove that logs contain only event, fixed command type, and status—not
+owner IDs, command IDs, completed-run IDs, notes, payloads, or thrown error
+objects.
+
+This proof does not activate the lane in a deployed environment. Functions
+deployment, production provider and UI migration, denial of direct material
+writes in Firestore Security Rules, live listener synchronization and cache
+isolation, App Check enforcement, and adaptation commands all remain open in
+their owning issues.
+
 `PlanApprovalReview` owns the participant-facing handoff from a fully reviewed
 proposal to that client. Its final confirmation snapshots the exact input and
 proposal, creates one command ID, disables duplicate submission, and reuses the
@@ -284,7 +310,12 @@ the unit, contract, and emulator checks prove:
     cross-owner, mismatched-guard, and malformed attempts preserve all records;
 14. an intentionally failed deletion transaction preserves the run, completed
     workout, and guard together; and
-15. emitted application logs contain outcome metadata only.
+15. two authenticated logical clients cannot double-complete one workout and
+    can replay or resolve the winning receipt from either client;
+16. cross-owner, malformed, offline, stale, and changed-signature deletion
+    attempts preserve the last committed state, while a lost successful
+    response resolves to its original receipt; and
+17. emitted application logs contain outcome metadata only.
 
 Pull-request CI provisions Java 21 and runs the same command.
 

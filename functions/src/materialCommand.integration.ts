@@ -51,6 +51,11 @@ import {
   createDurationSeconds,
 } from '../../src/domain/training/units.js'
 import {
+  createCompletedRunCommandClient,
+  type RunCompletionSubmission,
+  type RunDeletionSubmission,
+} from '../../src/services/completedRunCommandClient.js'
+import {
   createMaterialCommandClient,
   type MaterialCommandTransport,
 } from '../../src/services/materialCommandClient.js'
@@ -271,6 +276,112 @@ async function signInOwner() {
 
 async function signInOther() {
   await signInWithEmailAndPassword(otherAuth, otherEmail, otherPassword)
+}
+
+async function signInOwnerOnBothClients() {
+  await Promise.all([
+    signInWithEmailAndPassword(auth, email, password),
+    signInWithEmailAndPassword(otherAuth, email, password),
+  ])
+}
+
+function callableTransport(
+  submitCommand: typeof submit,
+  resolveCommand: typeof resolve,
+): MaterialCommandTransport {
+  return {
+    async submit(command) {
+      return (await submitCommand(command)).data
+    },
+    async resolve(commandId) {
+      return (await resolveCommand({ commandId })).data
+    },
+  }
+}
+
+function completionSubmission(
+  commandId: string,
+  durationSeconds = 1_800,
+): RunCompletionSubmission {
+  const envelope = runCompletionCommand(commandId, {
+    plannedWorkout: {
+      planId: runPlanId,
+      workoutId: runWorkoutId,
+      expectedUpdatedAt: workoutUpdatedAt,
+    },
+  })
+  return {
+    commandId: envelope.commandId,
+    input: {
+      ...envelope.command.input,
+      duration: createDurationSeconds(durationSeconds),
+    },
+  }
+}
+
+function deletionSubmission(
+  commandId: string,
+  completion: RunCompletionReceiptResult,
+): RunDeletionSubmission {
+  const envelope = runDeletionCommand(commandId, completion)
+  return {
+    commandId: envelope.commandId,
+    completedRunId: envelope.command.completedRunId,
+    expectedCompletedRunUpdatedAt:
+      envelope.command.expectedCompletedRunUpdatedAt,
+    plannedWorkout: envelope.command.plannedWorkout,
+  }
+}
+
+async function expectCompletedRunState(
+  completion: RunCompletionReceiptResult,
+) {
+  await expect(
+    database.doc(`users/${ownerId}/runs/${completion.completedRunId}`).get(),
+  ).resolves.toEqual(expect.objectContaining({ exists: true }))
+  expect((await database.doc(workoutPath()).get()).data()).toEqual(
+    expect.objectContaining({ status: 'completed' }),
+  )
+  expect((await database.doc(guardPath()).get()).data()).toEqual(
+    expect.objectContaining({ completedRunId: completion.completedRunId }),
+  )
+  await expect(
+    database.collection(`users/${ownerId}/runs`).get(),
+  ).resolves.toEqual(expect.objectContaining({ size: 1 }))
+  await expect(
+    database
+      .doc(
+        `materialCommandReceipts/${ownerId}/commands/${completion.commandId}`,
+      )
+      .get(),
+  ).resolves.toEqual(expect.objectContaining({ exists: true }))
+}
+
+async function expectDeletedRunState(
+  completion: RunCompletionReceiptResult,
+  deletion: RunDeletionReceiptResult,
+) {
+  await expect(
+    database.doc(`users/${ownerId}/runs/${completion.completedRunId}`).get(),
+  ).resolves.toEqual(expect.objectContaining({ exists: false }))
+  expect((await database.doc(workoutPath()).get()).data()).toEqual(
+    expect.objectContaining({ status: 'planned' }),
+  )
+  await expect(database.doc(guardPath()).get()).resolves.toEqual(
+    expect.objectContaining({ exists: false }),
+  )
+  await expect(
+    database.collection(`users/${ownerId}/runs`).get(),
+  ).resolves.toEqual(expect.objectContaining({ empty: true }))
+  expect(
+    (
+      await database
+        .doc(
+          `materialCommandReceipts/${ownerId}/commands/${deletion.commandId}`,
+        )
+        .get()
+    ).data()?.result,
+  ).toEqual(deletion)
 }
 
 beforeAll(async () => {
@@ -1150,5 +1261,281 @@ describe('material-command emulator boundary', () => {
         .doc(`materialCommandReceipts/${ownerId}/commands/${command.commandId}`)
         .get(),
     ).resolves.toEqual(expect.objectContaining({ exists: false }))
+  })
+
+  it('allows only one of two authenticated clients to complete a planned workout', async () => {
+    await seedWorkout()
+    await signInOwnerOnBothClients()
+    const firstClient = createCompletedRunCommandClient({
+      isOnline: () => true,
+      transport: callableTransport(submit, resolve),
+    })
+    const secondClient = createCompletedRunCommandClient({
+      isOnline: () => true,
+      transport: callableTransport(otherSubmit, otherResolve),
+    })
+    const attempts = [
+      {
+        client: firstClient,
+        submission: completionSubmission('complete-run-two-client-first'),
+      },
+      {
+        client: secondClient,
+        submission: completionSubmission('complete-run-two-client-second'),
+      },
+    ] as const
+
+    const results = await Promise.all(
+      attempts.map(({ client, submission }) =>
+        client.submitCompletion(submission),
+      ),
+    )
+    const winnerIndex = results.findIndex(
+      (result) => result.status === 'run_completed',
+    )
+    if (winnerIndex === -1) {
+      throw new Error('Expected one logical client to complete the workout.')
+    }
+    const loserIndex = winnerIndex === 0 ? 1 : 0
+    const winner = results[winnerIndex]
+    if (winner?.status !== 'run_completed') {
+      throw new Error('Expected a run-completion receipt.')
+    }
+    const winnerAttempt = attempts[winnerIndex]
+    const loserAttempt = attempts[loserIndex]
+    const replayClient = loserAttempt.client
+
+    expect(results.filter((result) => result.status === 'run_completed')).toHaveLength(
+      1,
+    )
+    expect(results[loserIndex]).toEqual({
+      status: 'conflict',
+      commandId: loserAttempt.submission.commandId,
+      code: 'planned-workout-already-completed',
+      message: 'This planned workout already has a completed run.',
+      planId: runPlanId,
+      plannedWorkoutId: runWorkoutId,
+      completedRunId: winner.completedRunId,
+    })
+    await expect(
+      replayClient.submitCompletion(winnerAttempt.submission),
+    ).resolves.toEqual(winner)
+    await expect(
+      replayClient.resolveCompletion(winnerAttempt.submission.commandId),
+    ).resolves.toEqual(winner)
+
+    const changedSignature = {
+      ...winnerAttempt.submission,
+      input: {
+        ...winnerAttempt.submission.input,
+        duration: createDurationSeconds(1_801),
+      },
+    }
+    await expect(
+      replayClient.submitCompletion(changedSignature),
+    ).resolves.toEqual(
+      expect.objectContaining({
+        status: 'conflict',
+        code: 'command-id-reused',
+      }),
+    )
+
+    await expectCompletedRunState(winner)
+    expect((await database.doc(guardPath()).get()).data()).toEqual(
+      expect.objectContaining({ commandId: winnerAttempt.submission.commandId }),
+    )
+    await expect(
+      database
+        .doc(
+          `materialCommandReceipts/${ownerId}/commands/${loserAttempt.submission.commandId}`,
+        )
+        .get(),
+    ).resolves.toEqual(expect.objectContaining({ exists: false }))
+    await expect(
+      database.collection(`users/${otherOwnerId}/runs`).get(),
+    ).resolves.toEqual(expect.objectContaining({ empty: true }))
+  })
+
+  it('preserves completed state through rejected two-client deletions and recovers a lost response', async () => {
+    await seedWorkout()
+    await signInOwner()
+    const ownerClient = createCompletedRunCommandClient({
+      isOnline: () => true,
+      transport: callableTransport(submit, resolve),
+    })
+    const completion = await ownerClient.submitCompletion(
+      completionSubmission('complete-run-before-two-client-delete'),
+    )
+    if (completion.status !== 'run_completed') {
+      throw new Error('Expected the setup run to complete.')
+    }
+    await expectCompletedRunState(completion)
+
+    await signInOther()
+    const foreignClient = createCompletedRunCommandClient({
+      isOnline: () => true,
+      transport: callableTransport(otherSubmit, otherResolve),
+    })
+    const foreignDeletion = deletionSubmission(
+      'delete-run-two-client-cross-owner',
+      completion,
+    )
+    await expect(foreignClient.submitDeletion(foreignDeletion)).resolves.toEqual(
+      expect.objectContaining({
+        status: 'validation_error',
+        code: 'invalid-run-deletion',
+      }),
+    )
+    await expect(
+      database
+        .doc(
+          `materialCommandReceipts/${otherOwnerId}/commands/${foreignDeletion.commandId}`,
+        )
+        .get(),
+    ).resolves.toEqual(expect.objectContaining({ exists: false }))
+    await expectCompletedRunState(completion)
+
+    const malformedEnvelope = {
+      ...runDeletionCommand(
+        'delete-run-two-client-malformed',
+        completion,
+      ),
+      ownerId: otherOwnerId,
+    } as unknown as MaterialCommandEnvelope
+    expect((await submit(malformedEnvelope)).data).toEqual(
+      expect.objectContaining({
+        status: 'validation_error',
+        code: 'ownership-field-prohibited',
+      }),
+    )
+    await expectCompletedRunState(completion)
+
+    let online = false
+    let offlineTransportCalls = 0
+    const offlineClient = createCompletedRunCommandClient({
+      isOnline: () => online,
+      transport: {
+        async submit(command) {
+          offlineTransportCalls += 1
+          return (await submit(command)).data
+        },
+        async resolve(commandId) {
+          offlineTransportCalls += 1
+          return (await resolve({ commandId })).data
+        },
+      },
+    })
+    const offlineDeletion = deletionSubmission(
+      'delete-run-two-client-offline',
+      completion,
+    )
+    await expect(offlineClient.submitDeletion(offlineDeletion)).resolves.toEqual(
+      expect.objectContaining({
+        status: 'retryable_error',
+        code: 'temporarily-unavailable',
+      }),
+    )
+    online = true
+    await Promise.resolve()
+    expect(offlineTransportCalls).toBe(0)
+    await expectCompletedRunState(completion)
+
+    await signOut(otherAuth)
+    await signInWithEmailAndPassword(otherAuth, email, password)
+    const secondOwnerClient = createCompletedRunCommandClient({
+      isOnline: () => true,
+      transport: callableTransport(otherSubmit, otherResolve),
+    })
+    const staleDeletion = {
+      ...deletionSubmission('delete-run-two-client-stale', completion),
+      expectedCompletedRunUpdatedAt: createUtcDateTime(
+        '2026-10-08T16:59:59.000Z',
+      ),
+    }
+    await expect(
+      secondOwnerClient.submitDeletion(staleDeletion),
+    ).resolves.toEqual(
+      expect.objectContaining({
+        status: 'stale_revision',
+        code: 'completed-run-version-changed',
+      }),
+    )
+    await expect(
+      database
+        .doc(
+          `materialCommandReceipts/${ownerId}/commands/${staleDeletion.commandId}`,
+        )
+        .get(),
+    ).resolves.toEqual(expect.objectContaining({ exists: false }))
+    await expectCompletedRunState(completion)
+
+    const committedDeletion = deletionSubmission(
+      'delete-run-two-client-lost-response',
+      completion,
+    )
+    const lostResponseClient = createCompletedRunCommandClient({
+      isOnline: () => true,
+      transport: {
+        async submit(command) {
+          await otherSubmit(command)
+          throw { code: 'functions/deadline-exceeded' }
+        },
+        async resolve(commandId) {
+          return (await otherResolve({ commandId })).data
+        },
+      },
+    })
+    await expect(
+      lostResponseClient.submitDeletion(committedDeletion),
+    ).resolves.toEqual(
+      expect.objectContaining({
+        status: 'outcome_unknown',
+        commandId: committedDeletion.commandId,
+        code: 'resolve-by-command-id',
+      }),
+    )
+    const storedDeletion = requireRunDeletionReceipt(
+      (
+        await database
+          .doc(
+            `materialCommandReceipts/${ownerId}/commands/${committedDeletion.commandId}`,
+          )
+          .get()
+      ).data()?.result,
+    )
+    await expectDeletedRunState(completion, storedDeletion)
+    await expect(
+      lostResponseClient.resolveDeletion(committedDeletion.commandId),
+    ).resolves.toEqual(storedDeletion)
+    await expect(
+      ownerClient.submitDeletion(committedDeletion),
+    ).resolves.toEqual(storedDeletion)
+
+    await expect(
+      ownerClient.submitDeletion({
+        ...committedDeletion,
+        plannedWorkout: null,
+      }),
+    ).resolves.toEqual(
+      expect.objectContaining({
+        status: 'conflict',
+        code: 'command-id-reused',
+      }),
+    )
+    await expectDeletedRunState(completion, storedDeletion)
+
+    await signOut(otherAuth)
+    await signInOther()
+    await expect(
+      foreignClient.resolveDeletion(committedDeletion.commandId),
+    ).resolves.toEqual(
+      expect.objectContaining({
+        status: 'outcome_unknown',
+        code: 'resolve-by-command-id',
+      }),
+    )
+    await expect(
+      database.collection(`users/${otherOwnerId}/runs`).get(),
+    ).resolves.toEqual(expect.objectContaining({ empty: true }))
   })
 })

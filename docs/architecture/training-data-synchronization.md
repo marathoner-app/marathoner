@@ -1,6 +1,6 @@
 # Training data synchronization
 
-- **Status:** Accepted target architecture; local command boundary proved, workflow migration remains open
+- **Status:** Accepted target architecture; completed-run command lane and two-client behavior proved against local emulators; deployment, provider migration, rules closure, live synchronization, and adaptation commands remain open
 - **Decision date:** 2026-09-30
 - **Decision owner:** Marathoner maintainer
 - **Tracking issue:** [#80](https://github.com/marathoner-app/marathoner/issues/80)
@@ -55,7 +55,8 @@ still implement this contract if a recorded reopen trigger changes the client.
 
 ## Current implementation snapshot
 
-The target architecture is not the behavior on `main` yet:
+The protected completed-run command lane is implemented and retained in local
+emulator tests, but it is not the production application path yet:
 
 - `TrainingDataProvider` performs one repository load when an authenticated
   experience starts and again only when the user explicitly retries.
@@ -63,6 +64,12 @@ The target architecture is not the behavior on `main` yet:
   `FirestoreDocumentStore` using `setDoc`, `deleteDoc`, or a delete-only batch.
 - Run creation plus workout completion and run deletion plus workout reopening
   are two separate writes with best-effort compensation. They are not atomic.
+- Separately, the emulator-only Functions lane commits those same completion and
+  deletion invariants atomically and idempotently. Two independent Firebase app
+  instances prove uniqueness, stale-write rejection, owner isolation, offline
+  non-submission, ambiguous-response resolution, and exact replay. Deployed
+  environments do not install these stores, and the current provider does not
+  call this client adapter.
 - Repositories read before writing but do not send a revision precondition, so a
   stale client can overwrite a newer value.
 - The application does not subscribe with `onSnapshot`, expose snapshot
@@ -263,9 +270,10 @@ the write boundary.
    #159.
 2. Issue #158 established the authenticated command boundary, transactional
    receipt, offline behavior, ambiguous-response resolution, and emulator
-   proof. The proof runtime remains deliberately undeployed. Implement the
-   atomic, idempotent, revision-safe workflows in their owning feature issues,
-   including #72 and #115.
+   proof. Sprint #256 completed the atomic, idempotent, revision-safe
+   completed-run creation/deletion lane and retained its two-client emulator
+   evidence. The runtime remains deliberately undeployed; #72 still owns plan
+   workflow migration and #115 still owns adaptation commands.
 3. Tighten Firestore Security Rules so clients can read their owned records but
    cannot directly write material collections after the endpoints are ready.
 4. Add listener adapters, completeness guards, freshness translation, teardown,
