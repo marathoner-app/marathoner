@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import {
   calculateShoeDistance,
+  COMPLETED_RUN_NOTES_MAX_LENGTH,
   createPlannedWorkoutId,
   createShoeId,
   createTrainingPlanId,
@@ -63,6 +64,17 @@ function parsePerceivedEffort(value: FormDataEntryValue | null) {
 function formatPerceivedEffort(value: PerceivedEffort | undefined) {
   if (value === undefined) return "Not recorded";
   return perceivedEffortOptions.find((option) => option.value === value)?.label;
+}
+
+function parseRunNotes(value: FormDataEntryValue | null) {
+  const notes = typeof value === "string" ? value.trim() : "";
+  if (notes.length === 0) return undefined;
+  if (notes.length > COMPLETED_RUN_NOTES_MAX_LENGTH) {
+    throw new Error(
+      `Keep run notes to ${COMPLETED_RUN_NOTES_MAX_LENGTH} characters or fewer.`,
+    );
+  }
+  return notes;
 }
 
 function today(): string {
@@ -186,6 +198,7 @@ export default function ShoeTracker({
         distance: milesToMeters(Number(formData.get("miles"))),
         duration: parseDuration(String(formData.get("time"))),
         perceivedEffort: parsePerceivedEffort(formData.get("perceivedEffort")),
+        notes: parseRunNotes(formData.get("notes")),
       });
       form.reset();
       setRunDate(today());
@@ -244,6 +257,18 @@ export default function ShoeTracker({
               </option>
             ))}
           </select>
+          <textarea
+            aria-label="Run notes"
+            aria-describedby="run-notes-help"
+            name="notes"
+            maxLength={COMPLETED_RUN_NOTES_MAX_LENGTH}
+            placeholder="Notes (optional)"
+            rows={3}
+          />
+          <p id="run-notes-help" className="training-field-hint">
+            Optional context such as weather, fueling, discomfort, or the route. Up to{" "}
+            {COMPLETED_RUN_NOTES_MAX_LENGTH} characters.
+          </p>
           <button type="submit" disabled={pending || activeShoes.length === 0}>
             Log Run
           </button>
@@ -276,6 +301,7 @@ export default function ShoeTracker({
                               shoeId: createShoeId(String(data.get("shoe"))),
                               perceivedEffort:
                                 parsePerceivedEffort(data.get("perceivedEffort")) ?? null,
+                              notes: parseRunNotes(data.get("notes")) ?? null,
                             });
                             setEditingRunId(null);
                           } catch (caught) {
@@ -330,6 +356,21 @@ export default function ShoeTracker({
                             </option>
                           ))}
                         </select>
+                        <textarea
+                          aria-label="Edit run notes"
+                          aria-describedby={`edit-run-notes-help-${run.id}`}
+                          name="notes"
+                          defaultValue={run.notes ?? ""}
+                          maxLength={COMPLETED_RUN_NOTES_MAX_LENGTH}
+                          placeholder="Notes (optional)"
+                          rows={3}
+                        />
+                        <p
+                          id={`edit-run-notes-help-${run.id}`}
+                          className="training-field-hint"
+                        >
+                          Optional context, up to {COMPLETED_RUN_NOTES_MAX_LENGTH} characters.
+                        </p>
                         <button type="submit" disabled={pending}>Save</button>
                         <button type="button" onClick={() => setEditingRunId(null)}>
                           Cancel
@@ -337,9 +378,14 @@ export default function ShoeTracker({
                       </form>
                     ) : (
                       <>
-                        {getRunLocalDate(run)}: {formatMiles(run.distance)} mi in{" "}
-                        {formatDuration(run.duration)} wearing {shoe?.name ?? "No shoe"}. Effort:{" "}
-                        {formatPerceivedEffort(run.perceivedEffort)}
+                        <span>
+                          {getRunLocalDate(run)}: {formatMiles(run.distance)} mi in{" "}
+                          {formatDuration(run.duration)} wearing {shoe?.name ?? "No shoe"}. Effort:{" "}
+                          {formatPerceivedEffort(run.perceivedEffort)}
+                        </span>
+                        {run.notes !== undefined && (
+                          <p className="run-notes"><strong>Notes:</strong> {run.notes}</p>
+                        )}
                         <button type="button" onClick={() => setEditingRunId(run.id)}>
                           Edit
                         </button>

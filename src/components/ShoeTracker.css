@@ -28,9 +28,15 @@
 
 .tracker input,
 .tracker select,
+.tracker textarea,
 .tracker button {
   box-sizing: border-box;
   width: 100%;
+}
+
+.tracker textarea {
+  min-height: 5rem;
+  resize: vertical;
 }
 
 .tracker form,
@@ -50,8 +56,14 @@
 }
 
 .training-empty-state,
-.training-status {
+.training-status,
+.training-field-hint {
   color: #555;
+}
+
+.training-field-hint,
+.run-notes {
+  margin: 0;
 }
 
 .tracker li {

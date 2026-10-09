@@ -4,6 +4,7 @@ import {
   calculateShoeDistance,
   calculateTrainingAnalytics,
   calculateTotalDistance,
+  COMPLETED_RUN_NOTES_MAX_LENGTH,
   createCompletedRunId,
   createDateOnly,
   createDistanceMeters,
@@ -274,6 +275,25 @@ describe("training domain validation", () => {
       { field: "distance", message: "Completed run distance must be positive." },
       { field: "duration", message: "Completed run duration must be positive." },
     ]);
+  });
+
+  it("accepts run notes at the limit and rejects longer notes", () => {
+    expect(
+      validateCompletedRun({
+        ...run,
+        notes: "n".repeat(COMPLETED_RUN_NOTES_MAX_LENGTH),
+      }),
+    ).toEqual([]);
+
+    expect(
+      validateCompletedRun({
+        ...run,
+        notes: "n".repeat(COMPLETED_RUN_NOTES_MAX_LENGTH + 1),
+      }),
+    ).toContainEqual({
+      field: "notes",
+      message: `Run notes cannot exceed ${COMPLETED_RUN_NOTES_MAX_LENGTH} characters.`,
+    });
   });
 
   it("requires retired shoes to include a retirement date", () => {
