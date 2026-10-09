@@ -1237,7 +1237,7 @@ describe('material-command emulator boundary', () => {
       completion,
     )
     const store = new FirestoreRunDeletionStore(database, {
-      now: () => new Date('2026-10-09T12:00:00.000Z'),
+      now: () => new Date(Date.parse(completion.completedRunUpdatedAt) + 1),
       onBeforeCommit: () => {
         throw new Error('Intentional deletion transaction failure.')
       },
