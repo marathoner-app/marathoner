@@ -4,7 +4,7 @@ import type {
   ShoeId,
   TrainingPlanId,
   UserId,
-} from "../../domain/training";
+} from "../../domain/training/identifiers.js";
 
 export const userDocumentPath = (userId: UserId): string => `users/${userId}`;
 
@@ -15,6 +15,14 @@ export const plansCollectionPath = (userId: UserId): string =>
 
 export const planDocumentPath = (userId: UserId, planId: TrainingPlanId): string =>
   `${plansCollectionPath(userId)}/${planId}`;
+
+export const activePlanStateDocumentPath = (userId: UserId): string =>
+  `${userDocumentPath(userId)}/planState/active`;
+
+export const planGenerationProvenanceDocumentPath = (
+  userId: UserId,
+  planId: TrainingPlanId,
+): string => `${planDocumentPath(userId, planId)}/metadata/generation`;
 
 export const workoutsCollectionPath = (
   userId: UserId,

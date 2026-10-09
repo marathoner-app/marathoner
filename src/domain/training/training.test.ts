@@ -158,6 +158,37 @@ describe("training domain validation", () => {
     });
   });
 
+  it("supports a recovery period after race day and rejects an earlier plan end", () => {
+    const recoveryPlan: TrainingPlan = {
+      ...plan,
+      endDate: createDateOnly("2027-05-09"),
+      completionGoal: "complete_first_marathon",
+    };
+    const recoveryWorkout: PlannedWorkout = {
+      id: workout.id,
+      userId: workout.userId,
+      planId: workout.planId,
+      kind: "rest",
+      scheduledDate: createDateOnly("2027-05-05"),
+      phase: "recovery",
+      status: "planned",
+      createdAt,
+      updatedAt,
+    };
+
+    expect(validateTrainingPlan(recoveryPlan)).toEqual([]);
+    expect(validateWorkoutForPlan(recoveryWorkout, recoveryPlan)).toEqual([]);
+    expect(
+      validateTrainingPlan({
+        ...recoveryPlan,
+        endDate: createDateOnly("2027-05-01"),
+      }),
+    ).toContainEqual({
+      field: "endDate",
+      message: "Plan end date cannot precede target race date.",
+    });
+  });
+
   it("validates profile scheduling and recent-running inputs without methodology thresholds", () => {
     const invalidProfile: UserProfile = {
       ...profile,

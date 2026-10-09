@@ -1,4 +1,4 @@
-import type { TrainingPlan, PlannedWorkout, CompletedRun, Shoe, UserProfile } from "./types";
+import type { TrainingPlan, PlannedWorkout, CompletedRun, Shoe, UserProfile } from "./types.js";
 
 export interface ValidationIssue {
   readonly field: string;
@@ -121,6 +121,10 @@ export function validateTrainingPlan(plan: TrainingPlan): ValidationIssue[] {
     issues.push({ field: "targetRaceDate", message: "Target race date cannot precede plan start date." });
   }
 
+  if (plan.endDate !== undefined && plan.endDate < plan.targetRaceDate) {
+    issues.push({ field: "endDate", message: "Plan end date cannot precede target race date." });
+  }
+
   return issues;
 }
 
@@ -159,7 +163,10 @@ export function validateWorkoutForPlan(
     issues.push({ field: "userId", message: "Workout and plan must belong to the same user." });
   }
 
-  if (workout.scheduledDate < plan.startDate || workout.scheduledDate > plan.targetRaceDate) {
+  if (
+    workout.scheduledDate < plan.startDate ||
+    workout.scheduledDate > (plan.endDate ?? plan.targetRaceDate)
+  ) {
     issues.push({
       field: "scheduledDate",
       message: "Workout date must fall within the training plan date range.",

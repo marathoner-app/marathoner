@@ -72,6 +72,8 @@ export interface TrainingPlan extends EntityTimestamps {
   readonly name: string;
   readonly startDate: DateOnly;
   readonly targetRaceDate: DateOnly;
+  readonly endDate?: DateOnly;
+  readonly completionGoal?: CompletionGoal;
   readonly status: TrainingPlanStatus;
 }
 

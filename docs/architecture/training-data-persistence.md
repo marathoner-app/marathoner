@@ -35,12 +35,18 @@ Every document is stored below the authenticated user's path:
 
 ```text
 users/{userId}
+  planState/active
   (runner profile fields)
   plans/{planId}
     workouts/{workoutId}
+    metadata/generation
   runs/{runId}
   shoes/{shoeId}
 ```
+
+The active-state and generation-metadata paths are defined by issue #240's
+pure projection but are not written yet. Issue #241 owns their atomic Firestore
+transaction, protected rules, deletion inventory, and emulator proof.
 
 Issue #87 temporarily added one non-production proof path below the same owner:
 
@@ -118,6 +124,8 @@ Path: `users/{userId}/plans/{planId}`
 | `name` | string |
 | `startDate` | date-only string |
 | `targetRaceDate` | date-only string |
+| `endDate` | optional date-only string; required for generated plans and may extend through recovery |
+| `completionGoal` | optional `complete_first_marathon`; required for generated plans |
 | `status` | `draft`, `active`, `completed`, or `archived` |
 | `createdAt` | Firestore `Timestamp` |
 | `updatedAt` | Firestore `Timestamp` |
@@ -150,7 +158,45 @@ Path: `users/{userId}/plans/{planId}/workouts/{workoutId}`
 | `updatedAt` | Firestore `Timestamp` |
 
 The repository verifies that the plan exists and validates every workout against
-the plan's owner and inclusive date range before writing it.
+the plan's owner and inclusive date range before writing it. Generated plans use
+`endDate` as the inclusive boundary so recovery workouts after race day remain
+valid; legacy plans without it continue to use `targetRaceDate`.
+
+## Projected plan-activation records
+
+Issue #240 defines two server-owned records without performing a Firestore
+operation. Both paths remain below the authenticated owner:
+
+```text
+users/{userId}/planState/active
+users/{userId}/plans/{planId}/metadata/generation
+```
+
+The active-state record contains schema version `1`, training schema version
+`1`, matching `userId`, the active plan ID, a positive active-plan revision,
+and server approval/update timestamps. The provenance record contains:
+
+- its own and the training persistence schema versions;
+- matching owner and plan IDs plus the material command ID;
+- envelope, app-protocol, and plan-approval command schema versions;
+- input, generator, ruleset, generated-plan, and result versions;
+- the exact approved supported-scope identifier and `approved` review state;
+- the expected prior active-plan revision;
+- plan, phase, week, and workout reason-code mappings; and
+- the server approval timestamp.
+
+`projectApprovedPlan` accepts ownership separately from the payload, validates
+the envelope again, requires one exact approved policy tuple, validates the
+server plan ID, positive revision, and UTC timestamp, and returns one active
+plan plus only planned workouts. It preserves rest, run, walk/run, distance,
+duration, phase, date-only, recovery-end, and audit values without importing a
+Firebase SDK or accepting a data-store dependency. Invalid or incomplete input
+therefore fails before any Firestore operation can exist. Unit tests inject
+synthetic artifacts only; the production artifact registry remains empty.
+
+Issue #241 must convert timestamps with the Admin SDK and commit the plan,
+complete workout set, active state, provenance, and receipt in one transaction.
+Until then, these records are a tested projection contract, not live storage.
 
 ## Completed-run documents
 
