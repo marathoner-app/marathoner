@@ -1,6 +1,6 @@
 # Material-command boundary
 
-- **Status:** Local proof and deletion-request boundaries complete; plan approval, run completion, and completed-run deletion are atomically persisted in emulator proof; production activation and deployment blocked
+- **Status:** Local proof and deletion-request boundaries complete; plan approval, run completion, and completed-run deletion are atomically persisted in emulator proof; completed-run client adapter complete; production activation and deployment blocked
 - **Decision date:** 2026-10-05
 - **Owner:** Marathoner maintainer
 - **Proof issue:** [#158](https://github.com/marathoner-app/marathoner/issues/158)
@@ -14,6 +14,7 @@
 - **Completed-run projection issue:** [#258](https://github.com/marathoner-app/marathoner/issues/258)
 - **Run-completion transaction issue:** [#259](https://github.com/marathoner-app/marathoner/issues/259)
 - **Run-deletion transaction issue:** [#260](https://github.com/marathoner-app/marathoner/issues/260)
+- **Completed-run client issue:** [#261](https://github.com/marathoner-app/marathoner/issues/261)
 
 ## Purpose and scope
 
@@ -34,7 +35,9 @@ define and project completed-run creation and deletion commands. Issue #259
 routes run completion through one emulator-only Admin SDK transaction; it does
 not activate a deployed client write path. Issue #260 adds the symmetric
 emulator-only deletion transaction and safely reopens only the workout whose
-guard identifies the deleted run.
+guard identifies the deleted run. Issue #261 adds the transport-injected,
+online-only completion and deletion client without switching the production
+provider or mounting a participant workflow.
 
 The browser and server share the portable contract in
 `src/domain/materialCommands/contract.ts`. It imports neither React nor
@@ -207,6 +210,19 @@ unknown outcomes. An unrelated material-command success or malformed response
 is treated as outcome unknown, never as plan approval. Known-offline submission
 is not queued, and an unknown result must be resolved with the original command
 ID before any retry.
+
+`createCompletedRunCommandClient` similarly builds canonical completion and
+deletion envelopes from caller-owned command IDs and versioned application
+inputs. Its operation-specific submit and resolution methods preserve exact run
+receipts and applicable duplicate or stale outcomes without allowing a valid
+receipt for the wrong operation to count as success. Generic validation,
+authentication, authorization, App Check, beta-membership, version, ID
+conflict, retryable, and outcome-unknown results remain distinguishable.
+Malformed responses, unrelated command successes, active-plan stale results,
+and operation-inapplicable run results become outcome unknown. Known-offline
+submission or resolution never calls the transport, queues work, or replays
+after reconnection; the caller must explicitly use the matching resolution
+method with the original command ID.
 
 `PlanApprovalReview` owns the participant-facing handoff from a fully reviewed
 proposal to that client. Its final confirmation snapshots the exact input and
