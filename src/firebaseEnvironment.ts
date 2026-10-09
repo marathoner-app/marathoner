@@ -12,6 +12,7 @@ const requiredConfigurationFields: (keyof FirebaseClientConfiguration)[] = [
   'storageBucket',
   'messagingSenderId',
   'appId',
+  'appCheckSiteKey',
 ]
 
 export interface SelectedFirebaseEnvironment {
@@ -24,6 +25,13 @@ interface FirebaseEnvironmentForModeOptions {
   requestedEnvironment: string | undefined
   iosApiKey?: string | undefined
   registry: FirebaseConfigurationRegistry
+}
+
+interface AppCheckDebugTokenForModeOptions {
+  mode: string
+  environmentName: FirebaseEnvironmentName
+  debugToken: string | undefined
+  isViteServe: boolean
 }
 
 export function assertFirebaseEnvironmentForMode(
@@ -50,6 +58,35 @@ export function assertFunctionsEmulatorForMode(
       `The Firebase Functions emulator cannot run in Vite mode "${mode}". It is available only to local development.`,
     )
   }
+}
+
+export function resolveAppCheckDebugTokenForMode({
+  mode,
+  environmentName,
+  debugToken,
+  isViteServe,
+}: AppCheckDebugTokenForModeOptions): string | undefined {
+  const normalizedDebugToken = debugToken?.trim()
+
+  if (!normalizedDebugToken) return undefined
+
+  if (
+    !isViteServe ||
+    mode !== 'development' ||
+    environmentName !== 'development'
+  ) {
+    throw new Error(
+      'An App Check debug token is allowed only while Vite serves the development Firebase environment locally. Build output must never contain one.',
+    )
+  }
+
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(normalizedDebugToken)) {
+    throw new Error(
+      'VITE_FIREBASE_APP_CHECK_DEBUG_TOKEN must contain a fixed Firebase App Check debug token. Boolean debug mode is not allowed.',
+    )
+  }
+
+  return normalizedDebugToken
 }
 
 function isEnvironmentName(value: string): value is FirebaseEnvironmentName {

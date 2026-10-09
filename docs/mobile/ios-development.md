@@ -7,9 +7,10 @@ there is no second feature application under `ios/`.
 The ordinary workflow proves the selected development shell. A separate,
 explicit beta proof below verifies environment selection without changing the
 development, CI, Pages, or production-web defaults. Both workflows now select
-and validate the corresponding public native Firebase configuration, but
-neither initializes or enforces App Check. Migrated material mobile workflows,
-TestFlight, and Android also remain open. The
+and validate the corresponding public native Firebase configuration and
+initialize App Attest before JavaScript Firebase services. Live signed-device
+token proof and enforcement remain open, as do migrated material mobile
+workflows, TestFlight, and Android. The
 local command foundation is proved in #158; workflow migration, live reads,
 and release work remain in #72, #115, #138, #159, #161, #122, and #90.
 
@@ -340,9 +341,12 @@ ignored; never commit it. A clean checkout recreates it with `npm ci` followed
 by `npm run sync:ios`. Commit `Package.swift` and `Package.resolved`, because
 they define and pin the reproducible native graph.
 
-Issue #202 links but does not invoke App Check. Issue #203 registered the
-distinct development and beta native apps and implemented exact, fail-closed
-configuration selection. Client initialization belongs to #204, with
-observation and enforcement in #205 and #206. Until those issues close,
-installed and registered App Attest support does not claim that clients send a
-token or that an API rejects missing tokens.
+Issue #202 linked the App Check bridge without invoking it. Issue #203
+registered the distinct development and beta native apps and implemented exact,
+fail-closed configuration selection. Issue #204 now initializes native App
+Attest before JavaScript Firebase services, validates the bridged token through
+a `CustomProvider`, and requires the production App Attest entitlement. The
+current Personal Team profile does not contain that capability, so a paid Apple
+Developer Program profile and physical-iPhone token proof remain required.
+Observation and enforcement remain in #205 and #206; implementation or an
+unsigned compile is not evidence that an API rejects missing tokens.

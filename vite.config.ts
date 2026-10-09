@@ -5,6 +5,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import {
   assertFunctionsEmulatorForMode,
+  resolveAppCheckDebugTokenForMode,
   resolveFirebaseEnvironmentForMode,
 } from './src/firebaseEnvironment'
 import { firebaseProjectConfigurations } from './src/firebaseConfig'
@@ -12,18 +13,24 @@ import { firebaseProjectConfigurations } from './src/firebaseConfig'
 const repositoryRoot = path.dirname(fileURLToPath(import.meta.url))
 
 // https://vite.dev/config/
-export default defineConfig(({ mode }) => {
+export default defineConfig(({ command, mode }) => {
   const isIosBuild = mode === 'ios-development' || mode === 'ios-beta'
   const environment = loadEnv(mode, repositoryRoot, 'VITE_')
   assertFunctionsEmulatorForMode(
     mode,
     environment.VITE_FIREBASE_FUNCTIONS_EMULATOR === 'true',
   )
-  resolveFirebaseEnvironmentForMode({
+  const selectedFirebaseEnvironment = resolveFirebaseEnvironmentForMode({
     mode,
     requestedEnvironment: environment.VITE_FIREBASE_ENVIRONMENT,
     iosApiKey: environment.VITE_FIREBASE_IOS_API_KEY,
     registry: firebaseProjectConfigurations,
+  })
+  resolveAppCheckDebugTokenForMode({
+    mode,
+    environmentName: selectedFirebaseEnvironment.name,
+    debugToken: environment.VITE_FIREBASE_APP_CHECK_DEBUG_TOKEN,
+    isViteServe: command === 'serve',
   })
 
   return {

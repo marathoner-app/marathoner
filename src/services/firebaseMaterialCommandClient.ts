@@ -5,33 +5,45 @@ import {
 } from 'firebase/functions'
 
 import type { MaterialCommandEnvelope } from '../domain/materialCommands/contract'
-import { firebaseApp } from './firebaseClient'
+import { getFirebaseApp } from './firebaseClient'
 import {
   createMaterialCommandClient,
   type MaterialCommandTransport,
 } from './materialCommandClient'
 
-const functions = getFunctions(firebaseApp, 'us-central1')
+let callables: {
+  submit: ReturnType<typeof httpsCallable<MaterialCommandEnvelope, unknown>>
+  resolve: ReturnType<typeof httpsCallable<{ commandId: string }, unknown>>
+} | null = null
 
-if (import.meta.env.VITE_FIREBASE_FUNCTIONS_EMULATOR === 'true') {
-  connectFunctionsEmulator(functions, '127.0.0.1', 5001)
+function getCallables() {
+  if (callables !== null) return callables
+
+  const functions = getFunctions(getFirebaseApp(), 'us-central1')
+
+  if (import.meta.env.VITE_FIREBASE_FUNCTIONS_EMULATOR === 'true') {
+    connectFunctionsEmulator(functions, '127.0.0.1', 5001)
+  }
+
+  callables = {
+    submit: httpsCallable<MaterialCommandEnvelope, unknown>(
+      functions,
+      'submitMaterialCommand',
+    ),
+    resolve: httpsCallable<{ commandId: string }, unknown>(
+      functions,
+      'resolveMaterialCommand',
+    ),
+  }
+  return callables
 }
-
-const submitCallable = httpsCallable<MaterialCommandEnvelope, unknown>(
-  functions,
-  'submitMaterialCommand',
-)
-const resolveCallable = httpsCallable<{ commandId: string }, unknown>(
-  functions,
-  'resolveMaterialCommand',
-)
 
 const transport: MaterialCommandTransport = {
   async submit(command) {
-    return (await submitCallable(command)).data
+    return (await getCallables().submit(command)).data
   },
   async resolve(commandId) {
-    return (await resolveCallable({ commandId })).data
+    return (await getCallables().resolve({ commandId })).data
   },
 }
 

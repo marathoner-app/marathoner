@@ -10,7 +10,7 @@ import {
   type User,
 } from "firebase/auth";
 import { FirebaseError } from "firebase/app";
-import { auth } from "./firebaseClient";
+import { getFirebaseAuth } from "./firebaseClient";
 
 export type AuthUser = Pick<User, "uid" | "email">;
 
@@ -89,7 +89,7 @@ export const signIn = async (
 ): Promise<User> => {
   try {
     const userCredential = await signInWithEmailAndPassword(
-      auth,
+      getFirebaseAuth(),
       email,
       password,
     );
@@ -101,7 +101,7 @@ export const signIn = async (
 
 export const requestPasswordReset = async (email: string): Promise<void> => {
   try {
-    await sendPasswordResetEmail(auth, email);
+    await sendPasswordResetEmail(getFirebaseAuth(), email);
   } catch (error) {
     const authenticationError = toAuthenticationError(error);
 
@@ -115,7 +115,7 @@ export const requestPasswordReset = async (email: string): Promise<void> => {
 
 export const logOut = async (): Promise<void> => {
   try {
-    await signOut(auth);
+    await signOut(getFirebaseAuth());
   } catch (error) {
     throw toAuthenticationError(error);
   }
@@ -124,7 +124,7 @@ export const logOut = async (): Promise<void> => {
 export const reauthenticateWithPassword = async (
   password: string,
 ): Promise<void> => {
-  const user = auth.currentUser;
+  const user = getFirebaseAuth().currentUser;
 
   if (!user?.email) {
     throw new AuthenticationError("unknown");
@@ -144,7 +144,7 @@ export const subscribeToAuthState = (
   onError?: (error: Error) => void,
 ): Unsubscribe =>
   onAuthStateChanged(
-    auth,
+    getFirebaseAuth(),
     (user) => {
       onChange(user ? { uid: user.uid, email: user.email } : null);
     },

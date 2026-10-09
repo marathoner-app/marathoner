@@ -20,7 +20,7 @@ const testAuth = vi.hoisted(() => ({
 }))
 
 vi.mock('firebase/auth', () => firebaseAuth)
-vi.mock('./firebaseClient', () => ({ auth: testAuth }))
+vi.mock('./firebaseClient', () => ({ getFirebaseAuth: () => testAuth }))
 
 import {
   AuthenticationError,

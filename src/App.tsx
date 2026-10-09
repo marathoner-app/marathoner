@@ -9,7 +9,6 @@ import Analyze from "./components/Analyze";
 import { useAuth } from "./auth/useAuth";
 import TrainingDataProvider from "./training/TrainingDataProvider";
 import { useTrainingData } from "./training/useTrainingData";
-import { releaseNativeStartupOverlayAfterPaint } from "./services/nativeStartup";
 import RunnerOnboarding from "./onboarding/RunnerOnboarding";
 import { isRunnerProfileOnboardingComplete } from "./onboarding/runnerProfileDraft";
 import {
@@ -52,8 +51,6 @@ function App() {
     track: null,
     analyze: null,
   });
-
-  useEffect(() => releaseNativeStartupOverlayAfterPaint(), []);
 
   useEffect(() => {
     if (!activeSection && lastActiveSection.current) {
