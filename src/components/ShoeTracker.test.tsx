@@ -71,6 +71,10 @@ function Harness({
       duration: changes.duration ?? existing.duration,
       shoeId:
         changes.shoeId === null ? undefined : changes.shoeId ?? existing.shoeId,
+      perceivedEffort:
+        changes.perceivedEffort === null
+          ? undefined
+          : changes.perceivedEffort ?? existing.perceivedEffort,
     };
     setRuns((current) =>
       current.map((run) => (run.id === updated.id ? updated : run)),
@@ -125,7 +129,100 @@ describe("ShoeTracker", () => {
     await user.click(screen.getByRole("button", { name: "Log Run" }));
 
     expect(await screen.findByText(/5 mi in 45:30 wearing Daily Trainer/)).toBeInTheDocument();
+    expect(screen.getByText(/Effort: Not recorded/)).toBeInTheDocument();
     expect(screen.getByText("Daily Trainer: 5 mi")).toBeInTheDocument();
+  });
+
+  it("records and displays optional perceived effort", async () => {
+    render(<Harness />);
+    const user = await addShoe("Daily Trainer");
+
+    await user.type(screen.getByPlaceholderText("Miles"), "5");
+    await user.type(screen.getByPlaceholderText("Time (e.g. 45:30)"), "45:30");
+    await user.selectOptions(
+      screen.getByRole("combobox", { name: "Running shoes" }),
+      "shoe-1",
+    );
+    await user.selectOptions(
+      screen.getByRole("combobox", { name: "Perceived effort" }),
+      "harder_than_expected",
+    );
+    await user.click(screen.getByRole("button", { name: "Log Run" }));
+
+    expect(await screen.findByText(/Effort: Harder than expected/)).toBeInTheDocument();
+  });
+
+  it("adds, changes, and clears perceived effort while editing a run", async () => {
+    const shoe: Shoe = {
+      id: createShoeId("shoe-1"),
+      userId,
+      name: "Daily Trainer",
+      startingDistance: createDistanceMeters(0),
+      status: "active",
+      createdAt: timestamp,
+      updatedAt: timestamp,
+    };
+    const run: CompletedRun = {
+      id: createCompletedRunId("run-1"),
+      userId,
+      shoeId: shoe.id,
+      startedAt: timestamp,
+      timeZone: createIanaTimeZone("America/Los_Angeles"),
+      distance: createDistanceMeters(5_000),
+      duration: createDurationSeconds(1_800),
+      createdAt: timestamp,
+      updatedAt: timestamp,
+    };
+    const user = userEvent.setup();
+    render(<Harness initialShoes={[shoe]} initialRuns={[run]} />);
+
+    await user.click(screen.getByRole("button", { name: "Edit" }));
+    await user.selectOptions(
+      screen.getByRole("combobox", { name: "Edit perceived effort" }),
+      "about_right",
+    );
+    await user.click(screen.getByRole("button", { name: "Save" }));
+    expect(await screen.findByText(/Effort: About as expected/)).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Edit" }));
+    await user.selectOptions(
+      screen.getByRole("combobox", { name: "Edit perceived effort" }),
+      "much_easier_than_expected",
+    );
+    await user.click(screen.getByRole("button", { name: "Save" }));
+    expect(await screen.findByText(/Effort: Much easier than expected/)).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Edit" }));
+    await user.selectOptions(
+      screen.getByRole("combobox", { name: "Edit perceived effort" }),
+      "",
+    );
+    await user.click(screen.getByRole("button", { name: "Save" }));
+    expect(await screen.findByText(/Effort: Not recorded/)).toBeInTheDocument();
+  });
+
+  it("rejects an unsupported perceived-effort value", async () => {
+    render(<Harness />);
+    const user = await addShoe("Daily Trainer");
+    const effort = screen.getByRole("combobox", { name: "Perceived effort" });
+    const invalidOption = document.createElement("option");
+    invalidOption.value = "impossibly_easy";
+    invalidOption.text = "Invalid effort";
+    effort.append(invalidOption);
+
+    await user.type(screen.getByPlaceholderText("Miles"), "5");
+    await user.type(screen.getByPlaceholderText("Time (e.g. 45:30)"), "45:30");
+    await user.selectOptions(
+      screen.getByRole("combobox", { name: "Running shoes" }),
+      "shoe-1",
+    );
+    await user.selectOptions(effort, "impossibly_easy");
+    await user.click(screen.getByRole("button", { name: "Log Run" }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Choose a valid perceived effort, or leave it blank.",
+    );
+    expect(screen.getByText("No runs logged yet.")).toBeInTheDocument();
   });
 
   it("edits and deletes a run without allowing shoe mileage to drift", async () => {
