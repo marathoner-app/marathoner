@@ -35,6 +35,13 @@ export const workoutDocumentPath = (
   workoutId: PlannedWorkoutId,
 ): string => `${workoutsCollectionPath(userId, planId)}/${workoutId}`;
 
+export const workoutCompletionGuardDocumentPath = (
+  userId: UserId,
+  planId: TrainingPlanId,
+  workoutId: PlannedWorkoutId,
+): string =>
+  `${workoutDocumentPath(userId, planId, workoutId)}/completionState/current`;
+
 export const runsCollectionPath = (userId: UserId): string =>
   `${userDocumentPath(userId)}/runs`;
 
