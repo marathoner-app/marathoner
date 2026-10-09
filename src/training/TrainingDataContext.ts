@@ -2,8 +2,10 @@ import { createContext } from "react";
 import type {
   CompletedRun,
   CompletedRunId,
+  DateOnly,
   PlannedWorkout,
   Shoe,
+  ShoeId,
   TrainingPlan,
   UserProfile,
 } from "../domain/training";
@@ -27,6 +29,7 @@ export interface TrainingDataContextValue {
   readonly reload: () => Promise<void>;
   readonly saveProfile: (input: SaveUserProfileInput) => Promise<UserProfile>;
   readonly createShoe: (input: CreateShoeInput) => Promise<Shoe>;
+  readonly retireShoe: (id: ShoeId, retiredOn: DateOnly) => Promise<Shoe>;
   readonly createRun: (input: CreateCompletedRunInput) => Promise<CompletedRun>;
   readonly updateRun: (
     id: CompletedRunId,

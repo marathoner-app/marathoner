@@ -12,8 +12,10 @@ import {
   createUserId,
   createUtcDateTime,
   type CompletedRun,
+  type DateOnly,
   type DistanceUnit,
   type Shoe,
+  type ShoeId,
 } from "../domain/training";
 import type {
   CreateCompletedRunInput,
@@ -30,11 +32,13 @@ function Harness({
   initialRuns = [],
   distanceUnit = "mile",
   onDeleteRunCall = () => undefined,
+  onRetireShoeCall = () => undefined,
 }: {
   initialShoes?: Shoe[];
   initialRuns?: CompletedRun[];
   distanceUnit?: DistanceUnit;
   onDeleteRunCall?: (id: CompletedRun["id"]) => void;
+  onRetireShoeCall?: (id: ShoeId, retiredOn: DateOnly) => void;
 }) {
   const [shoes, setShoes] = useState(initialShoes);
   const [runs, setRuns] = useState(initialRuns);
@@ -97,6 +101,22 @@ function Harness({
     setRuns((current) => current.filter((run) => run.id !== id));
   };
 
+  const retireShoe = async (id: ShoeId, retiredOn: DateOnly) => {
+    const existing = shoes.find((shoe) => shoe.id === id);
+    if (existing === undefined) throw new Error("Shoe not found");
+    const retiredShoe: Shoe = {
+      ...existing,
+      status: "retired",
+      retiredOn,
+      updatedAt: timestamp,
+    };
+    onRetireShoeCall(id, retiredOn);
+    setShoes((current) =>
+      current.map((shoe) => (shoe.id === id ? retiredShoe : shoe)),
+    );
+    return retiredShoe;
+  };
+
   return (
     <ShoeTracker
       distanceUnit={distanceUnit}
@@ -104,6 +124,7 @@ function Harness({
       shoes={shoes}
       plannedWorkouts={[]}
       onCreateShoe={createShoe}
+      onRetireShoe={retireShoe}
       onCreateRun={createRun}
       onUpdateRun={updateRun}
       onDeleteRun={deleteRun}
@@ -190,6 +211,86 @@ describe("ShoeTracker", () => {
     expect(screen.getByText("Total: 5 mi")).toBeInTheDocument();
     expect(screen.getByText(/Starting: 0 mi/)).toBeInTheDocument();
     expect(screen.getByText(/Recorded by Marathoner: 5 mi/)).toBeInTheDocument();
+  });
+
+  it("retires a shoe after confirmation while preserving its history and total", async () => {
+    const shoe: Shoe = {
+      id: createShoeId("shoe-1"),
+      userId,
+      name: "Daily Trainer",
+      startingDistance: createDistanceMeters(0),
+      status: "active",
+      createdAt: timestamp,
+      updatedAt: timestamp,
+    };
+    const run: CompletedRun = {
+      id: createCompletedRunId("run-1"),
+      userId,
+      shoeId: shoe.id,
+      startedAt: timestamp,
+      timeZone: createIanaTimeZone("America/Los_Angeles"),
+      distance: createDistanceMeters(8_047),
+      duration: createDurationSeconds(2_400),
+      createdAt: timestamp,
+      updatedAt: timestamp,
+    };
+    const onRetireShoeCall = vi.fn();
+    const user = userEvent.setup();
+    render(
+      <Harness
+        initialShoes={[shoe]}
+        initialRuns={[run]}
+        onRetireShoeCall={onRetireShoeCall}
+      />,
+    );
+
+    expect(
+      screen.getByRole("option", { name: "Daily Trainer (5 mi)" }),
+    ).toBeInTheDocument();
+    const retireButton = screen.getByRole("button", {
+      name: "Retire Daily Trainer",
+    });
+    await user.click(retireButton);
+
+    expect(
+      screen.getByRole("dialog", { name: "Retire Daily Trainer?" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/Existing run history and mileage will stay intact/),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Cancel" })).toHaveFocus();
+    await user.keyboard("{Escape}");
+
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(onRetireShoeCall).not.toHaveBeenCalled();
+    expect(retireButton).toHaveFocus();
+
+    await user.click(retireButton);
+    await user.tab();
+    expect(screen.getByRole("button", { name: "Retire shoe" })).toHaveFocus();
+    await user.keyboard("{Enter}");
+
+    expect(
+      await screen.findByText(/^Retired \d{4}-\d{2}-\d{2}$/),
+    ).toBeInTheDocument();
+    expect(onRetireShoeCall).toHaveBeenCalledTimes(1);
+    expect(onRetireShoeCall).toHaveBeenCalledWith(
+      shoe.id,
+      expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/),
+    );
+    expect(screen.getByText("Total: 5 mi")).toBeInTheDocument();
+    expect(
+      screen.getByText(/5 mi in 40:00 wearing Daily Trainer/),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("option", { name: "Daily Trainer (5 mi)" }),
+    ).not.toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Shoe Mileage" })).toHaveFocus();
+
+    await user.click(screen.getByRole("button", { name: "Edit" }));
+    expect(
+      screen.getByRole("option", { name: "Daily Trainer" }),
+    ).toBeInTheDocument();
   });
 
   it("records and displays optional run notes", async () => {
