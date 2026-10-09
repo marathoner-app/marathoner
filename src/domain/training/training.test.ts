@@ -4,6 +4,7 @@ import {
   calculateShoeDistance,
   calculateTrainingAnalytics,
   calculateTotalDistance,
+  calculateWeeklyDistanceTrend,
   COMPLETED_RUN_NOTES_MAX_LENGTH,
   createCompletedRunId,
   createDateOnly,
@@ -370,5 +371,71 @@ describe("training domain calculations", () => {
     expect(analytics.totalRuns).toBe(2);
     expect(analytics.runsThisWeek).toBe(1);
     expect(analytics.averagePace?.secondsPerUnit).toBeCloseTo(600, 0);
+  });
+
+  it("buckets recent distance into deterministic Monday-through-Sunday weeks", () => {
+    const honoluluSundayRun: CompletedRun = {
+      ...run,
+      id: createCompletedRunId("run-honolulu-sunday"),
+      startedAt: createUtcDateTime("2026-08-10T08:30:00Z"),
+      timeZone: createIanaTimeZone("Pacific/Honolulu"),
+      distance: milesToMeters(2),
+    };
+    const tokyoMondayRun: CompletedRun = {
+      ...run,
+      id: createCompletedRunId("run-tokyo-monday"),
+      startedAt: createUtcDateTime("2026-08-09T15:30:00Z"),
+      timeZone: createIanaTimeZone("Asia/Tokyo"),
+      distance: milesToMeters(4),
+    };
+    const outsideWindowRun: CompletedRun = {
+      ...run,
+      id: createCompletedRunId("run-outside-window"),
+      startedAt: createUtcDateTime("2026-07-25T12:00:00Z"),
+      distance: milesToMeters(20),
+    };
+
+    const buckets = calculateWeeklyDistanceTrend(
+      [honoluluSundayRun, tokyoMondayRun, outsideWindowRun],
+      createDateOnly("2026-08-10"),
+      2,
+    );
+
+    expect(buckets).toEqual([
+      {
+        weekStart: "2026-08-03",
+        weekEnd: "2026-08-09",
+        distance: milesToMeters(2),
+        runCount: 1,
+      },
+      {
+        weekStart: "2026-08-10",
+        weekEnd: "2026-08-16",
+        distance: milesToMeters(4),
+        runCount: 1,
+      },
+    ]);
+  });
+
+  it("returns ordered empty weeks and rejects an invalid trend window", () => {
+    expect(
+      calculateWeeklyDistanceTrend([], createDateOnly("2026-08-10"), 2),
+    ).toEqual([
+      {
+        weekStart: "2026-08-03",
+        weekEnd: "2026-08-09",
+        distance: 0,
+        runCount: 0,
+      },
+      {
+        weekStart: "2026-08-10",
+        weekEnd: "2026-08-16",
+        distance: 0,
+        runCount: 0,
+      },
+    ]);
+    expect(() =>
+      calculateWeeklyDistanceTrend([], createDateOnly("2026-08-10"), 0),
+    ).toThrow(/at least one whole week/i);
   });
 });

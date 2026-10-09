@@ -18,6 +18,13 @@ export interface TrainingAnalytics {
   readonly runsThisWeek: number;
 }
 
+export interface WeeklyDistanceBucket {
+  readonly weekStart: DateOnly;
+  readonly weekEnd: DateOnly;
+  readonly distance: DistanceMeters;
+  readonly runCount: number;
+}
+
 export function calculateTotalDistance(runs: readonly CompletedRun[]): DistanceMeters {
   const total = runs.reduce((sum, run) => sum + run.distance, 0);
   return createDistanceMeters(total);
@@ -46,6 +53,12 @@ function addDays(date: DateOnly, numberOfDays: number): DateOnly {
   const value = new Date(`${date}T00:00:00.000Z`);
   value.setUTCDate(value.getUTCDate() + numberOfDays);
   return createDateOnly(value.toISOString().slice(0, 10));
+}
+
+function daysBetween(start: DateOnly, end: DateOnly): number {
+  const startValue = new Date(`${start}T00:00:00.000Z`).getTime();
+  const endValue = new Date(`${end}T00:00:00.000Z`).getTime();
+  return Math.floor((endValue - startValue) / 86_400_000);
 }
 
 export function getRunLocalDate(run: CompletedRun): DateOnly {
@@ -82,4 +95,38 @@ export function calculateTrainingAnalytics(
     totalRuns: runs.length,
     runsThisWeek: weeklyRuns.length,
   };
+}
+
+export function calculateWeeklyDistanceTrend(
+  runs: readonly CompletedRun[],
+  latestWeekStart: DateOnly,
+  weekCount: number,
+): WeeklyDistanceBucket[] {
+  if (!Number.isInteger(weekCount) || weekCount <= 0) {
+    throw new RangeError("Weekly distance trend requires at least one whole week.");
+  }
+
+  const firstWeekStart = addDays(latestWeekStart, -7 * (weekCount - 1));
+  const finalWeekEnd = addDays(latestWeekStart, 6);
+  const distanceByWeek = Array.from({ length: weekCount }, () => 0);
+  const runCountByWeek = Array.from({ length: weekCount }, () => 0);
+
+  for (const run of runs) {
+    const runDate = getRunLocalDate(run);
+    if (runDate < firstWeekStart || runDate > finalWeekEnd) continue;
+
+    const bucketIndex = Math.floor(daysBetween(firstWeekStart, runDate) / 7);
+    distanceByWeek[bucketIndex] += run.distance;
+    runCountByWeek[bucketIndex] += 1;
+  }
+
+  return distanceByWeek.map((distance, index) => {
+    const weekStart = addDays(firstWeekStart, index * 7);
+    return {
+      weekStart,
+      weekEnd: addDays(weekStart, 6),
+      distance: createDistanceMeters(distance),
+      runCount: runCountByWeek[index],
+    };
+  });
 }
