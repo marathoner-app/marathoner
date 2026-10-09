@@ -10,8 +10,10 @@ import {
   createUserId,
   type CompletedRun,
   type CompletedRunId,
+  type DateOnly,
   type PlannedWorkout,
   type Shoe,
+  type ShoeId,
   type TrainingPlan,
   type UserId,
   type UserProfile,
@@ -152,6 +154,23 @@ export default function TrainingDataProvider({
         ),
       }));
       return shoe;
+    },
+    [requireRepositories],
+  );
+
+  const retireShoe = useCallback(
+    async (id: ShoeId, retiredOn: DateOnly) => {
+      const retiredShoe = await requireRepositories().shoes.retire(
+        id,
+        retiredOn,
+      );
+      setSnapshot((current) => ({
+        ...current,
+        shoes: current.shoes.map((shoe) =>
+          shoe.id === retiredShoe.id ? retiredShoe : shoe,
+        ),
+      }));
+      return retiredShoe;
     },
     [requireRepositories],
   );
@@ -309,6 +328,7 @@ export default function TrainingDataProvider({
     reload: load,
     saveProfile,
     createShoe,
+    retireShoe,
     createRun,
     updateRun,
     deleteRun,

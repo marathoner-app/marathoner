@@ -63,6 +63,7 @@ function IntegrationProbe() {
       <p>Total: {Number(metersToMiles(analytics.totalDistance).toFixed(1))}</p>
       <p>Weekly: {Number(metersToMiles(analytics.weeklyDistance).toFixed(1))}</p>
       <p>Shoe: {Number(shoeMiles.toFixed(1))}</p>
+      <p>Shoe status: {shoe?.status ?? "none"}</p>
       <button
         type="button"
         onClick={() =>
@@ -122,6 +123,16 @@ function IntegrationProbe() {
         onClick={() => run && void training.deleteRun(run.id)}
       >
         Delete run
+      </button>
+      <button
+        type="button"
+        disabled={!shoe || shoe.status === "retired"}
+        onClick={() =>
+          shoe &&
+          void training.retireShoe(shoe.id, createDateOnly("2026-08-04"))
+        }
+      >
+        Retire shoe
       </button>
     </div>
   );
@@ -235,7 +246,7 @@ describe("TrainingDataProvider", () => {
     expect(screen.getByText("Shoe: 0")).toBeInTheDocument();
   });
 
-  it("reloads a shoe total containing starting and Marathoner-recorded distance", async () => {
+  it("retires and reloads a shoe without losing its run or total", async () => {
     const shoe = await repositories.shoes.create({
       name: "Daily Trainer",
       startingDistance: milesToMeters(10),
@@ -248,6 +259,7 @@ describe("TrainingDataProvider", () => {
       duration: createDurationSeconds(1_800),
     });
 
+    const user = userEvent.setup();
     const firstLoad = render(
       <TrainingDataProvider
         userId={userId}
@@ -258,6 +270,16 @@ describe("TrainingDataProvider", () => {
     );
 
     expect(await screen.findByText("Shoe: 13")).toBeInTheDocument();
+    expect(screen.getByText("Shoe status: active")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Retire shoe" }));
+
+    expect(await screen.findByText("Shoe status: retired")).toBeInTheDocument();
+    expect(screen.getByText("Runs: 1")).toBeInTheDocument();
+    expect(screen.getByText("Shoe: 13")).toBeInTheDocument();
+    await expect(repositories.shoes.get(shoe.id)).resolves.toMatchObject({
+      status: "retired",
+      retiredOn: createDateOnly("2026-08-04"),
+    });
     firstLoad.unmount();
 
     render(
@@ -270,6 +292,8 @@ describe("TrainingDataProvider", () => {
     );
 
     expect(await screen.findByText("Shoe: 13")).toBeInTheDocument();
+    expect(screen.getByText("Runs: 1")).toBeInTheDocument();
+    expect(screen.getByText("Shoe status: retired")).toBeInTheDocument();
   });
 
   it("surfaces a calm recoverable load error", async () => {

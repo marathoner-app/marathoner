@@ -1,4 +1,11 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+  type RefObject,
+} from "react";
 import {
   calculateShoeDistance,
   COMPLETED_RUN_NOTES_MAX_LENGTH,
@@ -17,12 +24,14 @@ import {
   milesToMeters,
   type CompletedRun,
   type CompletedRunId,
+  type DateOnly,
   type DistanceMeters,
   type DistanceUnit,
   type IanaTimeZone,
   type PerceivedEffort,
   type PlannedWorkout,
   type Shoe,
+  type ShoeId,
 } from "../domain/training";
 import type {
   CreateCompletedRunInput,
@@ -36,6 +45,7 @@ type ShoeTrackerProps = {
   readonly shoes: readonly Shoe[];
   readonly plannedWorkouts: readonly PlannedWorkout[];
   readonly onCreateShoe: (input: CreateShoeInput) => Promise<Shoe>;
+  readonly onRetireShoe: (id: ShoeId, retiredOn: DateOnly) => Promise<Shoe>;
   readonly onCreateRun: (input: CreateCompletedRunInput) => Promise<CompletedRun>;
   readonly onUpdateRun: (
     id: CompletedRunId,
@@ -43,6 +53,119 @@ type ShoeTrackerProps = {
   ) => Promise<CompletedRun>;
   readonly onDeleteRun: (id: CompletedRunId) => Promise<void>;
 };
+
+type ConfirmationDialogProps = {
+  readonly headingId: string;
+  readonly descriptionId: string;
+  readonly eyebrow: string;
+  readonly title: string;
+  readonly children: ReactNode;
+  readonly pending: boolean;
+  readonly confirmLabel: string;
+  readonly pendingLabel: string;
+  readonly tone: "caution" | "danger";
+  readonly fallbackFocusRef: RefObject<HTMLElement>;
+  readonly onCancel: () => void;
+  readonly onConfirm: () => void;
+};
+
+function ConfirmationDialog({
+  headingId,
+  descriptionId,
+  eyebrow,
+  title,
+  children,
+  pending,
+  confirmLabel,
+  pendingLabel,
+  tone,
+  fallbackFocusRef,
+  onCancel,
+  onConfirm,
+}: ConfirmationDialogProps) {
+  const dialogRef = useRef<HTMLDivElement | null>(null);
+  const cancelButtonRef = useRef<HTMLButtonElement | null>(null);
+
+  useEffect(() => {
+    const trigger =
+      document.activeElement instanceof HTMLElement
+        ? document.activeElement
+        : null;
+    const fallbackFocus = fallbackFocusRef.current;
+    cancelButtonRef.current?.focus();
+
+    return () => {
+      if (trigger?.isConnected) {
+        trigger.focus();
+      } else {
+        fallbackFocus?.focus();
+      }
+    };
+  }, [fallbackFocusRef]);
+
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    if (event.key === "Escape" && !pending) {
+      event.preventDefault();
+      onCancel();
+      return;
+    }
+
+    if (event.key !== "Tab") return;
+
+    const buttons = Array.from(
+      dialogRef.current?.querySelectorAll<HTMLButtonElement>(
+        "button:not([disabled])",
+      ) ?? [],
+    );
+    const firstButton = buttons[0];
+    const lastButton = buttons.at(-1);
+
+    if (event.shiftKey && document.activeElement === firstButton) {
+      event.preventDefault();
+      lastButton?.focus();
+    } else if (!event.shiftKey && document.activeElement === lastButton) {
+      event.preventDefault();
+      firstButton?.focus();
+    }
+  };
+
+  return (
+    <div className="confirmation-backdrop" role="presentation">
+      <div
+        ref={dialogRef}
+        className="confirmation-dialog"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={headingId}
+        aria-describedby={descriptionId}
+        onKeyDown={handleKeyDown}
+      >
+        <p className="confirmation-eyebrow">{eyebrow}</p>
+        <h2 id={headingId}>{title}</h2>
+        {children}
+        <div className="confirmation-actions">
+          <button
+            ref={cancelButtonRef}
+            type="button"
+            className="confirmation-cancel"
+            disabled={pending}
+            onClick={onCancel}
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            className={`confirmation-confirm confirmation-confirm--${tone}`}
+            disabled={pending}
+            onClick={onConfirm}
+          >
+            {pending ? pendingLabel : confirmLabel}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 const perceivedEffortOptions = [
   { value: "much_easier_than_expected", label: "Much easier than expected" },
@@ -186,6 +309,7 @@ export default function ShoeTracker({
   shoes,
   plannedWorkouts,
   onCreateShoe,
+  onRetireShoe,
   onCreateRun,
   onUpdateRun,
   onDeleteRun,
@@ -197,10 +321,9 @@ export default function ShoeTracker({
   const [pending, setPending] = useState(false);
   const [editingRunId, setEditingRunId] = useState<CompletedRunId | null>(null);
   const [runToDelete, setRunToDelete] = useState<CompletedRun | null>(null);
-  const deleteTriggerRef = useRef<HTMLButtonElement | null>(null);
-  const deleteDialogRef = useRef<HTMLDivElement | null>(null);
-  const deleteCancelButtonRef = useRef<HTMLButtonElement | null>(null);
+  const [shoeToRetire, setShoeToRetire] = useState<Shoe | null>(null);
   const loggedRunsHeadingRef = useRef<HTMLHeadingElement | null>(null);
+  const shoeMileageHeadingRef = useRef<HTMLHeadingElement | null>(null);
   const activeShoes = shoes.filter((shoe) => shoe.status === "active");
   const availableWorkouts = plannedWorkouts.filter(
     (workout) => workout.kind !== "rest" && workout.status === "planned",
@@ -213,52 +336,8 @@ export default function ShoeTracker({
     [runs, shoes],
   );
 
-  useEffect(() => {
-    if (runToDelete === null) return;
-
-    const deleteTrigger = deleteTriggerRef.current;
-    const loggedRunsHeading = loggedRunsHeadingRef.current;
-    deleteCancelButtonRef.current?.focus();
-
-    return () => {
-      if (deleteTrigger?.isConnected) {
-        deleteTrigger.focus();
-      } else {
-        loggedRunsHeading?.focus();
-      }
-    };
-  }, [runToDelete]);
-
   const closeDeleteConfirmation = () => {
     if (!pending) setRunToDelete(null);
-  };
-
-  const handleDeleteConfirmationKeyDown = (
-    event: React.KeyboardEvent<HTMLDivElement>,
-  ) => {
-    if (event.key === "Escape") {
-      event.preventDefault();
-      closeDeleteConfirmation();
-      return;
-    }
-
-    if (event.key !== "Tab") return;
-
-    const buttons = Array.from(
-      deleteDialogRef.current?.querySelectorAll<HTMLButtonElement>(
-        "button:not([disabled])",
-      ) ?? [],
-    );
-    const firstButton = buttons[0];
-    const lastButton = buttons.at(-1);
-
-    if (event.shiftKey && document.activeElement === firstButton) {
-      event.preventDefault();
-      lastButton?.focus();
-    } else if (!event.shiftKey && document.activeElement === lastButton) {
-      event.preventDefault();
-      firstButton?.focus();
-    }
   };
 
   const confirmRunDeletion = async () => {
@@ -276,6 +355,30 @@ export default function ShoeTracker({
           : "The run could not be deleted.",
       );
       setRunToDelete(null);
+    } finally {
+      setPending(false);
+    }
+  };
+
+  const closeRetirementConfirmation = () => {
+    if (!pending) setShoeToRetire(null);
+  };
+
+  const confirmShoeRetirement = async () => {
+    if (shoeToRetire === null) return;
+
+    setError(null);
+    setPending(true);
+    try {
+      await onRetireShoe(shoeToRetire.id, today());
+      setShoeToRetire(null);
+    } catch (caught) {
+      setError(
+        caught instanceof Error
+          ? caught.message
+          : "The shoe could not be retired.",
+      );
+      setShoeToRetire(null);
     } finally {
       setPending(false);
     }
@@ -560,10 +663,7 @@ export default function ShoeTracker({
                           type="button"
                           disabled={pending}
                           aria-label={`Delete run from ${getRunLocalDate(run)}`}
-                          onClick={(event) => {
-                            deleteTriggerRef.current = event.currentTarget;
-                            setRunToDelete(run);
-                          }}
+                          onClick={() => setRunToDelete(run)}
                         >
                           Delete
                         </button>
@@ -578,46 +678,27 @@ export default function ShoeTracker({
       </div>
 
       {runToDelete !== null && (
-        <div className="run-delete-backdrop" role="presentation">
-          <div
-            ref={deleteDialogRef}
-            className="run-delete-dialog"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="run-delete-heading"
-            aria-describedby="run-delete-description"
-            onKeyDown={handleDeleteConfirmationKeyDown}
-          >
-            <p className="run-delete-eyebrow">Training history</p>
-            <h2 id="run-delete-heading">Delete this completed run?</h2>
-            <p className="run-delete-summary">
-              {getRunLocalDate(runToDelete)} · {formatMiles(runToDelete.distance)} mi
-            </p>
-            <p id="run-delete-description">
-              This permanently removes the run from your training history and
-              updates your analytics and shoe mileage. This cannot be undone.
-            </p>
-            <div className="run-delete-actions">
-              <button
-                ref={deleteCancelButtonRef}
-                type="button"
-                className="run-delete-cancel"
-                disabled={pending}
-                onClick={closeDeleteConfirmation}
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                className="run-delete-confirm"
-                disabled={pending}
-                onClick={() => void confirmRunDeletion()}
-              >
-                {pending ? "Deleting…" : "Delete run"}
-              </button>
-            </div>
-          </div>
-        </div>
+        <ConfirmationDialog
+          headingId="run-delete-heading"
+          descriptionId="run-delete-description"
+          eyebrow="Training history"
+          title="Delete this completed run?"
+          pending={pending}
+          confirmLabel="Delete run"
+          pendingLabel="Deleting…"
+          tone="danger"
+          fallbackFocusRef={loggedRunsHeadingRef}
+          onCancel={closeDeleteConfirmation}
+          onConfirm={() => void confirmRunDeletion()}
+        >
+          <p className="confirmation-summary">
+            {getRunLocalDate(runToDelete)} · {formatMiles(runToDelete.distance)} mi
+          </p>
+          <p id="run-delete-description">
+            This permanently removes the run from your training history and
+            updates your analytics and shoe mileage. This cannot be undone.
+          </p>
+        </ConfirmationDialog>
       )}
 
       <div className="shoe-tracking">
@@ -657,7 +738,13 @@ export default function ShoeTracker({
         </form>
 
         <div className="mt-4">
-          <h3 className="text-lg font-medium">Shoe Mileage</h3>
+          <h3
+            ref={shoeMileageHeadingRef}
+            className="text-lg font-medium"
+            tabIndex={-1}
+          >
+            Shoe Mileage
+          </h3>
           {shoes.length === 0 ? (
             <p className="training-empty-state">No shoes added yet.</p>
           ) : (
@@ -671,7 +758,14 @@ export default function ShoeTracker({
 
                 return (
                   <li key={shoe.id}>
-                    <strong>{shoe.name}</strong>
+                    <span className="shoe-mileage-heading">
+                      <strong>{shoe.name}</strong>
+                      <span className={`shoe-status shoe-status--${shoe.status}`}>
+                        {shoe.status === "active"
+                          ? "Active"
+                          : `Retired${shoe.retiredOn ? ` ${shoe.retiredOn}` : ""}`}
+                      </span>
+                    </span>
                     <span className="shoe-mileage-total">
                       Total: {formatDistance(totalDistance, distanceUnit)}
                     </span>
@@ -683,6 +777,16 @@ export default function ShoeTracker({
                         distanceUnit,
                       )}
                     </span>
+                    {shoe.status === "active" && (
+                      <button
+                        type="button"
+                        className="shoe-retire-button"
+                        disabled={pending}
+                        onClick={() => setShoeToRetire(shoe)}
+                      >
+                        Retire {shoe.name}
+                      </button>
+                    )}
                   </li>
                 );
               })}
@@ -690,6 +794,33 @@ export default function ShoeTracker({
           )}
         </div>
       </div>
+
+      {shoeToRetire !== null && (
+        <ConfirmationDialog
+          headingId="shoe-retire-heading"
+          descriptionId="shoe-retire-description"
+          eyebrow="Shoe rotation"
+          title={`Retire ${shoeToRetire.name}?`}
+          pending={pending}
+          confirmLabel="Retire shoe"
+          pendingLabel="Retiring…"
+          tone="caution"
+          fallbackFocusRef={shoeMileageHeadingRef}
+          onCancel={closeRetirementConfirmation}
+          onConfirm={() => void confirmShoeRetirement()}
+        >
+          <p className="confirmation-summary">
+            Current total: {formatDistance(
+              shoeMileage.get(shoeToRetire.id) ?? shoeToRetire.startingDistance,
+              distanceUnit,
+            )}
+          </p>
+          <p id="shoe-retire-description">
+            This shoe will stop appearing when you log new runs. Existing run
+            history and mileage will stay intact.
+          </p>
+        </ConfirmationDialog>
+      )}
     </div>
   );
 }

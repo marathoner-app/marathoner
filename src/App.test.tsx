@@ -77,6 +77,7 @@ vi.mock('./training/useTrainingData', () => ({
     reload: trainingMock.reload,
     saveProfile: trainingMock.saveProfile,
     createShoe: vi.fn(),
+    retireShoe: vi.fn(),
     createRun: vi.fn(),
     updateRun: vi.fn(),
     deleteRun: vi.fn()

@@ -433,6 +433,7 @@ function SectionContent({ section, title, onClose }: SectionContentProps) {
             (workout) => workout.planId === activePlan?.id,
           )}
           onCreateShoe={training.createShoe}
+          onRetireShoe={training.retireShoe}
           onCreateRun={training.createRun}
           onUpdateRun={training.updateRun}
           onDeleteRun={training.deleteRun}
