@@ -201,6 +201,44 @@ describe("Firestore training-data ownership rules", () => {
     );
   });
 
+  it("keeps active state, provenance, and command receipts server-owned", async () => {
+    const activeStatePath = `users/${firstUserId}/planState/active`;
+    const provenancePath =
+      `users/${firstUserId}/plans/plan-1/metadata/generation`;
+    const receiptPath =
+      `materialCommandReceipts/${firstUserId}/commands/approve-plan-1`;
+    await testEnvironment.withSecurityRulesDisabled(async (context) => {
+      await setDoc(doc(context.firestore(), activeStatePath), {
+        schemaVersion: 1,
+        userId: firstUserId,
+      });
+      await setDoc(doc(context.firestore(), provenancePath), {
+        schemaVersion: 1,
+        userId: firstUserId,
+      });
+      await setDoc(doc(context.firestore(), receiptPath), {
+        schemaVersion: 1,
+      });
+    });
+
+    const ownerDatabase = testEnvironment
+      .authenticatedContext(firstUserId)
+      .firestore();
+    const otherDatabase = testEnvironment
+      .authenticatedContext(secondUserId)
+      .firestore();
+
+    for (const path of [activeStatePath, provenancePath]) {
+      await assertSucceeds(getDoc(doc(ownerDatabase, path)));
+      await assertFails(getDoc(doc(otherDatabase, path)));
+      await assertFails(setDoc(doc(ownerDatabase, path), { userId: firstUserId }));
+      await assertFails(deleteDoc(doc(ownerDatabase, path)));
+    }
+    await assertFails(getDoc(doc(ownerDatabase, receiptPath)));
+    await assertFails(setDoc(doc(ownerDatabase, receiptPath), {}));
+    await assertFails(deleteDoc(doc(ownerDatabase, receiptPath)));
+  });
+
   it.each(["runs/run-1", "shoes/shoe-1"])(
     "applies the same ownership boundary to %s",
     async (relativePath) => {

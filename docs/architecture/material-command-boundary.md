@@ -1,6 +1,6 @@
 # Material-command boundary
 
-- **Status:** Local proof and deletion-request boundaries complete; plan approval is contract-defined, fail-closed, and projects validated records without writing them; Firestore transaction and deployment blocked
+- **Status:** Local proof and deletion-request boundaries complete; plan approval is contract-defined, fail-closed, and atomically persisted in emulator proof; production artifact activation and deployment blocked
 - **Decision date:** 2026-10-05
 - **Owner:** Marathoner maintainer
 - **Proof issue:** [#158](https://github.com/marathoner-app/marathoner/issues/158)
@@ -9,21 +9,23 @@
 - **Plan-approval client issue:** [#230](https://github.com/marathoner-app/marathoner/issues/230)
 - **Plan-approval artifact-policy issue:** [#239](https://github.com/marathoner-app/marathoner/issues/239)
 - **Plan-approval persistence-projection issue:** [#240](https://github.com/marathoner-app/marathoner/issues/240)
+- **Plan-approval transaction issue:** [#241](https://github.com/marathoner-app/marathoner/issues/241)
 
 ## Purpose and scope
 
 Marathoner has one shared authenticated, online-only contract for material
 writes. Issue #158 proves the boundary with a harmless counter command. Issue
 #195 adds the first security-sensitive workflow: requesting deletion and
-locking account access. Plan approval, run completion, adaptation, consent, the
-destructive deletion runner, and the deletion UI remain in their owning issues.
+locking account access. Run completion, adaptation, consent, the destructive
+deletion runner, and the deletion UI remain in their owning issues.
 Issue #227 defines the shared plan-approval envelope and outcomes. Issue #230
 adds the transport-injected, online-only client adapter without claiming that
 the server transaction or participant workflow exists yet. Issue #239 makes
 the authenticated handler recognize the command while rejecting every
 production proposal before persistence until an exact artifact tuple is
-deliberately activated. Issue #240 defines the deterministic, owned projection
-that follows that gate without adding a Firestore operation.
+deliberately activated. Issue #240 defines the deterministic, owned projection.
+Issue #241 commits that projection through one idempotent Admin SDK transaction
+without activating a production methodology artifact.
 
 The browser and server share the portable contract in
 `src/domain/materialCommands/contract.ts`. It imports neither React nor
@@ -66,10 +68,20 @@ security rules expose neither server-only collection.
 The plan-approval parser preserves the proposal's end date, reason codes, and
 input/generator/ruleset/schema provenance. It validates structural consistency
 only. The material-command handler now applies the server-owned artifact policy
-before a plan store can be called. Issue #240 now validates and projects the
-active plan, complete workout set, current-plan state, and audit provenance.
-Issue #241 still owns the atomic Firestore transaction, so the empty production
-policy and absent store keep live plan approval unavailable.
+before a plan store can be called. Issue #240 validates and projects the active
+plan, complete workout set, current-plan state, and audit provenance. Issue
+#241 atomically commits those records, the prior-plan retirement, and the
+replayable command receipt. The empty production policy still keeps live plan
+approval unavailable.
+
+The transaction reads the owner-scoped receipt and active state before any
+write. A same-signature receipt returns its original result; a different
+signature conflicts. A revision mismatch returns a typed stale result without
+creating a receipt or plan. A valid first approval records revision `1`; each
+valid replacement increments once and archives the prior active plan. Any
+failed create rolls back the plan, every workout, provenance, active state,
+prior-plan update, and receipt together. Resolution by command ID recognizes
+the exact plan-approval receipt through the shared receipt store.
 
 ## Plan-approval artifact policy
 
@@ -95,10 +107,12 @@ proposal, authenticated owner, or policy record.
 
 `PRODUCTION_PLAN_APPROVAL_ARTIFACT_POLICY` is intentionally an empty frozen
 registry. Unit tests inject one synthetic, non-draft approved tuple and a fake
-plan store to prove the positive wiring without approving any real methodology
-or creating Firestore records. The supported scope is also injected from the
-server boundary rather than accepted in the command payload. Ownership is
-always the verified Authentication UID passed separately to the store.
+plan store to prove the positive wiring without approving any real methodology.
+The Functions emulator enables only that exact synthetic fixture tuple so the
+transaction can be exercised end to end; deployed environments always select
+the empty production registry. The supported scope is injected from the server
+boundary rather than accepted in the command payload. Ownership is always the
+verified Authentication UID passed separately to the store.
 
 Activating a real tuple requires a later reviewed issue and pull request that:
 

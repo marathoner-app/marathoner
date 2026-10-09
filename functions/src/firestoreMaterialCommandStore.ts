@@ -5,14 +5,15 @@ import {
   materialCommandSignature,
   type AccountDeletionRequestAcceptedResult,
   type MaterialCommandCommittedResult,
+  type PlanApprovalReceiptResult,
   type ProofMaterialCommandEnvelope,
 } from '../../src/domain/materialCommands/contract.js'
 import type { MaterialCommandStore } from './materialCommandHandler.js'
 
-const receiptSchemaVersion = 1
+export const MATERIAL_COMMAND_RECEIPT_SCHEMA_VERSION = 1
 const proofSchemaVersion = 1
 
-function receiptPath(ownerId: string, commandId: string) {
+export function materialCommandReceiptPath(ownerId: string, commandId: string) {
   return `materialCommandReceipts/${ownerId}/commands/${commandId}`
 }
 
@@ -20,12 +21,17 @@ function proofPath(ownerId: string) {
   return `materialCommandProofs/${ownerId}`
 }
 
-function storedMaterialCommandResult(
+export function storedMaterialCommandResult(
   data: unknown,
-): MaterialCommandCommittedResult | AccountDeletionRequestAcceptedResult {
+):
+  | MaterialCommandCommittedResult
+  | AccountDeletionRequestAcceptedResult
+  | PlanApprovalReceiptResult {
   if (
     !isMaterialCommandResult(data) ||
-    (data.status !== 'committed' && data.status !== 'accepted')
+    (data.status !== 'committed' &&
+      data.status !== 'accepted' &&
+      data.status !== 'plan_approved')
   ) {
     throw new Error('A stored material-command receipt is invalid.')
   }
@@ -48,7 +54,7 @@ export class FirestoreMaterialCommandStore implements MaterialCommandStore {
     ownerId: string
   }) {
     const receiptReference = this.database.doc(
-      receiptPath(options.ownerId, options.envelope.commandId),
+      materialCommandReceiptPath(options.ownerId, options.envelope.commandId),
     )
     const proofReference = this.database.doc(proofPath(options.ownerId))
     const signature = materialCommandSignature(options.envelope)
@@ -91,7 +97,7 @@ export class FirestoreMaterialCommandStore implements MaterialCommandStore {
         updatedAt: committedAt,
       })
       transaction.create(receiptReference, {
-        schemaVersion: receiptSchemaVersion,
+        schemaVersion: MATERIAL_COMMAND_RECEIPT_SCHEMA_VERSION,
         signature,
         result,
         createdAt: committedAt,
@@ -103,7 +109,7 @@ export class FirestoreMaterialCommandStore implements MaterialCommandStore {
 
   async resolve(options: { commandId: string; ownerId: string }) {
     const snapshot = await this.database
-      .doc(receiptPath(options.ownerId, options.commandId))
+      .doc(materialCommandReceiptPath(options.ownerId, options.commandId))
       .get()
     if (!snapshot.exists) return null
     return storedMaterialCommandResult(snapshot.data()?.result)

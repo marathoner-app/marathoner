@@ -271,4 +271,39 @@ describe("founding-beta membership rules", () => {
       }),
     );
   });
+
+  it("keeps plan activation records server-owned while allowing owner reads", async () => {
+    await seedMembership(firstUserId);
+    await seedMembership(secondUserId);
+    const activeStatePath = `users/${firstUserId}/planState/active`;
+    const provenancePath =
+      `users/${firstUserId}/plans/plan-1/metadata/generation`;
+    const receiptPath =
+      `materialCommandReceipts/${firstUserId}/commands/approve-plan-1`;
+    await testEnvironment.withSecurityRulesDisabled(async (context) => {
+      await setDoc(doc(context.firestore(), activeStatePath), {
+        schemaVersion: 1,
+        userId: firstUserId,
+      });
+      await setDoc(doc(context.firestore(), provenancePath), {
+        schemaVersion: 1,
+        userId: firstUserId,
+      });
+      await setDoc(doc(context.firestore(), receiptPath), {
+        schemaVersion: 1,
+      });
+    });
+
+    const ownerDatabase = authenticatedContext(firstUserId).firestore();
+    const otherDatabase = authenticatedContext(secondUserId).firestore();
+    for (const path of [activeStatePath, provenancePath]) {
+      await assertSucceeds(getDoc(doc(ownerDatabase, path)));
+      await assertFails(getDoc(doc(otherDatabase, path)));
+      await assertFails(setDoc(doc(ownerDatabase, path), { userId: firstUserId }));
+      await assertFails(deleteDoc(doc(ownerDatabase, path)));
+    }
+    await assertFails(getDoc(doc(ownerDatabase, receiptPath)));
+    await assertFails(setDoc(doc(ownerDatabase, receiptPath), {}));
+    await assertFails(deleteDoc(doc(ownerDatabase, receiptPath)));
+  });
 });

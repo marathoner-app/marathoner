@@ -40,12 +40,16 @@ export interface MaterialCommandStore {
     commandId: string
     ownerId: string
   }): Promise<
-    MaterialCommandCommittedResult | AccountDeletionRequestAcceptedResult | null
+    | MaterialCommandCommittedResult
+    | AccountDeletionRequestAcceptedResult
+    | PlanApprovalReceiptResult
+    | null
   >
 }
 
 export interface PlanApprovalStore {
   commit(options: {
+    artifactPolicyRecord: PlanApprovalArtifactPolicyRecord
     envelope: PlanApprovalCommandEnvelope
     ownerId: string
   }): Promise<
@@ -185,6 +189,7 @@ export async function executeMaterialCommand(
 
     try {
       const stored = await planApproval.store.commit({
+        artifactPolicyRecord: policyDecision.record,
         envelope: parsed.envelope,
         ownerId: options.authenticatedUserId,
       })
@@ -288,9 +293,11 @@ export async function resolveMaterialCommand(
       result,
       stored?.status === 'accepted'
         ? 'account.request-deletion'
-        : stored
-          ? 'proof.material-command'
-          : 'unknown',
+        : stored?.status === 'plan_approved'
+          ? 'plan.approve-generated'
+          : stored
+            ? 'proof.material-command'
+            : 'unknown',
     )
     return result
   } catch (error) {

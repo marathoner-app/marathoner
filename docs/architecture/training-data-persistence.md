@@ -44,9 +44,10 @@ users/{userId}
   shoes/{shoeId}
 ```
 
-The active-state and generation-metadata paths are defined by issue #240's
-pure projection but are not written yet. Issue #241 owns their atomic Firestore
-transaction, protected rules, deletion inventory, and emulator proof.
+Issue #241 commits the active-state and generation-metadata records with the
+plan, complete workout set, prior-plan retirement, and idempotency receipt in
+one Admin SDK transaction. The production artifact registry remains empty, so
+this implemented path is not reachable in a live environment.
 
 Issue #87 temporarily added one non-production proof path below the same owner:
 
@@ -162,10 +163,10 @@ the plan's owner and inclusive date range before writing it. Generated plans use
 `endDate` as the inclusive boundary so recovery workouts after race day remain
 valid; legacy plans without it continue to use `targetRaceDate`.
 
-## Projected plan-activation records
+## Atomic plan activation
 
-Issue #240 defines two server-owned records without performing a Firestore
-operation. Both paths remain below the authenticated owner:
+The projection defined by issue #240 supplies two server-owned records below
+the authenticated owner:
 
 ```text
 users/{userId}/planState/active
@@ -194,9 +195,23 @@ Firebase SDK or accepting a data-store dependency. Invalid or incomplete input
 therefore fails before any Firestore operation can exist. Unit tests inject
 synthetic artifacts only; the production artifact registry remains empty.
 
-Issue #241 must convert timestamps with the Admin SDK and commit the plan,
-complete workout set, active state, provenance, and receipt in one transaction.
-Until then, these records are a tested projection contract, not live storage.
+`FirestorePlanApprovalStore` converts projected timestamps with the Admin SDK
+and commits the plan, every workout, active state, provenance, and owner-scoped
+material-command receipt in one transaction. On replacement it also verifies
+and archives the previous active plan in that transaction. The submitted
+expected revision must equal the stored active revision (`null` for no active
+plan); otherwise the store returns a typed stale result without writing. First
+activation records revision `1`, and a valid replacement increments once.
+
+The receipt stores the canonical command signature and exact approval result.
+A retry with the same command ID and signature returns that result before the
+current revision is inspected. Different content under the same ID conflicts.
+Resolution through the authenticated material-command endpoint returns the
+same receipt. Client rules permit the owner to read active state and provenance
+but deny every client mutation; material-command receipts remain unreadable and
+unwritable from clients. The emulator alone enables one synthetic fixture tuple
+to prove this behavior. Production continues to reject every plan proposal
+before the transaction because its artifact registry is empty.
 
 ## Completed-run documents
 
