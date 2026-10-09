@@ -6,16 +6,34 @@ import {
   MATERIAL_COMMAND_ENVELOPE_VERSION,
   MATERIAL_COMMAND_PROOF_SCHEMA_VERSION,
   PLAN_APPROVAL_COMMAND_SCHEMA_VERSION,
+  RUN_COMPLETION_COMMAND_SCHEMA_VERSION,
+  RUN_DELETION_COMMAND_SCHEMA_VERSION,
   createAccountDeletionRequest,
   createPlanApprovalCommand,
   createProofMaterialCommand,
+  createRunCompletionCommand,
+  createRunDeletionCommand,
   isMaterialCommandResult,
+  isRunCommandStaleRevisionResult,
+  isRunCompletionDuplicateResult,
+  isRunCompletionReceiptResult,
+  isRunDeletionReceiptResult,
   materialCommandSignature,
   parseMaterialCommand,
+  type CompletedRunCommandInputV1,
+  type PlannedWorkoutCommandReferenceV1,
 } from './contract'
 import {
   PLAN_GENERATION_RESULT_SCHEMA_VERSION,
+  createCompletedRunId,
+  createDistanceMeters,
+  createDurationSeconds,
+  createIanaTimeZone,
   createPlanGenerationArtifactVersion,
+  createPlannedWorkoutId,
+  createShoeId,
+  createTrainingPlanId,
+  createUtcDateTime,
   planGenerationContractFixtures,
   type GeneratedPlanV1,
   type PlanGenerationInputV1,
@@ -23,6 +41,26 @@ import {
 
 const commandId = 'proof-command-0001'
 const approvalCommandId = 'approve-plan-command-0001'
+const completionCommandId = 'complete-run-command-0001'
+const deletionCommandId = 'delete-run-command-0001'
+
+const plannedWorkout: PlannedWorkoutCommandReferenceV1 = {
+  planId: createTrainingPlanId('plan-0001'),
+  workoutId: createPlannedWorkoutId('workout-0001'),
+  expectedUpdatedAt: createUtcDateTime('2026-10-08T12:00:00Z'),
+}
+
+const completedRunInput: CompletedRunCommandInputV1 = {
+  plannedWorkout,
+  shoeId: createShoeId('shoe-0001'),
+  startedAt: createUtcDateTime('2026-10-08T13:15:00Z'),
+  timeZone: createIanaTimeZone('America/Los_Angeles'),
+  distance: createDistanceMeters(5_000),
+  duration: createDurationSeconds(1_650),
+  perceivedEffort: 'about_right',
+  unusualPain: false,
+  notes: 'Easy progression run.',
+}
 
 const generatedFixture = planGenerationContractFixtures.find(
   (fixture) => fixture.id === 'generated-exact-date-distance-target',
@@ -67,6 +105,122 @@ describe('material-command contract', () => {
     })
     expect(materialCommandSignature(command)).toBe(
       '1:1:account.request-deletion:1',
+    )
+  })
+
+  it('creates and parses a completed-run command without caller ownership', () => {
+    const command = createRunCompletionCommand(
+      completionCommandId,
+      completedRunInput,
+    )
+
+    expect(parseMaterialCommand(command)).toEqual({
+      ok: true,
+      envelope: command,
+    })
+    expect(command.command.input).toEqual(completedRunInput)
+    expect(JSON.stringify(command)).not.toContain('userId')
+    expect(command.command.input).toMatchObject({
+      plannedWorkout,
+      shoeId: 'shoe-0001',
+      startedAt: '2026-10-08T13:15:00.000Z',
+      timeZone: 'America/Los_Angeles',
+      distance: 5_000,
+      duration: 1_650,
+      perceivedEffort: 'about_right',
+      unusualPain: false,
+      notes: 'Easy progression run.',
+    })
+  })
+
+  it('creates and parses an unplanned run and a run deletion', () => {
+    const unplanned = createRunCompletionCommand(
+      'complete-unplanned-run-0001',
+      {
+        plannedWorkout: null,
+        startedAt: completedRunInput.startedAt,
+        timeZone: completedRunInput.timeZone,
+        distance: completedRunInput.distance,
+        duration: completedRunInput.duration,
+      },
+    )
+    const deletion = createRunDeletionCommand(deletionCommandId, {
+      completedRunId: createCompletedRunId('run-0001'),
+      expectedCompletedRunUpdatedAt: createUtcDateTime(
+        '2026-10-08T14:00:00Z',
+      ),
+      plannedWorkout,
+    })
+
+    expect(parseMaterialCommand(unplanned)).toEqual({
+      ok: true,
+      envelope: unplanned,
+    })
+    expect(parseMaterialCommand(deletion)).toEqual({
+      ok: true,
+      envelope: deletion,
+    })
+    expect(deletion.command).toMatchObject({
+      completedRunId: 'run-0001',
+      expectedCompletedRunUpdatedAt: '2026-10-08T14:00:00.000Z',
+      plannedWorkout,
+    })
+  })
+
+  it('uses stable, payload-sensitive run-command signatures', () => {
+    const completion = createRunCompletionCommand(
+      completionCommandId,
+      completedRunInput,
+    )
+    const reorderedInput: CompletedRunCommandInputV1 = {
+      notes: completedRunInput.notes,
+      duration: completedRunInput.duration,
+      distance: completedRunInput.distance,
+      timeZone: completedRunInput.timeZone,
+      startedAt: completedRunInput.startedAt,
+      shoeId: completedRunInput.shoeId,
+      plannedWorkout: {
+        expectedUpdatedAt: plannedWorkout.expectedUpdatedAt,
+        workoutId: plannedWorkout.workoutId,
+        planId: plannedWorkout.planId,
+      },
+      unusualPain: completedRunInput.unusualPain,
+      perceivedEffort: completedRunInput.perceivedEffort,
+    }
+    const reordered = createRunCompletionCommand(
+      'complete-run-command-0002',
+      reorderedInput,
+    )
+    const changed = createRunCompletionCommand(
+      'complete-run-command-0003',
+      { ...completedRunInput, duration: createDurationSeconds(1_651) },
+    )
+    const deletion = createRunDeletionCommand(deletionCommandId, {
+      completedRunId: createCompletedRunId('run-0001'),
+      expectedCompletedRunUpdatedAt: createUtcDateTime(
+        '2026-10-08T14:00:00Z',
+      ),
+      plannedWorkout,
+    })
+    const changedDeletion = createRunDeletionCommand(
+      'delete-run-command-0002',
+      {
+        completedRunId: createCompletedRunId('run-0001'),
+        expectedCompletedRunUpdatedAt: createUtcDateTime(
+          '2026-10-08T14:00:01Z',
+        ),
+        plannedWorkout,
+      },
+    )
+
+    expect(materialCommandSignature(reordered)).toBe(
+      materialCommandSignature(completion),
+    )
+    expect(materialCommandSignature(changed)).not.toBe(
+      materialCommandSignature(completion),
+    )
+    expect(materialCommandSignature(changedDeletion)).not.toBe(
+      materialCommandSignature(deletion),
     )
   })
 
@@ -231,6 +385,110 @@ describe('material-command contract', () => {
     })
   })
 
+  it('rejects incomplete or malformed completed-run input', () => {
+    const command = createRunCompletionCommand(
+      completionCommandId,
+      completedRunInput,
+    )
+
+    for (const input of [
+      {
+        ...completedRunInput,
+        plannedWorkout: {
+          planId: plannedWorkout.planId,
+          expectedUpdatedAt: plannedWorkout.expectedUpdatedAt,
+        },
+      },
+      { ...completedRunInput, distance: 0 },
+      { ...completedRunInput, duration: 1.5 },
+      { ...completedRunInput, timeZone: 'Not/A_Time_Zone' },
+      { ...completedRunInput, perceivedEffort: 'impossible' },
+      { ...completedRunInput, notes: '   ' },
+      { ...completedRunInput, extra: true },
+    ]) {
+      expect(
+        parseMaterialCommand({
+          ...command,
+          command: { ...command.command, input },
+        }),
+      ).toEqual({
+        ok: false,
+        result: expect.objectContaining({
+          status: 'validation_error',
+          code: 'invalid-run-completion',
+        }),
+      })
+    }
+  })
+
+  it('rejects malformed completed-run deletion fields', () => {
+    const command = createRunDeletionCommand(deletionCommandId, {
+      completedRunId: createCompletedRunId('run-0001'),
+      expectedCompletedRunUpdatedAt: createUtcDateTime(
+        '2026-10-08T14:00:00Z',
+      ),
+      plannedWorkout,
+    })
+
+    for (const change of [
+      { completedRunId: 'users/another-runner/run-0001' },
+      { expectedCompletedRunUpdatedAt: 'yesterday' },
+      {
+        plannedWorkout: {
+          workoutId: plannedWorkout.workoutId,
+          expectedUpdatedAt: plannedWorkout.expectedUpdatedAt,
+        },
+      },
+      { extra: true },
+    ]) {
+      expect(
+        parseMaterialCommand({
+          ...command,
+          command: { ...command.command, ...change },
+        }),
+      ).toEqual({
+        ok: false,
+        result: expect.objectContaining({
+          status: 'validation_error',
+          code: 'invalid-run-deletion',
+        }),
+      })
+    }
+  })
+
+  it.each(['userId', 'ownerId', 'uid', 'email', 'projectId', 'path'])(
+    'rejects prohibited run-command field %s anywhere in the payload',
+    (field) => {
+      const command = createRunCompletionCommand(
+        completionCommandId,
+        completedRunInput,
+      )
+      const parsed = parseMaterialCommand({
+        ...command,
+        command: {
+          ...command.command,
+          input: {
+            ...command.command.input,
+            plannedWorkout: {
+              ...plannedWorkout,
+              [field]: 'caller-selected-target',
+            },
+          },
+        },
+      })
+
+      expect(parsed).toEqual({
+        ok: false,
+        result: expect.objectContaining({
+          status: 'validation_error',
+          code: ['userId', 'ownerId', 'uid'].includes(field)
+            ? 'ownership-field-prohibited'
+            : 'target-field-prohibited',
+        }),
+      })
+    },
+  )
+
   it('rejects ownership or target selectors nested in plan approval data', () => {
     expect(
       parseMaterialCommand({
@@ -334,6 +592,35 @@ describe('material-command contract', () => {
       },
       'unsupported-command-schema-version',
     ],
+    [
+      'run-completion command schema',
+      {
+        command: {
+          ...createRunCompletionCommand(
+            completionCommandId,
+            completedRunInput,
+          ).command,
+          schemaVersion: RUN_COMPLETION_COMMAND_SCHEMA_VERSION + 1,
+        },
+      },
+      'unsupported-command-schema-version',
+    ],
+    [
+      'run-deletion command schema',
+      {
+        command: {
+          ...createRunDeletionCommand(deletionCommandId, {
+            completedRunId: createCompletedRunId('run-0001'),
+            expectedCompletedRunUpdatedAt: createUtcDateTime(
+              '2026-10-08T14:00:00Z',
+            ),
+            plannedWorkout,
+          }).command,
+          schemaVersion: RUN_DELETION_COMMAND_SCHEMA_VERSION + 1,
+        },
+      },
+      'unsupported-command-schema-version',
+    ],
   ])('returns a typed result for an unsupported %s', (_, change, code) => {
     const command = { ...createProofMaterialCommand(commandId), ...change }
 
@@ -376,6 +663,115 @@ describe('material-command contract', () => {
     expect(isMaterialCommandResult({ ...receipt, unexpected: true })).toBe(
       false,
     )
+  })
+
+  it('recognizes only exact replayable run completion and deletion receipts', () => {
+    const completedPlannedWorkout = {
+      planId: 'plan-0001',
+      workoutId: 'workout-0001',
+      updatedAt: '2026-10-08T14:00:00.000Z',
+    }
+    const completionReceipt = {
+      status: 'run_completed',
+      commandId: completionCommandId,
+      completedRunId: 'run-0001',
+      completedRunUpdatedAt: '2026-10-08T14:00:00.000Z',
+      completedPlannedWorkout,
+    }
+    const deletionReceipt = {
+      status: 'run_deleted',
+      commandId: deletionCommandId,
+      completedRunId: 'run-0001',
+      deletedAt: '2026-10-08T15:00:00.000Z',
+      reopenedPlannedWorkout: {
+        ...completedPlannedWorkout,
+        updatedAt: '2026-10-08T15:00:00.000Z',
+      },
+    }
+
+    expect(isRunCompletionReceiptResult(completionReceipt)).toBe(true)
+    expect(isRunDeletionReceiptResult(deletionReceipt)).toBe(true)
+    expect(isMaterialCommandResult(completionReceipt)).toBe(true)
+    expect(isMaterialCommandResult(deletionReceipt)).toBe(true)
+    expect(
+      isRunCompletionReceiptResult({ ...completionReceipt, extra: true }),
+    ).toBe(false)
+    expect(
+      isRunDeletionReceiptResult({
+        ...deletionReceipt,
+        reopenedPlannedWorkout: {
+          ...deletionReceipt.reopenedPlannedWorkout,
+          updatedAt: 'not-a-time',
+        },
+      }),
+    ).toBe(false)
+  })
+
+  it('distinguishes duplicate completion and run-specific stale results', () => {
+    const duplicate = {
+      status: 'conflict',
+      commandId: completionCommandId,
+      code: 'planned-workout-already-completed',
+      message: 'This workout already has a completed run.',
+      planId: 'plan-0001',
+      plannedWorkoutId: 'workout-0001',
+      completedRunId: 'run-0001',
+    }
+    const staleRun = {
+      status: 'stale_revision',
+      commandId: deletionCommandId,
+      code: 'completed-run-version-changed',
+      message: 'The completed run changed before deletion.',
+      completedRunId: 'run-0001',
+      expectedUpdatedAt: '2026-10-08T14:00:00.000Z',
+      actualUpdatedAt: '2026-10-08T14:01:00.000Z',
+    }
+    const staleWorkout = {
+      status: 'stale_revision',
+      commandId: deletionCommandId,
+      code: 'planned-workout-version-changed',
+      message: 'The planned workout changed before deletion.',
+      planId: 'plan-0001',
+      plannedWorkoutId: 'workout-0001',
+      expectedUpdatedAt: '2026-10-08T14:00:00.000Z',
+      actualUpdatedAt: null,
+    }
+
+    expect(isRunCompletionDuplicateResult(duplicate)).toBe(true)
+    expect(isRunCommandStaleRevisionResult(staleRun)).toBe(true)
+    expect(isRunCommandStaleRevisionResult(staleWorkout)).toBe(true)
+    expect(isMaterialCommandResult(duplicate)).toBe(true)
+    expect(isMaterialCommandResult(staleRun)).toBe(true)
+    expect(isMaterialCommandResult(staleWorkout)).toBe(true)
+    expect(
+      isRunCompletionDuplicateResult({
+        ...duplicate,
+        completedRunId: 'users/runner/run-0001',
+      }),
+    ).toBe(false)
+    expect(
+      isRunCommandStaleRevisionResult({
+        ...staleRun,
+        expectedUpdatedAt: 'not-a-time',
+      }),
+    ).toBe(false)
+  })
+
+  it.each([
+    ['validation_error', 'invalid-run-completion'],
+    ['authentication_error', 'authentication-required'],
+    ['authorization_error', 'training-resource-access-denied'],
+    ['retryable_error', 'temporarily-unavailable'],
+    ['outcome_unknown', 'resolve-by-command-id'],
+  ])('recognizes the run-command %s state', (status, code) => {
+    expect(
+      isMaterialCommandResult({
+        status,
+        commandId: completionCommandId,
+        code,
+        message: 'Typed run-command failure.',
+      }),
+    ).toBe(true)
   })
 
   it('recognizes only complete stale-revision and invalid-proposal results', () => {
