@@ -239,6 +239,34 @@ workout, both the workout ID and its parent plan ID are required because workout
 documents are nested below plans. The repository verifies referenced workouts
 and shoes before saving the run.
 
+### Completed-run command projection
+
+The server-owned projection for completed-run commands is pure: it receives a
+validated command plus records loaded by trusted server code and returns the
+exact run, workout, uniqueness-guard, and receipt effects that a later
+transaction may commit. It does not perform I/O. Authentication supplies the
+owner, the server supplies the run ID and audit timestamp, and client-observed
+`updatedAt` values are used only as stale-write preconditions.
+
+An associated completion reserves this deterministic document:
+
+```text
+users/{userId}/plans/{planId}/workouts/{workoutId}/completionState/current
+```
+
+The guard stores schema versions, owner, plan, workout, completed-run and
+command IDs, and the server creation time. Because every command for the same
+workout addresses the same document, a later transaction can reject a second
+completion without a collection query. Deleting an associated run may reopen a
+workout only when the loaded run, workout, and guard all identify one another;
+the projected deletion removes that exact guard. Unplanned runs create no guard
+and never invent a plan or workout association.
+
+The projection rejects missing, rest-day, already-completed, stale,
+cross-owner, mismatched, and retired-shoe inputs with stable material-command
+results. Firebase transaction wiring and activation remain owned by the next
+implementation slices; this section does not describe a live write path yet.
+
 ## Shoe documents
 
 Path: `users/{userId}/shoes/{shoeId}`
