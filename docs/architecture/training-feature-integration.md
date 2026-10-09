@@ -49,9 +49,13 @@ remains tracked by issue #29.
 
 ## Edit and deletion rules
 
-Editing run distance, duration, or shoe association updates the completed run.
-Every dependent value is derived again from the updated run collection. There
-is no separately incremented analytics or shoe-mileage total to drift.
+Editing a run's local completion date, distance, duration, or shoe association
+updates the completed run. A date correction keeps any planned-workout
+association intact and weekly analytics are derived again from the corrected
+local date. Every other dependent value is also derived from the updated run
+collection; there is no separately incremented analytics or shoe-mileage total
+to drift. Completed-run dates must be real calendar dates and cannot be in the
+future in the run's stored time zone.
 
 Deleting an unplanned run removes it from every calculation. Deleting the only
 completion record associated with a workout changes that workout back to

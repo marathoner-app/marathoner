@@ -68,6 +68,8 @@ function Harness({
     if (existing === undefined) throw new Error("Run not found");
     const updated = {
       ...existing,
+      startedAt: changes.startedAt ?? existing.startedAt,
+      timeZone: changes.timeZone ?? existing.timeZone,
       distance: changes.distance ?? existing.distance,
       duration: changes.duration ?? existing.duration,
       shoeId:
@@ -225,6 +227,85 @@ describe("ShoeTracker", () => {
     await user.clear(screen.getByRole("textbox", { name: "Edit run notes" }));
     await user.click(screen.getByRole("button", { name: "Save" }));
     expect(screen.queryByText(/^Notes:/)).not.toBeInTheDocument();
+  });
+
+  it("moves a run across a week boundary and cancel leaves the date unchanged", async () => {
+    const shoe: Shoe = {
+      id: createShoeId("shoe-1"),
+      userId,
+      name: "Daily Trainer",
+      startingDistance: createDistanceMeters(0),
+      status: "active",
+      createdAt: timestamp,
+      updatedAt: timestamp,
+    };
+    const run: CompletedRun = {
+      id: createCompletedRunId("run-1"),
+      userId,
+      shoeId: shoe.id,
+      startedAt: createUtcDateTime("2026-08-09T14:00:00Z"),
+      timeZone: createIanaTimeZone("America/Los_Angeles"),
+      distance: createDistanceMeters(5_000),
+      duration: createDurationSeconds(1_800),
+      createdAt: timestamp,
+      updatedAt: timestamp,
+    };
+    const user = userEvent.setup();
+    render(<Harness initialShoes={[shoe]} initialRuns={[run]} />);
+
+    await user.click(screen.getByRole("button", { name: "Edit" }));
+    const editDate = screen.getByLabelText("Edit run date");
+    expect(editDate).toHaveValue("2026-08-09");
+    await user.clear(editDate);
+    await user.type(editDate, "2026-08-10");
+    await user.click(screen.getByRole("button", { name: "Save" }));
+    expect(await screen.findByText(/^2026-08-10:/)).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Edit" }));
+    const changedDate = screen.getByLabelText("Edit run date");
+    await user.clear(changedDate);
+    await user.type(changedDate, "2026-08-11");
+    await user.click(screen.getByRole("button", { name: "Cancel" }));
+    expect(screen.getByText(/^2026-08-10:/)).toBeInTheDocument();
+  });
+
+  it("rejects a future completed-run date", async () => {
+    const shoe: Shoe = {
+      id: createShoeId("shoe-1"),
+      userId,
+      name: "Daily Trainer",
+      startingDistance: createDistanceMeters(0),
+      status: "active",
+      createdAt: timestamp,
+      updatedAt: timestamp,
+    };
+    const run: CompletedRun = {
+      id: createCompletedRunId("run-1"),
+      userId,
+      shoeId: shoe.id,
+      startedAt: timestamp,
+      timeZone: createIanaTimeZone("America/Los_Angeles"),
+      distance: createDistanceMeters(5_000),
+      duration: createDurationSeconds(1_800),
+      createdAt: timestamp,
+      updatedAt: timestamp,
+    };
+    const user = userEvent.setup();
+    render(<Harness initialShoes={[shoe]} initialRuns={[run]} />);
+
+    await user.click(screen.getByRole("button", { name: "Edit" }));
+    const editDate = screen.getByLabelText("Edit run date");
+    await user.clear(editDate);
+    await user.type(editDate, "2999-01-01");
+    await user.click(screen.getByRole("button", { name: "Save" }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "A completed run date cannot be in the future.",
+    );
+    expect(editDate).toHaveValue("2999-01-01");
+    await user.click(screen.getByRole("button", { name: "Cancel" }));
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    expect(screen.getByText(/^2026-08-05:/)).toBeInTheDocument();
   });
 
   it("records and displays optional perceived effort", async () => {

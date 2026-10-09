@@ -2,18 +2,20 @@ import { useMemo, useState } from "react";
 import {
   calculateShoeDistance,
   COMPLETED_RUN_NOTES_MAX_LENGTH,
+  createDateOnly,
   createPlannedWorkoutId,
   createShoeId,
   createTrainingPlanId,
   createDurationSeconds,
   createIanaTimeZone,
-  createUtcDateTime,
+  createUtcDateTimeAtLocalNoon,
   getRunLocalDate,
   metersToMiles,
   milesToMeters,
   type CompletedRun,
   type CompletedRunId,
   type DistanceMeters,
+  type IanaTimeZone,
   type PerceivedEffort,
   type PlannedWorkout,
   type Shoe,
@@ -77,21 +79,38 @@ function parseRunNotes(value: FormDataEntryValue | null) {
   return notes;
 }
 
-function today(): string {
-  const value = new Date();
-  const year = value.getFullYear();
-  const month = String(value.getMonth() + 1).padStart(2, "0");
-  const day = String(value.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
-}
-
 function currentTimeZone() {
   const value = Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
   return createIanaTimeZone(value);
 }
 
-function dateToUtc(date: string) {
-  return createUtcDateTime(new Date(`${date}T12:00:00`).toISOString());
+function today(timeZone: IanaTimeZone = currentTimeZone()) {
+  const values = Object.fromEntries(
+    new Intl.DateTimeFormat("en-US", {
+      timeZone,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    })
+      .formatToParts(new Date())
+      .map((part) => [part.type, part.value]),
+  );
+  return createDateOnly(`${values.year}-${values.month}-${values.day}`);
+}
+
+function parseCompletedRunDate(date: string, timeZone: IanaTimeZone) {
+  let localDate;
+  try {
+    localDate = createDateOnly(date);
+  } catch {
+    throw new Error("Choose a valid run date.");
+  }
+
+  if (localDate > today(timeZone)) {
+    throw new Error("A completed run date cannot be in the future.");
+  }
+
+  return createUtcDateTimeAtLocalNoon(localDate, timeZone);
 }
 
 function parseDuration(value: string) {
@@ -141,7 +160,7 @@ export default function ShoeTracker({
   onDeleteRun,
 }: ShoeTrackerProps) {
   const [newShoe, setNewShoe] = useState("");
-  const [runDate, setRunDate] = useState(today);
+  const [runDate, setRunDate] = useState<string>(today);
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
   const [editingRunId, setEditingRunId] = useState<CompletedRunId | null>(null);
@@ -181,6 +200,7 @@ export default function ShoeTracker({
     setError(null);
     setPending(true);
     try {
+      const timeZone = currentTimeZone();
       const association = String(formData.get("workout") ?? "");
       const [plannedWorkoutPlanId, plannedWorkoutId] = association
         ? association.split("/")
@@ -193,8 +213,8 @@ export default function ShoeTracker({
           ? createPlannedWorkoutId(plannedWorkoutId)
           : undefined,
         shoeId: createShoeId(String(formData.get("shoe"))),
-        startedAt: dateToUtc(runDate),
-        timeZone: currentTimeZone(),
+        startedAt: parseCompletedRunDate(runDate, timeZone),
+        timeZone,
         distance: milesToMeters(Number(formData.get("miles"))),
         duration: parseDuration(String(formData.get("time"))),
         perceivedEffort: parsePerceivedEffort(formData.get("perceivedEffort")),
@@ -295,7 +315,12 @@ export default function ShoeTracker({
                           setError(null);
                           setPending(true);
                           try {
+                            const selectedDate = String(data.get("date"));
                             await onUpdateRun(run.id, {
+                              startedAt:
+                                selectedDate === getRunLocalDate(run)
+                                  ? undefined
+                                  : parseCompletedRunDate(selectedDate, run.timeZone),
                               distance: milesToMeters(Number(data.get("miles"))),
                               duration: parseDuration(String(data.get("time"))),
                               shoeId: createShoeId(String(data.get("shoe"))),
@@ -311,6 +336,20 @@ export default function ShoeTracker({
                           }
                         }}
                       >
+                        <input
+                          aria-label="Edit run date"
+                          aria-describedby={`edit-run-date-help-${run.id}`}
+                          name="date"
+                          type="date"
+                          defaultValue={getRunLocalDate(run)}
+                          required
+                        />
+                        <p
+                          id={`edit-run-date-help-${run.id}`}
+                          className="training-field-hint"
+                        >
+                          Use the date this run was completed. Future dates are not allowed.
+                        </p>
                         <input
                           aria-label="Edit miles"
                           name="miles"
@@ -372,7 +411,13 @@ export default function ShoeTracker({
                           Optional context, up to {COMPLETED_RUN_NOTES_MAX_LENGTH} characters.
                         </p>
                         <button type="submit" disabled={pending}>Save</button>
-                        <button type="button" onClick={() => setEditingRunId(null)}>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setError(null);
+                            setEditingRunId(null);
+                          }}
+                        >
                           Cancel
                         </button>
                       </form>

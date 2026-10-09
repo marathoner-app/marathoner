@@ -137,12 +137,17 @@ describe("completed run repository", () => {
     await expect(repositories.runs.list()).resolves.toEqual([newer, older]);
 
     const updated = await repositories.runs.update(older.id, {
+      startedAt: createUtcDateTime("2026-08-10T14:00:00Z"),
       distance: createDistanceMeters(5000),
       perceivedEffort: "harder_than_expected",
     });
     expect(updated).toMatchObject({
+      startedAt: "2026-08-10T14:00:00.000Z",
       distance: 5000,
       perceivedEffort: "harder_than_expected",
+    });
+    await expect(repositories.runs.get(older.id)).resolves.toMatchObject({
+      startedAt: "2026-08-10T14:00:00.000Z",
     });
 
     await repositories.runs.delete(newer.id);
