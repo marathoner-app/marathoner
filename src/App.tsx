@@ -437,7 +437,11 @@ function SectionContent({ section, title, onClose }: SectionContentProps) {
         />
       )}
       {training.status === "ready" && section === "analyze" && (
-        <Analyze runs={training.runs} />
+        <Analyze
+          runs={training.runs}
+          distanceUnit={training.profile?.preferredDistanceUnit ?? "mile"}
+          timeZone={training.profile?.timeZone}
+        />
       )}
     </motion.div>
   );

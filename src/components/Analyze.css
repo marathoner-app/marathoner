@@ -38,9 +38,84 @@
   font-size: 1.5rem;
 }
 
+.weekly-trend {
+  width: 100%;
+  max-width: 56rem;
+  margin: 2rem auto 0;
+  padding: 1rem;
+  border: 1px solid #d9e2ec;
+  border-radius: 8px;
+  background: #fff;
+  text-align: left;
+}
+
+.weekly-trend h2,
+.weekly-trend-context {
+  margin: 0;
+}
+
+.weekly-trend h2 {
+  color: #005fcc;
+  font-size: 1.25rem;
+}
+
+.weekly-trend-context {
+  margin-top: 0.35rem;
+  color: #34495e;
+}
+
+.weekly-trend-chart {
+  width: 100%;
+  min-width: 0;
+  height: 18rem;
+  margin-top: 0.75rem;
+  overflow: hidden;
+}
+
+.weekly-trend-data {
+  margin-top: 0.75rem;
+}
+
+.weekly-trend-data summary {
+  color: #005fcc;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.weekly-trend-data table {
+  width: 100%;
+  margin-top: 0.75rem;
+  border-collapse: collapse;
+}
+
+.weekly-trend-data caption {
+  padding-bottom: 0.5rem;
+  font-weight: 600;
+  text-align: left;
+}
+
+.weekly-trend-data th,
+.weekly-trend-data td {
+  padding: 0.5rem;
+  border-bottom: 1px solid #d9e2ec;
+  text-align: left;
+}
+
 @media (max-width: 768px) {
   .analyze-container {
     width: 100%;
     margin: 0 auto;
+  }
+
+  .weekly-trend {
+    padding: 0.75rem;
+  }
+
+  .weekly-trend-chart {
+    height: 16rem;
+  }
+
+  .weekly-trend-data {
+    overflow-x: auto;
   }
 }

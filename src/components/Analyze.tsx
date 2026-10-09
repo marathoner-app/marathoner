@@ -1,41 +1,76 @@
+import { lazy, Suspense } from "react";
 import { motion } from "framer-motion";
 import {
   calculateTrainingAnalytics,
+  calculateWeeklyDistanceTrend,
   createDateOnly,
+  createIanaTimeZone,
+  metersToKilometers,
   metersToMiles,
   type CompletedRun,
   type DistanceMeters,
+  type DistanceUnit,
+  type IanaTimeZone,
 } from "../domain/training";
+
+const WeeklyDistanceTrend = lazy(() => import("./WeeklyDistanceTrend"));
 
 type AnalyzeProps = {
   readonly runs: readonly CompletedRun[];
+  readonly distanceUnit: DistanceUnit;
+  readonly timeZone?: IanaTimeZone;
   readonly now?: Date;
 };
 
-function mondayFor(date: Date) {
-  const monday = new Date(date);
-  const day = monday.getDay();
-  monday.setDate(monday.getDate() - (day === 0 ? 6 : day - 1));
-  const year = monday.getFullYear();
-  const month = String(monday.getMonth() + 1).padStart(2, "0");
-  const dayOfMonth = String(monday.getDate()).padStart(2, "0");
-  return createDateOnly(`${year}-${month}-${dayOfMonth}`);
+function currentTimeZone(): IanaTimeZone {
+  return createIanaTimeZone(
+    Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC",
+  );
 }
 
-function formatMiles(distance: DistanceMeters): string {
-  return Number(metersToMiles(distance).toFixed(1)).toString();
+function mondayFor(date: Date, timeZone: IanaTimeZone) {
+  const parts = Object.fromEntries(
+    new Intl.DateTimeFormat("en-US", {
+      timeZone,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    })
+      .formatToParts(date)
+      .map((part) => [part.type, part.value]),
+  );
+  const localDate = createDateOnly(`${parts.year}-${parts.month}-${parts.day}`);
+  const monday = new Date(`${localDate}T00:00:00.000Z`);
+  const day = monday.getUTCDay();
+  monday.setUTCDate(monday.getUTCDate() - (day === 0 ? 6 : day - 1));
+  return createDateOnly(monday.toISOString().slice(0, 10));
 }
 
-function formatPace(secondsPerMile: number | undefined): string {
-  if (secondsPerMile === undefined) return "Not enough data";
-  const rounded = Math.round(secondsPerMile);
+function formatDistance(distance: DistanceMeters, unit: DistanceUnit): string {
+  const value = unit === "mile" ? metersToMiles(distance) : metersToKilometers(distance);
+  return `${Number(value.toFixed(1))} ${unit === "mile" ? "mi" : "km"}`;
+}
+
+function formatPace(
+  secondsPerUnit: number | undefined,
+  unit: DistanceUnit,
+): string {
+  if (secondsPerUnit === undefined) return "Not enough data";
+  const rounded = Math.round(secondsPerUnit);
   const minutes = Math.floor(rounded / 60);
   const seconds = String(rounded % 60).padStart(2, "0");
-  return `${minutes}:${seconds} /mi`;
+  return `${minutes}:${seconds} /${unit === "mile" ? "mi" : "km"}`;
 }
 
-export default function Analyze({ runs, now = new Date() }: AnalyzeProps) {
-  const analytics = calculateTrainingAnalytics(runs, mondayFor(now), "mile");
+export default function Analyze({
+  runs,
+  distanceUnit,
+  timeZone = currentTimeZone(),
+  now = new Date(),
+}: AnalyzeProps) {
+  const currentWeekStart = mondayFor(now, timeZone);
+  const analytics = calculateTrainingAnalytics(runs, currentWeekStart, distanceUnit);
+  const weeklyDistance = calculateWeeklyDistanceTrend(runs, currentWeekStart, 8);
 
   return (
     <motion.div
@@ -51,16 +86,16 @@ export default function Analyze({ runs, now = new Date() }: AnalyzeProps) {
       )}
       <div className="analyze-cards">
         <div className="analyze-card">
-          <h2>Total Mileage</h2>
-          <p>{formatMiles(analytics.totalDistance)} mi</p>
+          <h2>Total Distance</h2>
+          <p>{formatDistance(analytics.totalDistance, distanceUnit)}</p>
         </div>
         <div className="analyze-card">
           <h2>This Week</h2>
-          <p>{formatMiles(analytics.weeklyDistance)} mi</p>
+          <p>{formatDistance(analytics.weeklyDistance, distanceUnit)}</p>
         </div>
         <div className="analyze-card">
           <h2>Average Pace</h2>
-          <p>{formatPace(analytics.averagePace?.secondsPerUnit)}</p>
+          <p>{formatPace(analytics.averagePace?.secondsPerUnit, distanceUnit)}</p>
         </div>
         <div className="analyze-card">
           <h2>Total Runs</h2>
@@ -71,6 +106,18 @@ export default function Analyze({ runs, now = new Date() }: AnalyzeProps) {
           <p>{analytics.runsThisWeek}</p>
         </div>
       </div>
+      <Suspense
+        fallback={
+          <p className="training-status" role="status">
+            Loading weekly distance chart...
+          </p>
+        }
+      >
+        <WeeklyDistanceTrend
+          buckets={weeklyDistance}
+          distanceUnit={distanceUnit}
+        />
+      </Suspense>
     </motion.div>
   );
 }
