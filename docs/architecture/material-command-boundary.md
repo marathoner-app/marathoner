@@ -331,15 +331,18 @@ from Marathoner's logger.
 ## Deployment ownership
 
 These issues do not deploy a live function. `firebase.json` contains the local
-runtime definition, while `assert-material-command-deploy-target.mjs` has an
-empty approved-project list and blocks every deployment. `firebase.beta.json`
-does not define a Functions source.
+runtime definition, but it invokes the generalized Functions guard as
+`development` and therefore remains deployment-blocked. `firebase.beta.json`
+names the same reviewed codebase behind an exact `marathonerapp-beta` check and
+a non-secret operator-intent phrase. Issue #201 establishes that boundary
+without deploying a Function.
 
-A later reviewed deployment issue must deliberately name the exact project,
-preserve the development/beta environment boundary, confirm billing and region,
-apply the beta membership policy, enable the App Check plan owned by #161, and
-replace the empty deploy allowlist. Removing the guard merely to make a deploy
-command succeed is not approved.
+The first live deployment remains owned by #205 after #143 and #204 are
+complete. It must preserve the development/beta environment boundary, confirm
+billing and region, apply the beta membership policy, and follow the scoped
+deploy and rollback commands in the
+[beta Functions runbook](../operations/beta-functions-deployment.md). Removing
+or weakening the guard merely to make a deploy command succeed is not approved.
 
 ## Follow-up migrations
 

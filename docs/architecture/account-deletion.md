@@ -50,8 +50,10 @@ Firebase recommends deleting collections from a trusted server environment and
 documents that recursive deletion is non-atomic. Firebase also requires the
 Blaze plan to deploy Cloud Functions. Therefore the beta project must have an
 explicitly approved billing account, budget alerts, spend controls, deployment
-allowlist, and rollback owner before the request endpoint can go live. The
-current empty Functions deployment allowlist remains correct until that review.
+boundary, and rollback owner before the request endpoint can go live. The
+repository now has an exact-beta-project guard, but its operator-intent check
+keeps deployment blocked until #143 and #204 are complete and #205 authorizes
+the first live release.
 
 ## Data inventory
 
@@ -272,8 +274,9 @@ The accepted design is split into focused child issues in this order:
    shared payload-free command, callable handler, five-minute authentication
    check, protected request schema, atomic membership transition, App Check
    gate, Auth disable/revocation, and local tests are complete. Live deployment
-   remains blocked by #161, #121 coordination, the empty deployment allowlist,
-   and an explicit Blaze/budget decision.
+   remains blocked by #161, #121 coordination, unresolved #143 and #204 gates,
+   and #205 authorization. The beta-only Blaze and budget boundary is verified
+   in #201 but does not itself authorize deployment.
 2. **#197 — implement the idempotent deletion runner and manifest tests.** The
    fixed-path Admin command, stage checkpoints, failure injection, recursive
    verification, anonymized receipt, exact-ID cleanup, and operator runbook are
