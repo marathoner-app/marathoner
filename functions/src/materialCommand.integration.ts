@@ -1,5 +1,8 @@
 import { deleteApp as deleteAdminApp, initializeApp as initializeAdminApp } from 'firebase-admin/app'
-import { getFirestore as getAdminFirestore } from 'firebase-admin/firestore'
+import {
+  getFirestore as getAdminFirestore,
+  Timestamp,
+} from 'firebase-admin/firestore'
 import { deleteApp, initializeApp, type FirebaseApp } from 'firebase/app'
 import {
   connectAuthEmulator,
@@ -20,21 +23,37 @@ import {
   createAccountDeletionRequest,
   createPlanApprovalCommand,
   createProofMaterialCommand,
+  createRunCompletionCommand,
   isMaterialCommandResult,
   type MaterialCommandEnvelope,
   type PlanApprovalReceiptResult,
+  type RunCompletionReceiptResult,
 } from '../../src/domain/materialCommands/contract.js'
+import {
+  createIanaTimeZone,
+  createUtcDateTime,
+} from '../../src/domain/training/dates.js'
+import {
+  createPlannedWorkoutId,
+  createShoeId,
+  createTrainingPlanId,
+} from '../../src/domain/training/identifiers.js'
 import {
   PLAN_GENERATION_RESULT_SCHEMA_VERSION,
   type GeneratedPlanV1,
 } from '../../src/domain/training/planGeneration.js'
 import { planGenerationContractFixtures } from '../../src/domain/training/planGenerationFixtures.js'
 import {
+  createDistanceMeters,
+  createDurationSeconds,
+} from '../../src/domain/training/units.js'
+import {
   createMaterialCommandClient,
   type MaterialCommandTransport,
 } from '../../src/services/materialCommandClient.js'
 import type { PlanApprovalArtifactPolicyRecord } from './planApprovalArtifactPolicy.js'
 import { FirestorePlanApprovalStore } from './firestorePlanApprovalStore.js'
+import { FirestoreRunCompletionStore } from './firestoreRunCompletionStore.js'
 
 const projectId = 'demo-marathoner'
 const email = 'material-command-owner@example.test'
@@ -73,6 +92,98 @@ const generatedFixture = {
   plan: matchedGeneratedFixture.result.plan,
 }
 const supportedScopeId = 'synthetic-consistent-runner@1'
+const runPlanId = createTrainingPlanId('run-command-plan-0001')
+const runWorkoutId = createPlannedWorkoutId('run-command-workout-0001')
+const runShoeId = createShoeId('run-command-shoe-0001')
+const workoutUpdatedAt = createUtcDateTime('2026-10-08T18:00:00.000Z')
+
+function runCompletionCommand(
+  commandId: string,
+  options: {
+    plannedWorkout?: {
+      planId: typeof runPlanId
+      workoutId: typeof runWorkoutId
+      expectedUpdatedAt: typeof workoutUpdatedAt
+    } | null
+    shoeId?: typeof runShoeId
+  } = {},
+) {
+  return createRunCompletionCommand(commandId, {
+    plannedWorkout: options.plannedWorkout ?? null,
+    ...(options.shoeId === undefined ? {} : { shoeId: options.shoeId }),
+    startedAt: createUtcDateTime('2026-10-08T17:00:00.000Z'),
+    timeZone: createIanaTimeZone('America/Los_Angeles'),
+    distance: createDistanceMeters(5_000),
+    duration: createDurationSeconds(1_800),
+    perceivedEffort: 'about_right',
+    unusualPain: false,
+    notes: 'Emulator completion fixture',
+  })
+}
+
+function workoutPath(
+  workoutId: string = runWorkoutId,
+  planId: string = runPlanId,
+) {
+  return `users/${ownerId}/plans/${planId}/workouts/${workoutId}`
+}
+
+function guardPath(
+  workoutId: string = runWorkoutId,
+  planId: string = runPlanId,
+) {
+  return `${workoutPath(workoutId, planId)}/completionState/current`
+}
+
+async function seedWorkout(options: {
+  planId?: string
+  workoutId?: string
+  userId?: string
+  kind?: 'rest' | 'run'
+  status?: 'planned' | 'completed'
+  updatedAt?: string
+} = {}) {
+  const kind = options.kind ?? 'run'
+  const path = workoutPath(options.workoutId, options.planId)
+  await database.doc(path).set({
+    schemaVersion: 1,
+    userId: options.userId ?? ownerId,
+    planId: options.planId ?? runPlanId,
+    scheduledDate: '2026-10-08',
+    phase: 'base_building',
+    status: options.status ?? 'planned',
+    kind,
+    ...(kind === 'run'
+      ? { purpose: 'easy', targetDistanceMeters: 5_000 }
+      : {}),
+    createdAt: Timestamp.fromDate(new Date('2026-10-01T18:00:00.000Z')),
+    updatedAt: Timestamp.fromDate(
+      new Date(options.updatedAt ?? workoutUpdatedAt),
+    ),
+  })
+  return path
+}
+
+async function seedShoe(options: {
+  shoeId?: string
+  userId?: string
+  status?: 'active' | 'retired'
+} = {}) {
+  const status = options.status ?? 'active'
+  const shoeId = options.shoeId ?? runShoeId
+  const path = `users/${ownerId}/shoes/${shoeId}`
+  await database.doc(path).set({
+    schemaVersion: 1,
+    userId: options.userId ?? ownerId,
+    name: 'Emulator Daily Trainer',
+    startingDistanceMeters: 100_000,
+    status,
+    ...(status === 'retired' ? { retiredOn: '2026-10-07' } : {}),
+    createdAt: Timestamp.fromDate(new Date('2026-10-01T18:00:00.000Z')),
+    updatedAt: Timestamp.fromDate(new Date('2026-10-07T18:00:00.000Z')),
+  })
+  return path
+}
 
 function approvalCommand(
   commandId: string,
@@ -102,6 +213,13 @@ function approvedPolicyRecord(): PlanApprovalArtifactPolicyRecord {
 function requirePlanApprovalReceipt(value: unknown): PlanApprovalReceiptResult {
   if (!isMaterialCommandResult(value) || value.status !== 'plan_approved') {
     throw new Error('Expected a plan-approval receipt.')
+  }
+  return value
+}
+
+function requireRunCompletionReceipt(value: unknown): RunCompletionReceiptResult {
+  if (!isMaterialCommandResult(value) || value.status !== 'run_completed') {
+    throw new Error('Expected a run-completion receipt.')
   }
   return value
 }
@@ -537,6 +655,228 @@ describe('material-command emulator boundary', () => {
       )
     }
     await expect(database.doc(collidingWorkoutPath).get()).resolves.toEqual(
+      expect.objectContaining({ exists: true }),
+    )
+  })
+
+  it('atomically completes a planned run once and replays the exact receipt', async () => {
+    await Promise.all([seedWorkout(), seedShoe()])
+    await signInOwner()
+    const command = runCompletionCommand('complete-run-emulator-planned', {
+      plannedWorkout: {
+        planId: runPlanId,
+        workoutId: runWorkoutId,
+        expectedUpdatedAt: workoutUpdatedAt,
+      },
+      shoeId: runShoeId,
+    })
+
+    const first = requireRunCompletionReceipt((await submit(command)).data)
+    const retry = (await submit(command)).data
+    const resolved = (await resolve({ commandId: command.commandId })).data
+
+    expect(retry).toEqual(first)
+    expect(resolved).toEqual(first)
+    expect(first.completedPlannedWorkout).toEqual({
+      planId: runPlanId,
+      workoutId: runWorkoutId,
+      updatedAt: first.completedRunUpdatedAt,
+    })
+    const run = (
+      await database
+        .doc(`users/${ownerId}/runs/${first.completedRunId}`)
+        .get()
+    ).data()
+    expect(run).toEqual(
+      expect.objectContaining({
+        userId: ownerId,
+        plannedWorkoutPlanId: runPlanId,
+        plannedWorkoutId: runWorkoutId,
+        shoeId: runShoeId,
+        distanceMeters: 5_000,
+        durationSeconds: 1_800,
+      }),
+    )
+    expect((await database.doc(workoutPath()).get()).data()).toEqual(
+      expect.objectContaining({ status: 'completed' }),
+    )
+    expect((await database.doc(guardPath()).get()).data()).toEqual(
+      expect.objectContaining({
+        userId: ownerId,
+        planId: runPlanId,
+        plannedWorkoutId: runWorkoutId,
+        completedRunId: first.completedRunId,
+        commandId: command.commandId,
+      }),
+    )
+    await expect(
+      database.collection(`users/${ownerId}/runs`).get(),
+    ).resolves.toEqual(expect.objectContaining({ size: 1 }))
+
+    const changedCommand = createRunCompletionCommand(command.commandId, {
+      ...command.command.input,
+      duration: createDurationSeconds(1_801),
+    })
+    expect((await submit(changedCommand)).data).toEqual(
+      expect.objectContaining({
+        status: 'conflict',
+        code: 'command-id-reused',
+      }),
+    )
+
+    const duplicateCommand = runCompletionCommand(
+      'complete-run-emulator-duplicate-workout',
+      {
+        plannedWorkout: {
+          planId: runPlanId,
+          workoutId: runWorkoutId,
+          expectedUpdatedAt: first.completedRunUpdatedAt,
+        },
+      },
+    )
+    const duplicate = await submit(duplicateCommand)
+    expect(duplicate.data).toEqual({
+      status: 'conflict',
+      commandId: duplicateCommand.commandId,
+      code: 'planned-workout-already-completed',
+      message: 'This planned workout already has a completed run.',
+      planId: runPlanId,
+      plannedWorkoutId: runWorkoutId,
+      completedRunId: first.completedRunId,
+    })
+    await expect(
+      database.collection(`users/${ownerId}/runs`).get(),
+    ).resolves.toEqual(expect.objectContaining({ size: 1 }))
+    await expect(
+      database
+        .doc(
+          `materialCommandReceipts/${ownerId}/commands/${duplicateCommand.commandId}`,
+        )
+        .get(),
+    ).resolves.toEqual(expect.objectContaining({ exists: false }))
+  })
+
+  it('commits an unplanned run without workout or guard writes', async () => {
+    await signInOwner()
+    const command = runCompletionCommand('complete-run-emulator-unplanned')
+
+    const receipt = requireRunCompletionReceipt((await submit(command)).data)
+
+    expect(receipt.completedPlannedWorkout).toBeNull()
+    expect(
+      (
+        await database.doc(`users/${ownerId}/runs/${receipt.completedRunId}`).get()
+      ).data(),
+    ).toEqual(
+      expect.objectContaining({
+        userId: ownerId,
+        distanceMeters: 5_000,
+      }),
+    )
+    await expect(database.doc(guardPath()).get()).resolves.toEqual(
+      expect.objectContaining({ exists: false }),
+    )
+    await expect(
+      database
+        .doc(`materialCommandReceipts/${ownerId}/commands/${command.commandId}`)
+        .get(),
+    ).resolves.toEqual(expect.objectContaining({ exists: true }))
+  })
+
+  it('rejects stale, retired-shoe, and cross-owner state without receipts or runs', async () => {
+    await seedWorkout()
+    await signInOwner()
+    const stale = runCompletionCommand('complete-run-emulator-stale', {
+      plannedWorkout: {
+        planId: runPlanId,
+        workoutId: runWorkoutId,
+        expectedUpdatedAt: createUtcDateTime('2026-10-08T17:59:59.000Z'),
+      },
+    })
+    expect((await submit(stale)).data).toEqual(
+      expect.objectContaining({
+        status: 'stale_revision',
+        code: 'planned-workout-version-changed',
+      }),
+    )
+
+    await seedShoe({ status: 'retired' })
+    const retiredShoe = runCompletionCommand(
+      'complete-run-emulator-retired-shoe',
+      { shoeId: runShoeId },
+    )
+    expect((await submit(retiredShoe)).data).toEqual(
+      expect.objectContaining({
+        status: 'validation_error',
+        code: 'shoe-not-available',
+      }),
+    )
+
+    await seedWorkout({ userId: otherOwnerId })
+    const foreignWorkout = runCompletionCommand(
+      'complete-run-emulator-foreign-workout',
+      {
+        plannedWorkout: {
+          planId: runPlanId,
+          workoutId: runWorkoutId,
+          expectedUpdatedAt: workoutUpdatedAt,
+        },
+      },
+    )
+    expect((await submit(foreignWorkout)).data).toEqual(
+      expect.objectContaining({
+        status: 'authorization_error',
+        code: 'training-resource-access-denied',
+      }),
+    )
+
+    await expect(
+      database.collection(`users/${ownerId}/runs`).get(),
+    ).resolves.toEqual(expect.objectContaining({ empty: true }))
+    for (const command of [stale, retiredShoe, foreignWorkout]) {
+      await expect(
+        database
+          .doc(
+            `materialCommandReceipts/${ownerId}/commands/${command.commandId}`,
+          )
+          .get(),
+      ).resolves.toEqual(expect.objectContaining({ exists: false }))
+    }
+  })
+
+  it('rolls back workout, guard, and receipt writes when run creation fails', async () => {
+    await seedWorkout()
+    const command = runCompletionCommand('complete-run-emulator-rollback', {
+      plannedWorkout: {
+        planId: runPlanId,
+        workoutId: runWorkoutId,
+        expectedUpdatedAt: workoutUpdatedAt,
+      },
+    })
+    const fixedRunId = 'run-completion-collision'
+    const collisionPath = `users/${ownerId}/runs/${fixedRunId}`
+    await database.doc(collisionPath).set({ collision: true })
+    const store = new FirestoreRunCompletionStore(database, {
+      createRunId: () => fixedRunId,
+      now: () => new Date('2026-10-08T20:00:00.000Z'),
+    })
+
+    await expect(
+      store.commit({ envelope: command, ownerId }),
+    ).rejects.toBeDefined()
+
+    expect((await database.doc(workoutPath()).get()).data()).toEqual(
+      expect.objectContaining({ status: 'planned' }),
+    )
+    await expect(database.doc(guardPath()).get()).resolves.toEqual(
+      expect.objectContaining({ exists: false }),
+    )
+    await expect(
+      database
+        .doc(`materialCommandReceipts/${ownerId}/commands/${command.commandId}`)
+        .get(),
+    ).resolves.toEqual(expect.objectContaining({ exists: false }))
+    await expect(database.doc(collisionPath).get()).resolves.toEqual(
       expect.objectContaining({ exists: true }),
     )
   })
