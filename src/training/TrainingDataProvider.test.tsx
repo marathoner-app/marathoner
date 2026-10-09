@@ -235,6 +235,43 @@ describe("TrainingDataProvider", () => {
     expect(screen.getByText("Shoe: 0")).toBeInTheDocument();
   });
 
+  it("reloads a shoe total containing starting and Marathoner-recorded distance", async () => {
+    const shoe = await repositories.shoes.create({
+      name: "Daily Trainer",
+      startingDistance: milesToMeters(10),
+    });
+    await repositories.runs.create({
+      shoeId: shoe.id,
+      startedAt: createUtcDateTime("2026-08-03T14:00:00Z"),
+      timeZone,
+      distance: milesToMeters(3),
+      duration: createDurationSeconds(1_800),
+    });
+
+    const firstLoad = render(
+      <TrainingDataProvider
+        userId={userId}
+        repositoryFactory={repositoryFactory}
+      >
+        <IntegrationProbe />
+      </TrainingDataProvider>,
+    );
+
+    expect(await screen.findByText("Shoe: 13")).toBeInTheDocument();
+    firstLoad.unmount();
+
+    render(
+      <TrainingDataProvider
+        userId={userId}
+        repositoryFactory={repositoryFactory}
+      >
+        <IntegrationProbe />
+      </TrainingDataProvider>,
+    );
+
+    expect(await screen.findByText("Shoe: 13")).toBeInTheDocument();
+  });
+
   it("surfaces a calm recoverable load error", async () => {
     const failingFactory: TrainingRepositoryFactory = async () => {
       throw new Error("Training data is temporarily unavailable.");

@@ -12,6 +12,7 @@ import {
   createUserId,
   createUtcDateTime,
   type CompletedRun,
+  type DistanceUnit,
   type Shoe,
 } from "../domain/training";
 import type {
@@ -27,10 +28,12 @@ const timestamp = createUtcDateTime("2026-08-05T14:00:00Z");
 function Harness({
   initialShoes = [],
   initialRuns = [],
+  distanceUnit = "mile",
   onDeleteRunCall = () => undefined,
 }: {
   initialShoes?: Shoe[];
   initialRuns?: CompletedRun[];
+  distanceUnit?: DistanceUnit;
   onDeleteRunCall?: (id: CompletedRun["id"]) => void;
 }) {
   const [shoes, setShoes] = useState(initialShoes);
@@ -96,6 +99,7 @@ function Harness({
 
   return (
     <ShoeTracker
+      distanceUnit={distanceUnit}
       runs={runs}
       shoes={shoes}
       plannedWorkouts={[]}
@@ -110,7 +114,7 @@ function Harness({
 async function addShoe(name: string) {
   const user = userEvent.setup();
   await user.type(screen.getByPlaceholderText("Shoe Name"), name);
-  await user.click(screen.getByRole("button", { name: "Add" }));
+  await user.click(screen.getByRole("button", { name: "Add shoe" }));
   return user;
 }
 
@@ -120,8 +124,52 @@ describe("ShoeTracker", () => {
 
     await addShoe("Daily Trainer");
 
-    expect(await screen.findByText("Daily Trainer: 0 mi")).toBeInTheDocument();
+    expect(await screen.findByText("Total: 0 mi")).toBeInTheDocument();
+    expect(screen.getByText(/Starting: 0 mi/)).toBeInTheDocument();
+    expect(screen.getByText(/Recorded by Marathoner: 0 mi/)).toBeInTheDocument();
     expect(screen.getByPlaceholderText("Shoe Name")).toHaveValue("");
+    expect(
+      screen.getByRole("spinbutton", {
+        name: "Distance already on this shoe (miles)",
+      }),
+    ).toHaveValue(0);
+  });
+
+  it("adds nonzero starting distance in the runner's preferred unit", async () => {
+    render(<Harness distanceUnit="kilometer" />);
+    const user = userEvent.setup();
+    const startingDistance = screen.getByRole("spinbutton", {
+      name: "Distance already on this shoe (kilometers)",
+    });
+
+    await user.type(screen.getByPlaceholderText("Shoe Name"), "Daily Trainer");
+    await user.clear(startingDistance);
+    await user.type(startingDistance, "12.5");
+    await user.click(screen.getByRole("button", { name: "Add shoe" }));
+
+    expect(await screen.findByText("Total: 12.5 km")).toBeInTheDocument();
+    expect(screen.getByText(/Starting: 12.5 km/)).toBeInTheDocument();
+    expect(screen.getByText(/Recorded by Marathoner: 0 km/)).toBeInTheDocument();
+  });
+
+  it("calmly rejects negative starting distance without clearing the form", async () => {
+    render(<Harness />);
+    const user = userEvent.setup();
+    const startingDistance = screen.getByRole("spinbutton", {
+      name: "Distance already on this shoe (miles)",
+    });
+
+    await user.type(screen.getByPlaceholderText("Shoe Name"), "Daily Trainer");
+    await user.clear(startingDistance);
+    await user.type(startingDistance, "-1");
+    await user.click(screen.getByRole("button", { name: "Add shoe" }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Enter a starting distance of zero or greater.",
+    );
+    expect(screen.getByPlaceholderText("Shoe Name")).toHaveValue("Daily Trainer");
+    expect(startingDistance).toHaveValue(-1);
+    expect(screen.getByText("No shoes added yet.")).toBeInTheDocument();
   });
 
   it("logs a run and derives mileage for the selected shoe", async () => {
@@ -139,7 +187,9 @@ describe("ShoeTracker", () => {
     expect(await screen.findByText(/5 mi in 45:30 wearing Daily Trainer/)).toBeInTheDocument();
     expect(screen.getByText(/Effort: Not recorded/)).toBeInTheDocument();
     expect(screen.queryByText(/^Notes:/)).not.toBeInTheDocument();
-    expect(screen.getByText("Daily Trainer: 5 mi")).toBeInTheDocument();
+    expect(screen.getByText("Total: 5 mi")).toBeInTheDocument();
+    expect(screen.getByText(/Starting: 0 mi/)).toBeInTheDocument();
+    expect(screen.getByText(/Recorded by Marathoner: 5 mi/)).toBeInTheDocument();
   });
 
   it("records and displays optional run notes", async () => {
@@ -445,13 +495,13 @@ describe("ShoeTracker", () => {
     ).toBeInTheDocument();
     expect(screen.getByText("2026-08-05 · 5 mi")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Cancel" })).toHaveFocus();
-    expect(screen.getByText("Daily Trainer: 5 mi")).toBeInTheDocument();
+    expect(screen.getByText("Total: 5 mi")).toBeInTheDocument();
 
     await user.keyboard("{Escape}");
 
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     expect(onDeleteRunCall).not.toHaveBeenCalled();
-    expect(screen.getByText("Daily Trainer: 5 mi")).toBeInTheDocument();
+    expect(screen.getByText("Total: 5 mi")).toBeInTheDocument();
     expect(deleteButton).toHaveFocus();
   });
 
@@ -491,12 +541,12 @@ describe("ShoeTracker", () => {
     await user.type(screen.getByRole("spinbutton", { name: "Edit miles" }), "3");
     await user.click(screen.getByRole("button", { name: "Save" }));
 
-    expect(await screen.findByText("Daily Trainer: 3 mi")).toBeInTheDocument();
+    expect(await screen.findByText("Total: 3 mi")).toBeInTheDocument();
 
     await user.click(
       screen.getByRole("button", { name: "Delete run from 2026-08-05" }),
     );
-    expect(screen.getByText("Daily Trainer: 3 mi")).toBeInTheDocument();
+    expect(screen.getByText("Total: 3 mi")).toBeInTheDocument();
 
     await user.tab();
     expect(screen.getByRole("button", { name: "Delete run" })).toHaveFocus();
@@ -505,7 +555,7 @@ describe("ShoeTracker", () => {
     expect(await screen.findByText("No runs logged yet.")).toBeInTheDocument();
     expect(onDeleteRunCall).toHaveBeenCalledTimes(1);
     expect(onDeleteRunCall).toHaveBeenCalledWith(run.id);
-    expect(screen.getByText("Daily Trainer: 0 mi")).toBeInTheDocument();
+    expect(screen.getByText("Total: 0 mi")).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Logged Runs" })).toHaveFocus();
   });
 });
