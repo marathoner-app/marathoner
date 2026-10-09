@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   calculateShoeDistance,
   COMPLETED_RUN_NOTES_MAX_LENGTH,
@@ -164,6 +164,11 @@ export default function ShoeTracker({
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
   const [editingRunId, setEditingRunId] = useState<CompletedRunId | null>(null);
+  const [runToDelete, setRunToDelete] = useState<CompletedRun | null>(null);
+  const deleteTriggerRef = useRef<HTMLButtonElement | null>(null);
+  const deleteDialogRef = useRef<HTMLDivElement | null>(null);
+  const deleteCancelButtonRef = useRef<HTMLButtonElement | null>(null);
+  const loggedRunsHeadingRef = useRef<HTMLHeadingElement | null>(null);
   const activeShoes = shoes.filter((shoe) => shoe.status === "active");
   const availableWorkouts = plannedWorkouts.filter(
     (workout) => workout.kind !== "rest" && workout.status === "planned",
@@ -175,6 +180,74 @@ export default function ShoeTracker({
       ),
     [runs, shoes],
   );
+
+  useEffect(() => {
+    if (runToDelete === null) return;
+
+    const deleteTrigger = deleteTriggerRef.current;
+    const loggedRunsHeading = loggedRunsHeadingRef.current;
+    deleteCancelButtonRef.current?.focus();
+
+    return () => {
+      if (deleteTrigger?.isConnected) {
+        deleteTrigger.focus();
+      } else {
+        loggedRunsHeading?.focus();
+      }
+    };
+  }, [runToDelete]);
+
+  const closeDeleteConfirmation = () => {
+    if (!pending) setRunToDelete(null);
+  };
+
+  const handleDeleteConfirmationKeyDown = (
+    event: React.KeyboardEvent<HTMLDivElement>,
+  ) => {
+    if (event.key === "Escape") {
+      event.preventDefault();
+      closeDeleteConfirmation();
+      return;
+    }
+
+    if (event.key !== "Tab") return;
+
+    const buttons = Array.from(
+      deleteDialogRef.current?.querySelectorAll<HTMLButtonElement>(
+        "button:not([disabled])",
+      ) ?? [],
+    );
+    const firstButton = buttons[0];
+    const lastButton = buttons.at(-1);
+
+    if (event.shiftKey && document.activeElement === firstButton) {
+      event.preventDefault();
+      lastButton?.focus();
+    } else if (!event.shiftKey && document.activeElement === lastButton) {
+      event.preventDefault();
+      firstButton?.focus();
+    }
+  };
+
+  const confirmRunDeletion = async () => {
+    if (runToDelete === null) return;
+
+    setError(null);
+    setPending(true);
+    try {
+      await onDeleteRun(runToDelete.id);
+      setRunToDelete(null);
+    } catch (caught) {
+      setError(
+        caught instanceof Error
+          ? caught.message
+          : "The run could not be deleted.",
+      );
+      setRunToDelete(null);
+    } finally {
+      setPending(false);
+    }
+  };
 
   const handleAddShoe = async () => {
     const name = newShoe.trim();
@@ -295,7 +368,13 @@ export default function ShoeTracker({
         </form>
 
         <div className="mt-4">
-          <h3 className="text-lg font-medium">Logged Runs</h3>
+          <h3
+            ref={loggedRunsHeadingRef}
+            className="text-lg font-medium"
+            tabIndex={-1}
+          >
+            Logged Runs
+          </h3>
           {runs.length === 0 ? (
             <p className="training-empty-state">No runs logged yet.</p>
           ) : (
@@ -437,16 +516,10 @@ export default function ShoeTracker({
                         <button
                           type="button"
                           disabled={pending}
-                          onClick={async () => {
-                            setError(null);
-                            setPending(true);
-                            try {
-                              await onDeleteRun(run.id);
-                            } catch (caught) {
-                              setError(caught instanceof Error ? caught.message : "The run could not be deleted.");
-                            } finally {
-                              setPending(false);
-                            }
+                          aria-label={`Delete run from ${getRunLocalDate(run)}`}
+                          onClick={(event) => {
+                            deleteTriggerRef.current = event.currentTarget;
+                            setRunToDelete(run);
                           }}
                         >
                           Delete
@@ -460,6 +533,49 @@ export default function ShoeTracker({
           )}
         </div>
       </div>
+
+      {runToDelete !== null && (
+        <div className="run-delete-backdrop" role="presentation">
+          <div
+            ref={deleteDialogRef}
+            className="run-delete-dialog"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="run-delete-heading"
+            aria-describedby="run-delete-description"
+            onKeyDown={handleDeleteConfirmationKeyDown}
+          >
+            <p className="run-delete-eyebrow">Training history</p>
+            <h2 id="run-delete-heading">Delete this completed run?</h2>
+            <p className="run-delete-summary">
+              {getRunLocalDate(runToDelete)} · {formatMiles(runToDelete.distance)} mi
+            </p>
+            <p id="run-delete-description">
+              This permanently removes the run from your training history and
+              updates your analytics and shoe mileage. This cannot be undone.
+            </p>
+            <div className="run-delete-actions">
+              <button
+                ref={deleteCancelButtonRef}
+                type="button"
+                className="run-delete-cancel"
+                disabled={pending}
+                onClick={closeDeleteConfirmation}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="run-delete-confirm"
+                disabled={pending}
+                onClick={() => void confirmRunDeletion()}
+              >
+                {pending ? "Deleting…" : "Delete run"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="shoe-tracking">
         <h3 className="text-lg font-medium">Add New Shoes</h3>

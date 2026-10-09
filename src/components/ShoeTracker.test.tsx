@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
   createCompletedRunId,
   COMPLETED_RUN_NOTES_MAX_LENGTH,
@@ -27,9 +27,11 @@ const timestamp = createUtcDateTime("2026-08-05T14:00:00Z");
 function Harness({
   initialShoes = [],
   initialRuns = [],
+  onDeleteRunCall = () => undefined,
 }: {
   initialShoes?: Shoe[];
   initialRuns?: CompletedRun[];
+  onDeleteRunCall?: (id: CompletedRun["id"]) => void;
 }) {
   const [shoes, setShoes] = useState(initialShoes);
   const [runs, setRuns] = useState(initialRuns);
@@ -88,6 +90,7 @@ function Harness({
   };
 
   const deleteRun = async (id: CompletedRun["id"]) => {
+    onDeleteRunCall(id);
     setRuns((current) => current.filter((run) => run.id !== id));
   };
 
@@ -400,7 +403,7 @@ describe("ShoeTracker", () => {
     expect(screen.getByText("No runs logged yet.")).toBeInTheDocument();
   });
 
-  it("edits and deletes a run without allowing shoe mileage to drift", async () => {
+  it("cancels deletion without changing the run and restores trigger focus", async () => {
     const shoe: Shoe = {
       id: createShoeId("shoe-1"),
       userId,
@@ -421,8 +424,67 @@ describe("ShoeTracker", () => {
       createdAt: timestamp,
       updatedAt: timestamp,
     };
+    const onDeleteRunCall = vi.fn();
     const user = userEvent.setup();
-    render(<Harness initialShoes={[shoe]} initialRuns={[run]} />);
+    render(
+      <Harness
+        initialShoes={[shoe]}
+        initialRuns={[run]}
+        onDeleteRunCall={onDeleteRunCall}
+      />,
+    );
+
+    const deleteButton = screen.getByRole("button", {
+      name: "Delete run from 2026-08-05",
+    });
+    deleteButton.focus();
+    await user.keyboard("{Enter}");
+
+    expect(
+      screen.getByRole("dialog", { name: "Delete this completed run?" }),
+    ).toBeInTheDocument();
+    expect(screen.getByText("2026-08-05 · 5 mi")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Cancel" })).toHaveFocus();
+    expect(screen.getByText("Daily Trainer: 5 mi")).toBeInTheDocument();
+
+    await user.keyboard("{Escape}");
+
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(onDeleteRunCall).not.toHaveBeenCalled();
+    expect(screen.getByText("Daily Trainer: 5 mi")).toBeInTheDocument();
+    expect(deleteButton).toHaveFocus();
+  });
+
+  it("edits and confirms deletion once without allowing shoe mileage to drift", async () => {
+    const shoe: Shoe = {
+      id: createShoeId("shoe-1"),
+      userId,
+      name: "Daily Trainer",
+      startingDistance: createDistanceMeters(0),
+      status: "active",
+      createdAt: timestamp,
+      updatedAt: timestamp,
+    };
+    const run: CompletedRun = {
+      id: createCompletedRunId("run-1"),
+      userId,
+      shoeId: shoe.id,
+      startedAt: timestamp,
+      timeZone: createIanaTimeZone("America/Los_Angeles"),
+      distance: createDistanceMeters(8_047),
+      duration: createDurationSeconds(2_400),
+      createdAt: timestamp,
+      updatedAt: timestamp,
+    };
+    const onDeleteRunCall = vi.fn();
+    const user = userEvent.setup();
+    render(
+      <Harness
+        initialShoes={[shoe]}
+        initialRuns={[run]}
+        onDeleteRunCall={onDeleteRunCall}
+      />,
+    );
 
     await user.click(screen.getByRole("button", { name: "Edit" }));
     await user.clear(screen.getByRole("spinbutton", { name: "Edit miles" }));
@@ -431,8 +493,19 @@ describe("ShoeTracker", () => {
 
     expect(await screen.findByText("Daily Trainer: 3 mi")).toBeInTheDocument();
 
-    await user.click(screen.getByRole("button", { name: "Delete" }));
+    await user.click(
+      screen.getByRole("button", { name: "Delete run from 2026-08-05" }),
+    );
+    expect(screen.getByText("Daily Trainer: 3 mi")).toBeInTheDocument();
+
+    await user.tab();
+    expect(screen.getByRole("button", { name: "Delete run" })).toHaveFocus();
+    await user.keyboard("{Enter}");
+
     expect(await screen.findByText("No runs logged yet.")).toBeInTheDocument();
+    expect(onDeleteRunCall).toHaveBeenCalledTimes(1);
+    expect(onDeleteRunCall).toHaveBeenCalledWith(run.id);
     expect(screen.getByText("Daily Trainer: 0 mi")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Logged Runs" })).toHaveFocus();
   });
 });
