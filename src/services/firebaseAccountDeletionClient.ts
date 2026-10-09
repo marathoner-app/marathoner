@@ -8,30 +8,39 @@ import {
   createAccountDeletionRequest,
   type AccountDeletionRequestEnvelope,
 } from '../domain/materialCommands/contract'
-import { firebaseApp } from './firebaseClient'
+import { getFirebaseApp } from './firebaseClient'
 import {
   createMaterialCommandClient,
   type MaterialCommandTransport,
 } from './materialCommandClient'
 
-const functions = getFunctions(firebaseApp, 'us-central1')
+let requestDeletionCallable: ReturnType<
+  typeof httpsCallable<AccountDeletionRequestEnvelope, unknown>
+> | null = null
 
-if (import.meta.env.VITE_FIREBASE_FUNCTIONS_EMULATOR === 'true') {
-  connectFunctionsEmulator(functions, '127.0.0.1', 5001)
+function getRequestDeletionCallable() {
+  if (requestDeletionCallable !== null) return requestDeletionCallable
+
+  const functions = getFunctions(getFirebaseApp(), 'us-central1')
+
+  if (import.meta.env.VITE_FIREBASE_FUNCTIONS_EMULATOR === 'true') {
+    connectFunctionsEmulator(functions, '127.0.0.1', 5001)
+  }
+
+  requestDeletionCallable = httpsCallable<
+    AccountDeletionRequestEnvelope,
+    unknown
+  >(functions, 'requestAccountDeletion')
+  return requestDeletionCallable
 }
-
-const requestDeletionCallable = httpsCallable<
-  AccountDeletionRequestEnvelope,
-  unknown
->(functions, 'requestAccountDeletion')
 
 const transport: MaterialCommandTransport = {
   async submit(command) {
-    return (await requestDeletionCallable(command as AccountDeletionRequestEnvelope))
+    return (await getRequestDeletionCallable()(command as AccountDeletionRequestEnvelope))
       .data
   },
   async resolve(commandId) {
-    return (await requestDeletionCallable(createAccountDeletionRequest(commandId)))
+    return (await getRequestDeletionCallable()(createAccountDeletionRequest(commandId)))
       .data
   },
 }

@@ -44,6 +44,7 @@ const config = {
   appId: 'development-app',
   projectId: 'development-project',
 }
+const initializeAppCheck = vi.fn(async () => undefined)
 
 describe('Firebase client factory', () => {
   beforeEach(() => {
@@ -51,18 +52,30 @@ describe('Firebase client factory', () => {
     vi.clearAllMocks()
   })
 
-  it('preserves the browser Auth initialization path', () => {
-    expect(createFirebaseClient(config, false)).toEqual({
+  it('initializes App Check before acquiring browser Auth', async () => {
+    const order: string[] = []
+    initializeAppCheck.mockImplementationOnce(async () => {
+      order.push('app-check')
+    })
+    firebase.getAuth.mockImplementationOnce(() => {
+      order.push('auth')
+      return firebase.auth
+    })
+
+    await expect(
+      createFirebaseClient(config, false, initializeAppCheck),
+    ).resolves.toEqual({
       app: firebase.app,
       auth: firebase.auth,
     })
+    expect(order).toEqual(['app-check', 'auth'])
     expect(firebase.initializeApp).toHaveBeenCalledWith(config)
     expect(firebase.getAuth).toHaveBeenCalledWith(firebase.app)
     expect(firebase.initializeAuth).not.toHaveBeenCalled()
   })
 
-  it('uses durable IndexedDB-first persistence in a native shell', () => {
-    createFirebaseClient(config, true)
+  it('uses durable IndexedDB-first persistence in a native shell', async () => {
+    await createFirebaseClient(config, true, initializeAppCheck)
 
     expect(firebase.initializeAuth).toHaveBeenCalledWith(firebase.app, {
       persistence: [
@@ -73,19 +86,55 @@ describe('Firebase client factory', () => {
     expect(firebase.getAuth).not.toHaveBeenCalled()
   })
 
-  it('reuses only a matching default Firebase app', () => {
+  it('reuses a matching default Firebase app with the reviewed native Auth persistence', async () => {
     firebase.getApps.mockReturnValue([firebase.app])
 
-    expect(createFirebaseClient(config, true)).toEqual({
+    await expect(
+      createFirebaseClient(config, true, initializeAppCheck),
+    ).resolves.toEqual({
       app: firebase.app,
       auth: firebase.auth,
     })
     expect(firebase.initializeApp).not.toHaveBeenCalled()
-    expect(firebase.initializeAuth).not.toHaveBeenCalled()
-    expect(firebase.getAuth).toHaveBeenCalledWith(firebase.app)
+    expect(firebase.initializeAuth).toHaveBeenCalledWith(firebase.app, {
+      persistence: [
+        firebase.indexedDbPersistence,
+        firebase.localStoragePersistence,
+      ],
+    })
+    expect(firebase.getAuth).not.toHaveBeenCalled()
   })
 
-  it('fails closed when an existing app targets another environment', () => {
+  it('keeps native persistence when retrying after App Check leaves only the app initialized', async () => {
+    firebase.getApps
+      .mockReturnValueOnce([])
+      .mockReturnValueOnce([firebase.app])
+    initializeAppCheck
+      .mockRejectedValueOnce(new Error('first attestation attempt failed'))
+      .mockResolvedValueOnce(undefined)
+
+    await expect(
+      createFirebaseClient(config, true, initializeAppCheck),
+    ).rejects.toThrow('first attestation attempt failed')
+    await expect(
+      createFirebaseClient(config, true, initializeAppCheck),
+    ).resolves.toEqual({
+      app: firebase.app,
+      auth: firebase.auth,
+    })
+
+    expect(firebase.initializeApp).toHaveBeenCalledOnce()
+    expect(firebase.initializeAuth).toHaveBeenCalledOnce()
+    expect(firebase.initializeAuth).toHaveBeenCalledWith(firebase.app, {
+      persistence: [
+        firebase.indexedDbPersistence,
+        firebase.localStoragePersistence,
+      ],
+    })
+    expect(firebase.getAuth).not.toHaveBeenCalled()
+  })
+
+  it('fails closed when an existing app targets another environment', async () => {
     firebase.getApps.mockReturnValue([
       {
         ...firebase.app,
@@ -93,8 +142,21 @@ describe('Firebase client factory', () => {
       },
     ])
 
-    expect(() => createFirebaseClient(config, true)).toThrow(
-      'does not match the selected projectId',
-    )
+    await expect(
+      createFirebaseClient(config, true, initializeAppCheck),
+    ).rejects.toThrow('does not match the selected projectId')
+    expect(initializeAppCheck).not.toHaveBeenCalled()
+    expect(firebase.getAuth).not.toHaveBeenCalled()
+  })
+
+  it('does not acquire Auth when App Check startup fails', async () => {
+    initializeAppCheck.mockRejectedValueOnce(new Error('attestation failed'))
+
+    await expect(
+      createFirebaseClient(config, false, initializeAppCheck),
+    ).rejects.toThrow('attestation failed')
+
+    expect(firebase.getAuth).not.toHaveBeenCalled()
+    expect(firebase.initializeAuth).not.toHaveBeenCalled()
   })
 })

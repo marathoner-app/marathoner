@@ -13,10 +13,12 @@ import {
   type Auth,
 } from 'firebase/auth'
 
-interface FirebaseClient {
+export interface FirebaseClient {
   app: FirebaseApp
   auth: Auth
 }
+
+type AppCheckInitializer = (app: FirebaseApp) => Promise<void>
 
 const identityFields = ['apiKey', 'appId', 'projectId'] as const
 
@@ -33,21 +35,23 @@ function assertExistingAppMatches(
   }
 }
 
-export function createFirebaseClient(
+export async function createFirebaseClient(
   config: FirebaseOptions,
   useNativePersistence: boolean,
-): FirebaseClient {
+  initializeAppCheck: AppCheckInitializer,
+): Promise<FirebaseClient> {
   const existingDefaultApp = getApps().find((app) => app.name === '[DEFAULT]')
+  let app: FirebaseApp
 
   if (existingDefaultApp) {
     assertExistingAppMatches(existingDefaultApp, config)
-    return {
-      app: getApp(),
-      auth: getAuth(existingDefaultApp),
-    }
+    app = getApp()
+  } else {
+    app = initializeApp(config)
   }
 
-  const app = initializeApp(config)
+  await initializeAppCheck(app)
+
   const auth = useNativePersistence
     ? initializeAuth(app, {
         persistence: [indexedDBLocalPersistence, browserLocalPersistence],

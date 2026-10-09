@@ -6,6 +6,7 @@ import {
 import {
   assertFunctionsEmulatorForMode,
   assertFirebaseEnvironmentForMode,
+  resolveAppCheckDebugTokenForMode,
   resolveFirebaseEnvironment as resolveFirebaseEnvironmentWithRegistry,
   resolveFirebaseEnvironmentForMode as resolveFirebaseEnvironmentForModeWithRegistry,
 } from './firebaseEnvironment'
@@ -36,6 +37,78 @@ const developmentConfig = firebaseProjectConfigurations.development
 const betaConfig = firebaseProjectConfigurations.beta
 
 describe('Firebase environment selection', () => {
+  it('pins each reviewed web app to its exact App Check registration', () => {
+    expect({
+      appId: developmentConfig.appId,
+      appCheckSiteKey: developmentConfig.appCheckSiteKey,
+    }).toEqual({
+      appId: '1:677998037771:web:9269b3b5f82909ccc3b00e',
+      appCheckSiteKey: '6LcjU-ItAAAAAFduN8dYLc-0HiI1yLtaI0liOX5Q',
+    })
+    expect({
+      appId: betaConfig.appId,
+      appCheckSiteKey: betaConfig.appCheckSiteKey,
+    }).toEqual({
+      appId: '1:156851031272:web:a6ab19f6b760fcf5084d5d',
+      appCheckSiteKey: '6Ld7-uEtAAAAAMi5OH-KIzx7e0ZkMm3xrwehkxEl',
+    })
+  })
+
+  it('allows only a fixed debug token in local development', () => {
+    const debugToken = '11111111-1111-4111-8111-111111111111'
+
+    expect(
+      resolveAppCheckDebugTokenForMode({
+        mode: 'development',
+        environmentName: 'development',
+        debugToken: ` ${debugToken} `,
+        isViteServe: true,
+      }),
+    ).toBe(debugToken)
+    expect(
+      resolveAppCheckDebugTokenForMode({
+        mode: 'development',
+        environmentName: 'development',
+        debugToken: undefined,
+        isViteServe: true,
+      }),
+    ).toBeUndefined()
+  })
+
+  it.each([
+    ['production', 'beta', false],
+    ['production', 'development', false],
+    ['development', 'development', false],
+    ['ios-development', 'development', false],
+    ['ios-beta', 'beta', false],
+  ] as const)(
+    'rejects an App Check debug token for %s/%s when serve=%s',
+    (mode, environmentName, isViteServe) => {
+      expect(() =>
+        resolveAppCheckDebugTokenForMode({
+          mode,
+          environmentName,
+          debugToken: '11111111-1111-4111-8111-111111111111',
+          isViteServe,
+        }),
+      ).toThrow('allowed only while Vite serves the development Firebase environment locally')
+    },
+  )
+
+  it.each(['true', 'false', 'generate', 'not-a-fixed-token'])(
+    'rejects unsafe App Check debug value %s',
+    (debugToken) => {
+      expect(() =>
+        resolveAppCheckDebugTokenForMode({
+          mode: 'development',
+          environmentName: 'development',
+          debugToken,
+          isViteServe: true,
+        }),
+      ).toThrow('must contain a fixed Firebase App Check debug token')
+    },
+  )
+
   it('allows the Functions emulator only in local development mode', () => {
     expect(() =>
       assertFunctionsEmulatorForMode('development', true),

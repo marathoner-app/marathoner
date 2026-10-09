@@ -1,6 +1,7 @@
 # App Check bridge dependency review
 
-- **Status:** Approved for staged implementation; not initialized or enforced
+- **Status:** Dated #202 dependency decision; initialization is now implemented
+  by #204, while live proof and enforcement remain pending
 - **Review date:** October 6, 2026
 - **Tracking issue:** [#202](https://github.com/marathoner-app/marathoner/issues/202)
 - **Parent:** [#161](https://github.com/marathoner-app/marathoner/issues/161)
@@ -12,6 +13,12 @@ between Apple App Attest and the existing Firebase JavaScript clients. This
 approval covers the pinned dependency and native build graph only. It does not
 approve provider registration, debug tokens, client initialization, billing,
 Functions deployment, or enforcement.
+
+This document records the dependency decision as it stood on October 6, 2026.
+Issue #204 subsequently implemented the approved initialization path; its
+[initialization record](app-check-client-initialization.md) is authoritative for
+current behavior and remaining proof. This dated review still does not approve
+enforcement or claim live token evidence.
 
 The bridge is needed because the Capacitor application continues to use the
 Firebase JavaScript SDK for Authentication, Firestore, and callable Functions.
@@ -68,8 +75,8 @@ The reviewed bridge behavior is narrow:
    `GoogleService-Info.plist`, obtains or refreshes an App Check token, and can
    expose that token to JavaScript.
 3. The bridge documentation uses a Firebase JavaScript `CustomProvider` whose
-   `getToken` callback calls the native bridge. Issue #204 must implement this
-   before any supported Firebase service is acquired.
+   `getToken` callback calls the native bridge. Issue #204 later implemented
+   this before any supported Firebase service is acquired.
 4. Token auto-refresh is off by default and must be enabled explicitly.
 5. Native debug mode selects Firebase's debug provider. A truthy token option
    selects that mode but does not itself make a source-controlled token safe;
@@ -78,12 +85,11 @@ The reviewed bridge behavior is narrow:
 6. Provider registration and broad Firebase enforcement are console state, not
    consequences of installing this dependency.
 
-The plugin is linked into the iOS target but is not imported or invoked by the
-application in this issue. A compiled simulator launch succeeded without a
-native Firebase configuration because no App Check call is made. Issue #203
-subsequently added distinct development and beta native registrations plus
-fail-closed configuration selection. Issue #204 still owns the first plugin
-invocation.
+In the #202 slice, the plugin was linked into the iOS target but was not imported
+or invoked by the application. That slice's simulator launch therefore proved
+only the dependency graph. Issue #203 subsequently added distinct development
+and beta native registrations plus fail-closed configuration selection, and
+#204 now owns the implemented invocation and its pending live proof.
 
 ## Native dependency footprint
 

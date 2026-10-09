@@ -73,9 +73,9 @@ removed the candidate runtimes, proof rule, and temporary key; only historical
 evidence remains under `spikes/mobile/`. Issue #181 proved continuous physical-
 device startup, and issue #125 proved explicit beta selection plus approved and
 denied beta access. The shell is still not a shipping iOS client: App Check
-providers and native configuration are registered, but initialization,
-observation, enforcement, daily-use failure states, accessibility, and
-TestFlight remain unproven.
+providers, native configuration, and fail-closed client initialization are
+implemented, but live App Attest proof, observation, enforcement, daily-use
+failure states, accessibility, and TestFlight remain unproven.
 
 ## Repository boundary
 
@@ -121,7 +121,7 @@ The promotion begins from the versions that passed the physical spike:
 | Native dependency manager | Swift Package Manager | CocoaPods is not added without a plugin requirement and recorded change. |
 | Web build | Existing root Vite and React application | Do not introduce a mobile-only presentation build. |
 | Auth, Firestore, and Functions | Root Firebase JavaScript SDK 12.19.0 | The lockfile is authoritative; upgrades require web, copied-bundle, Auth, rules, and device evidence. |
-| Apple App Check bridge | `@capacitor-firebase/app-check` 8.5.2 | Approved by #202 as a pinned native-to-JavaScript token bridge; registration, initialization, observation, and enforcement remain separate gates. |
+| Apple App Check bridge | `@capacitor-firebase/app-check` 8.5.2 | Approved by #202 as a pinned native-to-JavaScript token bridge; registration and client initialization are implemented, while live token proof, observation, and enforcement remain separate gates. |
 | Portable contracts | `@marathoner/training-contract` | Expand only for an implemented cross-boundary consumer. |
 
 Version upgrades are ordinary reviewed issues, not automatic permission to
@@ -214,9 +214,11 @@ beta native apps plus web providers and added exact native-configuration
 selection. The
 [registration record](../security/app-check-provider-registration.md) captures
 the public identities, debug-token custody, and unenforced console state. Issue
-#204 must initialize the native provider before the JavaScript Firebase clients
-and fail closed on provider errors. Issues #205 and #206 own observation,
-rollback, and staged enforcement.
+#204 implements the native provider before the JavaScript Firebase clients, a
+bounded fail-closed startup state, and the production App Attest entitlement.
+Its physical-device proof is blocked until an Apple Developer Program
+provisioning profile carries that entitlement. Issues #205 and #206 own
+observation, rollback, and staged enforcement.
 
 A custom App Check provider and token-minting backend are outside this decision
 because they create a new security service. Do not build one without a separate

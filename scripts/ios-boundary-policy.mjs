@@ -52,7 +52,48 @@ function requireText(violations, source, expected, label) {
   }
 }
 
+function requireAppTargetEntitlements(violations, xcodeProject) {
+  const configurationList = xcodeProject.match(
+    /\/\* Build configuration list for PBXNativeTarget "App" \*\/ = \{[\s\S]*?buildConfigurations = \(([\s\S]*?)\);/,
+  )?.[1]
+
+  if (!configurationList) {
+    violations.push('Xcode project is missing the App target build configuration list')
+    return
+  }
+
+  for (const configurationName of ['Debug', 'Release']) {
+    const configurationId = configurationList.match(
+      new RegExp(`([A-Za-z0-9]+) \/\\* ${configurationName} \\*\/`),
+    )?.[1]
+
+    if (!configurationId) {
+      violations.push(
+        `Xcode project is missing the App target ${configurationName} configuration`,
+      )
+      continue
+    }
+
+    const configurationBlock = xcodeProject.match(
+      new RegExp(
+        `${configurationId} \/\\* ${configurationName} \\*\/ = \\{[\\s\\S]*?buildSettings = \\{([\\s\\S]*?)\\n\\s*\\};`,
+      ),
+    )?.[1]
+
+    if (
+      !configurationBlock?.includes(
+        'CODE_SIGN_ENTITLEMENTS = App/App.entitlements;',
+      )
+    ) {
+      violations.push(
+        `App target ${configurationName} configuration is missing CODE_SIGN_ENTITLEMENTS = App/App.entitlements;`,
+      )
+    }
+  }
+}
+
 export function findIosProjectViolations({
+  appEntitlements,
   capacitorConfig,
   bridgeViewController,
   debugConfig,
@@ -128,6 +169,16 @@ export function findIosProjectViolations({
     'GoogleService-Info.plist in Resources',
     'Xcode project',
   )
+  requireAppTargetEntitlements(violations, xcodeProject)
+  if (
+    !/<key>\s*com\.apple\.developer\.devicecheck\.appattest-environment\s*<\/key>\s*<string>\s*production\s*<\/string>/.test(
+      appEntitlements,
+    )
+  ) {
+    violations.push(
+      'App.entitlements must bind com.apple.developer.devicecheck.appattest-environment to production',
+    )
+  }
   requireText(
     violations,
     infoPlist,

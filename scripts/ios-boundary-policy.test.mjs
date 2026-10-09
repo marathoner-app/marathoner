@@ -7,6 +7,8 @@ import {
 } from './ios-boundary-policy.mjs'
 
 const validProject = {
+  appEntitlements:
+    '<key>com.apple.developer.devicecheck.appattest-environment</key><string>production</string>',
   bridgeViewController:
     'installStartupOverlay() registerPluginInstance(StartupOverlayPlugin()) DispatchQueue.main.asyncAfter(deadline: .now() + 10',
   capacitorConfig: `appId: 'com.marathonerapp.marathoner'\nappName: 'Marathoner'\nwebDir: 'dist-ios'\nbackgroundColor: '#ffffff'\nerrorPath: 'startup-error.html'\nlaunchAutoHide: true\nlaunchShowDuration: 10_000\nbackgroundColor: '#ffffffff'\n'@capacitor-firebase/app-check'\nsymlink: true`,
@@ -36,8 +38,31 @@ const validProject = {
     '"identity" : "firebase-ios-sdk"\n"version" : "12.19.2"',
   sceneDelegate: 'guard let sceneWindow = window',
   trackedPaths: ['ios/App/App/AppDelegate.swift'],
-  xcodeProject:
-    'PRODUCT_BUNDLE_IDENTIFIER = com.marathonerapp.marathoner; GoogleService-Info.plist in Resources',
+  xcodeProject: `
+    PRODUCT_BUNDLE_IDENTIFIER = com.marathonerapp.marathoner;
+    GoogleService-Info.plist in Resources
+    APPDEBUG0001 /* Debug */ = {
+      isa = XCBuildConfiguration;
+      buildSettings = {
+        CODE_SIGN_ENTITLEMENTS = App/App.entitlements;
+      };
+      name = Debug;
+    };
+    APPRELEASE01 /* Release */ = {
+      isa = XCBuildConfiguration;
+      buildSettings = {
+        CODE_SIGN_ENTITLEMENTS = App/App.entitlements;
+      };
+      name = Release;
+    };
+    APPCONFIG001 /* Build configuration list for PBXNativeTarget "App" */ = {
+      isa = XCConfigurationList;
+      buildConfigurations = (
+        APPDEBUG0001 /* Debug */,
+        APPRELEASE01 /* Release */,
+      );
+    };
+  `,
 }
 
 describe('iOS boundary policy', () => {
@@ -99,6 +124,39 @@ describe('iOS boundary policy', () => {
       ]),
     )
   })
+
+  it('rejects an App Attest entitlement that is not bound to production', () => {
+    expect(
+      findIosProjectViolations({
+        ...validProject,
+        appEntitlements:
+          '<key>com.apple.developer.devicecheck.appattest-environment</key><string>development</string>',
+      }),
+    ).toContain(
+      'App.entitlements must bind com.apple.developer.devicecheck.appattest-environment to production',
+    )
+  })
+
+  it.each([
+    ['Debug', 'APPDEBUG0001'],
+    ['Release', 'APPRELEASE01'],
+  ])(
+    'rejects a missing App target %s entitlement setting',
+    (configurationName, configurationId) => {
+      const xcodeProject = validProject.xcodeProject.replace(
+        new RegExp(
+          `(${configurationId} \/\\* ${configurationName} \\*\/ = \\{[\\s\\S]*?buildSettings = \\{[\\s\\S]*?)CODE_SIGN_ENTITLEMENTS = App/App.entitlements;`,
+        ),
+        '$1',
+      )
+
+      expect(
+        findIosProjectViolations({ ...validProject, xcodeProject }),
+      ).toContain(
+        `App target ${configurationName} configuration is missing CODE_SIGN_ENTITLEMENTS = App/App.entitlements;`,
+      )
+    },
+  )
 
   it('accepts an exact copied development bundle', () => {
     const builtFiles = new Map([

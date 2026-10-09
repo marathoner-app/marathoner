@@ -1,7 +1,8 @@
 # App Check provider registration
 
 - **Status:** Development and beta web/iOS providers registered; client
-  initialization, observation, and enforcement remain off
+  initialization implemented with live token evidence pending; observation and
+  enforcement remain off
 - **Registration date:** 2026-10-06
 - **Tracking issue:**
   [#203](https://github.com/marathoner-app/marathoner/issues/203)
@@ -57,9 +58,11 @@ fallback. Issue #204 may create them only under this policy:
 | Scope | Identity and storage | Owner | Rotation and revocation |
 | --- | --- | --- | --- |
 | Development local | One token per operator/device, named `development-local-<operator>-<device>`; value only in an ignored mode-`0600` `*.local` file | The named operator; console custody remains with the Marathoner administrator | Revoke immediately for suspected exposure, lost/retired device, or custody change; replace at least every 90 days while active |
-| Development CI | Dedicated `development-ci-github-actions` token; value only in a development GitHub environment secret | Repository administrator | Rotate on runner/workflow trust changes and at least every 90 days; replace the secret, prove the new token, then revoke the old token |
-| Beta local | One beta-only token per approved operator/device; never reuse a development token or file | Marathoner administrator | Same immediate revocation rules; remove after the bounded beta proof when no longer needed |
-| Beta CI | Dedicated `beta-ci-github-actions` token in a protected beta GitHub environment secret | Marathoner administrator | Rotate on environment/workflow trust changes and at least every 90 days; revoke before removing the environment control |
+| Development CI | A future dedicated `development-ci-github-actions` token may be injected only into an ephemeral Vite **serve** process from a development GitHub environment secret; build and uploaded-artifact use is prohibited | Repository administrator | Rotate on runner/workflow trust changes and at least every 90 days; replace the secret, prove the new served session, then revoke the old token |
+
+Beta and production output must reject every debug-token value before bundling.
+A beta-local or beta-CI debug provider is not an approved exception; beta proof
+uses the registered production-shaped provider.
 
 Token values must never be committed, copied into issues or pull requests,
 printed by scripts, included in screenshots, placed in build artifacts, or
@@ -87,8 +90,11 @@ The rollout remains deliberately staged:
    and must prove rejected-client behavior for Authentication, Firestore, and
    Functions.
 
-Do not treat the four registered rows as evidence that a client currently
-sends App Check tokens or that any backend rejects missing tokens.
+Do not treat the four registered rows or the #204 client implementation as live
+token evidence. The
+[client initialization record](app-check-client-initialization.md) documents
+the remaining browser and Apple provisioning proof. No backend rejects missing
+tokens while enforcement is off.
 
 ## Console verification evidence
 

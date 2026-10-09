@@ -97,8 +97,10 @@ not have a deployed application server, API, or router. Its authenticated
 training data uses typed repositories backed by Cloud Firestore. The accepted
 [mobile client ADR](docs/architecture/mobile-client-architecture.md) selects a
 thin Capacitor iOS shell around this root application. The committed shell is a
-development foundation; App Check, beta activation, daily-use behavior,
-accessibility, and TestFlight remain explicit release gates.
+development foundation. App Check now gates Firebase client startup in code,
+but live browser observation and an Apple Developer Program profile carrying
+App Attest remain unproved; beta activation, daily-use behavior, accessibility,
+and TestFlight are still explicit release gates.
 
 | Path | Responsibility |
 | --- | --- |
@@ -111,7 +113,8 @@ accessibility, and TestFlight remain explicit release gates.
 | `src/persistence/` | Defines typed training repositories, Firestore conversion, storage paths, ownership integration tests, and recoverable persistence errors. |
 | `src/training/` | Owns authenticated training-data loading, shared feature state, and cross-feature mutations. |
 | `src/onboarding/` | Owns the resumable runner-profile intake, validation, unit conversion, and completion checks. |
-| `src/services/firebaseClient.ts` | Initializes the shared Firebase app and Authentication instance. |
+| `src/services/appCheckBootstrap.ts` | Selects the browser or iOS App Check provider, proves a bounded token, and enables refresh before Firebase services. |
+| `src/services/firebaseClient.ts` | Initializes the shared Firebase app, waits for App Check, and only then exposes Authentication or the app to lazy data services. |
 | `src/services/authService.ts` | Contains authentication operations and safe Firebase error mapping against the shared client. |
 | `src/firebaseConfig.ts` | Identifies the Firebase web project used by the client. |
 | `src/**/*.test.ts(x)` | Keeps unit and component tests beside the code they verify. |
@@ -123,14 +126,16 @@ accessibility, and TestFlight remain explicit release gates.
 
 The current application flow is deliberately small:
 
-1. `src/main.tsx` mounts `App`.
-2. `AuthProvider` resolves the Firebase session and gates personal features.
-3. `TrainingDataProvider` loads repositories for the signed-in user and keeps
+1. `src/main.tsx` mounts an App Check startup gate.
+2. The gate proves a browser Enterprise or native App Attest token before
+   Firebase services; failure stays in an accessible retry state.
+3. `AuthProvider` resolves the Firebase session and gates personal features.
+4. `TrainingDataProvider` loads repositories for the signed-in user and keeps
    one shared profile, plan, workout, run, and shoe snapshot.
-4. An incomplete runner profile opens the resumable onboarding intake before
+5. An incomplete runner profile opens the resumable onboarding intake before
    plan evaluation; saving progress writes through the same profile repository.
-5. Opening Plan, Track, or Analyze mounts a view over that shared snapshot.
-6. Feature mutations persist through repositories and update the shared state,
+6. Opening Plan, Track, or Analyze mounts a view over that shared snapshot.
+7. Feature mutations persist through repositories and update the shared state,
    so every open panel observes the same records.
 
 The shared training domain model is documented in
@@ -226,6 +231,15 @@ engine warnings from development tools on unsupported non-LTS releases.
 4. Open the local URL printed by Vite, normally
    `http://localhost:5173/marathoner/`.
 
+The development reCAPTCHA Enterprise key intentionally does not authorize
+localhost. Firebase-backed local use therefore fails closed until an
+administrator registers one fixed development debug token and the operator
+stores it in ignored `.env.development.local`. That token is accepted only by
+`npm run dev`; every Vite build command rejects it before bundling. Follow the
+[App Check client initialization record](docs/security/app-check-client-initialization.md#localhost-debug-token-workflow-external-evidence-pending)
+without copying the value into Git, logs, screenshots, issues, or pull
+requests.
+
 Use `npm ci` instead of `npm install` when you want a clean, reproducible install
 that exactly matches `package-lock.json`.
 
@@ -233,10 +247,11 @@ that exactly matches `package-lock.json`.
 
 Firebase performs email/password authentication and supplies the Firestore
 client for persisted training data. The web client
-configuration is defined in `src/firebaseConfig.ts`. Importing
-`src/services/firebaseClient.ts` initializes one shared Firebase app and creates
-the Authentication instance. The persistence entry point creates Firestore from
-that same app only when training repositories are requested.
+configuration is defined in `src/firebaseConfig.ts`. `src/main.tsx` mounts a
+startup gate that asks `src/services/firebaseClient.ts` to create one shared
+Firebase app, prove App Check, and only then acquire Authentication. The
+persistence entry point creates Firestore from that protected app only when
+training repositories are requested.
 
 The authentication service exports operations for sign in, password reset,
 sign out, reading the current user, and subscribing to authentication changes.

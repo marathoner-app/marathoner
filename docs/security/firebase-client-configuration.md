@@ -36,13 +36,13 @@ would not turn them into secrets.
 | Application restriction | The key accepts browser requests only from the current GitHub Pages host, `localhost`, and `127.0.0.1`, using the exact patterns below. | Keep these origins until environment separation is complete. Add the custom domain only when #162 publishes it. |
 | Selected iOS development key | `marathoner-ios-development` belongs only to the development project and permits Cloud Firestore API, Identity Toolkit API, and Token Service API. | It supports the canonical Capacitor shell through an ignored mode-`0600` local environment file. It is not committed, printed, or shared with beta. |
 | Selected iOS beta key | `marathoner-ios-beta` belongs only to `marathonerapp-beta` and permits Cloud Firestore API, Identity Toolkit API, and Token Service API. | The real beta bundle and physical approved/denied evidence passed. Its value exists only in `.env.ios-beta.local`. |
-| iOS application restriction | The iOS shell currently uses the Firebase JavaScript SDK inside a Capacitor WebView, so the key cannot use an iOS bundle restriction and has no application restriction. | The narrow API allowlist limits the key's reach. Issue #161 must add and enforce App Check before external invitations. |
+| iOS application restriction | The iOS shell currently uses the Firebase JavaScript SDK inside a Capacitor WebView, so the key cannot use an iOS bundle restriction and has no application restriction. | The narrow API allowlist limits the key's reach. Issue #161 must complete live token proof, observation, and staged App Check enforcement before external invitations. |
 | Sign-in providers | Email/Password is enabled and Google is disabled. The application implements only Email/Password, and the five visible legacy accounts all use the Email provider. | Keep Email/Password until the beta identity decision changes it. Do not migrate the legacy account list wholesale into beta. |
 | Authorized domains | `localhost`, the two Firebase default hosts, and `marathoner-app.github.io` are authorized. `marathonerapp.com` is not. | Keep the current hosts while this project serves local/prototype use. Issue #162 adds the apex and `www` hosts with the actual deployment. |
 | Cloud Firestore | The default `nam5` database is active. The live rule editor is byte-equivalent after whitespace normalization to the tracked `firestore.rules`. | Current rules enforce owner-path access and schema version 1. The separate [beta membership candidate](firebase-beta-membership.md) adds verified-email and approved-membership access but remains undeployed; #121 and the server-command migration must close the remaining beta rule boundary. |
 | Realtime Database | The console offers **Create Database**; no database exists. | Remain disabled. |
 | Cloud Storage | Storage is not configured and the Spark project cannot enable it without billing. | Remain disabled unless a future approved feature and ruleset require it. |
-| App Check | Development and beta each have a distinct Fraud Defense web registration and App Attest iOS registration. No debug token was created, the clients do not initialize App Check yet, and API enforcement remains off. | The [registration record](app-check-provider-registration.md) is the authority for provider identity, native configuration selection, debug-token custody, and the #204–#206 rollout gates. |
+| App Check | Development and beta each have a distinct Fraud Defense web registration and App Attest iOS registration. No debug token was created. Client initialization now fails closed before Firebase services, while live browser and paid-team physical-iPhone token evidence remain pending and API enforcement remains off. | The [registration record](app-check-provider-registration.md) is the authority for provider identity, native configuration selection, debug-token custody, and the #204–#206 rollout gates; the [initialization record](app-check-client-initialization.md) separates implemented behavior from pending live proof. |
 | GitHub Pages | The workflow serves `https://marathoner-app.github.io/marathoner/` with HTTPS. No Pages custom domain is configured. | The GitHub Pages host is the only current production origin. Issue #162 owns the coordinated custom-domain migration. |
 | Repository credentials | Current tracked files and historical filenames contain no Marathoner service-account file, private key, password, Firebase CLI token, or administrative credential. | Continue to prohibit privileged credentials in source. Use workload identity or provider-managed operator sessions. |
 | GitHub secret controls | Secret scanning and push protection were disabled at audit start and are now enabled for the public repository. Alerts #1 and #2 identify the development and beta browser keys; alerts #3 and #4 identify the versioned beta and development Apple client keys. | All four were resolved as documented false positives after their exact public-client locations and intended Firebase registrations were verified. |
@@ -143,10 +143,14 @@ before client and observation evidence would be premature. The mobile ADR
 selects Capacitor. Issue #202 approved and compiled the pinned native App Attest
 bridge. Issue #203 then registered distinct development and beta Fraud Defense
 web providers plus App Attest iOS providers and added fail-closed native
-configuration selection. No client initializes App Check yet, no live token has
-been proven, and enforcement remains off. The
+configuration selection. Issue #204 implements the App Check-before-services
+bootstrap, bounded error/retry UI, and production App Attest entitlement. No
+live browser or physical-iPhone token has been proven yet, and enforcement
+remains off. The
 [registration record](app-check-provider-registration.md) distinguishes those
-facts from the remaining rollout.
+facts from the remaining rollout; the
+[initialization record](app-check-client-initialization.md) records the current
+Apple provisioning blocker and remaining device evidence.
 
 Issue [#161](https://github.com/marathoner-app/marathoner/issues/161) is now an
 epic with #201 through #206. Those slices own:
