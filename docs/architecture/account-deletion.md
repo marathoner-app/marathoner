@@ -65,10 +65,12 @@ table and the deletion runner in the same pull request.
 | `users/{uid}` | Runner profile and onboarding context | Recursively delete the document and every descendant. |
 | `users/{uid}/plans/{planId}` | Training plans | Covered by recursive deletion of `users/{uid}`. |
 | `users/{uid}/plans/{planId}/workouts/{workoutId}` | Planned workouts | Covered by recursive deletion of `users/{uid}`. |
+| `users/{uid}/plans/{planId}/metadata/generation` | Server-owned plan-generation versions, approved scope, command ID, and audit reason codes | Covered by recursive deletion of `users/{uid}`. |
+| `users/{uid}/planState/active` | Server-owned current plan ID, revision, and approval timestamps | Covered by recursive deletion of `users/{uid}`. |
 | `users/{uid}/runs/{runId}` | Completed runs and feedback | Covered by recursive deletion of `users/{uid}`. |
 | `users/{uid}/shoes/{shoeId}` | Shoe records | Covered by recursive deletion of `users/{uid}`. |
 | `betaMemberships/{uid}` | Allowlist status and approval metadata | Change to `deletion_pending` to lock access, then delete during completion. |
-| `materialCommandReceipts/{uid}/commands/{commandId}` | Server idempotency receipts | Recursively delete the owner document path and descendants. This store is currently local proof infrastructure, not deployed. |
+| `materialCommandReceipts/{uid}/commands/{commandId}` | Server idempotency receipts for proof, deletion-request, and plan-approval commands | Recursively delete the owner document path and descendants. This store is implemented and emulator-tested but not deployed. |
 | `materialCommandProofs/{uid}` | Local server-boundary proof state | Delete. This store is currently local proof infrastructure, not deployed. |
 | `accountDeletionRequests/{requestId}` | Server-only workflow state, including the UID only while work is pending; implemented locally and not deployed | Remove all identity fields after completion, retain the anonymous completion receipt for 30 days, then delete it. |
 | Current client memory | Current-session authentication and training state | Clear immediately when the request is accepted; persistent participant-data caching remains prohibited. |
@@ -77,6 +79,12 @@ The retired `users/{uid}/mobileSpikeProofs/issue-87-shared-record` path is not a
 current data store. The proof document was deleted and its explicit rule was
 removed. Recursive deletion of the user tree would nevertheless remove any
 unexpected descendant left below that owner.
+
+Manifest version `1` remains valid for plan activation because no deletion root
+changed: active state and generation provenance are descendants of the already
+recursive `users/{uid}` root, and plan-approval receipts are descendants of the
+already recursive `materialCommandReceipts/{uid}` root. Emulator fixtures seed
+all three exact paths and verify owner deletion and cross-owner preservation.
 
 Marathoner currently has no Cloud Storage participant objects, analytics event
 store, app-managed export, or app-managed backup. Issue #124 may add a

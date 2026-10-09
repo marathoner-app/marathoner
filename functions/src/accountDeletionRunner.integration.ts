@@ -79,6 +79,14 @@ async function seedOwnedData(
       `users/${userId}/plans/plan-one/workouts/workout-one`,
       { schemaVersion: 1, userId, planId: 'plan-one' },
     ],
+    [
+      `users/${userId}/plans/plan-one/metadata/generation`,
+      { schemaVersion: 1, userId, planId: 'plan-one' },
+    ],
+    [
+      `users/${userId}/planState/active`,
+      { schemaVersion: 1, userId, activePlanId: 'plan-one' },
+    ],
     [`users/${userId}/runs/run-one`, { schemaVersion: 1, userId }],
     [`users/${userId}/shoes/shoe-one`, { schemaVersion: 1, userId }],
     [
@@ -88,6 +96,10 @@ async function seedOwnedData(
     [
       `materialCommandReceipts/${userId}/commands/fixture-command`,
       { fictional: true },
+    ],
+    [
+      `materialCommandReceipts/${userId}/commands/approve-plan-fixture`,
+      { schemaVersion: 1, result: { status: 'plan_approved' } },
     ],
     [`materialCommandProofs/${userId}`, { fictional: true }],
     [
@@ -177,10 +189,13 @@ async function expectOwnerDeletedAndOtherOwnerUntouched() {
     `users/${ownerId}`,
     `users/${ownerId}/plans/plan-one`,
     `users/${ownerId}/plans/plan-one/workouts/workout-one`,
+    `users/${ownerId}/plans/plan-one/metadata/generation`,
+    `users/${ownerId}/planState/active`,
     `users/${ownerId}/runs/run-one`,
     `users/${ownerId}/shoes/shoe-one`,
     `users/${ownerId}/unexpected/missing-parent/deep/canary`,
     `materialCommandReceipts/${ownerId}/commands/fixture-command`,
+    `materialCommandReceipts/${ownerId}/commands/approve-plan-fixture`,
     `materialCommandProofs/${ownerId}`,
     `betaMemberships/${ownerId}`,
   ]
@@ -188,10 +203,13 @@ async function expectOwnerDeletedAndOtherOwnerUntouched() {
     `users/${otherOwnerId}`,
     `users/${otherOwnerId}/plans/plan-one`,
     `users/${otherOwnerId}/plans/plan-one/workouts/workout-one`,
+    `users/${otherOwnerId}/plans/plan-one/metadata/generation`,
+    `users/${otherOwnerId}/planState/active`,
     `users/${otherOwnerId}/runs/run-one`,
     `users/${otherOwnerId}/shoes/shoe-one`,
     `users/${otherOwnerId}/unexpected/missing-parent/deep/canary`,
     `materialCommandReceipts/${otherOwnerId}/commands/fixture-command`,
+    `materialCommandReceipts/${otherOwnerId}/commands/approve-plan-fixture`,
     `materialCommandProofs/${otherOwnerId}`,
     `betaMemberships/${otherOwnerId}`,
   ]

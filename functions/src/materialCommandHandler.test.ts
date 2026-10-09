@@ -294,6 +294,7 @@ describe('material-command handler', () => {
       ),
     ).resolves.toEqual(planStore.result)
     expect(planStore.commit).toHaveBeenCalledWith({
+      artifactPolicyRecord: approvedPolicyRecord(),
       envelope: planApprovalCommand,
       ownerId,
     })

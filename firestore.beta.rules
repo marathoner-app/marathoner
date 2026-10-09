@@ -201,6 +201,10 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
+    match /materialCommandReceipts/{userId}/commands/{commandId} {
+      allow read, write: if false;
+    }
+
     match /users/{userId} {
       allow get: if canAccessBetaTrainingData(userId);
       allow create: if canAccessBetaTrainingData(userId)
@@ -222,6 +226,16 @@ service cloud.firestore {
           && isValidOwnedWrite(userId)
           && request.resource.data.planId == planId;
       }
+
+      match /metadata/{metadataId} {
+        allow read: if canAccessBetaTrainingData(userId);
+        allow write: if false;
+      }
+    }
+
+    match /users/{userId}/planState/{stateId} {
+      allow read: if canAccessBetaTrainingData(userId);
+      allow write: if false;
     }
 
     match /users/{userId}/runs/{runId} {

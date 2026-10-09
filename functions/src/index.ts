@@ -6,17 +6,27 @@ import { setGlobalOptions } from 'firebase-functions/v2'
 import { onCall } from 'firebase-functions/v2/https'
 
 import {
+  GENERATED_PLAN_SCHEMA_VERSION,
+  PLAN_GENERATION_INPUT_SCHEMA_VERSION,
+  PLAN_GENERATION_RESULT_SCHEMA_VERSION,
+} from '../../src/domain/training/planGeneration.js'
+import {
   executeAccountDeletionRequest,
   type AccountDeletionRequestLogEntry,
 } from './accountDeletionRequestHandler.js'
 import { FirebaseAccountAccessManager } from './firebaseAccountAccessManager.js'
 import { FirestoreAccountDeletionRequestStore } from './firestoreAccountDeletionRequestStore.js'
 import { FirestoreMaterialCommandStore } from './firestoreMaterialCommandStore.js'
+import { FirestorePlanApprovalStore } from './firestorePlanApprovalStore.js'
 import {
   executeMaterialCommand,
   resolveMaterialCommand as resolveMaterialCommandRequest,
   type MaterialCommandLogEntry,
 } from './materialCommandHandler.js'
+import {
+  PRODUCTION_PLAN_APPROVAL_ARTIFACT_POLICY,
+  type PlanApprovalArtifactPolicyRecord,
+} from './planApprovalArtifactPolicy.js'
 
 if (getApps().length === 0) initializeApp()
 
@@ -27,8 +37,33 @@ setGlobalOptions({
   maxInstances: 2,
 })
 
+const database = getFirestore()
+const emulatorPlanApprovalScopeId = 'synthetic-consistent-runner@1'
+const emulatorPlanApprovalPolicy: readonly PlanApprovalArtifactPolicyRecord[] = [
+  {
+    supportedScopeId: emulatorPlanApprovalScopeId,
+    inputSchemaVersion: PLAN_GENERATION_INPUT_SCHEMA_VERSION,
+    generatorVersion: 'fixture-generator@1.0.0',
+    rulesetVersion: 'fixture-rules@1.0.0',
+    generatedPlanSchemaVersion: GENERATED_PLAN_SCHEMA_VERSION,
+    resultSchemaVersion: PLAN_GENERATION_RESULT_SCHEMA_VERSION,
+    reviewState: 'approved',
+  },
+]
+const useEmulatorPlanApprovalPolicy =
+  process.env.FUNCTIONS_EMULATOR === 'true'
+
 const dependencies = {
-  store: new FirestoreMaterialCommandStore(getFirestore()),
+  store: new FirestoreMaterialCommandStore(database),
+  planApproval: {
+    policyRecords: useEmulatorPlanApprovalPolicy
+      ? emulatorPlanApprovalPolicy
+      : PRODUCTION_PLAN_APPROVAL_ARTIFACT_POLICY,
+    store: new FirestorePlanApprovalStore(database),
+    supportedScopeId: useEmulatorPlanApprovalPolicy
+      ? emulatorPlanApprovalScopeId
+      : null,
+  },
   log: (entry: MaterialCommandLogEntry) => {
     logger.info('Material command boundary event', entry)
   },
@@ -36,7 +71,7 @@ const dependencies = {
 
 const accountDeletionDependencies = {
   accountAccess: new FirebaseAccountAccessManager(getAuth()),
-  store: new FirestoreAccountDeletionRequestStore(getFirestore()),
+  store: new FirestoreAccountDeletionRequestStore(database),
   nowEpochSeconds: () => Math.floor(Date.now() / 1_000),
   log: (entry: AccountDeletionRequestLogEntry) => {
     logger.info('Account deletion request boundary event', entry)
