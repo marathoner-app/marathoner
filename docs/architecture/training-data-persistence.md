@@ -268,9 +268,12 @@ results. The Functions emulator now loads those records and commits a valid
 run, optional workout update, guard, and replay receipt atomically through the
 Admin SDK. A forced create collision proves that no partial state survives.
 The handler does not install that store in a deployed environment, and no
-browser or iOS client has migrated to this command yet. Completed-run deletion
-still has projection coverage only and remains owned by its next implementation
-slice.
+browser or iOS client has migrated to this command yet. The symmetric deletion
+transaction now deletes the run, optionally reopens its uniquely linked
+workout, removes the guard, and records its receipt in one emulator-proven
+commit. Missing, stale, cross-owner, mismatched-association, and
+mismatched-guard attempts do not write. Both transactions remain unavailable
+in deployed environments until the later activation and client-migration work.
 
 ## Shoe documents
 

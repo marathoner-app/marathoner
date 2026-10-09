@@ -24,16 +24,19 @@ import {
   createPlanApprovalCommand,
   createProofMaterialCommand,
   createRunCompletionCommand,
+  createRunDeletionCommand,
   isMaterialCommandResult,
   type MaterialCommandEnvelope,
   type PlanApprovalReceiptResult,
   type RunCompletionReceiptResult,
+  type RunDeletionReceiptResult,
 } from '../../src/domain/materialCommands/contract.js'
 import {
   createIanaTimeZone,
   createUtcDateTime,
 } from '../../src/domain/training/dates.js'
 import {
+  createCompletedRunId,
   createPlannedWorkoutId,
   createShoeId,
   createTrainingPlanId,
@@ -54,6 +57,7 @@ import {
 import type { PlanApprovalArtifactPolicyRecord } from './planApprovalArtifactPolicy.js'
 import { FirestorePlanApprovalStore } from './firestorePlanApprovalStore.js'
 import { FirestoreRunCompletionStore } from './firestoreRunCompletionStore.js'
+import { FirestoreRunDeletionStore } from './firestoreRunDeletionStore.js'
 
 const projectId = 'demo-marathoner'
 const email = 'material-command-owner@example.test'
@@ -118,6 +122,24 @@ function runCompletionCommand(
     perceivedEffort: 'about_right',
     unusualPain: false,
     notes: 'Emulator completion fixture',
+  })
+}
+
+function runDeletionCommand(
+  commandId: string,
+  completion: RunCompletionReceiptResult,
+) {
+  return createRunDeletionCommand(commandId, {
+    completedRunId: completion.completedRunId,
+    expectedCompletedRunUpdatedAt: completion.completedRunUpdatedAt,
+    plannedWorkout:
+      completion.completedPlannedWorkout === null
+        ? null
+        : {
+            planId: completion.completedPlannedWorkout.planId,
+            workoutId: completion.completedPlannedWorkout.workoutId,
+            expectedUpdatedAt: completion.completedPlannedWorkout.updatedAt,
+          },
   })
 }
 
@@ -220,6 +242,13 @@ function requirePlanApprovalReceipt(value: unknown): PlanApprovalReceiptResult {
 function requireRunCompletionReceipt(value: unknown): RunCompletionReceiptResult {
   if (!isMaterialCommandResult(value) || value.status !== 'run_completed') {
     throw new Error('Expected a run-completion receipt.')
+  }
+  return value
+}
+
+function requireRunDeletionReceipt(value: unknown): RunDeletionReceiptResult {
+  if (!isMaterialCommandResult(value) || value.status !== 'run_deleted') {
+    throw new Error('Expected a run-deletion receipt.')
   }
   return value
 }
@@ -879,5 +908,247 @@ describe('material-command emulator boundary', () => {
     await expect(database.doc(collisionPath).get()).resolves.toEqual(
       expect.objectContaining({ exists: true }),
     )
+  })
+
+  it('atomically deletes a planned run, reopens its workout, and replays the receipt', async () => {
+    await seedWorkout()
+    await signInOwner()
+    const completion = requireRunCompletionReceipt(
+      (
+        await submit(
+          runCompletionCommand('complete-run-before-delete', {
+            plannedWorkout: {
+              planId: runPlanId,
+              workoutId: runWorkoutId,
+              expectedUpdatedAt: workoutUpdatedAt,
+            },
+          }),
+        )
+      ).data,
+    )
+    const command = runDeletionCommand('delete-run-emulator-planned', completion)
+
+    const first = requireRunDeletionReceipt((await submit(command)).data)
+    const retry = (await submit(command)).data
+    const resolved = (await resolve({ commandId: command.commandId })).data
+
+    expect(retry).toEqual(first)
+    expect(resolved).toEqual(first)
+    expect(first).toEqual({
+      status: 'run_deleted',
+      commandId: command.commandId,
+      completedRunId: completion.completedRunId,
+      deletedAt: first.deletedAt,
+      reopenedPlannedWorkout: {
+        planId: runPlanId,
+        workoutId: runWorkoutId,
+        updatedAt: first.deletedAt,
+      },
+    })
+    await expect(
+      database.doc(`users/${ownerId}/runs/${completion.completedRunId}`).get(),
+    ).resolves.toEqual(expect.objectContaining({ exists: false }))
+    expect((await database.doc(workoutPath()).get()).data()).toEqual(
+      expect.objectContaining({ status: 'planned' }),
+    )
+    await expect(database.doc(guardPath()).get()).resolves.toEqual(
+      expect.objectContaining({ exists: false }),
+    )
+
+    const changedCommand = createRunDeletionCommand(command.commandId, {
+      completedRunId: completion.completedRunId,
+      expectedCompletedRunUpdatedAt: completion.completedRunUpdatedAt,
+      plannedWorkout: null,
+    })
+    expect((await submit(changedCommand)).data).toEqual(
+      expect.objectContaining({
+        status: 'conflict',
+        code: 'command-id-reused',
+      }),
+    )
+  })
+
+  it('deletes an unplanned run without changing workout state', async () => {
+    await signInOwner()
+    const completion = requireRunCompletionReceipt(
+      (
+        await submit(
+          runCompletionCommand('complete-unplanned-before-delete'),
+        )
+      ).data,
+    )
+    const command = runDeletionCommand(
+      'delete-run-emulator-unplanned',
+      completion,
+    )
+
+    const receipt = requireRunDeletionReceipt((await submit(command)).data)
+
+    expect(receipt.reopenedPlannedWorkout).toBeNull()
+    await expect(
+      database.doc(`users/${ownerId}/runs/${completion.completedRunId}`).get(),
+    ).resolves.toEqual(expect.objectContaining({ exists: false }))
+    await expect(database.doc(workoutPath()).get()).resolves.toEqual(
+      expect.objectContaining({ exists: false }),
+    )
+    await expect(database.doc(guardPath()).get()).resolves.toEqual(
+      expect.objectContaining({ exists: false }),
+    )
+  })
+
+  it('rejects stale, missing, cross-owner, mismatched-guard, and malformed deletion without effects', async () => {
+    await seedWorkout()
+    await signInOwner()
+    const completion = requireRunCompletionReceipt(
+      (
+        await submit(
+          runCompletionCommand('complete-run-before-invalid-delete', {
+            plannedWorkout: {
+              planId: runPlanId,
+              workoutId: runWorkoutId,
+              expectedUpdatedAt: workoutUpdatedAt,
+            },
+          }),
+        )
+      ).data,
+    )
+    const plannedWorkout = {
+      planId: runPlanId,
+      workoutId: runWorkoutId,
+      expectedUpdatedAt: completion.completedRunUpdatedAt,
+    }
+    const stale = createRunDeletionCommand('delete-run-emulator-stale', {
+      completedRunId: completion.completedRunId,
+      expectedCompletedRunUpdatedAt: createUtcDateTime(
+        '2026-10-08T17:59:59.000Z',
+      ),
+      plannedWorkout,
+    })
+    expect((await submit(stale)).data).toEqual(
+      expect.objectContaining({
+        status: 'stale_revision',
+        code: 'completed-run-version-changed',
+      }),
+    )
+
+    const missing = createRunDeletionCommand('delete-run-emulator-missing', {
+      completedRunId: createCompletedRunId('missing-run-0001'),
+      expectedCompletedRunUpdatedAt: completion.completedRunUpdatedAt,
+      plannedWorkout: null,
+    })
+    expect((await submit(missing)).data).toEqual(
+      expect.objectContaining({
+        status: 'validation_error',
+        code: 'invalid-run-deletion',
+      }),
+    )
+
+    const mismatch = runDeletionCommand(
+      'delete-run-emulator-mismatched-guard',
+      completion,
+    )
+    await database.doc(guardPath()).update({
+      completedRunId: 'another-completed-run',
+    })
+    expect((await submit(mismatch)).data).toEqual(
+      expect.objectContaining({
+        status: 'validation_error',
+        code: 'invalid-run-deletion',
+      }),
+    )
+    expect((await database.doc(guardPath()).get()).data()?.completedRunId).toBe(
+      'another-completed-run',
+    )
+
+    await database.doc(guardPath()).update({
+      completedRunId: completion.completedRunId,
+    })
+    const runPath = `users/${ownerId}/runs/${completion.completedRunId}`
+    await database.doc(runPath).update({ userId: otherOwnerId })
+    const crossOwner = runDeletionCommand(
+      'delete-run-emulator-cross-owner',
+      completion,
+    )
+    expect((await submit(crossOwner)).data).toEqual(
+      expect.objectContaining({
+        status: 'authorization_error',
+        code: 'training-resource-access-denied',
+      }),
+    )
+    expect((await database.doc(runPath).get()).data()?.userId).toBe(otherOwnerId)
+
+    const malformed = {
+      ...runDeletionCommand('delete-run-emulator-malformed', completion),
+      path: runPath,
+    } as unknown as MaterialCommandEnvelope
+    expect((await submit(malformed)).data).toEqual(
+      expect.objectContaining({
+        status: 'validation_error',
+        code: 'target-field-prohibited',
+      }),
+    )
+
+    expect((await database.doc(workoutPath()).get()).data()).toEqual(
+      expect.objectContaining({ status: 'completed' }),
+    )
+    await expect(database.doc(guardPath()).get()).resolves.toEqual(
+      expect.objectContaining({ exists: true }),
+    )
+    for (const rejected of [stale, missing, mismatch, crossOwner, malformed]) {
+      await expect(
+        database
+          .doc(
+            `materialCommandReceipts/${ownerId}/commands/${rejected.commandId}`,
+          )
+          .get(),
+      ).resolves.toEqual(expect.objectContaining({ exists: false }))
+    }
+  })
+
+  it('rolls back run, workout, guard, and receipt when deletion fails', async () => {
+    await seedWorkout()
+    await signInOwner()
+    const completion = requireRunCompletionReceipt(
+      (
+        await submit(
+          runCompletionCommand('complete-run-before-delete-rollback', {
+            plannedWorkout: {
+              planId: runPlanId,
+              workoutId: runWorkoutId,
+              expectedUpdatedAt: workoutUpdatedAt,
+            },
+          }),
+        )
+      ).data,
+    )
+    const command = runDeletionCommand(
+      'delete-run-emulator-rollback',
+      completion,
+    )
+    const store = new FirestoreRunDeletionStore(database, {
+      now: () => new Date('2026-10-09T12:00:00.000Z'),
+      onBeforeCommit: () => {
+        throw new Error('Intentional deletion transaction failure.')
+      },
+    })
+
+    await expect(
+      store.commit({ envelope: command, ownerId }),
+    ).rejects.toThrow('Intentional deletion transaction failure.')
+
+    await expect(
+      database.doc(`users/${ownerId}/runs/${completion.completedRunId}`).get(),
+    ).resolves.toEqual(expect.objectContaining({ exists: true }))
+    expect((await database.doc(workoutPath()).get()).data()).toEqual(
+      expect.objectContaining({ status: 'completed' }),
+    )
+    await expect(database.doc(guardPath()).get()).resolves.toEqual(
+      expect.objectContaining({ exists: true }),
+    )
+    await expect(
+      database
+        .doc(`materialCommandReceipts/${ownerId}/commands/${command.commandId}`)
+        .get(),
+    ).resolves.toEqual(expect.objectContaining({ exists: false }))
   })
 })

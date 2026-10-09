@@ -4,11 +4,13 @@ import {
   createPlanApprovalCommand,
   createProofMaterialCommand,
   createRunCompletionCommand,
+  createRunDeletionCommand,
   materialCommandSignature,
   type MaterialCommandCommittedResult,
   type PlanApprovalReceiptResult,
   type ProofMaterialCommandEnvelope,
   type RunCompletionReceiptResult,
+  type RunDeletionReceiptResult,
 } from '../../src/domain/materialCommands/contract.js'
 import { createIanaTimeZone, createUtcDateTime } from '../../src/domain/training/dates.js'
 import { createCompletedRunId } from '../../src/domain/training/identifiers.js'
@@ -27,6 +29,7 @@ import {
   type PlanApprovalStore,
   type MaterialCommandStore,
   type RunCompletionStore,
+  type RunDeletionStore,
 } from './materialCommandHandler.js'
 import type {
   PlanApprovalArtifactPolicyRecord,
@@ -58,6 +61,16 @@ const runCompletionCommand = createRunCompletionCommand(
     duration: createDurationSeconds(1_800),
   },
 )
+const runDeletionCommand = createRunDeletionCommand(
+  'delete-run-command-0001',
+  {
+    completedRunId: createCompletedRunId('run-0001'),
+    expectedCompletedRunUpdatedAt: createUtcDateTime(
+      '2026-10-08T13:00:00.000Z',
+    ),
+    plannedWorkout: null,
+  },
+)
 
 class InMemoryMaterialCommandStore implements MaterialCommandStore {
   proofCount = 0
@@ -67,7 +80,9 @@ class InMemoryMaterialCommandStore implements MaterialCommandStore {
   >()
   resolutionResults = new Map<
     string,
-    MaterialCommandCommittedResult | RunCompletionReceiptResult
+    | MaterialCommandCommittedResult
+    | RunCompletionReceiptResult
+    | RunDeletionReceiptResult
   >()
   failure: unknown = null
 
@@ -128,6 +143,18 @@ class InMemoryRunCompletionStore implements RunCompletionStore {
   commit = vi.fn(async () => ({ kind: 'completed' as const, result: this.result }))
 }
 
+class InMemoryRunDeletionStore implements RunDeletionStore {
+  readonly result: RunDeletionReceiptResult = {
+    status: 'run_deleted',
+    commandId: runDeletionCommand.commandId,
+    completedRunId: runDeletionCommand.command.completedRunId,
+    deletedAt: createUtcDateTime('2026-10-08T14:00:00.000Z'),
+    reopenedPlannedWorkout: null,
+  }
+
+  commit = vi.fn(async () => ({ kind: 'deleted' as const, result: this.result }))
+}
+
 function approvedPolicyRecord(): PlanApprovalArtifactPolicyRecord {
   return {
     supportedScopeId,
@@ -145,8 +172,9 @@ function dependencies(
   store = new InMemoryMaterialCommandStore(),
   planApproval?: PlanApprovalHandlerDependencies,
   runCompletion?: { store: RunCompletionStore },
+  runDeletion?: { store: RunDeletionStore },
 ) {
-  return { store, planApproval, runCompletion, log: vi.fn() }
+  return { store, planApproval, runCompletion, runDeletion, log: vi.fn() }
 }
 
 describe('material-command handler', () => {
@@ -410,7 +438,7 @@ describe('material-command handler', () => {
       status: 'authorization_error',
       commandId: runCompletionCommand.commandId,
       code: 'approved-beta-membership-required',
-      message: 'Run completion commands are not enabled in this environment.',
+      message: 'Completed-run commands are not enabled in this environment.',
     })
     expect(boundary.log).toHaveBeenCalledWith({
       event: 'material-command-result',
@@ -475,5 +503,95 @@ describe('material-command handler', () => {
       commandType: 'run.complete',
       status: 'run_completed',
     })
+  })
+
+  it('keeps run deletion unavailable when the emulator-only store is absent', async () => {
+    const boundary = dependencies()
+
+    await expect(
+      executeMaterialCommand(
+        { authenticatedUserId: ownerId, data: runDeletionCommand },
+        boundary,
+      ),
+    ).resolves.toEqual({
+      status: 'authorization_error',
+      commandId: runDeletionCommand.commandId,
+      code: 'approved-beta-membership-required',
+      message: 'Completed-run commands are not enabled in this environment.',
+    })
+    expect(boundary.log).toHaveBeenCalledWith({
+      event: 'material-command-result',
+      commandType: 'run.delete',
+      status: 'authorization_error',
+    })
+  })
+
+  it('passes run deletion to persistence and resolves its redacted receipt', async () => {
+    const materialStore = new InMemoryMaterialCommandStore()
+    const runStore = new InMemoryRunDeletionStore()
+    const boundary = dependencies(
+      materialStore,
+      undefined,
+      undefined,
+      { store: runStore },
+    )
+
+    await expect(
+      executeMaterialCommand(
+        { authenticatedUserId: ownerId, data: runDeletionCommand },
+        boundary,
+      ),
+    ).resolves.toEqual(runStore.result)
+    expect(runStore.commit).toHaveBeenCalledWith({
+      envelope: runDeletionCommand,
+      ownerId,
+    })
+
+    materialStore.resolutionResults.set(
+      `${ownerId}:${runStore.result.commandId}`,
+      runStore.result,
+    )
+    await expect(
+      resolveMaterialCommand(
+        {
+          authenticatedUserId: ownerId,
+          data: { commandId: runStore.result.commandId },
+        },
+        boundary,
+      ),
+    ).resolves.toEqual(runStore.result)
+    expect(boundary.log).toHaveBeenLastCalledWith({
+      event: 'material-command-resolution',
+      commandType: 'run.delete',
+      status: 'run_deleted',
+    })
+    expect(JSON.stringify(boundary.log.mock.calls)).not.toContain(ownerId)
+    expect(JSON.stringify(boundary.log.mock.calls)).not.toContain(
+      runDeletionCommand.commandId,
+    )
+  })
+
+  it('maps a reused run-deletion command ID to the shared conflict result', async () => {
+    const runStore: RunDeletionStore = {
+      commit: vi.fn(async () => ({ kind: 'conflict' as const })),
+    }
+    const boundary = dependencies(
+      new InMemoryMaterialCommandStore(),
+      undefined,
+      undefined,
+      { store: runStore },
+    )
+
+    await expect(
+      executeMaterialCommand(
+        { authenticatedUserId: ownerId, data: runDeletionCommand },
+        boundary,
+      ),
+    ).resolves.toEqual(
+      expect.objectContaining({
+        status: 'conflict',
+        code: 'command-id-reused',
+      }),
+    )
   })
 })
