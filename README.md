@@ -164,8 +164,12 @@ The development/test-only Creator Radar boundary is documented in
   eligibility or generate, approve, or activate a training plan.
 - Versioned plan-generation contracts and synthetic conformance fixtures exist,
   but no generator or training rules are implemented or approved yet.
-- Personalized plan generation and plan-creation UI are not implemented yet.
-  Accounts without a plan receive an honest empty state. This work is tracked in
+- Reusable proposal review, final confirmation, and typed approval-state UI is
+  implemented, including same-command recovery and a post-approval training-data
+  reload. It is not mounted in the signed-in production journey because no live
+  generator or approved methodology exists. Synthetic proposals remain test-only,
+  and accounts without a plan receive an honest empty state. The production
+  generation path is tracked in
   [issue #29](https://github.com/marathoner-app/marathoner/issues/29).
 - Training data currently loads as a persisted snapshot. Mutations remain
   synchronized inside the current session, while the accepted real-time read

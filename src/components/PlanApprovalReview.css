@@ -1,0 +1,119 @@
+.plan-approval-state {
+  box-sizing: border-box;
+  width: min(100%, 44rem);
+  margin: 0 auto;
+  padding: clamp(1.25rem, 4vw, 2rem);
+  border: 1px solid #d7dde4;
+  border-radius: 0.75rem;
+  background: #f8fafc;
+  color: #17202a;
+  line-height: 1.5;
+  text-align: left;
+}
+
+.plan-approval-state.approved {
+  border-color: #28754d;
+  background: #f2fbf6;
+  text-align: center;
+}
+
+.plan-approval-state h2,
+.plan-approval-state h3 {
+  line-height: 1.25;
+}
+
+.plan-approval-state h2:focus,
+.plan-approval-outcome:focus {
+  outline: 3px solid #2e6fbb;
+  outline-offset: 0.25rem;
+}
+
+.plan-approval-eyebrow {
+  margin: 0;
+  color: #475569;
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.plan-approval-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin: 1.5rem 0;
+}
+
+.plan-approval-summary div {
+  padding: 0.75rem;
+  border: 1px solid #d7dde4;
+  border-radius: 0.5rem;
+  background: #ffffff;
+}
+
+.plan-approval-summary dt {
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.plan-approval-summary dd {
+  margin: 0.2rem 0 0;
+}
+
+.plan-approval-pending,
+.plan-approval-outcome {
+  margin: 1rem 0 0;
+  padding: 0.85rem 1rem;
+  border-radius: 0.5rem;
+}
+
+.plan-approval-pending {
+  background: #eef4fb;
+}
+
+.plan-approval-outcome {
+  border: 1px solid #9a6a00;
+  background: #fffaf0;
+}
+
+.plan-approval-outcome h3,
+.plan-approval-outcome p {
+  margin: 0;
+}
+
+.plan-approval-outcome p {
+  margin-top: 0.35rem;
+}
+
+.plan-approval-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+}
+
+.plan-approval-actions button {
+  min-height: 2.75rem;
+  padding: 0.65rem 1rem;
+}
+
+.plan-approval-actions .secondary {
+  border: 1px solid #17202a;
+  background: #ffffff;
+  color: #17202a;
+}
+
+@media (max-width: 600px) {
+  .plan-approval-summary {
+    grid-template-columns: 1fr;
+  }
+
+  .plan-approval-actions {
+    flex-direction: column;
+  }
+
+  .plan-approval-actions button {
+    width: 100%;
+  }
+}

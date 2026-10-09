@@ -171,6 +171,22 @@ is treated as outcome unknown, never as plan approval. Known-offline submission
 is not queued, and an unknown result must be resolved with the original command
 ID before any retry.
 
+`PlanApprovalReview` owns the participant-facing handoff from a fully reviewed
+proposal to that client. Its final confirmation snapshots the exact input and
+proposal, creates one command ID, disables duplicate submission, and reuses the
+same command for known-safe retries. An outcome-unknown response replaces the
+submit action with same-command resolution; a confirmed approval can only retry
+the training-data reload, never the write. After a successful reload it calls
+the supplied completion callback so the owner can reveal the persisted active
+plan and next workout. Focus moves to the confirmation, failure, and success
+states, while status and alert regions announce asynchronous changes.
+
+The component accepts an injected approval client and reload callback. Its
+tests use only the checked-in synthetic contract fixtures. The signed-in
+production journey does not mount a generated proposal, and no fixture artifact
+is imported into that journey; live use remains blocked on an approved
+methodology and generator.
+
 `firebaseMaterialCommandClient.ts` is the browser transport. It attaches the
 current Firebase Authentication token through the callable SDK. Local browser
 work can opt into the Functions emulator with:
@@ -180,8 +196,7 @@ VITE_FIREBASE_FUNCTIONS_EMULATOR=true
 ```
 
 The Vite configuration rejects that variable outside local development mode,
-so production and iOS builds cannot target localhost accidentally. No
-proof-command UI ships in this issue.
+so production and iOS builds cannot target localhost accidentally.
 
 ## Local verification
 

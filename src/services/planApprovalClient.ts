@@ -30,6 +30,11 @@ export type PlanApprovalClientResult = Exclude<
   UnrelatedMaterialCommandSuccess
 >
 
+export interface PlanApprovalClient {
+  submit(submission: PlanApprovalSubmission): Promise<PlanApprovalClientResult>
+  resolve(commandId: string): Promise<PlanApprovalClientResult>
+}
+
 function unknownOutcome(commandId: string): MaterialCommandOutcomeUnknownResult {
   return {
     status: 'outcome_unknown',
@@ -50,7 +55,9 @@ function mapPlanApprovalResult(
   return result
 }
 
-export function createPlanApprovalClient(options: MaterialCommandClientOptions) {
+export function createPlanApprovalClient(
+  options: MaterialCommandClientOptions,
+): PlanApprovalClient {
   const materialCommandClient = createMaterialCommandClient(options)
 
   return {

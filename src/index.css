@@ -11,6 +11,7 @@
 @import "./components/AccountDeletion.css";
 @import "./components/Calendar.css";
 @import "./components/NextWorkoutSummary.css";
+@import "./components/PlanApprovalReview.css";
 @import "./components/PlanGenerationResultView.css";
 @import "./components/ProposedPlanSummary.css";
 @import "./components/ShoeTracker.css";

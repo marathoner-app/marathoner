@@ -1,37 +1,37 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
+import type { PlanApprovalReceiptResult } from "../domain/materialCommands/contract";
 import {
   PLAN_GENERATION_RESULT_SCHEMA_VERSION,
   planGenerationContractFixtures,
-  type GeneratedPlanResultV1,
+  type PlanGenerationContractFixtureV1,
   type InvalidPlanGenerationResultV1,
   type UnsupportedPlanGenerationResultV1,
 } from "../domain/training";
+import type { PlanApprovalClient } from "../services/planApprovalClient";
 import PlanGenerationResultView from "./PlanGenerationResultView";
 
-function generatedResult(): GeneratedPlanResultV1 {
-  const fixture = planGenerationContractFixtures.find(
-    (candidate) => candidate.id === "generated-exact-date-distance-target",
+function fixture(fixtureId: string): PlanGenerationContractFixtureV1 {
+  const match = planGenerationContractFixtures.find(
+    (candidate) => candidate.id === fixtureId,
   );
 
-  if (fixture?.result.kind !== "generated") {
-    throw new Error("Expected the generated contract fixture.");
-  }
+  if (match === undefined) throw new Error(`Expected fixture ${fixtureId}.`);
+  return match;
+}
 
-  return fixture.result;
+const generatedFixture = fixture("generated-exact-date-distance-target");
+if (generatedFixture.result.kind !== "generated") {
+  throw new Error("Expected the generated contract fixture.");
 }
 
 function unsupportedResult(): UnsupportedPlanGenerationResultV1 {
-  const fixture = planGenerationContractFixtures.find(
-    (candidate) => candidate.id === "unsupported-result-shape",
-  );
-
-  if (fixture?.result.kind !== "unsupported") {
+  const result = fixture("unsupported-result-shape").result;
+  if (result.kind !== "unsupported") {
     throw new Error("Expected the unsupported contract fixture.");
   }
-
-  return fixture.result;
+  return result;
 }
 
 const invalidResult: InvalidPlanGenerationResultV1 = {
@@ -46,41 +46,62 @@ const invalidResult: InvalidPlanGenerationResultV1 = {
   ],
 };
 
+const approved: PlanApprovalReceiptResult = {
+  status: "plan_approved",
+  commandId: "approve-plan-command-0001",
+  planId: "plan-generated-0001",
+  activePlanRevision: 1,
+  approvedAt: "2026-10-08T00:00:00.000Z",
+};
+
+function approvalClient(): PlanApprovalClient {
+  return {
+    submit: vi.fn().mockResolvedValue(approved),
+    resolve: vi.fn().mockResolvedValue(approved),
+  };
+}
+
+function commonProps() {
+  return {
+    input: generatedFixture.input,
+    expectedActivePlanRevision: null,
+    approvalClient: approvalClient(),
+    reloadTrainingData: vi.fn().mockResolvedValue(undefined),
+    onReviewInputs: vi.fn(),
+    onApproved: vi.fn(),
+    createCommandId: () => approved.commandId,
+  };
+}
+
 describe("PlanGenerationResultView", () => {
-  it("delegates a generated result to the inactive proposal review", async () => {
+  it("continues a generated result into explicit final confirmation", async () => {
     const user = userEvent.setup();
-    const onReviewInputs = vi.fn();
-    const onContinueReview = vi.fn();
+    const props = commonProps();
 
     render(
       <PlanGenerationResultView
-        result={generatedResult()}
-        onReviewInputs={onReviewInputs}
-        onContinueReview={onContinueReview}
+        {...props}
+        result={generatedFixture.result}
       />,
     );
 
     expect(screen.getByRole("status")).toHaveTextContent(
       "Proposed plan — not active",
     );
-
-    await user.click(screen.getByRole("button", { name: "Review inputs" }));
     await user.click(screen.getByRole("button", { name: "Continue review" }));
 
-    expect(onReviewInputs).toHaveBeenCalledOnce();
-    expect(onContinueReview).toHaveBeenCalledOnce();
+    expect(
+      screen.getByRole("heading", { name: "Activate Synthetic contract plan?" }),
+    ).toHaveFocus();
+    expect(props.approvalClient.submit).not.toHaveBeenCalled();
   });
 
   it("renders an honest unsupported state without internal reason codes", async () => {
     const user = userEvent.setup();
-    const onReviewInputs = vi.fn();
+    const props = commonProps();
 
     render(
-      <PlanGenerationResultView
-        result={unsupportedResult()}
-        onReviewInputs={onReviewInputs}
-        onContinueReview={() => undefined}
-      />,
+      <PlanGenerationResultView {...props} result={unsupportedResult()} />,
     );
 
     expect(
@@ -93,17 +114,12 @@ describe("PlanGenerationResultView", () => {
     ).not.toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "Review inputs" }));
-    expect(onReviewInputs).toHaveBeenCalledOnce();
+    expect(props.onReviewInputs).toHaveBeenCalledOnce();
   });
 
   it("renders an invalid-input state without internal fields or messages", () => {
-    render(
-      <PlanGenerationResultView
-        result={invalidResult}
-        onReviewInputs={() => undefined}
-        onContinueReview={() => undefined}
-      />,
-    );
+    const props = commonProps();
+    render(<PlanGenerationResultView {...props} result={invalidResult} />);
 
     expect(
       screen.getByRole("heading", { name: "Review your running details" }),
