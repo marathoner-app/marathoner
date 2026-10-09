@@ -1,6 +1,6 @@
 # Material-command boundary
 
-- **Status:** Local proof and deletion-request boundaries complete; plan approval and run completion are atomically persisted in emulator proof; production activation and deployment blocked
+- **Status:** Local proof and deletion-request boundaries complete; plan approval, run completion, and completed-run deletion are atomically persisted in emulator proof; production activation and deployment blocked
 - **Decision date:** 2026-10-05
 - **Owner:** Marathoner maintainer
 - **Proof issue:** [#158](https://github.com/marathoner-app/marathoner/issues/158)
@@ -13,14 +13,15 @@
 - **Completed-run contract issue:** [#257](https://github.com/marathoner-app/marathoner/issues/257)
 - **Completed-run projection issue:** [#258](https://github.com/marathoner-app/marathoner/issues/258)
 - **Run-completion transaction issue:** [#259](https://github.com/marathoner-app/marathoner/issues/259)
+- **Run-deletion transaction issue:** [#260](https://github.com/marathoner-app/marathoner/issues/260)
 
 ## Purpose and scope
 
 Marathoner has one shared authenticated, online-only contract for material
 writes. Issue #158 proves the boundary with a harmless counter command. Issue
 #195 adds the first security-sensitive workflow: requesting deletion and
-locking account access. Adaptation, consent, completed-run deletion, the
-destructive deletion runner, and the deletion UI remain in their owning issues.
+locking account access. Adaptation, consent, the destructive deletion runner,
+and the deletion UI remain in their owning issues.
 Issue #227 defines the shared plan-approval envelope and outcomes. Issue #230
 adds the transport-injected, online-only client adapter without claiming that
 the server transaction or participant workflow exists yet. Issue #239 makes
@@ -31,7 +32,9 @@ Issue #241 commits that projection through one idempotent Admin SDK transaction
 without activating a production methodology artifact. Issues #257 and #258
 define and project completed-run creation and deletion commands. Issue #259
 routes run completion through one emulator-only Admin SDK transaction; it does
-not activate a deployed client write path.
+not activate a deployed client write path. Issue #260 adds the symmetric
+emulator-only deletion transaction and safely reopens only the workout whose
+guard identifies the deleted run.
 
 The browser and server share the portable contract in
 `src/domain/materialCommands/contract.ts`. It imports neither React nor
@@ -105,6 +108,17 @@ The Functions entry point installs this store only when
 failure before persistence. Production activation remains blocked by the
 deployment, App Check, membership, and client-migration work described below.
 
+Run deletion reads the owner-scoped run plus the command's optional workout and
+guard before applying the deletion projection. A valid associated deletion
+removes the run, reopens the completed workout, removes its guard, and records
+one exact replay receipt. An unplanned run deletes without touching workout
+state. Missing or stale runs and cross-owner, mismatched-association, or
+mismatched-guard state produce typed failures and no receipt. Same-command
+replay succeeds after the run is gone because the receipt is checked first;
+changed content with the same command ID conflicts. A fault injected after all
+writes are staged proves that the original run, completed workout, and guard
+survive together when the transaction fails.
+
 ## Plan-approval artifact policy
 
 The server policy in `functions/src/planApprovalArtifactPolicy.ts` compares one
@@ -169,8 +183,8 @@ request and a same-command retry safely attempts the Auth lock again. It never
 deletes participant data or the Authentication user.
 
 The result union distinguishes proof commits, accepted deletion requests,
-replayable plan-approval and run-completion receipts, run-completion duplicate
-guards, and stale plan, workout, and run revisions plus
+replayable plan-approval, run-completion, and run-deletion receipts,
+run-completion duplicate guards, and stale plan, workout, and run revisions plus
 validation, authentication, authorization, unsupported-version, conflict,
 retryable, and outcome-unknown states. An outcome-unknown client must resolve
 the same command ID before deciding whether to retry.
@@ -249,8 +263,12 @@ the unit, contract, and emulator checks prove:
 11. stale, retired-shoe, and cross-owner completion attempts leave no run or
     receipt;
 12. a second command cannot complete one workout twice, and an intentionally
-    failed transaction leaves no partial workout, guard, or receipt; and
-13. emitted application logs contain outcome metadata only.
+    failed completion transaction leaves no partial workout, guard, or receipt;
+13. planned and unplanned run deletion replay exactly, while stale, missing,
+    cross-owner, mismatched-guard, and malformed attempts preserve all records;
+14. an intentionally failed deletion transaction preserves the run, completed
+    workout, and guard together; and
+15. emitted application logs contain outcome metadata only.
 
 Pull-request CI provisions Java 21 and runs the same command.
 
@@ -279,8 +297,8 @@ command succeed is not approved.
 ## Follow-up migrations
 
 - #72 moves initial-plan activation onto this boundary.
-- #115 continues the atomic workflow with completed-run deletion and adaptation
-  after the emulator-proven completion transaction.
+- #115 continues the atomic workflow with adaptation after the emulator-proven
+  completion and deletion transactions.
 - #121 removes direct client material writes after every owning workflow moves.
 - #159 adds live reads, freshness, and account cache isolation.
 - #138 may use the boundary on iOS only after its required workflow migrations.

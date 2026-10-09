@@ -1,72 +1,69 @@
-import { randomUUID } from 'node:crypto'
-
 import type { Firestore } from 'firebase-admin/firestore'
 
 import {
-  isRunCompletionReceiptResult,
+  isRunDeletionReceiptResult,
   materialCommandSignature,
-  type RunCompletionCommandEnvelope,
+  type RunDeletionCommandEnvelope,
 } from '../../src/domain/materialCommands/contract.js'
 import { createUserId } from '../../src/domain/training/identifiers.js'
 import {
   runDocumentPath,
-  shoeDocumentPath,
   workoutCompletionGuardDocumentPath,
   workoutDocumentPath,
 } from '../../src/persistence/firestore/paths.js'
-import { projectRunCompletion } from './completedRunCommandProjection.js'
+import { projectRunDeletion } from './completedRunCommandProjection.js'
 import {
   adminTimestamp,
-  completedRunAdminDocument,
-  completionGuardAdminDocument,
+  completedRunFromAdminDocument,
   completionGuardFromAdminDocument,
   plannedWorkoutAdminDocument,
   plannedWorkoutFromAdminDocument,
-  shoeFromAdminDocument,
 } from './firestoreCompletedRunDocuments.js'
 import {
   MATERIAL_COMMAND_RECEIPT_SCHEMA_VERSION,
   materialCommandReceiptPath,
 } from './firestoreMaterialCommandStore.js'
-import type { RunCompletionStore } from './materialCommandHandler.js'
+import type { RunDeletionStore } from './materialCommandHandler.js'
 
-export interface FirestoreRunCompletionStoreOptions {
-  createRunId?: () => string
+export interface FirestoreRunDeletionStoreOptions {
   now?: () => Date
+  // Test-only seam for proving that staged writes roll back together.
+  onBeforeCommit?: () => void
 }
 
-function storedRunCompletionResult(data: unknown) {
-  if (!isRunCompletionReceiptResult(data)) {
-    throw new Error('A stored run-completion receipt is invalid.')
+function storedRunDeletionResult(data: unknown) {
+  if (!isRunDeletionReceiptResult(data)) {
+    throw new Error('A stored run-deletion receipt is invalid.')
   }
   return data
 }
 
-export class FirestoreRunCompletionStore implements RunCompletionStore {
-  private readonly createRunId: () => string
+export class FirestoreRunDeletionStore implements RunDeletionStore {
   private readonly now: () => Date
+  private readonly onBeforeCommit: () => void
 
   constructor(
     private readonly database: Firestore,
-    options: FirestoreRunCompletionStoreOptions = {},
+    options: FirestoreRunDeletionStoreOptions = {},
   ) {
-    this.createRunId = options.createRunId ?? (() => `run-${randomUUID()}`)
     this.now = options.now ?? (() => new Date())
+    this.onBeforeCommit = options.onBeforeCommit ?? (() => {})
   }
 
   async commit(options: {
-    envelope: RunCompletionCommandEnvelope
+    envelope: RunDeletionCommandEnvelope
     ownerId: string
   }) {
     const signature = materialCommandSignature(options.envelope)
-    const committedAt = this.now().toISOString()
-    const serverRunId = this.createRunId()
+    const deletedAt = this.now().toISOString()
     const ownerId = createUserId(options.ownerId)
     const receiptReference = this.database.doc(
       materialCommandReceiptPath(options.ownerId, options.envelope.commandId),
     )
-    const workoutReference = options.envelope.command.input.plannedWorkout
-    const shoeId = options.envelope.command.input.shoeId
+    const runReference = this.database.doc(
+      runDocumentPath(ownerId, options.envelope.command.completedRunId),
+    )
+    const workoutReference = options.envelope.command.plannedWorkout
 
     return this.database.runTransaction(async (transaction) => {
       const receiptSnapshot = await transaction.get(receiptReference)
@@ -76,8 +73,8 @@ export class FirestoreRunCompletionStore implements RunCompletionStore {
           return { kind: 'conflict' as const }
         }
         return {
-          kind: 'completed' as const,
-          result: storedRunCompletionResult(receipt.result),
+          kind: 'deleted' as const,
+          result: storedRunDeletionResult(receipt.result),
         }
       }
 
@@ -101,27 +98,24 @@ export class FirestoreRunCompletionStore implements RunCompletionStore {
                 workoutReference.workoutId,
               ),
             )
-      const shoeDocumentReference =
-        shoeId === undefined
-          ? null
-          : this.database.doc(shoeDocumentPath(ownerId, shoeId))
-      const [workoutSnapshot, guardSnapshot, shoeSnapshot] = await Promise.all([
+      const [runSnapshot, workoutSnapshot, guardSnapshot] = await Promise.all([
+        transaction.get(runReference),
         workoutDocumentReference === null
           ? Promise.resolve(null)
           : transaction.get(workoutDocumentReference),
         guardDocumentReference === null
           ? Promise.resolve(null)
           : transaction.get(guardDocumentReference),
-        shoeDocumentReference === null
-          ? Promise.resolve(null)
-          : transaction.get(shoeDocumentReference),
       ])
 
-      const decision = projectRunCompletion({
+      const decision = projectRunDeletion({
         authenticatedOwnerId: options.ownerId,
-        serverRunId,
-        committedAt,
+        deletedAt,
         envelope: options.envelope,
+        loadedRun: completedRunFromAdminDocument(
+          runSnapshot.id,
+          runSnapshot.data(),
+        ),
         loadedPlannedWorkout:
           workoutSnapshot === null
             ? null
@@ -129,10 +123,6 @@ export class FirestoreRunCompletionStore implements RunCompletionStore {
                 workoutSnapshot.id,
                 workoutSnapshot.data(),
               ),
-        loadedShoe:
-          shoeSnapshot === null
-            ? null
-            : shoeFromAdminDocument(shoeSnapshot.id, shoeSnapshot.data()),
         loadedCompletionGuard:
           guardSnapshot === null
             ? null
@@ -143,37 +133,31 @@ export class FirestoreRunCompletionStore implements RunCompletionStore {
       }
 
       const projection = decision.projection
-      transaction.create(
-        this.database.doc(
-          runDocumentPath(ownerId, projection.completedRun.entity.id),
-        ),
-        completedRunAdminDocument(projection.completedRun.entity),
-      )
+      transaction.delete(this.database.doc(projection.deletedRun.path))
       if (
-        projection.completedPlannedWorkout !== null &&
+        projection.reopenedPlannedWorkout !== null &&
         workoutDocumentReference !== null
       ) {
         transaction.set(
           workoutDocumentReference,
-          plannedWorkoutAdminDocument(
-            projection.completedPlannedWorkout.entity,
-          ),
+          plannedWorkoutAdminDocument(projection.reopenedPlannedWorkout.entity),
         )
       }
-      if (projection.completionGuard !== null) {
-        transaction.create(
-          this.database.doc(projection.completionGuard.path),
-          completionGuardAdminDocument(projection.completionGuard.record),
-        )
+      if (
+        projection.completionGuardToDelete !== null &&
+        guardDocumentReference !== null
+      ) {
+        transaction.delete(guardDocumentReference)
       }
       transaction.create(receiptReference, {
         schemaVersion: MATERIAL_COMMAND_RECEIPT_SCHEMA_VERSION,
         signature,
         result: projection.receipt,
-        createdAt: adminTimestamp(committedAt),
+        createdAt: adminTimestamp(deletedAt),
       })
+      this.onBeforeCommit()
 
-      return { kind: 'completed' as const, result: projection.receipt }
+      return { kind: 'deleted' as const, result: projection.receipt }
     })
   }
 }

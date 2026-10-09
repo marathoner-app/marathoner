@@ -2,6 +2,7 @@ import {
   isProofMaterialCommandEnvelope,
   isPlanApprovalCommandEnvelope,
   isRunCompletionCommandEnvelope,
+  isRunDeletionCommandEnvelope,
   isMaterialCommandResult,
   materialCommandIdFrom,
   parseMaterialCommand,
@@ -14,6 +15,8 @@ import {
   type ProofMaterialCommandEnvelope,
   type RunCompletionCommandEnvelope,
   type RunCompletionReceiptResult,
+  type RunDeletionCommandEnvelope,
+  type RunDeletionReceiptResult,
 } from '../../src/domain/materialCommands/contract.js'
 import type { RunCommandProjectionFailureResult } from './completedRunCommandProjection.js'
 import {
@@ -29,6 +32,7 @@ export type MaterialCommandLogEntry = Readonly<{
     | 'account.request-deletion'
     | 'plan.approve-generated'
     | 'run.complete'
+    | 'run.delete'
     | 'unknown'
   status: MaterialCommandResult['status']
 }>
@@ -49,6 +53,7 @@ export interface MaterialCommandStore {
     | AccountDeletionRequestAcceptedResult
     | PlanApprovalReceiptResult
     | RunCompletionReceiptResult
+    | RunDeletionReceiptResult
     | null
   >
 }
@@ -59,6 +64,17 @@ export interface RunCompletionStore {
     ownerId: string
   }): Promise<
     | { kind: 'completed'; result: RunCompletionReceiptResult }
+    | { kind: 'rejected'; result: RunCommandProjectionFailureResult }
+    | { kind: 'conflict' }
+  >
+}
+
+export interface RunDeletionStore {
+  commit(options: {
+    envelope: RunDeletionCommandEnvelope
+    ownerId: string
+  }): Promise<
+    | { kind: 'deleted'; result: RunDeletionReceiptResult }
     | { kind: 'rejected'; result: RunCommandProjectionFailureResult }
     | { kind: 'conflict' }
   >
@@ -86,6 +102,7 @@ export interface HandlerDependencies {
   log: (entry: MaterialCommandLogEntry) => void
   planApproval?: PlanApprovalHandlerDependencies
   runCompletion?: { store: RunCompletionStore }
+  runDeletion?: { store: RunDeletionStore }
   store: MaterialCommandStore
 }
 
@@ -116,12 +133,12 @@ function artifactNotApprovedResult(commandId: string): MaterialCommandResult {
   }
 }
 
-function runCompletionNotEnabledResult(commandId: string): MaterialCommandResult {
+function runCommandNotEnabledResult(commandId: string): MaterialCommandResult {
   return {
     status: 'authorization_error',
     commandId,
     code: 'approved-beta-membership-required',
-    message: 'Run completion commands are not enabled in this environment.',
+    message: 'Completed-run commands are not enabled in this environment.',
   }
 }
 
@@ -245,7 +262,7 @@ export async function executeMaterialCommand(
   if (isRunCompletionCommandEnvelope(parsed.envelope)) {
     const runCompletion = dependencies.runCompletion
     if (!runCompletion) {
-      const result = runCompletionNotEnabledResult(parsed.envelope.commandId)
+      const result = runCommandNotEnabledResult(parsed.envelope.commandId)
       logResult(
         dependencies,
         'material-command-result',
@@ -257,6 +274,46 @@ export async function executeMaterialCommand(
 
     try {
       const stored = await runCompletion.store.commit({
+        envelope: parsed.envelope,
+        ownerId: options.authenticatedUserId,
+      })
+      const result =
+        stored.kind === 'conflict'
+          ? conflictResult(parsed.envelope.commandId)
+          : stored.result
+      logResult(
+        dependencies,
+        'material-command-result',
+        result,
+        parsed.envelope.command.type,
+      )
+      return result
+    } catch (error) {
+      const result = failureFor(error, parsed.envelope.commandId)
+      logResult(
+        dependencies,
+        'material-command-result',
+        result,
+        parsed.envelope.command.type,
+      )
+      return result
+    }
+  }
+  if (isRunDeletionCommandEnvelope(parsed.envelope)) {
+    const runDeletion = dependencies.runDeletion
+    if (!runDeletion) {
+      const result = runCommandNotEnabledResult(parsed.envelope.commandId)
+      logResult(
+        dependencies,
+        'material-command-result',
+        result,
+        parsed.envelope.command.type,
+      )
+      return result
+    }
+
+    try {
+      const stored = await runDeletion.store.commit({
         envelope: parsed.envelope,
         ownerId: options.authenticatedUserId,
       })
@@ -364,9 +421,11 @@ export async function resolveMaterialCommand(
           ? 'plan.approve-generated'
           : stored?.status === 'run_completed'
             ? 'run.complete'
-            : stored
-              ? 'proof.material-command'
-              : 'unknown',
+            : stored?.status === 'run_deleted'
+              ? 'run.delete'
+              : stored
+                ? 'proof.material-command'
+                : 'unknown',
     )
     return result
   } catch (error) {
