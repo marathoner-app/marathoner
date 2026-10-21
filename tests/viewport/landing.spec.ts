@@ -65,10 +65,14 @@ for (const viewport of viewports) {
     await expect(
       page.getByRole("heading", {
         level: 1,
-        name: "Your first marathon. One clear plan.",
+        name: "Training for a marathon is enough work.",
       }),
     ).toBeVisible();
-    await expect(page.getByText("Built for first-time marathoners")).toBeVisible();
+    await expect(
+      page.getByText(
+        "Marathoner brings your race date, weekly schedule, training plan, and completed runs into one place. It is built for first-time marathoners who want to understand what to do next and how each week leads to race day.",
+      ),
+    ).toBeVisible();
     const preview = page.getByRole("complementary", {
       name: "One run, clearly recorded.",
     });
@@ -78,7 +82,7 @@ for (const viewport of viewports) {
     ).toBeVisible();
     await expect(
       preview.getByText(
-        "Synthetic example only — not a live plan or training recommendation.",
+        "Synthetic example only. This is not a live plan or training recommendation.",
       ),
     ).toBeVisible();
     await expect(preview.getByRole("button")).toHaveCount(0);
