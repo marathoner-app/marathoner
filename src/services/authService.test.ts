@@ -25,8 +25,10 @@ vi.mock('./firebaseClient', () => ({ getFirebaseAuth: () => testAuth }))
 import {
   AuthenticationError,
   reauthenticateWithPassword,
+  requiresNewSignIn,
   requestPasswordReset,
   signIn,
+  subscribeToAuthState,
   toAuthenticationError,
 } from './authService'
 
@@ -34,6 +36,7 @@ describe('authentication error mapping', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     testAuth.currentUser.email = 'runner@example.com'
+    firebaseAuth.getIdToken.mockResolvedValue('valid-token')
   })
 
   it.each([
@@ -92,6 +95,30 @@ describe('authentication error mapping', () => {
     const mappedError = new AuthenticationError('too_many_requests')
 
     expect(toAuthenticationError(mappedError)).toBe(mappedError)
+  })
+
+  it.each([
+    'auth/invalid-user-token',
+    'auth/user-token-expired',
+  ])('maps %s to a new-sign-in requirement', (firebaseCode) => {
+    const error = toAuthenticationError(
+      new FirebaseError(firebaseCode, 'Firebase implementation detail'),
+    )
+
+    expect(error).toMatchObject({
+      code: 'session_expired',
+      message: 'Your session has ended. Log in again.',
+    })
+    expect(requiresNewSignIn(error)).toBe(true)
+  })
+
+  it('treats a disabled account as requiring a new sign-in', () => {
+    expect(requiresNewSignIn(new AuthenticationError('account_disabled'))).toBe(
+      true,
+    )
+    expect(requiresNewSignIn(new AuthenticationError('network_unavailable'))).toBe(
+      false,
+    )
   })
 
   it('maps a rejected Firebase sign-in at the service boundary', async () => {
@@ -177,5 +204,139 @@ describe('authentication error mapping', () => {
         'We could not reach Marathoner. Check your connection and try again.',
       cause: rawError,
     })
+  })
+
+  it('validates a restored user before publishing the session', async () => {
+    const onChange = vi.fn()
+    const onError = vi.fn()
+    const unsubscribe = vi.fn()
+    let receiveUser: ((user: typeof testAuth.currentUser | null) => void) | undefined
+    firebaseAuth.onAuthStateChanged.mockImplementation(
+      (_auth, onUser: (user: typeof testAuth.currentUser | null) => void) => {
+        receiveUser = onUser
+        return unsubscribe
+      },
+    )
+
+    const stop = subscribeToAuthState(onChange, onError)
+    receiveUser?.(testAuth.currentUser)
+
+    expect(onChange).not.toHaveBeenCalled()
+    await vi.waitFor(() =>
+      expect(onChange).toHaveBeenCalledWith({
+        uid: 'runner-1',
+        email: 'runner@example.com',
+      }),
+    )
+    expect(firebaseAuth.getIdToken).toHaveBeenCalledWith(testAuth.currentUser)
+    expect(onError).not.toHaveBeenCalled()
+
+    stop()
+    expect(unsubscribe).toHaveBeenCalledOnce()
+  })
+
+  it.each([
+    ['auth/user-token-expired', 'session_expired'],
+    ['auth/invalid-user-token', 'session_expired'],
+    ['auth/user-not-found', 'session_expired'],
+    ['auth/user-disabled', 'account_disabled'],
+    ['auth/network-request-failed', 'network_unavailable'],
+  ])(
+    'maps restored-session failure %s without publishing participant state',
+    async (firebaseCode, expectedCode) => {
+      const onChange = vi.fn()
+      const onError = vi.fn()
+      let receiveUser:
+        | ((user: typeof testAuth.currentUser | null) => void)
+        | undefined
+      firebaseAuth.getIdToken.mockRejectedValue(
+        new FirebaseError(firebaseCode, 'Firebase implementation detail'),
+      )
+      firebaseAuth.onAuthStateChanged.mockImplementation(
+        (_auth, onUser: (user: typeof testAuth.currentUser | null) => void) => {
+          receiveUser = onUser
+          return vi.fn()
+        },
+      )
+
+      subscribeToAuthState(onChange, onError)
+      receiveUser?.(testAuth.currentUser)
+
+      await vi.waitFor(() =>
+        expect(onError).toHaveBeenCalledWith(
+          expect.objectContaining({ code: expectedCode }),
+        ),
+      )
+      expect(onChange).not.toHaveBeenCalled()
+    },
+  )
+
+  it('ignores a token validation result superseded by sign-out', async () => {
+    const onChange = vi.fn()
+    let receiveUser: ((user: typeof testAuth.currentUser | null) => void) | undefined
+    let resolveToken: ((token: string) => void) | undefined
+    firebaseAuth.getIdToken.mockImplementation(
+      () =>
+        new Promise<string>((resolve) => {
+          resolveToken = resolve
+        }),
+    )
+    firebaseAuth.onAuthStateChanged.mockImplementation(
+      (_auth, onUser: (user: typeof testAuth.currentUser | null) => void) => {
+        receiveUser = onUser
+        return vi.fn()
+      },
+    )
+
+    subscribeToAuthState(onChange)
+    receiveUser?.(testAuth.currentUser)
+    receiveUser?.(null)
+    resolveToken?.('late-token')
+    await Promise.resolve()
+
+    expect(onChange).toHaveBeenCalledOnce()
+    expect(onChange).toHaveBeenCalledWith(null)
+  })
+
+  it('ignores a token validation failure superseded by a newer user', async () => {
+    const onChange = vi.fn()
+    const onError = vi.fn()
+    const replacementUser = {
+      uid: 'runner-2',
+      email: 'runner-2@example.com',
+    }
+    let receiveUser:
+      | ((user: typeof testAuth.currentUser | null) => void)
+      | undefined
+    let rejectFirstValidation: ((error: unknown) => void) | undefined
+    firebaseAuth.getIdToken
+      .mockImplementationOnce(
+        () =>
+          new Promise<string>((_resolve, reject) => {
+            rejectFirstValidation = reject
+          }),
+      )
+      .mockResolvedValueOnce('replacement-token')
+    firebaseAuth.onAuthStateChanged.mockImplementation(
+      (_auth, onUser: (user: typeof testAuth.currentUser | null) => void) => {
+        receiveUser = onUser
+        return vi.fn()
+      },
+    )
+
+    subscribeToAuthState(onChange, onError)
+    receiveUser?.(testAuth.currentUser)
+    receiveUser?.(replacementUser)
+    rejectFirstValidation?.(
+      new FirebaseError('auth/user-token-expired', 'stale failure'),
+    )
+
+    await vi.waitFor(() =>
+      expect(onChange).toHaveBeenCalledWith({
+        uid: 'runner-2',
+        email: 'runner-2@example.com',
+      }),
+    )
+    expect(onError).not.toHaveBeenCalled()
   })
 })
