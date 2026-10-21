@@ -41,8 +41,9 @@ so the visible retry can start a new one.
 ## Environment and debug policy
 
 `src/firebaseConfig.ts` binds each web app ID to its own public Enterprise site
-key. The development key remains limited to `marathoner-app.github.io`; the
-beta key remains limited to `marathonerapp.com` and `www.marathonerapp.com`.
+key. The development key is limited to `marathoner-app.github.io`,
+`marathonerapp.com`, and `www.marathonerapp.com`; the beta key remains limited
+to `marathonerapp.com` and `www.marathonerapp.com`.
 iOS uses the separately selected `GoogleService-Info.plist` identities described
 in the [provider registration record](app-check-provider-registration.md).
 
@@ -66,11 +67,11 @@ provider; no committed or uploaded build artifact may contain it.
 
 ### Localhost debug-token workflow (external evidence pending)
 
-The development Enterprise site key authorizes the GitHub Pages hostname, not
-localhost. Local Auth and Firestore use therefore require one separately
-registered development debug token. No such token has been created or verified
-for this implementation yet; the following workflow is the reviewed procedure,
-not a claim of console or traffic evidence:
+The development Enterprise site key authorizes the supported GitHub Pages
+hosts, not localhost. Local Auth and Firestore use therefore require one
+separately registered development debug token. No such token has been created
+or verified for this implementation yet; the following workflow is the
+reviewed procedure, not a claim of console or traffic evidence:
 
 1. In the **development** Firebase project only, an administrator creates an App
    Check debug token named `development-local-<operator>-<device>` and records
@@ -139,7 +140,7 @@ still requires:
    failure/retry state;
 3. create a separately custodied development-local browser debug token only if
    localhost smoke testing is required, or perform the browser smoke test from
-   the registered GitHub Pages origin;
+   a registered GitHub Pages origin;
 4. confirm live browser Auth and Firestore traffic carries valid App Check
    tokens; and
 5. reconfirm Authentication, Firestore, and Functions enforcement remains off

@@ -1,7 +1,7 @@
 # Firebase client configuration audit
 
 - **Status:** Verified browser, selected iOS, and registered App Check environment boundaries
-- **Audit dates:** 2026-09-30 browser audit; 2026-10-05 development and beta iOS audits; 2026-10-06 App Check registration audit
+- **Audit dates:** 2026-09-30 browser audit; 2026-10-05 development and beta iOS audits; 2026-10-06 App Check registration audit; 2026-10-21 custom-domain audit
 - **Owner:** Kevin Tulloch
 - **Tracking issues:** [#22](https://github.com/marathoner-app/marathoner/issues/22),
   [#178](https://github.com/marathoner-app/marathoner/issues/178),
@@ -33,17 +33,17 @@ would not turn them into secrets.
 | Environment selector | Web, CI defaults, Pages, and the selected iOS development build select the audited project as `development`; the distinct beta registration is available only to an explicit production web build or separately keyed `ios-beta` mode. | The [environment selection contract](firebase-environment-selection.md) and [beta project record](firebase-beta-project.md) define the verified boundary. App Check and participant activation remain separate gates. |
 | Browser API key | The committed value exactly matches the only `Browser key (auto created by Firebase)` in the project without printing or copying the value into this record. | It is an intentionally public Firebase client identifier. Rotation is not required solely because it appears in source or a browser bundle. |
 | API allowlist | The key is restricted to the eight APIs listed below. Generative Language and the previously allowed unused AI, SQL, Storage, Realtime Database, distribution, hosting, messaging, ML, and Remote Config APIs are not allowed. | Keep this inventory narrow. A later feature must deliberately update this record before adding an API. |
-| Application restriction | The key accepts browser requests only from the current GitHub Pages host, `localhost`, and `127.0.0.1`, using the exact patterns below. | Keep these origins until environment separation is complete. Add the custom domain only when #162 publishes it. |
+| Application restriction | The key accepts browser requests only from the legacy GitHub Pages host, the apex and `www` custom-domain hosts, `localhost`, and `127.0.0.1`, using the exact patterns below. | Retain the legacy host through cutover and keep the local origins only on development. Remove an origin only after the supported deployment and recovery path no longer require it. |
 | Selected iOS development key | `marathoner-ios-development` belongs only to the development project and permits Cloud Firestore API, Identity Toolkit API, and Token Service API. | It supports the canonical Capacitor shell through an ignored mode-`0600` local environment file. It is not committed, printed, or shared with beta. |
 | Selected iOS beta key | `marathoner-ios-beta` belongs only to `marathonerapp-beta` and permits Cloud Firestore API, Identity Toolkit API, and Token Service API. | The real beta bundle and physical approved/denied evidence passed. Its value exists only in `.env.ios-beta.local`. |
 | iOS application restriction | The iOS shell currently uses the Firebase JavaScript SDK inside a Capacitor WebView, so the key cannot use an iOS bundle restriction and has no application restriction. | The narrow API allowlist limits the key's reach. Issue #161 must complete live token proof, observation, and staged App Check enforcement before external invitations. |
 | Sign-in providers | Email/Password is enabled and Google is disabled. The application implements only Email/Password, and the five visible legacy accounts all use the Email provider. | Keep Email/Password until the beta identity decision changes it. Do not migrate the legacy account list wholesale into beta. |
-| Authorized domains | `localhost`, the two Firebase default hosts, and `marathoner-app.github.io` are authorized. `marathonerapp.com` is not. | Keep the current hosts while this project serves local/prototype use. Issue #162 adds the apex and `www` hosts with the actual deployment. |
+| Authorized domains | `localhost`, the two Firebase default hosts, `marathoner-app.github.io`, `marathonerapp.com`, and `www.marathonerapp.com` are authorized in development. | The active Pages build remains pinned to development. Beta authorization remains a separate activation decision rather than an effect of publishing the domain. |
 | Cloud Firestore | The default `nam5` database is active. The live rule editor is byte-equivalent after whitespace normalization to the tracked `firestore.rules`. | Current rules enforce owner-path access and schema version 1. The separate [beta membership candidate](firebase-beta-membership.md) adds verified-email and approved-membership access but remains undeployed; #121 and the server-command migration must close the remaining beta rule boundary. |
 | Realtime Database | The console offers **Create Database**; no database exists. | Remain disabled. |
 | Cloud Storage | Storage is not configured and the Spark project cannot enable it without billing. | Remain disabled unless a future approved feature and ruleset require it. |
 | App Check | Development and beta each have a distinct Fraud Defense web registration and App Attest iOS registration. No debug token was created. Client initialization now fails closed before Firebase services, while live browser and paid-team physical-iPhone token evidence remain pending and API enforcement remains off. | The [registration record](app-check-provider-registration.md) is the authority for provider identity, native configuration selection, debug-token custody, and the #204–#206 rollout gates; the [initialization record](app-check-client-initialization.md) separates implemented behavior from pending live proof. |
-| GitHub Pages | The workflow serves `https://marathoner-app.github.io/marathoner/` with HTTPS. No Pages custom domain is configured. | The GitHub Pages host is the only current production origin. Issue #162 owns the coordinated custom-domain migration. |
+| GitHub Pages | The repository custom domain is registered as `marathonerapp.com`; authoritative apex and `www` DNS is in place. The currently deployed build still uses the legacy `/marathoner/` asset base until #162 merges. | Do not treat the custom domain as live until the root-path workflow deploys, GitHub provisions the certificate, HTTPS enforcement is enabled, and the post-deployment smoke test passes. |
 | Repository credentials | Current tracked files and historical filenames contain no Marathoner service-account file, private key, password, Firebase CLI token, or administrative credential. | Continue to prohibit privileged credentials in source. Use workload identity or provider-managed operator sessions. |
 | GitHub secret controls | Secret scanning and push protection were disabled at audit start and are now enabled for the public repository. Alerts #1 and #2 identify the development and beta browser keys; alerts #3 and #4 identify the versioned beta and development Apple client keys. | All four were resolved as documented false positives after their exact public-client locations and intended Firebase registrations were verified. |
 
@@ -73,14 +73,16 @@ A later feature must update this inventory deliberately before adding an API.
 The current browser key allows requests only from:
 
 - `https://marathoner-app.github.io/*`;
+- `https://marathonerapp.com/*`;
+- `https://www.marathonerapp.com/*`;
 - `http://localhost/*`; and
 - `http://127.0.0.1/*`.
 
 Local origins remain temporary because this project still supports the current
 development workflow. Issue #125 preserves them only on the distinct
-development project; beta does not allow those origins. Issue #162 adds
-`marathonerapp.com` and `www.marathonerapp.com` only when those hosts actually
-serve the supported app.
+development project; beta does not allow those origins. The apex and `www`
+entries were saved and reopened on October 21, 2026 before the root-path Pages
+deployment so the key cannot block the coordinated cutover.
 
 Google sign-in is disabled because no shipped UI, service, test, or current
 account depends on it. Email/Password remains enabled. Public signup remains
@@ -286,6 +288,21 @@ Additional evidence recorded on 2026-10-05 for issue #125:
 6. Both temporary Auth users, the membership document, and their ignored local
    credential manifest were removed, then the development bundle boundary was
    restored and verified.
+
+Additional evidence recorded on 2026-10-21 for issue #162:
+
+1. The development browser key retained exactly the eight approved APIs and,
+   after saving and reopening, showed the legacy Pages host, apex, `www`,
+   `localhost`, and `127.0.0.1` website restrictions.
+2. Development Authentication showed the apex and `www` authorized alongside
+   the retained local, Firebase-hosted, and legacy Pages domains.
+3. The development Fraud Defense key showed the legacy Pages host, apex, and
+   `www` after saving and reopening; domain verification remained enabled.
+4. The existing Pages application still initialized, authenticated, and loaded
+   owner-scoped Firestore data after the browser-key change.
+5. The custom-domain application smoke test remains pending until the root-path
+   build is merged and deployed; the existing-origin result is not a substitute
+   for that post-deployment evidence.
 
 Any later console change must update this record or its owning issue. A Firebase
 setting is not complete merely because the application still builds locally.

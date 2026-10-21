@@ -1,7 +1,8 @@
 # GitHub Pages custom-domain runbook
 
-- **Status:** Cutover in progress; organization verification and authoritative
-  DNS complete, repository deployment and live smoke test pending
+- **Status:** Cutover in progress; organization verification, authoritative
+  DNS, and development Firebase allowlists complete; repository deployment,
+  certificate, HTTPS enforcement, and custom-domain smoke test pending
 - **Cutover date:** October 21, 2026
 - **Owner:** Kevin Tulloch
 - **Tracking issue:**
@@ -38,14 +39,20 @@ DKIM, Google verification, or email-routing records during a web cutover.
 ## Application and Firebase boundary
 
 The Pages workflow deliberately selects the `development` Firebase environment
-until a separate beta-activation change is approved. Before the root-path build
-is deployed, both `marathonerapp.com` and `www.marathonerapp.com` must be added
-to all three development-web controls:
+until a separate beta-activation change is approved. On October 21, 2026,
+`marathonerapp.com` and `www.marathonerapp.com` were added to all three
+development-web controls and the saved settings were reopened to verify them:
 
 1. Firebase Authentication authorized domains;
 2. the development browser API key's website restrictions, using
    `https://marathonerapp.com/*` and `https://www.marathonerapp.com/*`; and
-3. the development reCAPTCHA Enterprise/App Check web-key domain allowlist.
+3. the development reCAPTCHA Enterprise/App Check web-key domain allowlist,
+   alongside the retained `marathoner-app.github.io` entry.
+
+The existing Pages application continued to initialize, authenticate, and read
+its owner-scoped Firestore data after the browser-key change. That protects the
+current origin from a cutover regression, but it is not evidence for the custom
+domain until the root-path build is deployed there.
 
 The beta browser and App Check keys already name the two custom-domain hosts,
 but the beta project remains an explicit non-default environment. Domain

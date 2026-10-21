@@ -11,8 +11,8 @@
 Marathoner has two supported Firebase environment names:
 
 - `development` is the existing audited `marathoner-d9bf9` project. It supports
-  local work and the registration-closed GitHub Pages prototype; it does not
-  hold founding-beta participant data.
+  local work and the registration-closed GitHub Pages deployment, including
+  its custom domain; it does not hold founding-beta participant data.
 - `beta` is the isolated `marathonerapp-beta` project. Its public web
   configuration, membership-gated rules deployment, and fictional live-boundary
   evidence are recorded. Only an explicit production-mode web build or the
@@ -88,5 +88,5 @@ pull-request iOS job checks both environment bundles with non-live placeholder
 keys, but it does not contact beta. App Check providers are registered and the
 client now initializes them before Firebase services, but live browser and
 paid-team physical-iPhone token evidence remain pending and enforcement remains
-off. The remaining #204 proof, #205–#206 rollout, custom-domain publication, and
-invitation controls stay separate gates.
+off. The remaining #204 proof, #205–#206 rollout, completion of the #162
+custom-domain deployment, and invitation controls stay separate gates.

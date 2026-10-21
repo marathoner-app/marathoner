@@ -62,9 +62,10 @@ and #204 gates. No Function was deployed, deleted, or invoked to establish this
 repository boundary. Runtime configuration scales each current export to zero
 and permits at most one instance per export.
 
-The beta browser key intentionally permits no localhost or GitHub Pages
-referrer. It will remain unusable from those origins. The custom-domain
-publication and Authentication authorized-domain changes remain owned by #162.
+The beta browser key intentionally permits no localhost or legacy GitHub Pages
+referrer. It will remain unusable from those origins. The #162 Pages deployment
+remains pinned to development; beta Authentication authorized-domain changes
+belong to the later explicit beta-activation change.
 
 The beta iOS path uses a separate `marathoner-ios-beta` key because the
 browser key's website restrictions correctly reject the Capacitor WebView. The
@@ -152,6 +153,6 @@ rebuild path after account recovery.
 
 - Complete live App Check proof, observation, enforcement, and rollback in #204
   through #206.
-- Publish the custom domain and authorized-domain configuration in #162.
+- Complete the custom-domain deployment and live verification in #162.
 - Complete participant-data integrity, deletion, incident, and support controls
   before invitations.
