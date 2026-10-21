@@ -162,6 +162,9 @@ describe("ShoeTracker", () => {
 
     await addShoe("Daily Trainer");
 
+    expect(await screen.findByRole("status")).toHaveTextContent(
+      "Daily Trainer added.",
+    );
     expect(await screen.findByText("Total: 0 mi")).toBeInTheDocument();
     expect(screen.getByText(/Starting: 0 mi/)).toBeInTheDocument();
     expect(screen.getByText(/Recorded by Marathoner: 0 mi/)).toBeInTheDocument();
@@ -222,6 +225,9 @@ describe("ShoeTracker", () => {
     );
     await user.click(screen.getByRole("button", { name: "Log Run" }));
 
+    expect(await screen.findByRole("status")).toHaveTextContent(
+      /^Run logged for \d{4}-\d{2}-\d{2}\.$/,
+    );
     expect(await screen.findByText(/5 mi in 45:30 wearing Daily Trainer/)).toBeInTheDocument();
     expect(screen.getByText(/Effort: Not recorded/)).toBeInTheDocument();
     expect(screen.queryByText(/^Notes:/)).not.toBeInTheDocument();
@@ -290,6 +296,9 @@ describe("ShoeTracker", () => {
     expect(
       await screen.findByText(/^Retired \d{4}-\d{2}-\d{2}$/),
     ).toBeInTheDocument();
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "Daily Trainer retired.",
+    );
     expect(onRetireShoeCall).toHaveBeenCalledTimes(1);
     expect(onRetireShoeCall).toHaveBeenCalledWith(
       shoe.id,
@@ -431,13 +440,21 @@ describe("ShoeTracker", () => {
     await user.type(editDate, "2026-08-10");
     await user.click(screen.getByRole("button", { name: "Save" }));
     expect(await screen.findByText(/^2026-08-10:/)).toBeInTheDocument();
+    const restoredEditButton = screen.getByRole("button", { name: "Edit" });
+    expect(restoredEditButton).toHaveFocus();
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "Run from 2026-08-10 updated.",
+    );
 
-    await user.click(screen.getByRole("button", { name: "Edit" }));
+    await user.click(restoredEditButton);
+    expect(screen.queryByRole("status")).not.toBeInTheDocument();
     const changedDate = screen.getByLabelText("Edit run date");
     await user.clear(changedDate);
     await user.type(changedDate, "2026-08-11");
     await user.click(screen.getByRole("button", { name: "Cancel" }));
     expect(screen.getByText(/^2026-08-10:/)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Edit" })).toHaveFocus();
+    expect(screen.queryByRole("status")).not.toBeInTheDocument();
   });
 
   it("rejects a future completed-run date", async () => {
@@ -673,6 +690,9 @@ describe("ShoeTracker", () => {
     await user.keyboard("{Enter}");
 
     expect(await screen.findByText("No runs logged yet.")).toBeInTheDocument();
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "Run from 2026-08-05 deleted.",
+    );
     expect(onDeleteRunCall).toHaveBeenCalledTimes(1);
     expect(onDeleteRunCall).toHaveBeenCalledWith(run.id);
     expect(screen.getByText("Total: 0 mi")).toBeInTheDocument();

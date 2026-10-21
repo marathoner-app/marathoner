@@ -318,12 +318,17 @@ export default function ShoeTracker({
   const [startingDistance, setStartingDistance] = useState("0");
   const [runDate, setRunDate] = useState<string>(today);
   const [error, setError] = useState<string | null>(null);
+  const [actionStatus, setActionStatus] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
   const [editingRunId, setEditingRunId] = useState<CompletedRunId | null>(null);
   const [runToDelete, setRunToDelete] = useState<CompletedRun | null>(null);
   const [shoeToRetire, setShoeToRetire] = useState<Shoe | null>(null);
   const loggedRunsHeadingRef = useRef<HTMLHeadingElement | null>(null);
   const shoeMileageHeadingRef = useRef<HTMLHeadingElement | null>(null);
+  const editRunButtonRefs = useRef(
+    new Map<CompletedRunId, HTMLButtonElement>(),
+  );
+  const editButtonToRestoreRef = useRef<CompletedRunId | null>(null);
   const activeShoes = shoes.filter((shoe) => shoe.status === "active");
   const availableWorkouts = plannedWorkouts.filter(
     (workout) => workout.kind !== "rest" && workout.status === "planned",
@@ -336,6 +341,19 @@ export default function ShoeTracker({
     [runs, shoes],
   );
 
+  useEffect(() => {
+    const runId = editButtonToRestoreRef.current;
+    if (editingRunId !== null || runId === null) return;
+
+    editRunButtonRefs.current.get(runId)?.focus();
+    editButtonToRestoreRef.current = null;
+  }, [editingRunId, runs]);
+
+  const closeRunEditor = (runId: CompletedRunId) => {
+    editButtonToRestoreRef.current = runId;
+    setEditingRunId(null);
+  };
+
   const closeDeleteConfirmation = () => {
     if (!pending) setRunToDelete(null);
   };
@@ -343,11 +361,14 @@ export default function ShoeTracker({
   const confirmRunDeletion = async () => {
     if (runToDelete === null) return;
 
+    const deletedRunDate = getRunLocalDate(runToDelete);
     setError(null);
+    setActionStatus(null);
     setPending(true);
     try {
       await onDeleteRun(runToDelete.id);
       setRunToDelete(null);
+      setActionStatus(`Run from ${deletedRunDate} deleted.`);
     } catch (caught) {
       setError(
         caught instanceof Error
@@ -367,11 +388,14 @@ export default function ShoeTracker({
   const confirmShoeRetirement = async () => {
     if (shoeToRetire === null) return;
 
+    const retiredShoeName = shoeToRetire.name;
     setError(null);
+    setActionStatus(null);
     setPending(true);
     try {
       await onRetireShoe(shoeToRetire.id, today());
       setShoeToRetire(null);
+      setActionStatus(`${retiredShoeName} retired.`);
     } catch (caught) {
       setError(
         caught instanceof Error
@@ -387,6 +411,7 @@ export default function ShoeTracker({
   const handleAddShoe = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const name = newShoe.trim();
+    setActionStatus(null);
     if (name.length === 0) {
       setError("Enter a name for the shoe.");
       return;
@@ -401,6 +426,7 @@ export default function ShoeTracker({
       });
       setNewShoe("");
       setStartingDistance("0");
+      setActionStatus(`${name} added.`);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "The shoe could not be saved.");
     } finally {
@@ -414,6 +440,7 @@ export default function ShoeTracker({
     const formData = new FormData(form);
 
     setError(null);
+    setActionStatus(null);
     setPending(true);
     try {
       const timeZone = currentTimeZone();
@@ -438,6 +465,7 @@ export default function ShoeTracker({
       });
       form.reset();
       setRunDate(today());
+      setActionStatus(`Run logged for ${runDate}.`);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "The run could not be saved.");
     } finally {
@@ -448,6 +476,11 @@ export default function ShoeTracker({
   return (
     <div className="tracker">
       {error && <p role="alert" className="training-error">{error}</p>}
+      {actionStatus && (
+        <p role="status" className="training-status tracker-status">
+          {actionStatus}
+        </p>
+      )}
       <div className="entry">
         <h2>Run</h2>
         {activeShoes.length === 0 && (
@@ -561,6 +594,7 @@ export default function ShoeTracker({
                           event.preventDefault();
                           const data = new FormData(event.currentTarget);
                           setError(null);
+                          setActionStatus(null);
                           setPending(true);
                           try {
                             const selectedDate = String(data.get("date"));
@@ -576,7 +610,8 @@ export default function ShoeTracker({
                                 parsePerceivedEffort(data.get("perceivedEffort")) ?? null,
                               notes: parseRunNotes(data.get("notes")) ?? null,
                             });
-                            setEditingRunId(null);
+                            setActionStatus(`Run from ${selectedDate} updated.`);
+                            closeRunEditor(run.id);
                           } catch (caught) {
                             setError(caught instanceof Error ? caught.message : "The run could not be updated.");
                           } finally {
@@ -663,7 +698,8 @@ export default function ShoeTracker({
                           type="button"
                           onClick={() => {
                             setError(null);
-                            setEditingRunId(null);
+                            setActionStatus(null);
+                            closeRunEditor(run.id);
                           }}
                         >
                           Cancel
@@ -679,14 +715,31 @@ export default function ShoeTracker({
                         {run.notes !== undefined && (
                           <p className="run-notes"><strong>Notes:</strong> {run.notes}</p>
                         )}
-                        <button type="button" onClick={() => setEditingRunId(run.id)}>
+                        <button
+                          ref={(button) => {
+                            if (button === null) {
+                              editRunButtonRefs.current.delete(run.id);
+                            } else {
+                              editRunButtonRefs.current.set(run.id, button);
+                            }
+                          }}
+                          type="button"
+                          onClick={() => {
+                            setError(null);
+                            setActionStatus(null);
+                            setEditingRunId(run.id);
+                          }}
+                        >
                           Edit
                         </button>
                         <button
                           type="button"
                           disabled={pending}
                           aria-label={`Delete run from ${getRunLocalDate(run)}`}
-                          onClick={() => setRunToDelete(run)}
+                          onClick={() => {
+                            setActionStatus(null);
+                            setRunToDelete(run);
+                          }}
                         >
                           Delete
                         </button>
@@ -805,7 +858,10 @@ export default function ShoeTracker({
                         type="button"
                         className="shoe-retire-button"
                         disabled={pending}
-                        onClick={() => setShoeToRetire(shoe)}
+                        onClick={() => {
+                          setActionStatus(null);
+                          setShoeToRetire(shoe);
+                        }}
                       >
                         Retire {shoe.name}
                       </button>
