@@ -30,6 +30,15 @@ const viewports = [
     trustColumns: 1,
   },
   {
+    name: "laptop",
+    width: 1_280,
+    height: 800,
+    explanationColumns: 3,
+    platformColumns: 2,
+    platformCardColumns: 2,
+    trustColumns: 3,
+  },
+  {
     name: "desktop",
     width: 1_440,
     height: 900,
@@ -61,6 +70,19 @@ for (const viewport of viewports) {
   }) => {
     await page.setViewportSize(viewport);
     await page.goto("tests/viewport/landing.html");
+
+    const landingFrame = page.locator(".landing-page__frame");
+    const landingFrameBounds = await landingFrame.boundingBox();
+    expect(
+      landingFrameBounds,
+      "landing frame should have visible bounds",
+    ).not.toBeNull();
+    if (viewport.width >= 1_280 && landingFrameBounds) {
+      expect(
+        landingFrameBounds.width / viewport.width,
+        "laptop and desktop landing frames should use at least 90% of the viewport",
+      ).toBeGreaterThanOrEqual(0.9);
+    }
 
     const skipLink = page.getByRole("link", { name: "Skip to main content" });
     await page.keyboard.press("Tab");
