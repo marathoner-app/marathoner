@@ -8,9 +8,16 @@ vi.mock("../services/authService", () => ({
   signIn: vi.fn(),
 }));
 
+const renderPublicLandingPage = () =>
+  render(
+    <main>
+      <PublicLandingPage supportEmail="support@marathonerapp.com" />
+    </main>,
+  );
+
 describe("PublicLandingPage", () => {
   it("keeps honest access information in a navigable public shell", () => {
-    render(<PublicLandingPage supportEmail="support@marathonerapp.com" />);
+    renderPublicLandingPage();
 
     expect(screen.getByTestId("public-landing-page")).toBeInTheDocument();
     expect(
@@ -45,6 +52,14 @@ describe("PublicLandingPage", () => {
     const publicNavigation = screen.getByRole("navigation", {
       name: "Public site",
     });
+    expect(screen.getByRole("main")).toBeInTheDocument();
+    expect(document.querySelector("#landing-main-content")).toHaveAttribute(
+      "tabindex",
+      "-1",
+    );
+    expect(
+      screen.getByRole("link", { name: "Skip to main content" }),
+    ).toHaveAttribute("href", "#landing-main-content");
     expect(screen.getByRole("banner")).toContainElement(publicNavigation);
     expect(publicNavigation).toBeInTheDocument();
     expect(
@@ -74,8 +89,31 @@ describe("PublicLandingPage", () => {
     ).not.toBeInTheDocument();
   });
 
+  it("moves keyboard users from the skip link to the main content", async () => {
+    const user = userEvent.setup();
+    renderPublicLandingPage();
+
+    const skipLink = screen.getByRole("link", {
+      name: "Skip to main content",
+    });
+    const mainContent = document.querySelector("#landing-main-content");
+
+    expect(mainContent).toBeInstanceOf(HTMLElement);
+
+    await user.tab();
+    expect(skipLink).toHaveFocus();
+
+    await user.keyboard("{Enter}");
+    await waitFor(() => expect(mainContent).toHaveFocus());
+
+    await user.tab();
+    expect(
+      screen.getByRole("link", { name: "View current access" }),
+    ).toHaveFocus();
+  });
+
   it("presents supported sample logging concepts without fake controls", () => {
-    render(<PublicLandingPage supportEmail="support@marathonerapp.com" />);
+    renderPublicLandingPage();
 
     const preview = screen.getByRole("complementary", {
       name: "One run, clearly recorded.",
@@ -105,7 +143,7 @@ describe("PublicLandingPage", () => {
   });
 
   it("distinguishes current and planned capabilities in the product model", () => {
-    render(<PublicLandingPage supportEmail="support@marathonerapp.com" />);
+    renderPublicLandingPage();
 
     const explanation = screen.getByRole("region", {
       name: "Plan. Track. Adjust.",
@@ -133,7 +171,7 @@ describe("PublicLandingPage", () => {
   });
 
   it("explains the platform roles without inventing mobile availability", () => {
-    render(<PublicLandingPage supportEmail="support@marathonerapp.com" />);
+    renderPublicLandingPage();
 
     const platforms = screen.getByRole("region", {
       name: "One product. Two focused surfaces.",
@@ -167,7 +205,7 @@ describe("PublicLandingPage", () => {
 
   it("shares one login dialog and restores focus to each opening trigger", async () => {
     const user = userEvent.setup();
-    render(<PublicLandingPage supportEmail="support@marathonerapp.com" />);
+    renderPublicLandingPage();
 
     const loginTriggers = [
       screen.getByRole("button", { name: /^Log in$/ }),
@@ -181,7 +219,7 @@ describe("PublicLandingPage", () => {
 
       expect(
         screen.getByRole("dialog", { name: "Existing account login" }),
-      ).toBeInTheDocument();
+      ).toHaveAttribute("aria-modal", "true");
       expect(screen.getAllByRole("dialog")).toHaveLength(1);
 
       await user.click(screen.getByRole("button", { name: "Close login" }));

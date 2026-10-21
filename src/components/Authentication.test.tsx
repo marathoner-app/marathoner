@@ -78,6 +78,31 @@ describe('authentication forms', () => {
     expect(screen.getByRole('button', { name: 'Forgot password?' })).toHaveFocus()
   })
 
+  it('keeps forward and backward keyboard focus inside the login dialog', async () => {
+    const user = userEvent.setup()
+    render(<LoginButton />)
+
+    await user.click(screen.getByRole('button', { name: 'Log in' }))
+
+    const email = screen.getByRole('textbox', { name: 'Email' })
+    const closeButton = screen.getByRole('button', { name: 'Close login' })
+    const forgotPassword = screen.getByRole('button', {
+      name: 'Forgot password?'
+    })
+
+    expect(screen.getByRole('dialog')).toHaveAttribute('aria-modal', 'true')
+    expect(email).toHaveFocus()
+
+    await user.tab({ shift: true })
+    expect(closeButton).toHaveFocus()
+
+    await user.tab({ shift: true })
+    expect(forgotPassword).toHaveFocus()
+
+    await user.tab()
+    expect(closeButton).toHaveFocus()
+  })
+
   it('prevents duplicate login requests while authentication is pending', async () => {
     const user = userEvent.setup()
     let resolveLogin: ((user: SignInResult) => void) | undefined

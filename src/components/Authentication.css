@@ -288,7 +288,8 @@
 }
 
 .public-access a:focus-visible,
-.login-popup input:focus-visible {
+.login-popup input:focus-visible,
+.login-popup button:focus-visible {
   outline: 3px solid #2563eb;
   outline-offset: 3px;
 }

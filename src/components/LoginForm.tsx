@@ -106,11 +106,39 @@ const LoginForm = ({ onClose }: { onClose: () => void }) => {
       if (!isSubmitting && event.key === "Escape") onClose();
     };
 
+    const keepFocusInsideDialog = (event: KeyboardEvent) => {
+      if (event.key !== "Tab" || !formRef.current) return;
+
+      const focusableElements = Array.from(
+        formRef.current.querySelectorAll<HTMLElement>(
+          'button:not([disabled]), input:not([disabled]), [href], [tabindex]:not([tabindex="-1"])',
+        ),
+      );
+
+      if (focusableElements.length === 0) {
+        event.preventDefault();
+        return;
+      }
+
+      const firstElement = focusableElements[0];
+      const lastElement = focusableElements[focusableElements.length - 1];
+
+      if (event.shiftKey && document.activeElement === firstElement) {
+        event.preventDefault();
+        lastElement.focus();
+      } else if (!event.shiftKey && document.activeElement === lastElement) {
+        event.preventDefault();
+        firstElement.focus();
+      }
+    };
+
     document.addEventListener("mousedown", handleClickOutside);
     document.addEventListener("keydown", handleEscape);
+    document.addEventListener("keydown", keepFocusInsideDialog);
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
       document.removeEventListener("keydown", handleEscape);
+      document.removeEventListener("keydown", keepFocusInsideDialog);
     };
   }, [isSubmitting, onClose]);
 
@@ -120,6 +148,7 @@ const LoginForm = ({ onClose }: { onClose: () => void }) => {
       id="existing-account-login"
       className="login-popup"
       role="dialog"
+      aria-modal="true"
       aria-labelledby="login-title"
     >
       <form

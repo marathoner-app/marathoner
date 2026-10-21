@@ -29,11 +29,26 @@ export default function PublicLandingPage({
   return (
     <div className="landing-page" data-testid="public-landing-page">
       <div className="landing-page__frame">
+        <a
+          className="landing-skip-link"
+          href="#landing-main-content"
+          onClick={() => {
+            window.requestAnimationFrame(() => {
+              document.getElementById("landing-main-content")?.focus();
+            });
+          }}
+        >
+          Skip to main content
+        </a>
         <PublicLandingHeader
           isLoginOpen={isLoginOpen}
           onLoginOpen={openLogin}
         />
-        <div className="landing-page__content">
+        <div
+          id="landing-main-content"
+          className="landing-page__content"
+          tabIndex={-1}
+        >
           <PublicLandingHero
             isLoginOpen={isLoginOpen}
             onLoginOpen={openLogin}

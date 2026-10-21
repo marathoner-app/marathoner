@@ -62,6 +62,14 @@ for (const viewport of viewports) {
     await page.setViewportSize(viewport);
     await page.goto("tests/viewport/landing.html");
 
+    const skipLink = page.getByRole("link", { name: "Skip to main content" });
+    await page.keyboard.press("Tab");
+    await expect(skipLink).toBeFocused();
+    await expect(skipLink).toBeInViewport();
+    await expectMinimumTouchTarget(skipLink, "skip link");
+    await page.keyboard.press("Enter");
+    await expect(page.locator("#landing-main-content")).toBeFocused();
+
     await expect(
       page.getByRole("heading", {
         level: 1,
