@@ -36,7 +36,6 @@ export default defineConfig(({ command, mode }) => {
   return {
     base: isIosBuild ? './' : '/',
     plugins: [react()],
-    assetsInclude: ['src/assets/IMG_0437.JPG'],
     optimizeDeps: {
       entries: ['index.html'],
     },
