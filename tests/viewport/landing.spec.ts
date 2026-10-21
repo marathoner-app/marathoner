@@ -14,8 +14,12 @@ for (const viewport of viewports) {
     await page.goto("tests/viewport/landing.html");
 
     await expect(
-      page.getByRole("heading", { level: 1, name: "Marathoner." }),
+      page.getByRole("heading", {
+        level: 1,
+        name: "Your first marathon. One clear plan.",
+      }),
     ).toBeVisible();
+    await expect(page.getByText("Built for first-time marathoners")).toBeVisible();
     await expect(
       page.getByRole("heading", { name: "New account registration is closed." }),
     ).toBeVisible();

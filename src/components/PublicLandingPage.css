@@ -45,10 +45,11 @@
   border-bottom: 1px solid var(--landing-border);
 }
 
-.landing-header .title {
+.landing-header__wordmark {
   margin: 0;
   color: var(--landing-ink);
   font-size: clamp(1.9rem, 4vw, 2.5rem);
+  font-weight: 700;
   line-height: 1;
   letter-spacing: -0.045em;
 }
@@ -87,19 +88,52 @@
   width: auto;
 }
 
-.landing-page__lead {
+.landing-hero {
   display: grid;
-  justify-items: center;
-  padding: clamp(2.5rem, 7vw, 5rem) 0 clamp(1.5rem, 4vw, 2.5rem);
-  text-align: center;
+  gap: 1rem;
+  max-width: 54rem;
+  padding: clamp(3rem, 8vw, 6rem) 0 clamp(2.5rem, 6vw, 4.5rem);
 }
 
-.landing-page .subtitle {
-  max-width: 38rem;
+.landing-hero__eyebrow {
   margin: 0;
+  color: var(--landing-accent);
+  font-size: 0.9rem;
+  font-weight: 750;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.landing-hero h1 {
+  max-width: 13ch;
+  margin: 0;
+  color: var(--landing-ink);
+  font-size: clamp(3rem, 8vw, 5.5rem);
+  font-weight: 650;
+  line-height: 0.98;
+  letter-spacing: -0.055em;
+}
+
+.landing-hero h1 span {
+  display: block;
+  color: var(--landing-accent);
+}
+
+.landing-hero__summary,
+.landing-hero__promise {
+  max-width: 48rem;
+  margin: 0;
+  font-size: clamp(1.05rem, 2.25vw, 1.3rem);
+  line-height: 1.55;
+}
+
+.landing-hero__summary {
   color: var(--landing-muted);
-  font-size: clamp(1.05rem, 2.5vw, 1.4rem);
-  line-height: 1.5;
+}
+
+.landing-hero__promise {
+  color: var(--landing-ink);
+  font-weight: 650;
 }
 
 .landing-page .public-access {
@@ -127,7 +161,7 @@
     gap: 1rem;
   }
 
-  .landing-header .title {
+  .landing-header__wordmark {
     text-align: center;
   }
 
@@ -139,5 +173,9 @@
   .landing-header__navigation .login-wrapper,
   .landing-header__navigation .login-btn {
     width: 100%;
+  }
+
+  .landing-hero {
+    padding-top: 3.25rem;
   }
 }
