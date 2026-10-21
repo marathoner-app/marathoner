@@ -241,6 +241,13 @@ run. Confirm that the canonical Marathoner UI appears and that the expected
 development account state resolves. Test sign-in only with an existing
 development account; signup remains disabled.
 
+Issue #140 uses the dedicated
+[iOS accessibility and critical-failure rehearsal](ios-accessibility-rehearsal.md)
+for VoiceOver, large text, focus, input, motion, failure-state, and non-owner
+evidence. Complete that procedure against an organization-signed,
+App Attest-capable candidate; this setup section or a simulator result is not an
+accessibility pass.
+
 ### Launch-continuity acceptance test
 
 Run this test after a startup, authentication-bootstrap, WebView, or native
