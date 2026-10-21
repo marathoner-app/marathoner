@@ -42,7 +42,11 @@ export default defineConfig(({ command, mode }) => {
     },
     test: {
       environment: 'jsdom',
-      exclude: [...configDefaults.exclude, 'functions/lib/**'],
+      exclude: [
+        ...configDefaults.exclude,
+        'functions/lib/**',
+        'tests/viewport/**',
+      ],
       setupFiles: './src/test/setup.ts',
     },
   }

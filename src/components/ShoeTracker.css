@@ -2,6 +2,7 @@
   display: flex;
   align-items: flex-start;
   justify-content: center;
+  box-sizing: border-box;
   gap: 2rem;
   width: min(100%, 900px);
   max-width: 900px;
@@ -11,6 +12,7 @@
 
 .entry,
 .shoe-tracking {
+  box-sizing: border-box;
   flex: 1;
   min-width: 0;
   padding: 1.5rem;

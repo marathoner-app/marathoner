@@ -12,6 +12,8 @@ dist
 dist-ios
 dist-ssr
 functions/lib
+playwright-report
+test-results
 *.local
 ios/App/App/GoogleService-Info.plist
 
