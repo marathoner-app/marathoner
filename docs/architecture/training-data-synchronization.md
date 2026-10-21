@@ -1,6 +1,6 @@
 # Training data synchronization
 
-- **Status:** Accepted target architecture; completed-run command lane and two-client behavior proved against local emulators; owner-scoped live reads, explicit memory caching, and the web provider migration are implemented; two-client live-read evidence, deployment, rules closure, and adaptation commands remain open
+- **Status:** Accepted architecture; the web live-read path and memory-only training cache are implemented and proved with two emulator clients; material-command migration, deployment and rules closure, and mobile parity remain open
 - **Decision date:** 2026-09-30
 - **Decision owner:** Marathoner maintainer
 - **Tracking issue:** [#80](https://github.com/marathoner-app/marathoner/issues/80)
@@ -81,19 +81,25 @@ emulator tests, but it is not the production application path yet:
   The provider exposes loading, current, stale, and recoverable error states,
   retries with a new session generation, and does not publish direct-write
   results until a listener snapshot confirms them.
+- Two independent authenticated Firestore emulator clients prove that a commit
+  from one client reaches the other without reload, a disconnected listener
+  becomes stale, every required source returns to server-confirmed current state
+  after reconnection, owner data stays isolated, and teardown stops delivery.
 - Firebase startup now initializes Firestore with `memoryLocalCache()` before
   repositories or listeners can acquire it. Training snapshots are therefore
   not intentionally written to IndexedDB, `localStorage`, or another durable
-  client store.
+  client store. A build-time policy rejects durable Firestore cache APIs and
+  durable browser-storage paths inside the training synchronization boundary.
 - Issue #283 hides and unmounts `TrainingDataProvider` as soon as logout begins,
   keys the provider by authenticated user, clears its repository and visible
   snapshot before a replacement load, and ignores a late load from the prior
-  session. Live-listener teardown and listener-specific stale-callback
-  suppression remain open because listeners do not exist yet.
+  session. The live provider now also detaches its source and rejects callbacks
+  from an ended owner or session generation.
 
-The present UI can therefore appear synchronized inside one browser session,
-but it does not provide live cross-client convergence or the write guarantees
-defined by this decision. The implementation issues below close those gaps.
+The web read path now provides live cross-client convergence and honest stale
+state. Its material plan, run, workout, and shoe writes still bypass the command
+boundary, so the write guarantees in this decision remain owned by #72 and
+#115 rather than being implied by the completed read work.
 
 ## Read synchronization
 
@@ -291,9 +297,10 @@ the write boundary.
    memory-only cache are implemented.
 5. The web provider now uses listeners for reads, publishes stale/current state,
    blocks mutations outside a current session, and clears old-session state.
-   Direct material writes still require command migration. Two-client listener,
-   disconnect/reconnect, and browser-storage emulator evidence remain before
-   this step is complete.
+   Two authenticated emulator clients retain evidence for listener convergence,
+   disconnect/reconnect, teardown, and owner isolation, while the build rejects
+   durable training snapshot storage. The read migration is complete; direct
+   material writes still require command migration.
 6. Implement the same contract in the selected iOS adapter and prove it on a
    physical iPhone before enabling the mobile completion flow.
 7. Apply the same contract and tests to Android when Android returns to scope.
