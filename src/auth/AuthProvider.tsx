@@ -16,9 +16,13 @@ export default function AuthProvider({ children }: AuthProviderProps) {
   const [subscriptionAttempt, setSubscriptionAttempt] = useState(0);
 
   useEffect(() => {
+    let subscriptionIsCurrent = true;
+
     setSession({ status: "loading", user: null });
 
     const timeout = window.setTimeout(() => {
+      if (!subscriptionIsCurrent) return;
+
       setSession((currentSession) =>
         currentSession.status === "loading"
           ? {
@@ -33,6 +37,8 @@ export default function AuthProvider({ children }: AuthProviderProps) {
 
     const unsubscribe = subscribeToAuthState(
       (user) => {
+        if (!subscriptionIsCurrent) return;
+
         window.clearTimeout(timeout);
         setSession(
           user
@@ -41,6 +47,8 @@ export default function AuthProvider({ children }: AuthProviderProps) {
         );
       },
       () => {
+        if (!subscriptionIsCurrent) return;
+
         window.clearTimeout(timeout);
         setSession({
           status: "error",
@@ -52,6 +60,7 @@ export default function AuthProvider({ children }: AuthProviderProps) {
     );
 
     return () => {
+      subscriptionIsCurrent = false;
       window.clearTimeout(timeout);
       unsubscribe();
     };
