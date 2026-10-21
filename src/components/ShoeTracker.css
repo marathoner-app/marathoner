@@ -87,6 +87,7 @@
 }
 
 .run-entry-form label,
+.run-edit-form label,
 .shoe-entry-form label {
   display: grid;
   gap: 0.35rem;

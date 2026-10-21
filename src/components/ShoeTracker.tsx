@@ -590,6 +590,7 @@ export default function ShoeTracker({
                     {isEditing ? (
                       <form
                         aria-label={`Edit run from ${getRunLocalDate(run)}`}
+                        className="run-edit-form"
                         onSubmit={async (event) => {
                           event.preventDefault();
                           const data = new FormData(event.currentTarget);
@@ -619,74 +620,86 @@ export default function ShoeTracker({
                           }
                         }}
                       >
-                        <input
-                          aria-label="Edit run date"
-                          aria-describedby={`edit-run-date-help-${run.id}`}
-                          name="date"
-                          type="date"
-                          defaultValue={getRunLocalDate(run)}
-                          required
-                        />
+                        <label>
+                          Edit run date
+                          <input
+                            aria-describedby={`edit-run-date-help-${run.id}`}
+                            name="date"
+                            type="date"
+                            defaultValue={getRunLocalDate(run)}
+                            required
+                          />
+                        </label>
                         <p
                           id={`edit-run-date-help-${run.id}`}
                           className="training-field-hint"
                         >
                           Use the date this run was completed. Future dates are not allowed.
                         </p>
-                        <input
-                          aria-label="Edit miles"
-                          name="miles"
-                          type="number"
-                          min="0.01"
-                          step="0.01"
-                          defaultValue={formatMiles(run.distance)}
-                          required
-                        />
-                        <input
-                          aria-label="Edit elapsed time"
-                          name="time"
-                          defaultValue={formatDuration(run.duration)}
-                          required
-                        />
-                        <select
-                          aria-label="Edit running shoes"
-                          name="shoe"
-                          defaultValue={run.shoeId}
-                          required
-                        >
-                          {shoes
-                            .filter(
-                              (candidate) =>
-                                candidate.status === "active" ||
-                                candidate.id === run.shoeId,
-                            )
-                            .map((candidate) => (
-                            <option key={candidate.id} value={candidate.id}>
-                              {candidate.name}
-                            </option>
+                        <label>
+                          Edit distance (miles)
+                          <input
+                            name="miles"
+                            type="number"
+                            min="0.01"
+                            step="0.01"
+                            defaultValue={formatMiles(run.distance)}
+                            required
+                          />
+                        </label>
+                        <label>
+                          Edit elapsed time
+                          <input
+                            name="time"
+                            defaultValue={formatDuration(run.duration)}
+                            required
+                          />
+                        </label>
+                        <label>
+                          Edit running shoes
+                          <select
+                            name="shoe"
+                            defaultValue={run.shoeId}
+                            required
+                          >
+                            {shoes
+                              .filter(
+                                (candidate) =>
+                                  candidate.status === "active" ||
+                                  candidate.id === run.shoeId,
+                              )
+                              .map((candidate) => (
+                                <option key={candidate.id} value={candidate.id}>
+                                  {candidate.name}
+                                </option>
+                              ))}
+                          </select>
+                        </label>
+                        <label>
+                          Edit perceived effort (optional)
+                          <select
+                            name="perceivedEffort"
+                            defaultValue={run.perceivedEffort ?? ""}
+                          >
+                            <option value="">Not recorded</option>
+                            {perceivedEffortOptions.map((option) => (
+                              <option key={option.value} value={option.value}>
+                                {option.label}
+                              </option>
                             ))}
-                        </select>
-                        <select
-                          aria-label="Edit perceived effort"
-                          name="perceivedEffort"
-                          defaultValue={run.perceivedEffort ?? ""}
-                        >
-                          <option value="">Not recorded</option>
-                          {perceivedEffortOptions.map((option) => (
-                            <option key={option.value} value={option.value}>
-                              {option.label}
-                            </option>
-                          ))}
-                        </select>
-                        <textarea
-                          aria-label="Edit run notes"
-                          aria-describedby={`edit-run-notes-help-${run.id}`}
-                          name="notes"
-                          defaultValue={run.notes ?? ""}
-                          maxLength={COMPLETED_RUN_NOTES_MAX_LENGTH}
-                          placeholder="Notes (optional)"
-                          rows={3}
-                        />
+                          </select>
+                        </label>
+                        <label>
+                          Edit run notes (optional)
+                          <textarea
+                            aria-describedby={`edit-run-notes-help-${run.id}`}
+                            name="notes"
+                            defaultValue={run.notes ?? ""}
+                            maxLength={COMPLETED_RUN_NOTES_MAX_LENGTH}
+                            placeholder="Notes (optional)"
+                            rows={3}
+                          />
+                        </label>
                         <p
                           id={`edit-run-notes-help-${run.id}`}
                           className="training-field-hint"
