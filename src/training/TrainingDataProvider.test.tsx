@@ -1,9 +1,11 @@
+import { useState } from "react";
 import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   calculateShoeDistance,
   calculateTrainingAnalytics,
+  createCompletedRunId,
   createDateOnly,
   createDurationSeconds,
   createIanaTimeZone,
@@ -13,10 +15,12 @@ import {
   milesToMeters,
   type UserId,
 } from "../domain/training";
+import type { CompletedRunCommandClient } from "../services/completedRunCommandClient";
 import { createDocumentTrainingRepositories } from "../persistence/documentTrainingRepositories";
 import { InMemoryDocumentStore } from "../persistence/testing/InMemoryDocumentStore";
 import type { TrainingRepositories } from "../persistence/trainingRepositories";
 import TrainingDataProvider, {
+  type CompletedRunCommandClientFactory,
   type TrainingLiveReadSourceFactory,
   type TrainingRepositoryFactory,
 } from "./TrainingDataProvider";
@@ -91,6 +95,8 @@ class ControlledLiveReadSource implements TrainingLiveReadSource {
 let repositories: TrainingRepositories;
 let repositoryFactory: TrainingRepositoryFactory;
 let liveReadSourceFactory: TrainingLiveReadSourceFactory;
+let completedRunCommandClient: CompletedRunCommandClient;
+let completedRunCommandClientFactory: CompletedRunCommandClientFactory;
 let sources: ControlledLiveReadSource[];
 
 beforeEach(() => {
@@ -106,6 +112,84 @@ beforeEach(() => {
     sources.push(source);
     return source;
   };
+  completedRunCommandClient = {
+    submitCompletion: vi.fn(async ({ commandId, input }) => {
+      const run = await repositories.runs.create({
+        plannedWorkoutPlanId: input.plannedWorkout?.planId,
+        plannedWorkoutId: input.plannedWorkout?.workoutId,
+        shoeId: input.shoeId,
+        startedAt: input.startedAt,
+        timeZone: input.timeZone,
+        distance: input.distance,
+        duration: input.duration,
+        perceivedEffort: input.perceivedEffort,
+        unusualPain: input.unusualPain,
+        notes: input.notes,
+      });
+      const completedPlannedWorkout = input.plannedWorkout
+        ? await repositories.workouts.update(
+            input.plannedWorkout.planId,
+            input.plannedWorkout.workoutId,
+            { status: "completed" },
+          )
+        : null;
+      return {
+        status: "run_completed" as const,
+        commandId,
+        completedRunId: run.id,
+        completedRunUpdatedAt: run.updatedAt,
+        completedPlannedWorkout:
+          completedPlannedWorkout === null
+            ? null
+            : {
+                planId: completedPlannedWorkout.planId,
+                workoutId: completedPlannedWorkout.id,
+                updatedAt: completedPlannedWorkout.updatedAt,
+              },
+      };
+    }),
+    submitDeletion: vi.fn(async ({
+      commandId,
+      completedRunId,
+      plannedWorkout,
+    }) => {
+      const reopenedPlannedWorkout = plannedWorkout
+        ? await repositories.workouts.update(
+            plannedWorkout.planId,
+            plannedWorkout.workoutId,
+            { status: "planned" },
+          )
+        : null;
+      await repositories.runs.delete(completedRunId);
+      return {
+        status: "run_deleted" as const,
+        commandId,
+        completedRunId,
+        deletedAt: timestamp,
+        reopenedPlannedWorkout:
+          reopenedPlannedWorkout === null
+            ? null
+            : {
+                planId: reopenedPlannedWorkout.planId,
+                workoutId: reopenedPlannedWorkout.id,
+                updatedAt: reopenedPlannedWorkout.updatedAt,
+              },
+      };
+    }),
+    resolveCompletion: vi.fn(async (commandId) => ({
+      status: "outcome_unknown" as const,
+      commandId,
+      code: "resolve-by-command-id" as const,
+      message: "The completion outcome is still unknown.",
+    })),
+    resolveDeletion: vi.fn(async (commandId) => ({
+      status: "outcome_unknown" as const,
+      commandId,
+      code: "resolve-by-command-id" as const,
+      message: "The deletion outcome is still unknown.",
+    })),
+  };
+  completedRunCommandClientFactory = async () => completedRunCommandClient;
 });
 
 async function createNamedRepositories(
@@ -167,6 +251,10 @@ function renderProvider(children = <IntegrationProbe />) {
       userId={userId}
       repositoryFactory={repositoryFactory}
       liveReadSourceFactory={liveReadSourceFactory}
+      completedRunCommandClientFactory={completedRunCommandClientFactory}
+      createCompletedRunCommandId={(operation) =>
+        `run-${operation}-test-command`
+      }
     >
       {children}
     </TrainingDataProvider>,
@@ -266,6 +354,41 @@ function IntegrationProbe() {
         }
       >
         Retire shoe
+      </button>
+    </div>
+  );
+}
+
+function RunCommandProbe() {
+  const training = useTrainingData();
+  const [outcome, setOutcome] = useState("idle");
+
+  if (training.status === "loading" || training.status === "error") {
+    return <p>{training.status}</p>;
+  }
+
+  return (
+    <div>
+      <p>Command: {outcome}</p>
+      <button
+        type="button"
+        onClick={() => {
+          setOutcome("pending");
+          void training
+            .createRun({
+              shoeId: training.shoes[0]?.id,
+              startedAt: createUtcDateTime("2026-08-03T14:00:00Z"),
+              timeZone,
+              distance: milesToMeters(3),
+              duration: createDurationSeconds(1_800),
+            })
+            .then(() => setOutcome("success"))
+            .catch((error: unknown) =>
+              setOutcome(error instanceof Error ? error.message : "failed"),
+            );
+        }}
+      >
+        Create unplanned run
       </button>
     </div>
   );
@@ -399,6 +522,267 @@ describe("TrainingDataProvider", () => {
     expect(screen.getByText("Workout: planned")).toBeInTheDocument();
   });
 
+  it("submits a planned completion with the listener-confirmed workout revision", async () => {
+    const plan = await repositories.plans.create({
+      name: "First Marathon Journey",
+      startDate: createDateOnly("2026-08-03"),
+      targetRaceDate: createDateOnly("2027-01-10"),
+    });
+    const workout = await repositories.workouts.create({
+      planId: plan.id,
+      scheduledDate: createDateOnly("2026-08-03"),
+      phase: "base_building",
+      kind: "run",
+      purpose: "easy",
+      targetDistance: milesToMeters(5),
+    });
+    const shoe = await repositories.shoes.create({ name: "Daily Trainer" });
+    const directCreate = vi.spyOn(repositories.runs, "create");
+    vi.mocked(completedRunCommandClient.submitCompletion).mockResolvedValue({
+      status: "run_completed",
+      commandId: "run-complete-test-command",
+      completedRunId: createCompletedRunId("run-server-confirmed"),
+      completedRunUpdatedAt: timestamp,
+      completedPlannedWorkout: {
+        planId: workout.planId,
+        workoutId: workout.id,
+        updatedAt: timestamp,
+      },
+    });
+
+    const user = userEvent.setup();
+    renderProvider();
+    const source = await waitForSource();
+    await publishRepositories(source);
+    await user.click(screen.getByRole("button", { name: "Complete workout" }));
+
+    await waitFor(() =>
+      expect(completedRunCommandClient.submitCompletion).toHaveBeenCalledWith({
+        commandId: "run-complete-test-command",
+        input: {
+          plannedWorkout: {
+            planId: workout.planId,
+            workoutId: workout.id,
+            expectedUpdatedAt: workout.updatedAt,
+          },
+          shoeId: shoe.id,
+          startedAt: createUtcDateTime("2026-08-03T14:00:00Z"),
+          timeZone,
+          distance: milesToMeters(3),
+          duration: createDurationSeconds(1_800),
+          perceivedEffort: undefined,
+          unusualPain: undefined,
+          notes: undefined,
+        },
+      }),
+    );
+    expect(directCreate).not.toHaveBeenCalled();
+    expect(screen.getByText("Runs: 0")).toBeInTheDocument();
+  });
+
+  it("submits an unplanned run without a workout reference or direct write", async () => {
+    await repositories.shoes.create({ name: "Daily Trainer" });
+    const directCreate = vi.spyOn(repositories.runs, "create");
+    vi.mocked(completedRunCommandClient.submitCompletion).mockResolvedValue({
+      status: "run_completed",
+      commandId: "run-complete-test-command",
+      completedRunId: createCompletedRunId("run-unplanned-confirmed"),
+      completedRunUpdatedAt: timestamp,
+      completedPlannedWorkout: null,
+    });
+
+    const user = userEvent.setup();
+    renderProvider(<RunCommandProbe />);
+    const source = await waitForSource();
+    await publishRepositories(source);
+    await user.click(screen.getByRole("button", { name: "Create unplanned run" }));
+
+    expect(await screen.findByText("Command: success")).toBeInTheDocument();
+    expect(completedRunCommandClient.submitCompletion).toHaveBeenCalledWith(
+      expect.objectContaining({
+        commandId: "run-complete-test-command",
+        input: expect.objectContaining({ plannedWorkout: null }),
+      }),
+    );
+    expect(directCreate).not.toHaveBeenCalled();
+  });
+
+  it("resolves an ambiguous completion with the original command ID before retrying", async () => {
+    await repositories.shoes.create({ name: "Daily Trainer" });
+    vi.mocked(completedRunCommandClient.submitCompletion).mockResolvedValue({
+      status: "outcome_unknown",
+      commandId: "run-complete-test-command",
+      code: "resolve-by-command-id",
+      message: "The completion outcome is still unknown.",
+    });
+    vi.mocked(completedRunCommandClient.resolveCompletion)
+      .mockResolvedValueOnce({
+        status: "outcome_unknown",
+        commandId: "run-complete-test-command",
+        code: "resolve-by-command-id",
+        message: "The completion outcome is still unknown.",
+      })
+      .mockResolvedValueOnce({
+        status: "run_completed",
+        commandId: "run-complete-test-command",
+        completedRunId: createCompletedRunId("run-resolved-confirmed"),
+        completedRunUpdatedAt: timestamp,
+        completedPlannedWorkout: null,
+      });
+
+    const user = userEvent.setup();
+    renderProvider(<RunCommandProbe />);
+    const source = await waitForSource();
+    await publishRepositories(source);
+    const createButton = screen.getByRole("button", {
+      name: "Create unplanned run",
+    });
+    await user.click(createButton);
+    expect(
+      await screen.findByText("Command: The completion outcome is still unknown."),
+    ).toBeInTheDocument();
+
+    await user.click(createButton);
+    expect(await screen.findByText("Command: success")).toBeInTheDocument();
+    expect(completedRunCommandClient.submitCompletion).toHaveBeenCalledOnce();
+    expect(completedRunCommandClient.resolveCompletion).toHaveBeenNthCalledWith(
+      1,
+      "run-complete-test-command",
+    );
+    expect(completedRunCommandClient.resolveCompletion).toHaveBeenNthCalledWith(
+      2,
+      "run-complete-test-command",
+    );
+  });
+
+  it("surfaces a known offline completion failure without a direct write", async () => {
+    await repositories.shoes.create({ name: "Daily Trainer" });
+    const directCreate = vi.spyOn(repositories.runs, "create");
+    vi.mocked(completedRunCommandClient.submitCompletion).mockResolvedValue({
+      status: "retryable_error",
+      commandId: "run-complete-test-command",
+      code: "temporarily-unavailable",
+      message: "You are offline. This command was not queued; reconnect and try again.",
+    });
+
+    const user = userEvent.setup();
+    renderProvider(<RunCommandProbe />);
+    const source = await waitForSource();
+    await publishRepositories(source);
+    await user.click(screen.getByRole("button", { name: "Create unplanned run" }));
+
+    expect(
+      await screen.findByText(
+        "Command: You are offline. This command was not queued; reconnect and try again.",
+      ),
+    ).toBeInTheDocument();
+    expect(directCreate).not.toHaveBeenCalled();
+    expect(completedRunCommandClient.resolveCompletion).not.toHaveBeenCalled();
+  });
+
+  it("submits deletion with run and workout revisions without a direct delete", async () => {
+    const plan = await repositories.plans.create({
+      name: "First Marathon Journey",
+      startDate: createDateOnly("2026-08-03"),
+      targetRaceDate: createDateOnly("2027-01-10"),
+    });
+    const workout = await repositories.workouts.create({
+      planId: plan.id,
+      scheduledDate: createDateOnly("2026-08-03"),
+      phase: "base_building",
+      kind: "run",
+      purpose: "easy",
+      targetDistance: milesToMeters(5),
+    });
+    const shoe = await repositories.shoes.create({ name: "Daily Trainer" });
+    const run = await repositories.runs.create({
+      plannedWorkoutPlanId: workout.planId,
+      plannedWorkoutId: workout.id,
+      shoeId: shoe.id,
+      startedAt: createUtcDateTime("2026-08-03T14:00:00Z"),
+      timeZone,
+      distance: milesToMeters(3),
+      duration: createDurationSeconds(1_800),
+    });
+    const completedWorkout = await repositories.workouts.update(
+      workout.planId,
+      workout.id,
+      { status: "completed" },
+    );
+    const directDelete = vi.spyOn(repositories.runs, "delete");
+    vi.mocked(completedRunCommandClient.submitDeletion).mockResolvedValue({
+      status: "run_deleted",
+      commandId: "run-delete-test-command",
+      completedRunId: run.id,
+      deletedAt: timestamp,
+      reopenedPlannedWorkout: {
+        planId: completedWorkout.planId,
+        workoutId: completedWorkout.id,
+        updatedAt: timestamp,
+      },
+    });
+
+    const user = userEvent.setup();
+    renderProvider();
+    const source = await waitForSource();
+    await publishRepositories(source);
+    await user.click(screen.getByRole("button", { name: "Delete run" }));
+
+    await waitFor(() =>
+      expect(completedRunCommandClient.submitDeletion).toHaveBeenCalledWith({
+        commandId: "run-delete-test-command",
+        completedRunId: run.id,
+        expectedCompletedRunUpdatedAt: run.updatedAt,
+        plannedWorkout: {
+          planId: completedWorkout.planId,
+          workoutId: completedWorkout.id,
+          expectedUpdatedAt: completedWorkout.updatedAt,
+        },
+      }),
+    );
+    expect(directDelete).not.toHaveBeenCalled();
+    expect(screen.getByText("Runs: 1")).toBeInTheDocument();
+  });
+
+  it("resolves an ambiguous deletion with the original command ID", async () => {
+    const shoe = await repositories.shoes.create({ name: "Daily Trainer" });
+    const run = await repositories.runs.create({
+      shoeId: shoe.id,
+      startedAt: createUtcDateTime("2026-08-03T14:00:00Z"),
+      timeZone,
+      distance: milesToMeters(3),
+      duration: createDurationSeconds(1_800),
+    });
+    const directDelete = vi.spyOn(repositories.runs, "delete");
+    vi.mocked(completedRunCommandClient.submitDeletion).mockResolvedValue({
+      status: "outcome_unknown",
+      commandId: "run-delete-test-command",
+      code: "resolve-by-command-id",
+      message: "The deletion outcome is unknown.",
+    });
+    vi.mocked(completedRunCommandClient.resolveDeletion).mockResolvedValue({
+      status: "run_deleted",
+      commandId: "run-delete-test-command",
+      completedRunId: run.id,
+      deletedAt: timestamp,
+      reopenedPlannedWorkout: null,
+    });
+
+    const user = userEvent.setup();
+    renderProvider();
+    const source = await waitForSource();
+    await publishRepositories(source);
+    await user.click(screen.getByRole("button", { name: "Delete run" }));
+
+    await waitFor(() =>
+      expect(completedRunCommandClient.resolveDeletion).toHaveBeenCalledWith(
+        "run-delete-test-command",
+      ),
+    );
+    expect(completedRunCommandClient.submitDeletion).toHaveBeenCalledOnce();
+    expect(directDelete).not.toHaveBeenCalled();
+  });
+
   it("surfaces a listener error and creates a fresh subscription on retry", async () => {
     const user = userEvent.setup();
     renderProvider();
@@ -438,6 +822,10 @@ describe("TrainingDataProvider", () => {
         userId={secondUserId}
         repositoryFactory={repositoryFactory}
         liveReadSourceFactory={liveReadSourceFactory}
+        completedRunCommandClientFactory={completedRunCommandClientFactory}
+        createCompletedRunCommandId={(operation) =>
+          `run-${operation}-test-command`
+        }
       >
         <IntegrationProbe />
       </TrainingDataProvider>,

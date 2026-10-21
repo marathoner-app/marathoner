@@ -1,6 +1,6 @@
 # Material-command boundary
 
-- **Status:** Local proof and deletion-request boundaries complete; plan approval, run completion, and completed-run deletion are atomically persisted; two-client completed-run proof retained against emulators; production activation and deployment blocked
+- **Status:** Local proof and deletion-request boundaries complete; plan approval, run completion, and completed-run deletion are atomically persisted; the signed-in training provider routes run creation and deletion through the command client; two-client completed-run proof retained against emulators; production deployment blocked
 - **Decision date:** 2026-10-05
 - **Owner:** Marathoner maintainer
 - **Proof issue:** [#158](https://github.com/marathoner-app/marathoner/issues/158)
@@ -16,6 +16,7 @@
 - **Run-deletion transaction issue:** [#260](https://github.com/marathoner-app/marathoner/issues/260)
 - **Completed-run client issue:** [#261](https://github.com/marathoner-app/marathoner/issues/261)
 - **Two-client completed-run proof issue:** [#262](https://github.com/marathoner-app/marathoner/issues/262)
+- **Completed-run provider integration issue:** [#346](https://github.com/marathoner-app/marathoner/issues/346)
 
 ## Purpose and scope
 
@@ -40,6 +41,11 @@ guard identifies the deleted run. Issue #261 adds the transport-injected,
 online-only completion and deletion client without switching the production
 provider or mounting a participant workflow. Issue #262 retains the end-to-end
 two-client emulator evidence and records the remaining activation boundary.
+Issue #346 routes signed-in Track creation and deletion through that client,
+retains command IDs while an outcome remains unknown, and keeps live listener
+snapshots as the only source of visible training state. Completed-run editing
+still uses its existing repository path because no server update-command
+contract exists yet.
 
 The browser and server share the portable contract in
 `src/domain/materialCommands/contract.ts`. It imports neither React nor
@@ -226,6 +232,14 @@ submission or resolution never calls the transport, queues work, or replays
 after reconnection; the caller must explicitly use the matching resolution
 method with the original command ID.
 
+`TrainingDataProvider` now supplies the listener-confirmed run and workout
+revisions required by those commands. A committed receipt completes the form
+action but does not synthesize visible Track or Analyze state; the existing
+live-read source must observe the server commit first. Direct repository create
+and delete calls are no longer fallbacks for these migrated operations. If a
+response is ambiguous, the provider resolves the original command ID before it
+can create a replacement command.
+
 Two independent Firebase app instances now prove the completed-run lane against
 the Authentication, Functions, and Firestore emulators. When both are signed in
 as the same runner and race to complete one planned workout, exactly one run,
@@ -244,11 +258,12 @@ tests prove that logs contain only event, fixed command type, and status—not
 owner IDs, command IDs, completed-run IDs, notes, payloads, or thrown error
 objects.
 
-This proof does not activate the lane in a deployed environment. Functions
-deployment, production provider and UI migration, denial of direct material
-writes in Firestore Security Rules, live listener synchronization and cache
-isolation, App Check enforcement, and adaptation commands all remain open in
-their owning issues.
+The client routing does not activate the lane in a deployed environment.
+Functions deployment, denial of remaining direct material writes in Firestore
+Security Rules, App Check enforcement, completed-run update commands, and
+adaptation commands all remain open in their owning issues. Live listener
+synchronization and account-cache isolation are already implemented through
+#159.
 
 `PlanApprovalReview` owns the participant-facing handoff from a fully reviewed
 proposal to that client. Its final confirmation snapshots the exact input and
@@ -347,8 +362,8 @@ or weakening the guard merely to make a deploy command succeed is not approved.
 ## Follow-up migrations
 
 - #72 moves initial-plan activation onto this boundary.
-- #115 continues the atomic workflow with adaptation after the emulator-proven
-  completion and deletion transactions.
+- #115 continues the atomic workflow with completed-run editing and adaptation
+  after the emulator-proven completion and deletion transactions.
 - #121 removes direct client material writes after every owning workflow moves.
 - #159 adds live reads, freshness, and account cache isolation.
 - #138 may use the boundary on iOS only after its required workflow migrations.
