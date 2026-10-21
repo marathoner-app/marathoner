@@ -8,15 +8,11 @@ import {
 } from "react";
 import {
   createUserId,
-  type CompletedRun,
   type CompletedRunId,
   type DateOnly,
   type PlannedWorkout,
-  type Shoe,
   type ShoeId,
-  type TrainingPlan,
   type UserId,
-  type UserProfile,
 } from "../domain/training";
 import type {
   CreateCompletedRunInput,
@@ -28,37 +24,29 @@ import type {
 import {
   TrainingDataContext,
   type TrainingDataContextValue,
-  type TrainingDataStatus,
 } from "./TrainingDataContext";
+import {
+  createTrainingSynchronizationKernel,
+  reduceTrainingSynchronization,
+  type SynchronizedTrainingSnapshot,
+  type TrainingLiveReadSource,
+  type TrainingSynchronizationState,
+} from "./trainingSynchronization";
 
 export type TrainingRepositoryFactory = (
   userId: UserId,
 ) => Promise<TrainingRepositories>;
 
+export type TrainingLiveReadSourceFactory = (
+  userId: UserId,
+  sessionGeneration: number,
+) => Promise<TrainingLiveReadSource>;
+
 type TrainingDataProviderProps = {
   readonly userId: string;
   readonly children: ReactNode;
   readonly repositoryFactory?: TrainingRepositoryFactory;
-};
-
-interface TrainingSnapshot {
-  readonly status: TrainingDataStatus;
-  readonly error: string | null;
-  readonly profile: UserProfile | null;
-  readonly plans: TrainingPlan[];
-  readonly workouts: PlannedWorkout[];
-  readonly runs: CompletedRun[];
-  readonly shoes: Shoe[];
-}
-
-const emptySnapshot: TrainingSnapshot = {
-  status: "loading",
-  error: null,
-  profile: null,
-  plans: [],
-  workouts: [],
-  runs: [],
-  shoes: [],
+  readonly liveReadSourceFactory?: TrainingLiveReadSourceFactory;
 };
 
 const defaultRepositoryFactory: TrainingRepositoryFactory = async (userId) => {
@@ -68,119 +56,159 @@ const defaultRepositoryFactory: TrainingRepositoryFactory = async (userId) => {
   return createFirestoreTrainingRepositories(userId);
 };
 
+const defaultLiveReadSourceFactory: TrainingLiveReadSourceFactory = async (
+  userId,
+  sessionGeneration,
+) => {
+  const { createFirestoreTrainingLiveReadSource } = await import(
+    "../persistence/firestore"
+  );
+  return createFirestoreTrainingLiveReadSource(userId, sessionGeneration);
+};
+
 function messageFor(error: unknown): string {
   return error instanceof Error
     ? error.message
     : "Your training data could not be loaded. Please try again.";
 }
 
+function snapshotFor(
+  state: TrainingSynchronizationState,
+): SynchronizedTrainingSnapshot | null {
+  return "snapshot" in state ? state.snapshot : null;
+}
+
+function errorFor(state: TrainingSynchronizationState): string | null {
+  if (state.status === "error" || state.status === "conflict") {
+    return state.message;
+  }
+
+  return null;
+}
+
 export default function TrainingDataProvider({
   userId: rawUserId,
   children,
   repositoryFactory = defaultRepositoryFactory,
+  liveReadSourceFactory = defaultLiveReadSourceFactory,
 }: TrainingDataProviderProps) {
   const userId = useMemo(() => createUserId(rawUserId), [rawUserId]);
   const repositoryRef = useRef<TrainingRepositories | null>(null);
-  const loadGenerationRef = useRef(0);
-  const [snapshot, setSnapshot] = useState<TrainingSnapshot>(emptySnapshot);
+  const unsubscribeRef = useRef<(() => void) | null>(null);
+  const sessionGenerationRef = useRef(0);
+  const [synchronization, setSynchronization] = useState(() =>
+    createTrainingSynchronizationKernel({
+      ownerId: userId,
+      sessionGeneration: 0,
+    }),
+  );
 
-  const load = useCallback(async () => {
-    const generation = loadGenerationRef.current + 1;
-    loadGenerationRef.current = generation;
+  const startSynchronization = useCallback(async () => {
+    const generation = sessionGenerationRef.current + 1;
+    sessionGenerationRef.current = generation;
+    unsubscribeRef.current?.();
+    unsubscribeRef.current = null;
     repositoryRef.current = null;
-    setSnapshot(emptySnapshot);
+    setSynchronization(
+      createTrainingSynchronizationKernel({
+        ownerId: userId,
+        sessionGeneration: generation,
+      }),
+    );
 
     try {
-      const repositories = await repositoryFactory(userId);
-      const [profile, plans, runs, shoes] = await Promise.all([
-        repositories.profile.load(),
-        repositories.plans.list(),
-        repositories.runs.list(),
-        repositories.shoes.list(),
+      const [repositories, source] = await Promise.all([
+        repositoryFactory(userId),
+        liveReadSourceFactory(userId, generation),
       ]);
-      const workouts = (
-        await Promise.all(
-          plans.map((plan) => repositories.workouts.listForPlan(plan.id)),
-        )
-      ).flat();
 
-      if (generation !== loadGenerationRef.current) return;
+      if (generation !== sessionGenerationRef.current) return;
 
       repositoryRef.current = repositories;
-      setSnapshot({
-        status: "ready",
-        error: null,
-        profile,
-        plans,
-        workouts,
-        runs,
-        shoes,
+      const unsubscribe = source.subscribe((events) => {
+        if (generation !== sessionGenerationRef.current) return;
+
+        setSynchronization((current) =>
+          events.reduce(reduceTrainingSynchronization, current),
+        );
       });
+
+      if (generation !== sessionGenerationRef.current) {
+        unsubscribe();
+        return;
+      }
+
+      unsubscribeRef.current = unsubscribe;
     } catch (error) {
-      if (generation !== loadGenerationRef.current) return;
+      if (generation !== sessionGenerationRef.current) return;
 
       repositoryRef.current = null;
-      setSnapshot((current) => ({
-        ...current,
-        status: "error",
-        error: messageFor(error),
-      }));
+      setSynchronization((current) =>
+        reduceTrainingSynchronization(current, {
+          type: "source_error",
+          source: "profile",
+          ownerId: userId,
+          sessionGeneration: generation,
+          message: messageFor(error),
+          recoverable: true,
+        }),
+      );
     }
-  }, [repositoryFactory, userId]);
+  }, [liveReadSourceFactory, repositoryFactory, userId]);
 
   useEffect(() => {
-    void load();
+    void startSynchronization();
 
     return () => {
-      loadGenerationRef.current += 1;
+      sessionGenerationRef.current += 1;
+      unsubscribeRef.current?.();
+      unsubscribeRef.current = null;
       repositoryRef.current = null;
     };
-  }, [load]);
+  }, [startSynchronization]);
+
+  const synchronizedSnapshot = snapshotFor(synchronization.state);
+  const status =
+    synchronization.state.status === "current"
+      ? "current"
+      : synchronization.state.status === "stale" ||
+          synchronization.state.status === "saving"
+        ? "stale"
+        : synchronization.state.status === "loading"
+          ? "loading"
+          : "error";
 
   const requireRepositories = useCallback(() => {
+    if (synchronization.state.status !== "current") {
+      throw new Error(
+        "Training data is not current. Reconnect and try again.",
+      );
+    }
+
     if (repositoryRef.current === null) {
       throw new Error("Training data is still loading. Please try again.");
     }
 
     return repositoryRef.current;
-  }, []);
+  }, [synchronization.state.status]);
 
   const createShoe = useCallback(
     async (input: CreateShoeInput) => {
-      const shoe = await requireRepositories().shoes.create(input);
-      setSnapshot((current) => ({
-        ...current,
-        shoes: [...current.shoes, shoe].sort((left, right) =>
-          left.name.localeCompare(right.name),
-        ),
-      }));
-      return shoe;
+      return requireRepositories().shoes.create(input);
     },
     [requireRepositories],
   );
 
   const retireShoe = useCallback(
     async (id: ShoeId, retiredOn: DateOnly) => {
-      const retiredShoe = await requireRepositories().shoes.retire(
-        id,
-        retiredOn,
-      );
-      setSnapshot((current) => ({
-        ...current,
-        shoes: current.shoes.map((shoe) =>
-          shoe.id === retiredShoe.id ? retiredShoe : shoe,
-        ),
-      }));
-      return retiredShoe;
+      return requireRepositories().shoes.retire(id, retiredOn);
     },
     [requireRepositories],
   );
 
   const saveProfile = useCallback(
     async (input: SaveUserProfileInput) => {
-      const profile = await requireRepositories().profile.save(input);
-      setSnapshot((current) => ({ ...current, profile }));
-      return profile;
+      return requireRepositories().profile.save(input);
     },
     [requireRepositories],
   );
@@ -192,7 +220,7 @@ export default function TrainingDataProvider({
         input.plannedWorkoutPlanId === undefined ||
         input.plannedWorkoutId === undefined
           ? null
-          : snapshot.workouts.find(
+          : synchronizedSnapshot?.workouts.find(
               (workout) =>
                 workout.planId === input.plannedWorkoutPlanId &&
                 workout.id === input.plannedWorkoutId,
@@ -215,14 +243,13 @@ export default function TrainingDataProvider({
       }
 
       const run = await repositories.runs.create(input);
-      let completedWorkout: PlannedWorkout | null = null;
 
       if (
         run.plannedWorkoutPlanId !== undefined &&
         run.plannedWorkoutId !== undefined
       ) {
         try {
-          completedWorkout = await repositories.workouts.update(
+          await repositories.workouts.update(
             run.plannedWorkoutPlanId,
             run.plannedWorkoutId,
             { status: "completed" },
@@ -233,34 +260,14 @@ export default function TrainingDataProvider({
         }
       }
 
-      setSnapshot((current) => ({
-        ...current,
-        runs: [run, ...current.runs],
-        workouts:
-          completedWorkout === null
-            ? current.workouts
-            : current.workouts.map((workout) =>
-                workout.planId === completedWorkout.planId &&
-                workout.id === completedWorkout.id
-                  ? completedWorkout
-                  : workout,
-              ),
-      }));
       return run;
     },
-    [requireRepositories, snapshot.workouts],
+    [requireRepositories, synchronizedSnapshot?.workouts],
   );
 
   const updateRun = useCallback(
     async (id: CompletedRunId, changes: UpdateCompletedRunInput) => {
-      const updated = await requireRepositories().runs.update(id, changes);
-      setSnapshot((current) => ({
-        ...current,
-        runs: current.runs
-          .map((run) => (run.id === updated.id ? updated : run))
-          .sort((left, right) => right.startedAt.localeCompare(left.startedAt)),
-      }));
-      return updated;
+      return requireRepositories().runs.update(id, changes);
     },
     [requireRepositories],
   );
@@ -268,13 +275,16 @@ export default function TrainingDataProvider({
   const deleteRun = useCallback(
     async (id: CompletedRunId) => {
       const repositories = requireRepositories();
-      const run = snapshot.runs.find((candidate) => candidate.id === id);
+      const currentSnapshot = synchronizedSnapshot;
+      const run = currentSnapshot?.runs.find(
+        (candidate) => candidate.id === id,
+      );
 
-      if (run === undefined) {
+      if (currentSnapshot === null || run === undefined) {
         return;
       }
 
-      const hasAnotherCompletion = snapshot.runs.some(
+      const hasAnotherCompletion = currentSnapshot.runs.some(
         (candidate) =>
           candidate.id !== run.id &&
           candidate.plannedWorkoutPlanId === run.plannedWorkoutPlanId &&
@@ -306,27 +316,28 @@ export default function TrainingDataProvider({
         }
         throw error;
       }
-
-      setSnapshot((current) => ({
-        ...current,
-        runs: current.runs.filter((candidate) => candidate.id !== id),
-        workouts:
-          reopenedWorkout === null
-            ? current.workouts
-            : current.workouts.map((workout) =>
-                workout.planId === reopenedWorkout.planId &&
-                workout.id === reopenedWorkout.id
-                  ? reopenedWorkout
-                  : workout,
-              ),
-      }));
     },
-    [requireRepositories, snapshot.runs],
+    [requireRepositories, synchronizedSnapshot],
   );
 
   const value: TrainingDataContextValue = {
-    ...snapshot,
-    reload: load,
+    status,
+    error: errorFor(synchronization.state),
+    profile: synchronizedSnapshot?.profile ?? null,
+    plans: synchronizedSnapshot?.plans ?? [],
+    workouts: synchronizedSnapshot?.workouts ?? [],
+    runs: synchronizedSnapshot?.runs ?? [],
+    shoes: synchronizedSnapshot?.shoes ?? [],
+    canWrite: status === "current",
+    staleReasons:
+      synchronization.state.status === "stale"
+        ? synchronization.state.reasons
+        : [],
+    lastServerConfirmedAt:
+      "freshness" in synchronization.state
+        ? synchronization.state.freshness.lastServerConfirmedAt
+        : null,
+    reload: startSynchronization,
     saveProfile,
     createShoe,
     retireShoe,

@@ -58,6 +58,7 @@ vi.mock('./training/TrainingDataProvider', () => ({
 }))
 
 const trainingMock = vi.hoisted(() => ({
+  status: 'current' as 'current' | 'stale',
   profile: null as object | null,
   plans: [] as object[],
   workouts: [] as object[],
@@ -67,13 +68,16 @@ const trainingMock = vi.hoisted(() => ({
 
 vi.mock('./training/useTrainingData', () => ({
   useTrainingData: () => ({
-    status: 'ready',
+    status: trainingMock.status,
     error: null,
     profile: trainingMock.profile,
     plans: trainingMock.plans,
     workouts: trainingMock.workouts,
     runs: [],
     shoes: [],
+    canWrite: trainingMock.status === 'current',
+    staleReasons: trainingMock.status === 'stale' ? ['cache_only'] : [],
+    lastServerConfirmedAt: null,
     reload: trainingMock.reload,
     saveProfile: trainingMock.saveProfile,
     createShoe: vi.fn(),
@@ -173,6 +177,7 @@ function renderSignedInApp() {
 
 beforeEach(() => {
   vi.clearAllMocks()
+  trainingMock.status = 'current'
   trainingMock.profile = completeRunnerProfile
   trainingMock.plans = []
   trainingMock.workouts = []
@@ -522,6 +527,31 @@ describe('App training sections', () => {
     expect(screen.getByRole('button', { name: 'Plan' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Track' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Analyze' })).toBeInTheDocument()
+  })
+
+  it('keeps stale training data readable while disabling mutations', async () => {
+    const user = userEvent.setup()
+    trainingMock.status = 'stale'
+    renderSignedInApp()
+
+    expect(
+      screen.getByText(/training data may be out of date/i)
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole('button', { name: 'Edit runner profile' })
+    ).toBeDisabled()
+    expect(
+      screen.getByRole('navigation', { name: 'Training sections' })
+    ).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'Retry connection' }))
+    expect(trainingMock.reload).toHaveBeenCalledOnce()
+
+    await user.click(screen.getByRole('button', { name: 'Track' }))
+    expect(document.querySelector('fieldset.training-read-only')).toBeDisabled()
+    expect(
+      screen.getByText(/showing the latest in-memory snapshot/i)
+    ).toBeInTheDocument()
   })
 
   it('opens Plan from the persisted next-workout summary', async () => {

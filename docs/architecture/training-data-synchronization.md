@@ -1,6 +1,6 @@
 # Training data synchronization
 
-- **Status:** Accepted target architecture; completed-run command lane and two-client behavior proved against local emulators; the owner-scoped live-read adapter and explicit memory cache are implemented; provider migration, deployment, rules closure, and adaptation commands remain open
+- **Status:** Accepted target architecture; completed-run command lane and two-client behavior proved against local emulators; owner-scoped live reads, explicit memory caching, and the web provider migration are implemented; two-client live-read evidence, deployment, rules closure, and adaptation commands remain open
 - **Decision date:** 2026-09-30
 - **Decision owner:** Marathoner maintainer
 - **Tracking issue:** [#80](https://github.com/marathoner-app/marathoner/issues/80)
@@ -58,8 +58,10 @@ still implement this contract if a recorded reopen trigger changes the client.
 The protected completed-run command lane is implemented and retained in local
 emulator tests, but it is not the production application path yet:
 
-- `TrainingDataProvider` performs one repository load when an authenticated
-  experience starts and again only when the user explicitly retries.
+- `TrainingDataProvider` now mounts the owner-scoped live-read source and reduces
+  its event batches through the shared synchronization kernel. Cache-originated
+  snapshots remain readable as stale, while training mutations are available
+  only after every required source is server-confirmed.
 - Plan, workout, run, and shoe changes are sent directly from the client through
   `FirestoreDocumentStore` using `setDoc`, `deleteDoc`, or a delete-only batch.
 - Run creation plus workout completion and run deletion plus workout reopening
@@ -72,13 +74,13 @@ emulator tests, but it is not the production application path yet:
   call this client adapter.
 - Repositories read before writing but do not send a revision precondition, so a
   stale client can overwrite a newer value.
-- `firestoreTrainingLiveReadSource` now provides owner-scoped `onSnapshot`
+- `firestoreTrainingLiveReadSource` provides owner-scoped `onSnapshot`
   adapters for profile, plans, relevant workouts, runs, and shoes. It translates
   Firestore freshness metadata into portable synchronization events, assembles
   plan/workout changes as coherent batches, and owns teardown of every listener.
-  `TrainingDataProvider` does not mount this source yet, so the visible
-  application still uses startup-only repository reads and does not expose the
-  portable freshness states.
+  The provider exposes loading, current, stale, and recoverable error states,
+  retries with a new session generation, and does not publish direct-write
+  results until a listener snapshot confirms them.
 - Firebase startup now initializes Firestore with `memoryLocalCache()` before
   repositories or listeners can acquire it. Training snapshots are therefore
   not intentionally written to IndexedDB, `localStorage`, or another durable
@@ -286,11 +288,12 @@ the write boundary.
    cannot directly write material collections after the endpoints are ready.
 4. The owner-scoped listener adapter, freshness translation, coherent dynamic
    workout assembly, teardown, late-callback suppression, and explicit
-   memory-only cache are implemented. Mounting the source and feature-specific
-   completeness behavior remain part of the provider migration.
-5. Migrate the web provider from snapshot reads and direct writes to listeners
-   and commands. Exercise two browser clients, offline requests, timeouts,
-   retries, conflicts, logout, and account switching.
+   memory-only cache are implemented.
+5. The web provider now uses listeners for reads, publishes stale/current state,
+   blocks mutations outside a current session, and clears old-session state.
+   Direct material writes still require command migration. Two-client listener,
+   disconnect/reconnect, and browser-storage emulator evidence remain before
+   this step is complete.
 6. Implement the same contract in the selected iOS adapter and prove it on a
    physical iPhone before enabling the mobile completion flow.
 7. Apply the same contract and tests to Android when Android returns to scope.

@@ -93,6 +93,17 @@
   padding: 4rem clamp(1rem, 4vw, 3rem) 2rem;
 }
 
+.training-stale {
+  color: #7c4a03;
+}
+
+.training-read-only {
+  min-inline-size: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
 .section-panel *,
 .section-panel *::before,
 .section-panel *::after {
