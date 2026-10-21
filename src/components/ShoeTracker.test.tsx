@@ -374,6 +374,57 @@ describe("ShoeTracker", () => {
     expect(screen.getByText(/Recorded by Marathoner: 5 mi/)).toBeInTheDocument();
   });
 
+  it("uses kilometers throughout run entry, editing, history, and deletion", async () => {
+    const onCreateRunCall = vi.fn();
+    const onUpdateRunCall = vi.fn();
+    render(
+      <Harness
+        distanceUnit="kilometer"
+        onCreateRunCall={onCreateRunCall}
+        onUpdateRunCall={onUpdateRunCall}
+      />,
+    );
+    const user = await addShoe("Daily Trainer");
+
+    await user.type(
+      screen.getByRole("spinbutton", { name: "Distance (kilometers)" }),
+      "5",
+    );
+    await user.type(screen.getByRole("textbox", { name: "Elapsed time" }), "30:00");
+    await user.selectOptions(
+      screen.getByRole("combobox", { name: "Running shoes" }),
+      "shoe-1",
+    );
+    await user.click(screen.getByRole("button", { name: "Log Run" }));
+
+    expect(onCreateRunCall).toHaveBeenCalledWith(
+      expect.objectContaining({ distance: createDistanceMeters(5_000) }),
+    );
+    expect(
+      await screen.findByText(/5 km in 30:00 wearing Daily Trainer/),
+    ).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Edit" }));
+    const editDistance = screen.getByRole("spinbutton", {
+      name: "Edit distance (kilometers)",
+    });
+    expect(editDistance).toHaveValue(5);
+    await user.clear(editDistance);
+    await user.type(editDistance, "6.25");
+    await user.click(screen.getByRole("button", { name: "Save" }));
+
+    expect(onUpdateRunCall).toHaveBeenCalledWith(
+      createCompletedRunId("run-1"),
+      expect.objectContaining({ distance: createDistanceMeters(6_250) }),
+    );
+    expect(await screen.findByText(/6.25 km in 30:00/)).toBeInTheDocument();
+
+    await user.click(
+      screen.getByRole("button", { name: /^Delete run from / }),
+    );
+    expect(screen.getByText(/· 6.25 km$/)).toBeInTheDocument();
+  });
+
   it("retires a shoe after confirmation while preserving its history and total", async () => {
     const shoe: Shoe = {
       id: createShoeId("shoe-1"),

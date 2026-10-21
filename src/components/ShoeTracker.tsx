@@ -275,10 +275,6 @@ function formatDuration(totalSeconds: number): string {
     : `${minutes}:${seconds}`;
 }
 
-function formatMiles(meters: DistanceMeters): string {
-  return Number(metersToMiles(meters).toFixed(2)).toString();
-}
-
 function distanceUnitName(unit: DistanceUnit) {
   return unit === "mile" ? "miles" : "kilometers";
 }
@@ -287,10 +283,21 @@ function distanceUnitAbbreviation(unit: DistanceUnit) {
   return unit === "mile" ? "mi" : "km";
 }
 
+function distanceValue(meters: DistanceMeters, unit: DistanceUnit): number {
+  return unit === "mile" ? metersToMiles(meters) : metersToKilometers(meters);
+}
+
+function formatDistanceValue(meters: DistanceMeters, unit: DistanceUnit): string {
+  return Number(distanceValue(meters, unit).toFixed(2)).toString();
+}
+
 function formatDistance(meters: DistanceMeters, unit: DistanceUnit): string {
-  const value =
-    unit === "mile" ? metersToMiles(meters) : metersToKilometers(meters);
-  return `${Number(value.toFixed(2))} ${distanceUnitAbbreviation(unit)}`;
+  return `${formatDistanceValue(meters, unit)} ${distanceUnitAbbreviation(unit)}`;
+}
+
+function parseDistance(value: string, unit: DistanceUnit): DistanceMeters {
+  const distance = Number(value);
+  return unit === "mile" ? milesToMeters(distance) : kilometersToMeters(distance);
 }
 
 function parseStartingDistance(value: string, unit: DistanceUnit) {
@@ -299,9 +306,7 @@ function parseStartingDistance(value: string, unit: DistanceUnit) {
     throw new Error("Enter a starting distance of zero or greater.");
   }
 
-  return unit === "mile"
-    ? milesToMeters(distance)
-    : kilometersToMeters(distance);
+  return parseDistance(value, unit);
 }
 
 function workoutName(workout: PlannedWorkout): string {
@@ -466,7 +471,7 @@ export default function ShoeTracker({
         shoeId: createShoeId(String(formData.get("shoe"))),
         startedAt: parseCompletedRunDate(runDate, timeZone),
         timeZone,
-        distance: milesToMeters(Number(formData.get("miles"))),
+        distance: parseDistance(String(formData.get("distance")), distanceUnit),
         duration: parseDuration(String(formData.get("time"))),
         perceivedEffort: parsePerceivedEffort(formData.get("perceivedEffort")),
         notes: parseRunNotes(formData.get("notes")),
@@ -513,8 +518,8 @@ export default function ShoeTracker({
             />
           </label>
           <label>
-            Distance (miles)
-            <input name="miles" type="number" min="0.01" step="0.01" required />
+            Distance ({distanceUnitName(distanceUnit)})
+            <input name="distance" type="number" min="0.01" step="0.01" required />
           </label>
           <label>
             Elapsed time
@@ -614,7 +619,10 @@ export default function ShoeTracker({
                                 selectedDate === getRunLocalDate(run)
                                   ? undefined
                                   : parseCompletedRunDate(selectedDate, run.timeZone),
-                              distance: milesToMeters(Number(data.get("miles"))),
+                              distance: parseDistance(
+                                String(data.get("distance")),
+                                distanceUnit,
+                              ),
                               duration: parseDuration(String(data.get("time"))),
                               shoeId: createShoeId(String(data.get("shoe"))),
                               perceivedEffort:
@@ -647,13 +655,16 @@ export default function ShoeTracker({
                           Use the date this run was completed. Future dates are not allowed.
                         </p>
                         <label>
-                          Edit distance (miles)
+                          Edit distance ({distanceUnitName(distanceUnit)})
                           <input
-                            name="miles"
+                            name="distance"
                             type="number"
                             min="0.01"
                             step="0.01"
-                            defaultValue={formatMiles(run.distance)}
+                            defaultValue={formatDistanceValue(
+                              run.distance,
+                              distanceUnit,
+                            )}
                             required
                           />
                         </label>
@@ -733,7 +744,10 @@ export default function ShoeTracker({
                     ) : (
                       <>
                         <span>
-                          {getRunLocalDate(run)}: {formatMiles(run.distance)} mi in{" "}
+                          {getRunLocalDate(run)}: {formatDistance(
+                            run.distance,
+                            distanceUnit,
+                          )} in{" "}
                           {formatDuration(run.duration)} wearing {shoe?.name ?? "No shoe"}. Effort:{" "}
                           {formatPerceivedEffort(run.perceivedEffort)}
                         </span>
@@ -793,7 +807,10 @@ export default function ShoeTracker({
           onConfirm={() => void confirmRunDeletion()}
         >
           <p className="confirmation-summary">
-            {getRunLocalDate(runToDelete)} · {formatMiles(runToDelete.distance)} mi
+            {getRunLocalDate(runToDelete)} · {formatDistance(
+              runToDelete.distance,
+              distanceUnit,
+            )}
           </p>
           <p id="run-delete-description">
             This permanently removes the run from your training history and
