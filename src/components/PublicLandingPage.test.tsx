@@ -48,7 +48,21 @@ describe("PublicLandingPage", () => {
       screen.getByRole("link", { name: "Current access" }),
     ).toHaveAttribute("href", "#access-status");
     expect(document.querySelector("#access-status")).toBeInTheDocument();
-    expect(screen.getAllByRole("button", { name: "Log in" })).toHaveLength(1);
+    expect(
+      screen.getByText("Invitations are not open yet."),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/No public waitlist or self-service request path/),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("link", { name: "View current access" }),
+    ).toHaveAttribute("href", "#access-status");
+    expect(
+      screen.getByRole("button", { name: /^Log in$/ }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Log in on web" }),
+    ).toBeInTheDocument();
     expect(screen.queryByText(/TestFlight/i)).not.toBeInTheDocument();
     expect(
       screen.queryByRole("button", { name: /request ios beta access/i }),
@@ -58,19 +72,26 @@ describe("PublicLandingPage", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("opens the existing login dialog from the header and restores focus", async () => {
+  it("shares one login dialog and restores focus to each opening trigger", async () => {
     const user = userEvent.setup();
     render(<PublicLandingPage supportEmail="support@marathonerapp.com" />);
 
-    const login = screen.getByRole("button", { name: "Log in" });
-    await user.click(login);
+    const loginTriggers = [
+      screen.getByRole("button", { name: /^Log in$/ }),
+      screen.getByRole("button", { name: "Log in on web" }),
+    ];
 
-    expect(
-      screen.getByRole("dialog", { name: "Existing account login" }),
-    ).toBeInTheDocument();
+    for (const loginTrigger of loginTriggers) {
+      await user.click(loginTrigger);
 
-    await user.click(screen.getByRole("button", { name: "Close login" }));
-    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-    await waitFor(() => expect(login).toHaveFocus());
+      expect(
+        screen.getByRole("dialog", { name: "Existing account login" }),
+      ).toBeInTheDocument();
+      expect(screen.getAllByRole("dialog")).toHaveLength(1);
+
+      await user.click(screen.getByRole("button", { name: "Close login" }));
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+      await waitFor(() => expect(loginTrigger).toHaveFocus());
+    }
   });
 });

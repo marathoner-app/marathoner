@@ -1,4 +1,14 @@
-export default function PublicLandingHero() {
+import LoginButton from "./LoginButton";
+
+type PublicLandingHeroProps = {
+  isLoginOpen: boolean;
+  onLoginOpen: (trigger: HTMLButtonElement) => void;
+};
+
+export default function PublicLandingHero({
+  isLoginOpen,
+  onLoginOpen,
+}: PublicLandingHeroProps) {
   return (
     <section className="landing-hero" aria-labelledby="landing-hero-title">
       <p className="landing-hero__eyebrow">Built for first-time marathoners</p>
@@ -12,6 +22,25 @@ export default function PublicLandingHero() {
       <p className="landing-hero__promise">
         Reach the start line prepared, informed, and in control.
       </p>
+      <div
+        className="landing-hero__actions"
+        role="group"
+        aria-label="Marathoner access"
+      >
+        <div className="landing-hero__ios-status">
+          <span className="landing-hero__platform">iOS beta</span>
+          <p>
+            <strong>Invitations are not open yet.</strong> No public waitlist or
+            self-service request path is available.
+          </p>
+          <a href="#access-status">View current access</a>
+        </div>
+        <LoginButton
+          isOpen={isLoginOpen}
+          label="Log in on web"
+          onOpen={onLoginOpen}
+        />
+      </div>
     </section>
   );
 }

@@ -136,6 +136,66 @@
   font-weight: 650;
 }
 
+.landing-hero__actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 0.5rem;
+}
+
+.landing-hero__ios-status {
+  display: flex;
+  flex: 1 1 auto;
+  align-items: center;
+  gap: 0.75rem;
+  min-width: 0;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--landing-border);
+  border-radius: 0.75rem;
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.landing-hero__platform {
+  flex: 0 0 auto;
+  padding: 0.25rem 0.55rem;
+  border-radius: 999px;
+  background: rgba(29, 78, 216, 0.1);
+  color: var(--landing-accent);
+  font-size: 0.8rem;
+  font-weight: 750;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.landing-hero__ios-status p {
+  min-width: 0;
+  margin: 0;
+  color: var(--landing-muted);
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+
+.landing-hero__ios-status strong {
+  color: var(--landing-ink);
+}
+
+.landing-hero__ios-status a {
+  flex: 0 0 auto;
+  color: var(--landing-accent);
+  font-size: 0.9rem;
+  font-weight: 650;
+  text-underline-offset: 0.2em;
+  white-space: nowrap;
+}
+
+.landing-hero__actions .login-wrapper {
+  flex: 0 0 auto;
+}
+
+.landing-hero__actions .login-btn {
+  min-width: 10rem;
+}
+
 .landing-page .public-access {
   width: 100%;
   margin: 0;
@@ -177,5 +237,21 @@
 
   .landing-hero {
     padding-top: 3.25rem;
+  }
+
+  .landing-hero__actions,
+  .landing-hero__ios-status {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .landing-hero__ios-status a {
+    align-self: flex-start;
+    white-space: normal;
+  }
+
+  .landing-hero__actions .login-wrapper,
+  .landing-hero__actions .login-btn {
+    width: 100%;
   }
 }
