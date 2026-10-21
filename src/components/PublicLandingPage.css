@@ -188,9 +188,13 @@
 }
 
 .landing-hero__ios-status a {
+  display: inline-flex;
+  align-items: center;
   grid-column: 2;
   justify-self: start;
   flex: 0 0 auto;
+  min-width: 2.75rem;
+  min-height: 2.75rem;
   color: var(--landing-accent);
   font-size: 0.9rem;
   font-weight: 650;

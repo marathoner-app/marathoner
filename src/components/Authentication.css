@@ -258,6 +258,13 @@
   text-underline-offset: 0.2em;
 }
 
+.trust-navigation a {
+  display: inline-flex;
+  align-items: center;
+  min-width: 2.75rem;
+  min-height: 2.75rem;
+}
+
 .trust-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
