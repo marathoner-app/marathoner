@@ -12,7 +12,8 @@ export default function PublicLandingPreview() {
         </div>
         <h2 id="landing-preview-title">One run, clearly recorded.</h2>
         <p id="landing-preview-boundary">
-          Synthetic example only — not a live plan or training recommendation.
+          Synthetic example only. This is not a live plan or training
+          recommendation.
         </p>
       </div>
 

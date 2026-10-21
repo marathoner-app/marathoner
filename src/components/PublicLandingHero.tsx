@@ -13,16 +13,12 @@ export default function PublicLandingHero({
   return (
     <section className="landing-hero" aria-labelledby="landing-hero-title">
       <div className="landing-hero__copy">
-        <p className="landing-hero__eyebrow">Built for first-time marathoners</p>
-        <h1 id="landing-hero-title">
-          Your first marathon. <span>One clear plan.</span>
-        </h1>
+        <h1 id="landing-hero-title">Training for a marathon is enough work.</h1>
         <p className="landing-hero__summary">
-          Marathoner turns your race date, starting point, and real-life schedule
-          into training you can understand and adjust.
-        </p>
-        <p className="landing-hero__promise">
-          Reach the start line prepared, informed, and in control.
+          Marathoner brings your race date, weekly schedule, training plan, and
+          completed runs into one place. It is built for first-time marathoners
+          who want to understand what to do next and how each week leads to race
+          day.
         </p>
         <div
           className="landing-hero__actions"

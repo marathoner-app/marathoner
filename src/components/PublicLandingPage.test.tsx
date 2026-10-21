@@ -16,24 +16,27 @@ describe("PublicLandingPage", () => {
     expect(
       screen.getByRole("heading", {
         level: 1,
-        name: "Your first marathon. One clear plan.",
+        name: "Training for a marathon is enough work.",
       }),
     ).toBeInTheDocument();
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
     expect(screen.getByText("Marathoner.")).toBeInTheDocument();
     expect(
-      screen.getByText("Built for first-time marathoners"),
-    ).toBeInTheDocument();
-    expect(
       screen.getByText(
-        "Marathoner turns your race date, starting point, and real-life schedule into training you can understand and adjust.",
+        "Marathoner brings your race date, weekly schedule, training plan, and completed runs into one place. It is built for first-time marathoners who want to understand what to do next and how each week leads to race day.",
       ),
     ).toBeInTheDocument();
     expect(
-      screen.getByText(
-        "Reach the start line prepared, informed, and in control.",
-      ),
-    ).toBeInTheDocument();
+      screen.queryByText("Built for first-time marathoners"),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("heading", {
+        name: "Your first marathon. One clear plan.",
+      }),
+    ).not.toBeInTheDocument();
+    expect(screen.getByTestId("public-landing-page")).not.toHaveTextContent(
+      /\u2014/,
+    );
     expect(
       screen.getByRole("heading", {
         name: "New account registration is closed.",
@@ -84,7 +87,7 @@ describe("PublicLandingPage", () => {
     expect(within(preview).getByText("Sample data")).toBeInTheDocument();
     expect(
       within(preview).getByText(
-        "Synthetic example only — not a live plan or training recommendation.",
+        "Synthetic example only. This is not a live plan or training recommendation.",
       ),
     ).toBeInTheDocument();
     expect(

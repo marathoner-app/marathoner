@@ -98,49 +98,26 @@
 
 .landing-hero__copy {
   display: grid;
-  gap: 1rem;
+  gap: 1.5rem;
   min-width: 0;
 }
 
-.landing-hero__eyebrow {
-  margin: 0;
-  color: var(--landing-accent);
-  font-size: 0.9rem;
-  font-weight: 750;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
 .landing-hero h1 {
-  max-width: 13ch;
+  max-width: 14ch;
   margin: 0;
   color: var(--landing-ink);
-  font-size: clamp(3rem, 8vw, 5.5rem);
-  font-weight: 650;
-  line-height: 0.98;
-  letter-spacing: -0.055em;
-}
-
-.landing-hero h1 span {
-  display: block;
-  color: var(--landing-accent);
-}
-
-.landing-hero__summary,
-.landing-hero__promise {
-  max-width: 48rem;
-  margin: 0;
-  font-size: clamp(1.05rem, 2.25vw, 1.3rem);
-  line-height: 1.55;
+  font-size: clamp(3rem, 5.5vw, 4.25rem);
+  font-weight: 600;
+  line-height: 1.02;
+  letter-spacing: -0.045em;
 }
 
 .landing-hero__summary {
+  max-width: 36rem;
+  margin: 0;
   color: var(--landing-muted);
-}
-
-.landing-hero__promise {
-  color: var(--landing-ink);
-  font-weight: 650;
+  font-size: clamp(1.1rem, 2vw, 1.35rem);
+  line-height: 1.5;
 }
 
 .landing-hero__actions {

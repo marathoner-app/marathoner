@@ -1,6 +1,6 @@
 # Landing page design direction
 
-**Status:** Historical visual direction; availability and CTA contract superseded by issue #117
+**Status:** Historical visual direction; availability and CTA contract superseded by issue #117; hero copy superseded by issue #312
 **Approved:** July 22, 2026  
 **Product owner:** Kevin Tulloch  
 **Planning issue:** [#23](https://github.com/marathoner-app/marathoner/issues/23)
@@ -59,7 +59,7 @@ The primary product model is **Plan. Track. Adjust.**
 
 ## Core content
 
-The approved hero direction is:
+The July 2026 hero direction was:
 
 > Built for first-time marathoners
 >
@@ -68,6 +68,20 @@ The approved hero direction is:
 > Marathoner turns your race date, starting point, and real-life schedule into training you can understand and adjust.
 >
 > Reach the start line prepared, informed, and in control.
+
+Issue [#312](https://github.com/marathoner-app/marathoner/issues/312)
+supersedes that copy in production. The current hero uses a conversational,
+benefit-led headline followed by one concrete explanation of the product:
+
+> Training for a marathon is enough work.
+>
+> Marathoner brings your race date, weekly schedule, training plan, and
+> completed runs into one place. It is built for first-time marathoners who
+> want to understand what to do next and how each week leads to race day.
+
+The production hero intentionally omits the decorative audience eyebrow and
+blue second headline. First-marathon specificity belongs in the explanation,
+while the adjacent product preview supplies the proof.
 
 The founding-beta actions are:
 
