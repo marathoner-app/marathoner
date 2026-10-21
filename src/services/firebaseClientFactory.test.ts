@@ -62,7 +62,7 @@ describe('Firebase client factory', () => {
     vi.clearAllMocks()
   })
 
-  it('initializes App Check, memory-only Firestore, then browser Auth', async () => {
+  it('initializes App Check, browser Auth, then memory-only Firestore', async () => {
     const order: string[] = []
     initializeAppCheck.mockImplementationOnce(async () => {
       order.push('app-check')
@@ -89,9 +89,9 @@ describe('Firebase client factory', () => {
     })
     expect(order).toEqual([
       'app-check',
+      'auth',
       'memory-cache',
       'firestore',
-      'auth',
     ])
     expect(firebase.initializeApp).toHaveBeenCalledWith(config)
     expect(firebase.initializeFirestore).toHaveBeenCalledWith(firebase.app, {

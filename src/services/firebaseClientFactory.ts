@@ -58,15 +58,15 @@ export async function createFirebaseClient(
 
   await initializeAppCheck(app)
 
-  const firestore = initializeFirestore(app, {
-    localCache: memoryLocalCache(),
-  })
-
   const auth = useNativePersistence
     ? initializeAuth(app, {
         persistence: [indexedDBLocalPersistence, browserLocalPersistence],
       })
     : getAuth(app)
+
+  const firestore = initializeFirestore(app, {
+    localCache: memoryLocalCache(),
+  })
 
   return { app, auth, firestore }
 }
