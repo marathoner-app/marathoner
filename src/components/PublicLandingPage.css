@@ -90,9 +90,16 @@
 
 .landing-hero {
   display: grid;
-  gap: 1rem;
-  max-width: 54rem;
+  grid-template-columns: minmax(0, 1.08fr) minmax(20rem, 0.92fr);
+  align-items: center;
+  gap: clamp(2rem, 5vw, 4.5rem);
   padding: clamp(3rem, 8vw, 6rem) 0 clamp(2.5rem, 6vw, 4.5rem);
+}
+
+.landing-hero__copy {
+  display: grid;
+  gap: 1rem;
+  min-width: 0;
 }
 
 .landing-hero__eyebrow {
@@ -144,7 +151,8 @@
 }
 
 .landing-hero__ios-status {
-  display: flex;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
   flex: 1 1 auto;
   align-items: center;
   gap: 0.75rem;
@@ -180,6 +188,8 @@
 }
 
 .landing-hero__ios-status a {
+  grid-column: 2;
+  justify-self: start;
   flex: 0 0 auto;
   color: var(--landing-accent);
   font-size: 0.9rem;
@@ -194,6 +204,159 @@
 
 .landing-hero__actions .login-btn {
   min-width: 10rem;
+}
+
+.landing-preview {
+  display: grid;
+  gap: 1.25rem;
+  min-width: 0;
+  padding: clamp(1.25rem, 3vw, 1.75rem);
+  border: 1px solid var(--landing-border);
+  border-radius: var(--landing-card-radius);
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: var(--landing-card-shadow);
+}
+
+.landing-preview__header {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.landing-preview__label-row,
+.landing-preview__run-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.landing-preview__label,
+.landing-preview__product-areas > p,
+.landing-preview__run-heading p {
+  margin: 0;
+  color: var(--landing-muted);
+  font-size: 0.75rem;
+  font-weight: 750;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.landing-preview__sample-badge {
+  flex: 0 0 auto;
+  padding: 0.2rem 0.5rem;
+  border-radius: 999px;
+  background: #e2e8f0;
+  color: var(--landing-ink);
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.landing-preview__header h2 {
+  margin: 0;
+  color: var(--landing-ink);
+  font-size: clamp(1.55rem, 3vw, 2rem);
+  line-height: 1.1;
+  letter-spacing: -0.035em;
+}
+
+.landing-preview__header > p,
+.landing-preview__data-note {
+  margin: 0;
+  color: var(--landing-muted);
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+
+.landing-preview__product-areas {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.landing-preview__product-areas ul {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.35rem;
+  margin: 0;
+  padding: 0.3rem;
+  border-radius: 0.7rem;
+  background: #e2e8f0;
+  list-style: none;
+}
+
+.landing-preview__product-areas li {
+  padding: 0.45rem 0.35rem;
+  border-radius: 0.45rem;
+  color: var(--landing-muted);
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-align: center;
+}
+
+.landing-preview__product-areas .landing-preview__product-area--current {
+  background: var(--landing-surface);
+  color: var(--landing-accent);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.12);
+}
+
+.landing-preview__run-card {
+  display: grid;
+  gap: 1rem;
+  padding: 1rem;
+  border: 1px solid var(--landing-border);
+  border-radius: 0.85rem;
+  background: var(--landing-surface);
+}
+
+.landing-preview__run-heading h3 {
+  margin: 0.2rem 0 0;
+  color: var(--landing-ink);
+  font-size: 1rem;
+}
+
+.landing-preview__distance {
+  display: grid;
+  flex: 0 0 auto;
+  text-align: right;
+}
+
+.landing-preview__distance strong {
+  color: var(--landing-ink);
+  font-size: 1.2rem;
+  line-height: 1.1;
+}
+
+.landing-preview__distance span {
+  color: var(--landing-muted);
+  font-size: 0.7rem;
+}
+
+.landing-preview__details {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.85rem 1rem;
+  margin: 0;
+}
+
+.landing-preview__details div {
+  min-width: 0;
+}
+
+.landing-preview__details dt {
+  color: var(--landing-muted);
+  font-size: 0.73rem;
+}
+
+.landing-preview__details dd {
+  margin: 0.15rem 0 0;
+  color: var(--landing-ink);
+  font-size: 0.9rem;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.landing-preview__data-note {
+  padding-top: 1rem;
+  border-top: 1px solid var(--landing-border);
 }
 
 .landing-page .public-access {
@@ -236,6 +399,7 @@
   }
 
   .landing-hero {
+    grid-template-columns: minmax(0, 1fr);
     padding-top: 3.25rem;
   }
 
@@ -245,7 +409,12 @@
     flex-direction: column;
   }
 
+  .landing-hero__ios-status {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
   .landing-hero__ios-status a {
+    grid-column: 1;
     align-self: flex-start;
     white-space: normal;
   }
@@ -253,5 +422,12 @@
   .landing-hero__actions .login-wrapper,
   .landing-hero__actions .login-btn {
     width: 100%;
+  }
+}
+
+@media (min-width: 641px) and (max-width: 980px) {
+  .landing-hero {
+    grid-template-columns: minmax(0, 1fr);
+    max-width: 54rem;
   }
 }

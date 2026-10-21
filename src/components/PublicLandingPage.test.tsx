@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import PublicLandingPage from "./PublicLandingPage";
@@ -70,6 +70,36 @@ describe("PublicLandingPage", () => {
     expect(
       screen.queryByRole("button", { name: /sign up/i }),
     ).not.toBeInTheDocument();
+  });
+
+  it("presents supported sample logging concepts without fake controls", () => {
+    render(<PublicLandingPage supportEmail="support@marathonerapp.com" />);
+
+    const preview = screen.getByRole("complementary", {
+      name: "One run, clearly recorded.",
+    });
+
+    expect(
+      within(preview).getByText("Illustrative product preview"),
+    ).toBeInTheDocument();
+    expect(within(preview).getByText("Sample data")).toBeInTheDocument();
+    expect(
+      within(preview).getByText(
+        "Synthetic example only — not a live plan or training recommendation.",
+      ),
+    ).toBeInTheDocument();
+    expect(
+      within(preview).getByRole("list", {
+        name: "Marathoner product areas",
+      }),
+    ).toHaveTextContent("PlanTrackAnalyze");
+    expect(within(preview).getByText("5.0 mi")).toBeInTheDocument();
+    expect(within(preview).getByText("Easy")).toBeInTheDocument();
+    expect(within(preview).getByText("Felt steady")).toBeInTheDocument();
+    expect(within(preview).getByText("Daily trainer")).toBeInTheDocument();
+    expect(within(preview).getByText("214 mi logged")).toBeInTheDocument();
+    expect(within(preview).queryByRole("button")).not.toBeInTheDocument();
+    expect(within(preview).queryByRole("link")).not.toBeInTheDocument();
   });
 
   it("shares one login dialog and restores focus to each opening trigger", async () => {

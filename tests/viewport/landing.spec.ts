@@ -20,6 +20,20 @@ for (const viewport of viewports) {
       }),
     ).toBeVisible();
     await expect(page.getByText("Built for first-time marathoners")).toBeVisible();
+    const preview = page.getByRole("complementary", {
+      name: "One run, clearly recorded.",
+    });
+    await expect(preview).toBeVisible();
+    await expect(
+      preview.getByText("Illustrative product preview"),
+    ).toBeVisible();
+    await expect(
+      preview.getByText(
+        "Synthetic example only — not a live plan or training recommendation.",
+      ),
+    ).toBeVisible();
+    await expect(preview.getByRole("button")).toHaveCount(0);
+    await expect(preview.getByRole("link")).toHaveCount(0);
     await expect(
       page.getByRole("heading", { name: "New account registration is closed." }),
     ).toBeVisible();
