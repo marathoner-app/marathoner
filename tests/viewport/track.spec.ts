@@ -40,12 +40,14 @@ async function exerciseTrackWorkflow(page: Page, textSizeLabel: string) {
   );
 
   const runDate = page.getByRole("textbox", { name: "Run date" });
-  const runDistance = page.getByPlaceholder("Miles");
-  const runDuration = page.getByPlaceholder("Time (e.g. 45:30)");
+  const runDistance = page.getByRole("spinbutton", { name: "Distance (miles)" });
+  const runDuration = page.getByRole("textbox", { name: "Elapsed time" });
   const runningShoes = page.getByRole("combobox", { name: "Running shoes" });
   const plannedWorkout = page.getByRole("combobox", { name: "Planned workout" });
-  const perceivedEffort = page.getByRole("combobox", { name: "Perceived effort" });
-  const runNotes = page.getByRole("textbox", { name: "Run notes" });
+  const perceivedEffort = page.getByRole("combobox", {
+    name: "Perceived effort (optional)",
+  });
+  const runNotes = page.getByRole("textbox", { name: "Run notes (optional)" });
   const logRun = page.getByRole("button", { name: "Log Run" });
   await expectMinimumTouchTargets([
     { locator: runDate, label: `run date at ${textSizeLabel}` },

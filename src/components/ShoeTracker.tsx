@@ -455,55 +455,78 @@ export default function ShoeTracker({
             Add your current running shoes before logging a run.
           </p>
         )}
-        <form onSubmit={handleRunSubmit} className="space-y-3">
-          <input
-            aria-label="Run date"
-            name="date"
-            type="date"
-            value={runDate}
-            onChange={(event) => setRunDate(event.target.value)}
-            required
-          />
-          <input name="miles" type="number" min="0.01" step="0.01" placeholder="Miles" required />
-          <input name="time" type="text" placeholder="Time (e.g. 45:30)" required />
-          <select name="shoe" aria-label="Running shoes" required>
-            <option value="">Select Shoes</option>
-            {activeShoes.map((shoe) => (
-              <option key={shoe.id} value={shoe.id}>
-                {shoe.name} ({formatDistance(
-                  shoeMileage.get(shoe.id) ?? shoe.startingDistance,
-                  distanceUnit,
-                )})
-              </option>
-            ))}
-          </select>
-          <select name="workout" aria-label="Planned workout">
-            <option value="">Unplanned run</option>
-            {availableWorkouts.map((workout) => (
-              <option
-                key={workout.id}
-                value={`${workout.planId}/${workout.id}`}
-              >
-                {workout.scheduledDate}: {workoutName(workout)}
-              </option>
-            ))}
-          </select>
-          <select name="perceivedEffort" aria-label="Perceived effort">
-            <option value="">How did it feel? (optional)</option>
-            {perceivedEffortOptions.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-          <textarea
-            aria-label="Run notes"
-            aria-describedby="run-notes-help"
-            name="notes"
-            maxLength={COMPLETED_RUN_NOTES_MAX_LENGTH}
-            placeholder="Notes (optional)"
-            rows={3}
-          />
+        <form
+          aria-label="Log a completed run"
+          onSubmit={handleRunSubmit}
+          className="space-y-3 run-entry-form"
+        >
+          <label>
+            Run date
+            <input
+              name="date"
+              type="date"
+              value={runDate}
+              onChange={(event) => setRunDate(event.target.value)}
+              required
+            />
+          </label>
+          <label>
+            Distance (miles)
+            <input name="miles" type="number" min="0.01" step="0.01" required />
+          </label>
+          <label>
+            Elapsed time
+            <input name="time" type="text" placeholder="e.g. 45:30" required />
+          </label>
+          <label>
+            Running shoes
+            <select name="shoe" required>
+              <option value="">Select Shoes</option>
+              {activeShoes.map((shoe) => (
+                <option key={shoe.id} value={shoe.id}>
+                  {shoe.name} ({formatDistance(
+                    shoeMileage.get(shoe.id) ?? shoe.startingDistance,
+                    distanceUnit,
+                  )})
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
+            Planned workout
+            <select name="workout">
+              <option value="">Unplanned run</option>
+              {availableWorkouts.map((workout) => (
+                <option
+                  key={workout.id}
+                  value={`${workout.planId}/${workout.id}`}
+                >
+                  {workout.scheduledDate}: {workoutName(workout)}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
+            Perceived effort (optional)
+            <select name="perceivedEffort">
+              <option value="">How did it feel? (optional)</option>
+              {perceivedEffortOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
+            Run notes (optional)
+            <textarea
+              aria-describedby="run-notes-help"
+              name="notes"
+              maxLength={COMPLETED_RUN_NOTES_MAX_LENGTH}
+              placeholder="Weather, fueling, discomfort, or route notes"
+              rows={3}
+            />
+          </label>
           <p id="run-notes-help" className="training-field-hint">
             Optional context such as weather, fueling, discomfort, or the route. Up to{" "}
             {COMPLETED_RUN_NOTES_MAX_LENGTH} characters.

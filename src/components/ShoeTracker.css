@@ -74,10 +74,13 @@
   list-style-type: none;
 }
 
+.run-entry-form label,
 .shoe-entry-form label {
   display: grid;
   gap: 0.35rem;
+  width: 100%;
   font-weight: 700;
+  text-align: left;
 }
 
 .shoe-mileage-total {
