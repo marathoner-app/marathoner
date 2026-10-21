@@ -77,9 +77,11 @@ emulator tests, but it is not the production application path yet:
 - The web client uses Firestore's default in-memory cache because no persistent
   cache is configured. It does not intentionally write training records to
   IndexedDB, `localStorage`, or another durable client store.
-- Signing out eventually unmounts `TrainingDataProvider` and clears its React
-  state, but listener teardown, stale-callback suppression, and immediate
-  logout clearing do not exist because listeners do not exist yet.
+- Issue #283 hides and unmounts `TrainingDataProvider` as soon as logout begins,
+  keys the provider by authenticated user, clears its repository and visible
+  snapshot before a replacement load, and ignores a late load from the prior
+  session. Live-listener teardown and listener-specific stale-callback
+  suppression remain open because listeners do not exist yet.
 
 The present UI can therefore appear synchronized inside one browser session,
 but it does not provide live cross-client convergence or the write guarantees

@@ -33,6 +33,7 @@ function App() {
   const auth = useAuth();
   const reduceMotion = useReducedMotion();
   const [activeSection, setActiveSection] = useState<Section | null>(null);
+  const [logoutPending, setLogoutPending] = useState(false);
   const [logoutError, setLogoutError] = useState<string | null>(null);
   const [accountSettingsOpen, setAccountSettingsOpen] = useState(false);
   const [unresolvedDeletionCommandId, setUnresolvedDeletionCommandId] =
@@ -62,6 +63,7 @@ function App() {
   useEffect(() => {
     if (auth.status !== "signedIn") {
       setActiveSection(null);
+      setLogoutPending(false);
       setLogoutError(null);
       setAccountSettingsOpen(false);
       if (deletionReceipt === null) setUnresolvedDeletionCommandId(null);
@@ -108,10 +110,12 @@ function App() {
 
   const handleLogout = async () => {
     setLogoutError(null);
+    setLogoutPending(true);
 
     try {
       await auth.logout();
     } catch {
+      setLogoutPending(false);
       setLogoutError("We couldn't log you out. Please try again.");
     }
   };
@@ -170,7 +174,17 @@ function App() {
         </>
       )}
 
+      {!deletionReceipt && logoutPending && (
+        <>
+          <Title />
+          <p className="auth-message" role="status">
+            Signing out...
+          </p>
+        </>
+      )}
+
       {!deletionReceipt &&
+        !logoutPending &&
         (auth.status === "signedIn" || auth.status === "signedOut") &&
         !activeSection && (
           <>
@@ -209,8 +223,8 @@ function App() {
           </>
         )}
 
-      {!deletionReceipt && auth.status === "signedIn" && (
-        <TrainingDataProvider userId={auth.user.uid}>
+      {!deletionReceipt && !logoutPending && auth.status === "signedIn" && (
+        <TrainingDataProvider key={auth.user.uid} userId={auth.user.uid}>
           <AuthenticatedExperience
             activeSection={activeSection}
             activeSectionDetails={activeSectionDetails}
@@ -223,16 +237,19 @@ function App() {
         </TrainingDataProvider>
       )}
 
-      {!deletionReceipt && auth.status === "signedIn" && accountSettingsOpen && (
-        <AccountDeletionDialog
-          email={auth.user.email}
-          supportEmail={publicSupportEmail}
-          unresolvedCommandId={unresolvedDeletionCommandId}
-          onAccepted={acceptDeletion}
-          onClose={closeAccountSettings}
-          onUnresolvedCommandChange={setUnresolvedDeletionCommandId}
-        />
-      )}
+      {!deletionReceipt &&
+        !logoutPending &&
+        auth.status === "signedIn" &&
+        accountSettingsOpen && (
+          <AccountDeletionDialog
+            email={auth.user.email}
+            supportEmail={publicSupportEmail}
+            unresolvedCommandId={unresolvedDeletionCommandId}
+            onAccepted={acceptDeletion}
+            onClose={closeAccountSettings}
+            onUnresolvedCommandChange={setUnresolvedDeletionCommandId}
+          />
+        )}
     </motion.main>
   );
 }
