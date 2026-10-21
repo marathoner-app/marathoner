@@ -46,6 +46,30 @@ for (const viewport of viewports) {
     await expect(page).toHaveURL(/#access-status$/);
     await expect(page.locator("#access-status")).toBeVisible();
     await expect(page.getByText("Invitations are not open yet.")).toBeVisible();
+    const explanation = page.getByRole("region", {
+      name: "Plan. Track. Adjust.",
+    });
+    await expect(explanation).toBeVisible();
+    await expect(
+      explanation.getByRole("heading", { name: "Plan around your life" }),
+    ).toBeVisible();
+    await expect(
+      explanation.getByRole("heading", { name: "Track what matters" }),
+    ).toBeVisible();
+    await expect(
+      explanation.getByRole("heading", { name: "Adjust with confidence" }),
+    ).toBeVisible();
+    await expect
+      .poll(() =>
+        explanation
+          .locator(".landing-how-it-works__cards")
+          .evaluate(
+            (cards) =>
+              window.getComputedStyle(cards).gridTemplateColumns.split(" ")
+                .length,
+          ),
+      )
+      .toBe(viewport.name === "phone" ? 1 : 3);
     const headerLogin = page.getByRole("button", {
       name: "Log in",
       exact: true,

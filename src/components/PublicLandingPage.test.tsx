@@ -102,6 +102,34 @@ describe("PublicLandingPage", () => {
     expect(within(preview).queryByRole("link")).not.toBeInTheDocument();
   });
 
+  it("distinguishes current and planned capabilities in the product model", () => {
+    render(<PublicLandingPage supportEmail="support@marathonerapp.com" />);
+
+    const explanation = screen.getByRole("region", {
+      name: "Plan. Track. Adjust.",
+    });
+    const cards = within(explanation).getAllByRole("article");
+
+    expect(cards).toHaveLength(3);
+    expect(cards[0]).toHaveTextContent("Plan around your life");
+    expect(cards[0]).toHaveTextContent(
+      "The training methodology still requires qualified review before beta coaching use.",
+    );
+    expect(cards[1]).toHaveTextContent("Track what matters");
+    expect(cards[1]).toHaveTextContent(
+      "Log completed runs, perceived effort, notes, and shoes without a social feed.",
+    );
+    expect(cards[1]).toHaveTextContent(
+      "Planned: Add fueling, hydration, sleep, and recovery inputs.",
+    );
+    expect(cards[2]).toHaveTextContent("Adjust with confidence");
+    expect(cards[2]).toHaveTextContent(
+      "Not available today: Marathoner does not currently recommend or apply training adjustments.",
+    );
+    expect(within(explanation).queryByRole("button")).not.toBeInTheDocument();
+    expect(within(explanation).queryByRole("link")).not.toBeInTheDocument();
+  });
+
   it("shares one login dialog and restores focus to each opening trigger", async () => {
     const user = userEvent.setup();
     render(<PublicLandingPage supportEmail="support@marathonerapp.com" />);

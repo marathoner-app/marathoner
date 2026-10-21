@@ -3,6 +3,7 @@ import LoginForm from "./LoginForm";
 import PublicAccessNotice from "./PublicAccessNotice";
 import PublicLandingHeader from "./PublicLandingHeader";
 import PublicLandingHero from "./PublicLandingHero";
+import PublicLandingHowItWorks from "./PublicLandingHowItWorks";
 
 type PublicLandingPageProps = {
   supportEmail?: string;
@@ -36,6 +37,7 @@ export default function PublicLandingPage({
             isLoginOpen={isLoginOpen}
             onLoginOpen={openLogin}
           />
+          <PublicLandingHowItWorks />
           <PublicAccessNotice supportEmail={supportEmail} />
         </div>
       </div>
