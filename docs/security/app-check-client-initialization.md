@@ -107,8 +107,11 @@ The 2026-10-06 signed-device build stopped before compilation because the
 current Personal Team provisioning profile does not contain App Attest. This is
 the expected fail-closed behavior. A Marathoner Apple Developer Program team
 must enable the capability and issue a new profile before the physical-iPhone
-App Attest acceptance test can pass. Unsigned compilation is still useful for
-code and dependency verification but is not attestation evidence.
+App Attest acceptance test can pass. The approved
+[entity and Apple organization-enrollment path](../operations/legal-entity-and-apple-enrollment.md)
+is tracked in [#281](https://github.com/marathoner-app/marathoner/issues/281).
+Unsigned compilation is still useful for code and dependency verification but
+is not attestation evidence.
 
 ## Evidence and remaining proof
 

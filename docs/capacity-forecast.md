@@ -6,6 +6,7 @@
 - **Baseline issue:** [#116](https://github.com/marathoner-app/marathoner/issues/116)
 - **Recalibration issue:** [#208](https://github.com/marathoner-app/marathoner/issues/208)
 - **Strategy realignment:** [#223](https://github.com/marathoner-app/marathoner/issues/223)
+- **Entity-path update:** October 21, 2026; [#280](https://github.com/marathoner-app/marathoner/issues/280)
 - **Master tracker:** [#104](https://github.com/marathoner-app/marathoner/issues/104)
 - **Scope:** Marathoner beta critical path; Creator Radar is excluded
 
@@ -307,9 +308,18 @@ They must be started as early as their input package allows.
 | --- | --- | --- | --- |
 | Qualified reviewer availability | 2–6 calendar weeks to identify and schedule | Start #191 immediately; overlap the wait with non-prescriptive implementation and trust work | If no qualified reviewer is committed when #70 is ready, choose the non-prescriptive fallback or move the date |
 | Rules and content review | 1–3 calendar weeks per complete review packet | Owner preparation is in #119, #134, and #135 estimates; reviewer elapsed time is separate | Unapproved high-risk rules or content cannot ship |
-| Apple account, signing, and App Store Connect setup | 1–3 calendar weeks as a planning allowance | Begin during the mobile-foundation work; do not wait for Wave 04 | Unresolved ownership or recovery blocks external distribution |
+| California entity formation, D-U-N-S synchronization, Apple organization enrollment, signing, and App Store Connect setup | 1–3 calendar weeks after accepted formation as a planning allowance | Execute [#281](https://github.com/marathoner-app/marathoner/issues/281) as early as practical; overlap the external wait with product work rather than waiting for Wave 04 | The Personal Team cannot supply the intended seller identity or App Attest profile; unresolved enrollment blocks #204 and external distribution |
 | First external TestFlight review | 1 week likely; 2 weeks conservative including correction allowance | Prioritize #122 early enough to overlap review with the remaining iOS work | No external invitation without an approved build |
 | Non-owner device rehearsal | 1–3 calendar weeks to schedule | Book after the first installable candidate exists; owner execution effort is in #122 and #140 | A failed critical journey creates a blocking issue |
+
+Apple documents that a new D-U-N-S record can take up to five business days and
+then up to two additional business days to become available to Apple. Neither
+California nor Apple publishes a completion guarantee for the full formation
+and organization-enrollment path, so the one-to-three-week range is a forecast
+allowance after accepted formation, not a service-level claim. Start the
+[entity and enrollment path](operations/legal-entity-and-apple-enrollment.md)
+early; it does not block ordinary web work, but it controls App Attest and
+external distribution.
 
 Apple documents that the first build submitted for external testing receives a
 full TestFlight App Review and that later builds may not require one. Apple does
