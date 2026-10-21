@@ -70,13 +70,51 @@ for (const viewport of viewports) {
           ),
       )
       .toBe(viewport.name === "phone" ? 1 : 3);
+    const platforms = page.getByRole("region", {
+      name: "One product. Two focused surfaces.",
+    });
+    await expect(platforms).toBeVisible();
+    await expect(
+      platforms.getByText("Public TestFlight invitations are not open."),
+    ).toBeVisible();
+    await expect(
+      platforms.getByRole("link", { name: "View current iOS status" }),
+    ).toHaveAttribute("href", "#access-status");
+    await expect(
+      platforms.getByRole("button", { name: "Log in on web" }),
+    ).toBeVisible();
+    await expect
+      .poll(() =>
+        platforms.evaluate(
+          (section) =>
+            window.getComputedStyle(section).gridTemplateColumns.split(" ")
+              .length,
+        ),
+      )
+      .toBe(viewport.name === "phone" ? 1 : 2);
+    await expect
+      .poll(() =>
+        platforms
+          .locator(".landing-platforms__cards")
+          .evaluate(
+            (cards) =>
+              window.getComputedStyle(cards).gridTemplateColumns.split(" ")
+                .length,
+          ),
+      )
+      .toBe(viewport.name === "phone" ? 1 : 2);
     const headerLogin = page.getByRole("button", {
       name: "Log in",
       exact: true,
     });
-    const webLogin = page.getByRole("button", { name: "Log in on web" });
+    const webLogin = page
+      .getByRole("group", { name: "Marathoner access" })
+      .getByRole("button", { name: "Log in on web" });
     await expect(headerLogin).toBeVisible();
     await expect(webLogin).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: "Log in on web" }),
+    ).toHaveCount(2);
     await expectNoHorizontalOverflow(
       page,
       "Public landing page",

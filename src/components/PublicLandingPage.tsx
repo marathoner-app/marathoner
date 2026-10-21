@@ -4,6 +4,7 @@ import PublicAccessNotice from "./PublicAccessNotice";
 import PublicLandingHeader from "./PublicLandingHeader";
 import PublicLandingHero from "./PublicLandingHero";
 import PublicLandingHowItWorks from "./PublicLandingHowItWorks";
+import PublicLandingPlatforms from "./PublicLandingPlatforms";
 
 type PublicLandingPageProps = {
   supportEmail?: string;
@@ -38,6 +39,10 @@ export default function PublicLandingPage({
             onLoginOpen={openLogin}
           />
           <PublicLandingHowItWorks />
+          <PublicLandingPlatforms
+            isLoginOpen={isLoginOpen}
+            onLoginOpen={openLogin}
+          />
           <PublicAccessNotice supportEmail={supportEmail} />
         </div>
       </div>

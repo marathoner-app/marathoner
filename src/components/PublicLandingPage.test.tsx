@@ -61,9 +61,8 @@ describe("PublicLandingPage", () => {
       screen.getByRole("button", { name: /^Log in$/ }),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("button", { name: "Log in on web" }),
-    ).toBeInTheDocument();
-    expect(screen.queryByText(/TestFlight/i)).not.toBeInTheDocument();
+      screen.getAllByRole("button", { name: "Log in on web" }),
+    ).toHaveLength(2);
     expect(
       screen.queryByRole("button", { name: /request ios beta access/i }),
     ).not.toBeInTheDocument();
@@ -130,14 +129,49 @@ describe("PublicLandingPage", () => {
     expect(within(explanation).queryByRole("link")).not.toBeInTheDocument();
   });
 
+  it("explains the platform roles without inventing mobile availability", () => {
+    render(<PublicLandingPage supportEmail="support@marathonerapp.com" />);
+
+    const platforms = screen.getByRole("region", {
+      name: "One product. Two focused surfaces.",
+    });
+    const platformCards = within(platforms).getAllByRole("article");
+
+    expect(platformCards).toHaveLength(2);
+    expect(platformCards[0]).toHaveTextContent("iPhone");
+    expect(platformCards[0]).toHaveTextContent(
+      "Public TestFlight invitations are not open.",
+    );
+    expect(
+      within(platformCards[0]).getByRole("link", {
+        name: "View current iOS status",
+      }),
+    ).toHaveAttribute("href", "#access-status");
+    expect(platformCards[1]).toHaveTextContent("Web");
+    expect(platformCards[1]).toHaveTextContent(
+      "Existing-account login only. New registration remains closed.",
+    );
+    expect(
+      within(platformCards[1]).getByRole("button", {
+        name: "Log in on web",
+      }),
+    ).toBeInTheDocument();
+    expect(
+      within(platforms).queryByRole("link", { name: /TestFlight|App Store/i }),
+    ).not.toBeInTheDocument();
+    expect(within(platforms).queryByText(/Android/i)).not.toBeInTheDocument();
+  });
+
   it("shares one login dialog and restores focus to each opening trigger", async () => {
     const user = userEvent.setup();
     render(<PublicLandingPage supportEmail="support@marathonerapp.com" />);
 
     const loginTriggers = [
       screen.getByRole("button", { name: /^Log in$/ }),
-      screen.getByRole("button", { name: "Log in on web" }),
+      ...screen.getAllByRole("button", { name: "Log in on web" }),
     ];
+
+    expect(loginTriggers).toHaveLength(3);
 
     for (const loginTrigger of loginTriggers) {
       await user.click(loginTrigger);
