@@ -1,5 +1,8 @@
-import { expect, test, type Locator } from "@playwright/test";
-import { expectNoHorizontalOverflow } from "./layoutAssertions";
+import { expect, test } from "@playwright/test";
+import {
+  expectMinimumTouchTarget,
+  expectNoHorizontalOverflow,
+} from "./layoutAssertions";
 
 const viewports = [
   {
@@ -48,21 +51,6 @@ const viewports = [
     trustColumns: 3,
   },
 ] as const;
-
-async function expectMinimumTouchTarget(locator: Locator, label: string) {
-  const bounds = await locator.boundingBox();
-  expect(bounds, `${label} should have visible bounds`).not.toBeNull();
-
-  if (!bounds) return;
-
-  expect(bounds.width, `${label} should be at least 44px wide`).toBeGreaterThanOrEqual(
-    44,
-  );
-  expect(
-    bounds.height,
-    `${label} should be at least 44px tall`,
-  ).toBeGreaterThanOrEqual(44);
-}
 
 for (const viewport of viewports) {
   test(`keeps the signed-out landing shell usable at ${viewport.name} width`, async ({

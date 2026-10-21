@@ -22,6 +22,7 @@ npm run test:viewport
 The tests check for both document-level horizontal scrolling and individual
 visible elements whose bounds leave the viewport. Failure messages name the
 workflow stage and offending elements so a mobile regression can be found
-without first reproducing it manually. The 200% browser check does not replace
-the physical-iPhone Dynamic Type and VoiceOver verification tracked by issue
-`#140`.
+without first reproducing it manually. Landing and Track checks also enforce a
+`44 × 44` CSS-pixel minimum for the critical interactive targets they exercise.
+The 200% browser check does not replace the physical-iPhone Dynamic Type and
+VoiceOver verification tracked by issue `#140`.
