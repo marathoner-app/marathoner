@@ -1,6 +1,14 @@
 import LoginButton from "./LoginButton";
 
-export default function PublicLandingHeader() {
+type PublicLandingHeaderProps = {
+  isLoginOpen: boolean;
+  onLoginOpen: (trigger: HTMLButtonElement) => void;
+};
+
+export default function PublicLandingHeader({
+  isLoginOpen,
+  onLoginOpen,
+}: PublicLandingHeaderProps) {
   return (
     <header className="landing-header">
       <span className="landing-header__wordmark">Marathoner.</span>
@@ -9,7 +17,7 @@ export default function PublicLandingHeader() {
         aria-label="Public site"
       >
         <a href="#access-status">Current access</a>
-        <LoginButton />
+        <LoginButton isOpen={isLoginOpen} onOpen={onLoginOpen} />
       </nav>
     </header>
   );

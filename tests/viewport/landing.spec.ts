@@ -23,21 +23,29 @@ for (const viewport of viewports) {
     await expect(
       page.getByRole("heading", { name: "New account registration is closed." }),
     ).toBeVisible();
-    const accessLink = page.getByRole("link", { name: "Current access" });
+    const accessLink = page.getByRole("link", {
+      name: "Current access",
+      exact: true,
+    });
     await expect(accessLink).toHaveAttribute("href", "#access-status");
     await accessLink.click();
     await expect(page).toHaveURL(/#access-status$/);
     await expect(page.locator("#access-status")).toBeVisible();
-    const login = page.getByRole("button", { name: "Log in" });
-    await expect(login).toHaveCount(1);
-    await expect(login).toBeVisible();
+    await expect(page.getByText("Invitations are not open yet.")).toBeVisible();
+    const headerLogin = page.getByRole("button", {
+      name: "Log in",
+      exact: true,
+    });
+    const webLogin = page.getByRole("button", { name: "Log in on web" });
+    await expect(headerLogin).toBeVisible();
+    await expect(webLogin).toBeVisible();
     await expectNoHorizontalOverflow(
       page,
       "Public landing page",
       "before login",
     );
 
-    await login.click();
+    await webLogin.click();
     await expect(
       page.getByRole("dialog", { name: "Existing account login" }),
     ).toBeVisible();
@@ -49,6 +57,6 @@ for (const viewport of viewports) {
 
     await page.getByRole("button", { name: "Close login" }).click();
     await expect(page.getByRole("dialog")).toHaveCount(0);
-    await expect(login).toBeFocused();
+    await expect(webLogin).toBeFocused();
   });
 }
