@@ -17,6 +17,7 @@ import {
   type UserProfile
 } from './domain/training'
 import {
+  AuthenticationError,
   logOut,
   subscribeToAuthState,
   type AuthUser
@@ -67,12 +68,17 @@ vi.mock('framer-motion', async () => {
   }
 })
 
-vi.mock('./services/authService', () => ({
-  logOut: vi.fn(),
-  reauthenticateWithPassword: vi.fn(),
-  signIn: vi.fn(),
-  subscribeToAuthState: vi.fn()
-}))
+vi.mock('./services/authService', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('./services/authService')>()
+
+  return {
+    ...actual,
+    logOut: vi.fn(),
+    reauthenticateWithPassword: vi.fn(),
+    signIn: vi.fn(),
+    subscribeToAuthState: vi.fn()
+  }
+})
 
 vi.mock('./services/accountDeletionService', () => ({
   reauthenticateForAccountDeletion: vi.fn(),
@@ -502,6 +508,26 @@ describe('App authentication state', () => {
     expect(screen.getByRole('button', { name: 'Try again' })).toBeInTheDocument()
     expect(screen.queryByText('Loading your session...')).not.toBeInTheDocument()
   })
+
+  it.each(['session_expired', 'account_disabled'] as const)(
+    'returns %s sessions to signed-out UI without participant data',
+    (errorCode) => {
+      renderSignedInApp()
+
+      act(() => {
+        emitAuthError(new AuthenticationError(errorCode))
+      })
+
+      expect(mockedLogOut).toHaveBeenCalledOnce()
+      expect(screen.getByRole('button', { name: 'Log in' })).toBeInTheDocument()
+      expect(
+        screen.queryByTestId('training-data-provider')
+      ).not.toBeInTheDocument()
+      expect(
+        screen.queryByRole('navigation', { name: 'Training sections' })
+      ).not.toBeInTheDocument()
+    }
+  )
 
   it('times out a stalled authentication subscription and retries it', () => {
     vi.useFakeTimers()

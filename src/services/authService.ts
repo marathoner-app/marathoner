@@ -20,6 +20,7 @@ export type AuthenticationErrorCode =
   | "email_in_use"
   | "invalid_credentials"
   | "account_disabled"
+  | "session_expired"
   | "too_many_requests"
   | "network_unavailable"
   | "unknown";
@@ -30,6 +31,7 @@ const authenticationErrorMessages: Record<AuthenticationErrorCode, string> = {
   email_in_use: "An account already uses this email address. Try logging in instead.",
   invalid_credentials: "The email or password is incorrect.",
   account_disabled: "This account is disabled. Contact support if you need help.",
+  session_expired: "Your session has ended. Log in again.",
   too_many_requests: "Too many attempts. Wait a moment before trying again.",
   network_unavailable:
     "We could not reach Marathoner. Check your connection and try again.",
@@ -45,6 +47,8 @@ const firebaseCodeMap: Record<string, AuthenticationErrorCode> = {
   "auth/user-not-found": "invalid_credentials",
   "auth/wrong-password": "invalid_credentials",
   "auth/user-disabled": "account_disabled",
+  "auth/invalid-user-token": "session_expired",
+  "auth/user-token-expired": "session_expired",
   "auth/too-many-requests": "too_many_requests",
   "auth/network-request-failed": "network_unavailable",
 };
@@ -81,6 +85,26 @@ export const toAuthenticationError = (error: unknown): AuthenticationError => {
   }
 
   return new AuthenticationError("unknown", error);
+};
+
+export const requiresNewSignIn = (error: unknown): boolean =>
+  error instanceof AuthenticationError &&
+  (error.code === "account_disabled" || error.code === "session_expired");
+
+const validateRestoredUser = async (user: User): Promise<AuthUser> => {
+  try {
+    await getIdToken(user);
+    return { uid: user.uid, email: user.email };
+  } catch (error) {
+    if (
+      error instanceof FirebaseError &&
+      error.code === "auth/user-not-found"
+    ) {
+      throw new AuthenticationError("session_expired", error, error.code);
+    }
+
+    throw toAuthenticationError(error);
+  }
 };
 
 export const signIn = async (
@@ -142,11 +166,41 @@ export const reauthenticateWithPassword = async (
 export const subscribeToAuthState = (
   onChange: (user: AuthUser | null) => void,
   onError?: (error: Error) => void,
-): Unsubscribe =>
-  onAuthStateChanged(
+): Unsubscribe => {
+  let active = true;
+  let authEventGeneration = 0;
+  const unsubscribe = onAuthStateChanged(
     getFirebaseAuth(),
     (user) => {
-      onChange(user ? { uid: user.uid, email: user.email } : null);
+      const generation = authEventGeneration + 1;
+      authEventGeneration = generation;
+
+      if (user === null) {
+        onChange(null);
+        return;
+      }
+
+      void validateRestoredUser(user)
+        .then((validatedUser) => {
+          if (active && generation === authEventGeneration) {
+            onChange(validatedUser);
+          }
+        })
+        .catch((error: unknown) => {
+          if (active && generation === authEventGeneration) {
+            onError?.(toAuthenticationError(error));
+          }
+        });
     },
-    onError,
+    (error) => {
+      authEventGeneration += 1;
+      if (active) onError?.(toAuthenticationError(error));
+    },
   );
+
+  return () => {
+    active = false;
+    authEventGeneration += 1;
+    unsubscribe();
+  };
+};

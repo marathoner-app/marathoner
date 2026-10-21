@@ -1,5 +1,9 @@
 import { useEffect, useState, type ReactNode } from "react";
-import { logOut, subscribeToAuthState } from "../services/authService";
+import {
+  logOut,
+  requiresNewSignIn,
+  subscribeToAuthState,
+} from "../services/authService";
 import { AuthContext, type AuthSession } from "./AuthContext";
 
 export const authSessionTimeoutMs = 10_000;
@@ -46,10 +50,17 @@ export default function AuthProvider({ children }: AuthProviderProps) {
             : { status: "signedOut", user: null },
         );
       },
-      () => {
+      (error) => {
         if (!subscriptionIsCurrent) return;
 
         window.clearTimeout(timeout);
+
+        if (requiresNewSignIn(error)) {
+          setSession({ status: "signedOut", user: null });
+          void logOut().catch(() => undefined);
+          return;
+        }
+
         setSession({
           status: "error",
           user: null,
