@@ -1,7 +1,7 @@
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import type { ReactNode } from 'react'
+import type { HTMLAttributes, ReactNode } from 'react'
 import App from './App'
 import AuthProvider, { authSessionTimeoutMs } from './auth/AuthProvider'
 import {
@@ -28,15 +28,44 @@ import {
 } from './services/accountDeletionService'
 import type { AccountDeletionRequestAcceptedResult } from './domain/materialCommands/contract'
 
-vi.mock('framer-motion', () => ({
-  useReducedMotion: () => true,
-  motion: {
-    button: 'button',
-    div: 'div',
-    main: ({ children }: { children?: ReactNode }) => <main>{children}</main>,
-    section: 'section'
+type MockMotionProps = {
+  animate?: unknown
+  children?: ReactNode
+  exit?: unknown
+  initial?: unknown
+  transition?: { duration?: number }
+}
+
+vi.mock('framer-motion', async () => {
+  const { createElement, forwardRef } = await import('react')
+  const motionElement = (element: 'button' | 'div' | 'main' | 'section') =>
+    forwardRef<
+      HTMLElement,
+      MockMotionProps & HTMLAttributes<HTMLElement>
+    >(function MotionElement(
+      { animate, children, exit, initial, transition, ...props },
+      ref
+    ) {
+      void animate
+      void exit
+      void initial
+      return createElement(
+        element,
+        { ...props, 'data-motion-duration': transition?.duration, ref },
+        children
+      )
+    })
+
+  return {
+    useReducedMotion: () => true,
+    motion: {
+      button: motionElement('button'),
+      div: motionElement('div'),
+      main: motionElement('main'),
+      section: motionElement('section')
+    }
   }
-}))
+})
 
 vi.mock('./services/authService', () => ({
   logOut: vi.fn(),
@@ -587,6 +616,13 @@ describe('App training sections', () => {
       expect(
         screen.getByRole('region', { name: sectionHeading })
       ).toBeInTheDocument()
+      const animatedElements = document.querySelectorAll(
+        '[data-motion-duration]'
+      )
+      expect(animatedElements.length).toBeGreaterThan(0)
+      for (const animatedElement of animatedElements) {
+        expect(animatedElement).toHaveAttribute('data-motion-duration', '0')
+      }
       expect(
         screen.queryByRole('heading', { level: 1, name: 'Marathoner.' })
       ).not.toBeInTheDocument()

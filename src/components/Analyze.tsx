@@ -1,5 +1,5 @@
 import { lazy, Suspense } from "react";
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import {
   calculateTrainingAnalytics,
   calculateWeeklyDistanceTrend,
@@ -68,6 +68,7 @@ export default function Analyze({
   timeZone = currentTimeZone(),
   now = new Date(),
 }: AnalyzeProps) {
+  const reduceMotion = useReducedMotion();
   const currentWeekStart = mondayFor(now, timeZone);
   const analytics = calculateTrainingAnalytics(runs, currentWeekStart, distanceUnit);
   const weeklyDistance = calculateWeeklyDistanceTrend(runs, currentWeekStart, 8);
@@ -77,7 +78,7 @@ export default function Analyze({
       className="analyze-container"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      transition={{ duration: 0.8 }}
+      transition={{ duration: reduceMotion ? 0 : 0.8 }}
     >
       {runs.length === 0 && (
         <p className="training-empty-state">

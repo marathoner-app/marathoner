@@ -228,6 +228,7 @@ function App() {
           <AuthenticatedExperience
             activeSection={activeSection}
             activeSectionDetails={activeSectionDetails}
+            reduceMotion={Boolean(reduceMotion)}
             onOpenSection={openSection}
             onCloseSection={closeSection}
             onRegisterTrigger={(section, element) => {
@@ -257,6 +258,7 @@ function App() {
 type AuthenticatedExperienceProps = {
   activeSection: Section | null;
   activeSectionDetails: (typeof sections)[number] | undefined;
+  reduceMotion: boolean;
   onOpenSection: (section: Section) => void;
   onCloseSection: () => void;
   onRegisterTrigger: (
@@ -268,6 +270,7 @@ type AuthenticatedExperienceProps = {
 function AuthenticatedExperience({
   activeSection,
   activeSectionDetails,
+  reduceMotion,
   onOpenSection,
   onCloseSection,
   onRegisterTrigger,
@@ -296,6 +299,7 @@ function AuthenticatedExperience({
   const showOnboarding =
     training.status === "current" &&
     (isOnboardingOpen || (!onboardingComplete && !onboardingDeferred));
+  const sectionTransitionDuration = reduceMotion ? 0 : 0.25;
 
   const closeOnboarding = () => {
     setIsOnboardingOpen(false);
@@ -373,7 +377,7 @@ function AuthenticatedExperience({
                 onClick={() => onOpenSection(id)}
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.25 }}
+                transition={{ duration: sectionTransitionDuration }}
               >
                 {label}
               </motion.button>
@@ -389,7 +393,7 @@ function AuthenticatedExperience({
           aria-labelledby={`${activeSection}-panel-title`}
           initial={{ opacity: 0, scale: 0.98 }}
           animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.25 }}
+          transition={{ duration: sectionTransitionDuration }}
           onKeyDown={(event) => {
             if (event.key === "Escape") onCloseSection();
           }}
@@ -397,6 +401,7 @@ function AuthenticatedExperience({
           <SectionContent
             section={activeSection}
             title={activeSectionDetails.title}
+            transitionDuration={sectionTransitionDuration}
             onClose={onCloseSection}
           />
         </motion.section>
@@ -408,10 +413,16 @@ function AuthenticatedExperience({
 type SectionContentProps = {
   section: Section;
   title: string;
+  transitionDuration: number;
   onClose: () => void;
 };
 
-function SectionContent({ section, title, onClose }: SectionContentProps) {
+function SectionContent({
+  section,
+  title,
+  transitionDuration,
+  onClose,
+}: SectionContentProps) {
   const training = useTrainingData();
   const hasReadableTraining =
     training.status === "current" || training.status === "stale";
@@ -427,7 +438,7 @@ function SectionContent({ section, title, onClose }: SectionContentProps) {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      transition={{ duration: 0.25 }}
+      transition={{ duration: transitionDuration }}
     >
       <button
         type="button"
