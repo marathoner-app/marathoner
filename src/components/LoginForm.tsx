@@ -25,11 +25,12 @@ const LoginForm = ({ onClose }: { onClose: () => void }) => {
   const formRef = useRef<HTMLDivElement>(null);
   const emailRef = useRef<HTMLInputElement>(null);
   const passwordRef = useRef<HTMLInputElement>(null);
+  const submissionInFlightRef = useRef(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (isSubmitting) return;
+    if (submissionInFlightRef.current) return;
 
     setError(null);
     const email = emailAddress.trim();
@@ -46,6 +47,7 @@ const LoginForm = ({ onClose }: { onClose: () => void }) => {
       return;
     }
 
+    submissionInFlightRef.current = true;
     setIsSubmitting(true);
 
     try {
@@ -63,6 +65,7 @@ const LoginForm = ({ onClose }: { onClose: () => void }) => {
           : "We could not complete that request. Please try again.",
       );
     } finally {
+      submissionInFlightRef.current = false;
       setIsSubmitting(false);
     }
   };
@@ -86,7 +89,9 @@ const LoginForm = ({ onClose }: { onClose: () => void }) => {
 
   useEffect(() => {
     emailRef.current?.focus();
+  }, []);
 
+  useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
         !isSubmitting &&
@@ -117,7 +122,12 @@ const LoginForm = ({ onClose }: { onClose: () => void }) => {
       role="dialog"
       aria-labelledby="login-title"
     >
-      <form onSubmit={handleSubmit} noValidate>
+      <form
+        aria-busy={isSubmitting}
+        aria-labelledby="login-title"
+        onSubmit={handleSubmit}
+        noValidate
+      >
         <div className="login-popup-header">
           <h2 id="login-title">
             {mode === "login" ? "Existing account login" : "Reset your password"}
@@ -145,7 +155,7 @@ const LoginForm = ({ onClose }: { onClose: () => void }) => {
           </p>
         )}
         {error && (
-          <div className="error" role="alert">
+          <div id="login-error" className="error" role="alert">
             {error}
           </div>
         )}
@@ -171,6 +181,7 @@ const LoginForm = ({ onClose }: { onClose: () => void }) => {
               name="email"
               type="email"
               autoComplete="email"
+              aria-describedby={error ? "login-error" : undefined}
               value={emailAddress}
               disabled={isSubmitting}
               onChange={(e) => {
@@ -188,6 +199,7 @@ const LoginForm = ({ onClose }: { onClose: () => void }) => {
                   name="password"
                   type="password"
                   autoComplete="current-password"
+                  aria-describedby={error ? "login-error" : undefined}
                   value={password}
                   disabled={isSubmitting}
                   onChange={(e) => {
