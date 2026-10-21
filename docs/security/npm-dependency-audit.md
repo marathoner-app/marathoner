@@ -2,113 +2,89 @@
 
 **Original remediation:** [#31](https://github.com/marathoner-app/marathoner/issues/31)
 
-**Current follow-up:** [#143](https://github.com/marathoner-app/marathoner/issues/143)
+**Current remediation:** [#143](https://github.com/marathoner-app/marathoner/issues/143)
 
-**Last reviewed:** October 6, 2026
+**Last reviewed:** October 21, 2026
 
 ## Current outcome
 
-The issue #202 Firebase 12 and App Check bridge alignment reports eight
-production-tree path findings: two moderate, five high, and one critical. The
-full tree reports 25 path findings: seven moderate, fifteen high, and three
-critical. There are no low findings in the current result.
+The current lockfile has no production dependency findings. The full tree has
+eight development-tool path findings: five moderate and three high. It has no
+critical findings.
 
-These results come from the issue #158 lockfile after `npm audit fix` applied
-only non-breaking transitive updates. No forced downgrade or major-version
-change was accepted.
-
-| Command | October 5, 2026 result | Required posture |
+| Command | October 21, 2026 result | Required posture |
 | --- | --- | --- |
-| `npm audit --omit=dev` | 2 moderate, 5 high, 1 critical | Resolve before live command deployment or external beta. |
-| `npm audit` | 7 moderate, 15 high, 3 critical | Resolve or record a specific, time-bounded risk decision in #143. Critical findings cannot be accepted for live deployment. |
+| `npm audit --omit=dev` | zero findings | Required before live command deployment and external beta. |
+| `npm audit` | 5 moderate, 3 high, 0 critical | The remaining paths are time-bound below and must be reviewed again by November 15, 2026 or before the next Firebase/Capacitor toolchain upgrade, whichever happens first. |
 
 Audit databases change independently of the lockfile. Treat these counts as a
 dated result, not a permanent property of a package version.
 
+## Remediation retained in the lockfile
+
+Issue #143 retained supported direct upgrades rather than npm's proposed forced
+downgrades:
+
+- `firebase-tools` 15.34.0;
+- Vite 6.4.5; and
+- Vitest 4.1.12, the patched Vitest 4 line compatible with Vite 6 and Node 22.
+
+Narrow root overrides keep stale compatible transitive ranges on patched
+releases:
+
+- `@grpc/grpc-js` 1.14.6 for browser Firestore and server dependencies;
+- `proxy-addr` 2.0.8 for Express paths;
+- `gaxios@6.7.1 > uuid` 11.1.1;
+- `@modelcontextprotocol/sdk` 1.32.0;
+- `compression` 1.8.2; and
+- `source-map-js` 1.2.2.
+
+The overrides do not introduce runtime imports or change Marathoner product
+behavior. They select patched releases through existing APIs. Lint, unit tests,
+Firestore emulator tests, the Functions/material-command emulator suite, and
+the production build verify the retained graph. Do not remove an override until
+the owning direct dependency resolves an equal or newer safe version and the
+same checks pass.
+
 ## Production boundary
 
-Firebase remains the only direct browser dependency with a substantial
-transitive tree. The combined application and Functions workspace findings
-include:
+The production-only audit now reports zero findings. In particular:
 
-- the Firebase 12.19 web Firestore tree resolves `@grpc/grpc-js@1.9.16`, below the
-  patched `1.14.5` release named by the current authorization and error-message
-  advisories; and
-- the undeployed Functions dependency graph resolves `proxy-addr@2.0.7`, which
-  is named by the current IPv4-mapped IPv6 trust-subnet advisory; and
-- the combined workspace audit includes `gaxios@6.7.1` and `uuid@9.0.1`, below
-  the patched UUID release for caller-supplied buffer bounds.
+- Firebase 12.19 Firestore resolves `@grpc/grpc-js@1.14.6`, above the patched
+  threshold for the authorization and error-message advisories;
+- Functions and Firebase CLI Express paths resolve `proxy-addr@2.0.8`;
+- the Firebase Admin storage path's `gaxios@6.7.1` resolves `uuid@11.1.1`; and
+- the reviewed Functions dependencies do not carry a production audit finding.
 
-The material-command code imports only Firebase Admin Firestore. Its active
-Firestore path resolves `@grpc/grpc-js@1.14.5`; it does not call Cloud Storage
-or UUID generation. Live Functions deployment is blocked by the repository
-guard until its exact beta target and operator-intent checks pass, and remains
-explicitly blocked by #143 and #204 plus #205 authorization. Issue #201 prepares
-that boundary but does not deploy. These reachability limits reduce immediate
-exposure but do not meet the external-beta gate. Issue #143 must upgrade,
-override with tested patched versions, or explicitly replace the affected
-paths before the first live deployment in #205.
+This removes the dependency-audit blocker from the reviewed code graph. It does
+not authorize a deployment by itself: #204 and #205 retain App Check,
+observation, rollback, and operator-approval ownership.
 
-## Current development findings
+## Remaining development-tool findings
 
-The affected paths are rooted in tools that are not imported into the browser
-application bundle:
+The remaining findings are not imported into the browser bundle or deployed
+Functions. Each is still owned and time-bound rather than dismissed.
 
-### Vitest mock tooling
+| Path | Severity | Exposure and mitigation | Owner and review date |
+| --- | --- | --- | --- |
+| `firebase-tools > chokidar > braces@3.0.3` | High (three reported path findings through `braces`, `chokidar`, and `firebase-tools`) | The advisory has no patched `braces` release as of October 21. Firebase CLI and emulator commands process reviewed repository paths and are not exposed as a network service. Do not pass participant-controlled glob patterns to these tools. A forced Firebase CLI downgrade is not an acceptable fix. | Maintainer; recheck by November 15, 2026, before any Firebase CLI upgrade, and before external invitations. |
+| `firebase-tools > @google-cloud/pubsub > @opentelemetry/core@1.30.1` | Moderate (two reported path findings) | The path exists only inside local Firebase tooling. Marathoner does not import the Pub/Sub client or accept untrusted baggage headers through this CLI path. A major transitive override is not accepted without upstream compatibility support. | Maintainer; recheck by November 15, 2026 or when Firebase CLI updates Pub/Sub. |
+| `@capacitor/cli > xcode@3.0.1 > uuid@7.0.3` | Moderate (three reported path findings through `uuid`, `xcode`, and Capacitor CLI) | The Xcode project writer runs only against the reviewed local native project and Marathoner does not pass caller-supplied UUID buffers. Capacitor 8.5.2 still requires Xcode 3; overriding it to Xcode 4 would be an unreviewed major tool change. | Maintainer; recheck by November 15, 2026 or when Capacitor supports the patched Xcode package. |
 
-`@vitest/mocker` and `vitest` are reported for a redirect-mock path-traversal
-issue. `tinypool` is reported for prototype-pollution paths that can reach code
-execution when attacker-controlled worker options are accepted. Marathoner
-tests execute reviewed local inputs and do not expose Vitest as a service.
-npm's forced recommendation is a downgrade to `vitest@2.0.5`, which is not an
-acceptable automatic remediation. Issue #143 owns evaluation of supported
-upgrades and regression verification.
+If any remaining path becomes participant-reachable, enters the shipped bundle,
+or gains a supported upstream fix, the temporary decision expires immediately.
 
-### Build and native-project tooling
+## Rejected automatic fixes
 
-Vite resolves the affected `source-map-js` through PostCSS, and the Capacitor
-CLI resolves an affected UUID version through its Xcode project writer. These
-tools process reviewed repository source and the committed native project; they
-are not shipped as participant-callable tooling. That reachability limit does
-not remove the findings.
+Do not run `npm audit fix --force`. The current npm recommendations include
+forced downgrades of Firebase, Firebase CLI, Capacitor CLI, and Vitest. Those
+changes would cross reviewed architecture and compatibility boundaries without
+proving that the resulting application is safer or functional.
 
-### Firebase CLI and emulator tooling
-
-Most remaining development findings flow through the Firebase CLI and emulator
-dependencies. The current audit names paths involving:
-
-- `@opentelemetry/core` and `@google-cloud/pubsub`;
-- `basic-ftp` through the proxy-agent path;
-- `braces` through Chokidar;
-- `compression` through Superstatic;
-- `gaxios` and `uuid`; and
-- `proxy-addr` through Express and MCP tooling.
-
-These tools are not imported into the browser bundle, but their presence still
-requires active remediation rather than a permanent blanket exception.
-
-## Temporary risk boundary
-
-The current development-only findings are accepted only while #143 remains an
-owned external-beta-readiness issue and all of these conditions hold:
-
-- the beta Functions guard requires an explicit operator acknowledgement that
-  #143 is complete before issue #205 can authorize deployment;
-- the affected tools run only from reviewed repository commands and trusted
-  configuration;
-- the Firestore emulator binds only to the local development environment and
-  is not exposed as a service;
-- no affected tool or dependency is imported into the browser bundle or a
-  participant-facing server path;
-- the current critical findings remain a hard stop for live Functions
-  deployment and external invitations; and
-- every unresolved high or moderate finding receives a specific removal or
-  time-bounded acceptance decision before external invitations.
-
-Do not run `npm audit fix --force`. The current forced recommendations include
-breaking downgrades of direct tools and do not constitute reviewed fixes.
-Non-forced audit changes must still be inspected, tested, and committed through
-their own issue-linked pull request.
+The lockfile was resolved and clean-installed with Node 22 and npm 10. The host
+Node 23/npm 11 pair is outside the repository's supported runtime and hit an npm
+optional-peer resolver crash before writing a lockfile; that host-only failure
+is not a reason to weaken package constraints.
 
 ## Historical record
 
@@ -120,18 +96,14 @@ their own issue-linked pull request.
 | September 22, 2026 refresh | 0 findings | 16 moderate, 3 high |
 | October 5, 2026 issue #158 refresh | 2 moderate, 4 high | 8 moderate, 12 high |
 | October 6, 2026 issue #202 alignment | 2 moderate, 5 high, 1 critical | 7 moderate, 15 high, 3 critical |
+| October 21, 2026 issue #143 remediation | 0 findings | 5 moderate, 3 high, 0 critical |
 
 The historical counts explain earlier decisions; only the latest row describes
 the current lockfile and advisory database.
 
-## Node version
-
-The repository automation uses Node 22. Local audit and remediation work should
-use the same supported LTS line so engine behavior and dependency resolution
-match CI. Do not weaken or downgrade patched dependencies to accommodate an
-unsupported non-LTS local runtime.
-
 ## Verification commands
+
+Run these commands on the supported Node 22 line:
 
 ```sh
 npm ci
@@ -140,9 +112,10 @@ npm audit
 npm run lint
 npm test
 npm run test:firestore
+npm run test:material-commands
 npm run build
 ```
 
-Both audits are currently expected to exit nonzero. Issue #143 must resolve the
-production paths before live command deployment or external beta and must
-resolve or explicitly time-bound every remaining development-tool finding.
+The production audit must exit successfully. The full audit is expected to exit
+nonzero only for the exact time-bound development paths above; any new path,
+critical finding, or production finding reopens remediation.

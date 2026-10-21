@@ -149,7 +149,7 @@ const acceptedDeletion: AccountDeletionRequestAcceptedResult = {
 
 let emitAuthState: (user: AuthUser | null) => void
 let emitAuthError: (error: Error) => void
-let unsubscribe: ReturnType<typeof vi.fn>
+let unsubscribe: () => void
 
 const sectionTransitions = [
   ['Plan', 'Plan Your Workouts'],
