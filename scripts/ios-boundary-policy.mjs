@@ -409,7 +409,7 @@ export function findCopiedBundleViolations({
     violations.push('iOS index.html does not use relative asset paths')
   }
   if (indexHtml.includes('/marathoner/')) {
-    violations.push('iOS index.html contains the GitHub Pages base path')
+    violations.push('iOS index.html contains the legacy project-site base path')
   }
   for (const expectedStartupValue of [
     'data-marathoner-startup',

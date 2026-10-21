@@ -99,8 +99,8 @@ That command:
 7. validates both native Firebase registrations, selects development, and
    proves the Xcode resource is byte-equivalent to that source.
 
-The normal `npm run build` remains the GitHub Pages build with its existing
-`/marathoner/` base. It does not read the iOS key.
+The normal `npm run build` remains the GitHub Pages build with the custom
+domain's root `/` base. It does not read the iOS key.
 
 ## Explicit beta selection and physical proof
 

@@ -231,7 +231,7 @@ engine warnings from development tools on unsupported non-LTS releases.
    ```
 
 4. Open the local URL printed by Vite, normally
-   `http://localhost:5173/marathoner/`.
+   `http://localhost:5173/`.
 
 The development reCAPTCHA Enterprise key intentionally does not authorize
 localhost. Firebase-backed local use therefore fails closed until an
@@ -297,16 +297,22 @@ and
 
 ## GitHub Pages deployment
 
-The current production site is published at
-[https://marathoner-app.github.io/marathoner/](https://marathoner-app.github.io/marathoner/).
-GitHub Actions builds and deploys the site whenever a pull request is merged
-into `main`. The workflow can also be started manually from the repository's
-Actions tab when a deployment needs to be repeated without a source change.
+The supported web surface is published at
+[https://marathonerapp.com/](https://marathonerapp.com/). GitHub Actions builds
+and deploys the site whenever a pull request is merged into `main`. The
+workflow can also be started manually from the repository's Actions tab when a
+deployment needs to be repeated without a source change.
 
-`vite.config.ts` sets `base` to `/marathoner/`. Vite uses that value to prefix
-production asset URLs for a GitHub Pages project site. If the repository name
-or hosting path changes, update `base` before deploying. The `homepage` value
+`vite.config.ts` sets the web `base` to `/` because the custom domain serves the
+application at its root. iOS builds keep their separate relative `./` base so
+the copied Capacitor bundle can load without a web origin. The `homepage` value
 in `package.json` does not control Vite's asset paths.
+
+GitHub redirects the legacy
+`https://marathoner-app.github.io/marathoner/` project URL to the custom domain
+while the Pages custom-domain setting is active. Do not publish a second copy
+there. DNS, Firebase allowlists, verification, and rollback steps are recorded
+in the [custom-domain runbook](docs/operations/github-pages-custom-domain.md).
 
 The deployment workflow installs the locked dependencies, runs the production
 build, uploads `dist` as a Pages artifact, and deploys that artifact through the
@@ -320,8 +326,8 @@ npm run build
 npm run preview
 ```
 
-Open the URL printed by Vite, including its `/marathoner/` suffix, and confirm
-that the page and its assets load. After a pull request is merged, check its
+Open the root URL printed by Vite and confirm that the page and its assets load.
+After a pull request is merged, check its
 **Deploy to GitHub Pages** workflow run in the Actions tab. GitHub Pages may
 take a short time to serve the new commit after that run completes.
 

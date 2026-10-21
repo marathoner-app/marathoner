@@ -17,12 +17,14 @@ The registrations are public client identities, not administrator credentials.
 
 | Environment | Firebase app | Public app identity | Provider | Provider boundary |
 | --- | --- | --- | --- | --- |
-| Development | `Marathoner` web | `1:677998037771:web:9269b3b5f82909ccc3b00e` | Fraud Defense (reCAPTCHA Enterprise) | Site key `6LcjU-ItAAAAAFduN8dYLc-0HiI1yLtaI0liOX5Q`; `marathoner-app.github.io` only |
+| Development | `Marathoner` web | `1:677998037771:web:9269b3b5f82909ccc3b00e` | Fraud Defense (reCAPTCHA Enterprise) | Site key `6LcjU-ItAAAAAFduN8dYLc-0HiI1yLtaI0liOX5Q`; `marathoner-app.github.io`, `marathonerapp.com`, and `www.marathonerapp.com` |
 | Development | `Marathoner Development iOS` | `1:677998037771:ios:71c7b70132f83f57c3b00e` | App Attest | Bundle `com.marathonerapp.marathoner`; no DeviceCheck fallback |
 | Beta | `Marathoner Beta Web` | `1:156851031272:web:a6ab19f6b760fcf5084d5d` | Fraud Defense (reCAPTCHA Enterprise) | Site key `6Ld7-uEtAAAAAMi5OH-KIzx7e0ZkMm3xrwehkxEl`; `marathonerapp.com` and `www.marathonerapp.com` only |
 | Beta | `Marathoner Beta iOS` | `1:156851031272:ios:8ad247902c872823084d5d` | App Attest | Bundle `com.marathonerapp.marathoner`; no DeviceCheck fallback |
 
-Both providers retain the console's one-hour token TTL. No custom provider,
+Both providers retain the console's one-hour token TTL. The development web
+domain list was extended and reopened on October 21, 2026 for the #162 Pages
+cutover, with domain verification still enabled. No custom provider,
 reCAPTCHA v3 registration, DeviceCheck fallback, or App Check debug token was
 created by #203.
 
