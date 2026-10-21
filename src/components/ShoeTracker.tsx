@@ -54,6 +54,13 @@ type ShoeTrackerProps = {
   readonly onDeleteRun: (id: CompletedRunId) => Promise<void>;
 };
 
+type PendingAction =
+  | "add-shoe"
+  | "create-run"
+  | "update-run"
+  | "delete-run"
+  | "retire-shoe";
+
 type ConfirmationDialogProps = {
   readonly headingId: string;
   readonly descriptionId: string;
@@ -319,7 +326,8 @@ export default function ShoeTracker({
   const [runDate, setRunDate] = useState<string>(today);
   const [error, setError] = useState<string | null>(null);
   const [actionStatus, setActionStatus] = useState<string | null>(null);
-  const [pending, setPending] = useState(false);
+  const [pendingAction, setPendingAction] = useState<PendingAction | null>(null);
+  const pending = pendingAction !== null;
   const [editingRunId, setEditingRunId] = useState<CompletedRunId | null>(null);
   const [runToDelete, setRunToDelete] = useState<CompletedRun | null>(null);
   const [shoeToRetire, setShoeToRetire] = useState<Shoe | null>(null);
@@ -364,7 +372,7 @@ export default function ShoeTracker({
     const deletedRunDate = getRunLocalDate(runToDelete);
     setError(null);
     setActionStatus(null);
-    setPending(true);
+    setPendingAction("delete-run");
     try {
       await onDeleteRun(runToDelete.id);
       setRunToDelete(null);
@@ -377,7 +385,7 @@ export default function ShoeTracker({
       );
       setRunToDelete(null);
     } finally {
-      setPending(false);
+      setPendingAction(null);
     }
   };
 
@@ -391,7 +399,7 @@ export default function ShoeTracker({
     const retiredShoeName = shoeToRetire.name;
     setError(null);
     setActionStatus(null);
-    setPending(true);
+    setPendingAction("retire-shoe");
     try {
       await onRetireShoe(shoeToRetire.id, today());
       setShoeToRetire(null);
@@ -404,7 +412,7 @@ export default function ShoeTracker({
       );
       setShoeToRetire(null);
     } finally {
-      setPending(false);
+      setPendingAction(null);
     }
   };
 
@@ -418,7 +426,7 @@ export default function ShoeTracker({
     }
 
     setError(null);
-    setPending(true);
+    setPendingAction("add-shoe");
     try {
       await onCreateShoe({
         name,
@@ -430,7 +438,7 @@ export default function ShoeTracker({
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "The shoe could not be saved.");
     } finally {
-      setPending(false);
+      setPendingAction(null);
     }
   };
 
@@ -441,7 +449,7 @@ export default function ShoeTracker({
 
     setError(null);
     setActionStatus(null);
-    setPending(true);
+    setPendingAction("create-run");
     try {
       const timeZone = currentTimeZone();
       const association = String(formData.get("workout") ?? "");
@@ -469,7 +477,7 @@ export default function ShoeTracker({
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "The run could not be saved.");
     } finally {
-      setPending(false);
+      setPendingAction(null);
     }
   };
 
@@ -490,6 +498,7 @@ export default function ShoeTracker({
         )}
         <form
           aria-label="Log a completed run"
+          aria-busy={pendingAction === "create-run"}
           onSubmit={handleRunSubmit}
           className="space-y-3 run-entry-form"
         >
@@ -565,7 +574,7 @@ export default function ShoeTracker({
             {COMPLETED_RUN_NOTES_MAX_LENGTH} characters.
           </p>
           <button type="submit" disabled={pending || activeShoes.length === 0}>
-            Log Run
+            {pendingAction === "create-run" ? "Logging run…" : "Log Run"}
           </button>
         </form>
 
@@ -590,13 +599,14 @@ export default function ShoeTracker({
                     {isEditing ? (
                       <form
                         aria-label={`Edit run from ${getRunLocalDate(run)}`}
+                        aria-busy={pendingAction === "update-run"}
                         className="run-edit-form"
                         onSubmit={async (event) => {
                           event.preventDefault();
                           const data = new FormData(event.currentTarget);
                           setError(null);
                           setActionStatus(null);
-                          setPending(true);
+                          setPendingAction("update-run");
                           try {
                             const selectedDate = String(data.get("date"));
                             await onUpdateRun(run.id, {
@@ -616,7 +626,7 @@ export default function ShoeTracker({
                           } catch (caught) {
                             setError(caught instanceof Error ? caught.message : "The run could not be updated.");
                           } finally {
-                            setPending(false);
+                            setPendingAction(null);
                           }
                         }}
                       >
@@ -706,7 +716,9 @@ export default function ShoeTracker({
                         >
                           Optional context, up to {COMPLETED_RUN_NOTES_MAX_LENGTH} characters.
                         </p>
-                        <button type="submit" disabled={pending}>Save</button>
+                        <button type="submit" disabled={pending}>
+                          {pendingAction === "update-run" ? "Saving…" : "Save"}
+                        </button>
                         <button
                           type="button"
                           onClick={() => {
@@ -772,7 +784,7 @@ export default function ShoeTracker({
           descriptionId="run-delete-description"
           eyebrow="Training history"
           title="Delete this completed run?"
-          pending={pending}
+          pending={pendingAction === "delete-run"}
           confirmLabel="Delete run"
           pendingLabel="Deleting…"
           tone="danger"
@@ -794,6 +806,7 @@ export default function ShoeTracker({
         <h3 className="text-lg font-medium">Add New Shoes</h3>
         <form
           className="shoe-entry-form"
+          aria-busy={pendingAction === "add-shoe"}
           onSubmit={(event) => void handleAddShoe(event)}
           noValidate
         >
@@ -822,7 +835,7 @@ export default function ShoeTracker({
             Use 0 for new shoes. This stays separate from distance Marathoner records.
           </p>
           <button type="submit" disabled={pending}>
-            Add shoe
+            {pendingAction === "add-shoe" ? "Adding shoe…" : "Add shoe"}
           </button>
         </form>
 
@@ -893,7 +906,7 @@ export default function ShoeTracker({
           descriptionId="shoe-retire-description"
           eyebrow="Shoe rotation"
           title={`Retire ${shoeToRetire.name}?`}
-          pending={pending}
+          pending={pendingAction === "retire-shoe"}
           confirmLabel="Retire shoe"
           pendingLabel="Retiring…"
           tone="caution"

@@ -27,16 +27,33 @@ import ShoeTracker from "./ShoeTracker";
 const userId = createUserId("runner-1");
 const timestamp = createUtcDateTime("2026-08-05T14:00:00Z");
 
+function deferredRequest() {
+  let resolveRequest!: () => void;
+  const request = new Promise<void>((resolve) => {
+    resolveRequest = resolve;
+  });
+  return { request, resolve: resolveRequest };
+}
+
 function Harness({
   initialShoes = [],
   initialRuns = [],
   distanceUnit = "mile",
+  onCreateShoeCall = () => undefined,
+  onCreateRunCall = () => undefined,
+  onUpdateRunCall = () => undefined,
   onDeleteRunCall = () => undefined,
   onRetireShoeCall = () => undefined,
 }: {
   initialShoes?: Shoe[];
   initialRuns?: CompletedRun[];
   distanceUnit?: DistanceUnit;
+  onCreateShoeCall?: (input: CreateShoeInput) => void | Promise<void>;
+  onCreateRunCall?: (input: CreateCompletedRunInput) => void | Promise<void>;
+  onUpdateRunCall?: (
+    id: CompletedRun["id"],
+    changes: UpdateCompletedRunInput,
+  ) => void | Promise<void>;
   onDeleteRunCall?: (id: CompletedRun["id"]) => void;
   onRetireShoeCall?: (id: ShoeId, retiredOn: DateOnly) => void;
 }) {
@@ -44,6 +61,7 @@ function Harness({
   const [runs, setRuns] = useState(initialRuns);
 
   const createShoe = async (input: CreateShoeInput) => {
+    await onCreateShoeCall(input);
     const shoe: Shoe = {
       id: createShoeId(`shoe-${shoes.length + 1}`),
       userId,
@@ -58,6 +76,7 @@ function Harness({
   };
 
   const createRun = async (input: CreateCompletedRunInput) => {
+    await onCreateRunCall(input);
     const run: CompletedRun = {
       ...input,
       id: createCompletedRunId(`run-${runs.length + 1}`),
@@ -73,6 +92,7 @@ function Harness({
     id: CompletedRun["id"],
     changes: UpdateCompletedRunInput,
   ) => {
+    await onUpdateRunCall(id, changes);
     const existing = runs.find((run) => run.id === id);
     if (existing === undefined) throw new Error("Run not found");
     const updated = {
@@ -208,6 +228,71 @@ describe("ShoeTracker", () => {
         name: "Edit run notes (optional)",
       }),
     ).toBeInTheDocument();
+  });
+
+  it("exposes operation-specific pending states while Track forms save", async () => {
+    const shoeRequest = deferredRequest();
+    const runRequest = deferredRequest();
+    const updateRequest = deferredRequest();
+    const user = userEvent.setup();
+    render(
+      <Harness
+        onCreateShoeCall={() => shoeRequest.request}
+        onCreateRunCall={() => runRequest.request}
+        onUpdateRunCall={() => updateRequest.request}
+      />,
+    );
+
+    await user.type(screen.getByPlaceholderText("Shoe Name"), "Daily Trainer");
+    await user.click(screen.getByRole("button", { name: "Add shoe" }));
+
+    const addingShoe = screen.getByRole("button", { name: "Adding shoe…" });
+    expect(addingShoe).toBeDisabled();
+    expect(addingShoe.closest("form")).toHaveAttribute("aria-busy", "true");
+
+    shoeRequest.resolve();
+    expect(await screen.findByRole("button", { name: "Add shoe" })).toBeEnabled();
+    expect(screen.getByRole("status")).toHaveTextContent("Daily Trainer added.");
+
+    const runForm = screen.getByRole("form", { name: "Log a completed run" });
+    await user.type(
+      within(runForm).getByRole("spinbutton", { name: "Distance (miles)" }),
+      "5",
+    );
+    await user.type(
+      within(runForm).getByRole("textbox", { name: "Elapsed time" }),
+      "45:30",
+    );
+    await user.selectOptions(
+      within(runForm).getByRole("combobox", { name: "Running shoes" }),
+      "shoe-1",
+    );
+    await user.click(within(runForm).getByRole("button", { name: "Log Run" }));
+
+    expect(
+      within(runForm).getByRole("button", { name: "Logging run…" }),
+    ).toBeDisabled();
+    expect(runForm).toHaveAttribute("aria-busy", "true");
+
+    runRequest.resolve();
+    expect(
+      await screen.findByText(/5 mi in 45:30 wearing Daily Trainer/),
+    ).toBeInTheDocument();
+    expect(within(runForm).getByRole("button", { name: "Log Run" })).toBeEnabled();
+    expect(runForm).toHaveAttribute("aria-busy", "false");
+
+    await user.click(screen.getByRole("button", { name: "Edit" }));
+    const editForm = screen.getByRole("form", { name: /Edit run from/ });
+    await user.click(within(editForm).getByRole("button", { name: "Save" }));
+
+    expect(
+      within(editForm).getByRole("button", { name: "Saving…" }),
+    ).toBeDisabled();
+    expect(editForm).toHaveAttribute("aria-busy", "true");
+
+    updateRequest.resolve();
+    expect(await screen.findByRole("button", { name: "Edit" })).toHaveFocus();
+    expect(screen.getByRole("status")).toHaveTextContent(/updated\.$/);
   });
 
   it("adds a persisted shoe with zero starting mileage", async () => {
