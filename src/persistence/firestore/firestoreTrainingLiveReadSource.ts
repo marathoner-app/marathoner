@@ -107,7 +107,7 @@ function listenerMetadata(metadata: SnapshotMetadata): TrainingListenerMetadata 
   }
 }
 
-function createFirebaseListenerBackend(
+export function createFirebaseTrainingListenerBackend(
   database: Firestore,
 ): FirestoreTrainingListenerBackend {
   return {
@@ -448,7 +448,7 @@ export function createFirestoreTrainingLiveReadSource(
   sessionGeneration: number,
 ): TrainingLiveReadSource {
   return createFirestoreTrainingLiveReadSourceWithBackend({
-    backend: createFirebaseListenerBackend(getFirebaseFirestore()),
+    backend: createFirebaseTrainingListenerBackend(getFirebaseFirestore()),
     ownerId,
     sessionGeneration,
   })
