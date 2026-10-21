@@ -1,10 +1,9 @@
 import LoginButton from "./LoginButton";
-import Title from "./Title";
 
 export default function PublicLandingHeader() {
   return (
     <header className="landing-header">
-      <Title />
+      <span className="landing-header__wordmark">Marathoner.</span>
       <nav
         className="landing-header__navigation"
         aria-label="Public site"

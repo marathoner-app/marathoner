@@ -14,7 +14,25 @@ describe("PublicLandingPage", () => {
 
     expect(screen.getByTestId("public-landing-page")).toBeInTheDocument();
     expect(
-      screen.getByRole("heading", { level: 1, name: "Marathoner." }),
+      screen.getByRole("heading", {
+        level: 1,
+        name: "Your first marathon. One clear plan.",
+      }),
+    ).toBeInTheDocument();
+    expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
+    expect(screen.getByText("Marathoner.")).toBeInTheDocument();
+    expect(
+      screen.getByText("Built for first-time marathoners"),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "Marathoner turns your race date, starting point, and real-life schedule into training you can understand and adjust.",
+      ),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "Reach the start line prepared, informed, and in control.",
+      ),
     ).toBeInTheDocument();
     expect(
       screen.getByRole("heading", {
@@ -32,6 +50,9 @@ describe("PublicLandingPage", () => {
     expect(document.querySelector("#access-status")).toBeInTheDocument();
     expect(screen.getAllByRole("button", { name: "Log in" })).toHaveLength(1);
     expect(screen.queryByText(/TestFlight/i)).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /request ios beta access/i }),
+    ).not.toBeInTheDocument();
     expect(
       screen.queryByRole("button", { name: /sign up/i }),
     ).not.toBeInTheDocument();
