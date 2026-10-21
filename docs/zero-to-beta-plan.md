@@ -1,13 +1,14 @@
 # Marathoner zero-to-beta plan
 
 - **Status:** Active delivery plan
-- **Last updated:** October 8, 2026
+- **Last updated:** October 21, 2026
 - **Product owner and current implementer:** Kevin Tulloch
 - **Decision checkpoint:** January 15, 2027; it is the optimistic invitation floor, precedes the likely forecast, and is not a delivery promise
 - **Master tracker:** [GitHub issue #104](https://github.com/marathoner-app/marathoner/issues/104)
 - **Active remediation:** [Committee remediation sprint](committee-remediation-sprint.md)
 - **Founding-beta contract:** [GitHub issue #117](https://github.com/marathoner-app/marathoner/issues/117)
 - **Capacity forecast:** [Owner-session and gate forecast](capacity-forecast.md)
+- **Legal entity and Apple enrollment:** [Decision and execution path](operations/legal-entity-and-apple-enrollment.md)
 - **Product strategy:** [Product-first free-beta decision](product-first-beta-decision.md)
 - **Optional commercial research:** [Dormant commercial proof sprint](commercial-proof-sprint.md)
 - **Methodology review:** [Qualified review protocol](methodology/README.md)
@@ -186,7 +187,7 @@ scope or measured throughput changes.
 | 01 Shared Mobile Foundation | October 18, 2026 | [#33](https://github.com/marathoner-app/marathoner/issues/33) | A physical iPhone can authenticate and exchange one typed training record with the preserved web application through the approved least-duplicated client boundary. |
 | 02 Intake and Initial Plan | November 15, 2026 | [#65](https://github.com/marathoner-app/marathoner/issues/65) | A representative supported runner can complete intake, receive an approved deterministic plan or honest unsupported result, approve the plan, and identify the next workout. |
 | 03 Track, Learn, and Adapt | December 6, 2026 | [#105](https://github.com/marathoner-app/marathoner/issues/105), [#106](https://github.com/marathoner-app/marathoner/issues/106) | A runner can log what happened, receive an authored explanation and deterministic adjustment recommendation, and approve or decline a material change. |
-| 04 iOS Daily Companion | December 20, 2026 | [#108](https://github.com/marathoner-app/marathoner/issues/108) | The complete daily loop is usable on a physical iPhone and an internal/TestFlight candidate can be installed and exercised. |
+| 04 iOS Daily Companion | December 20, 2026 | [#108](https://github.com/marathoner-app/marathoner/issues/108) | The complete daily loop is usable on a physical iPhone; the organization enrollment in #281 supplies the seller identity and signing capabilities required for App Attest and an internal/TestFlight candidate. |
 | 05 Trust and External-Beta Readiness | January 8, 2027 | [#107](https://github.com/marathoner-app/marathoner/issues/107), [#109](https://github.com/marathoner-app/marathoner/issues/109) | Safety boundaries, privacy and deletion, accessibility, reliability, support, consent, instrumentation, and TestFlight operations satisfy the beta checklist. |
 | 06A Founding Cohort Invitations | January 15, 2027 | [#129](https://github.com/marathoner-app/marathoner/issues/129) | Five to eight allowlisted invitations may open only when every invitation blocker passes. |
 | 06B Four-Week Review | February 12, 2027 | [#131](https://github.com/marathoner-app/marathoner/issues/131) | Activation, comprehension, trust, safety, usefulness, and support burden produce a proceed, refine, or pause decision. |

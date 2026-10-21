@@ -21,6 +21,9 @@ and release work remain in #72, #115, #138, #159, #161, #122, and #90.
 - an iOS simulator for unsigned compilation
 - the physical test iPhone and an owner-controlled Apple development identity
   only when recording device evidence
+- an organization-owned Apple Developer Program team for the signed App Attest
+  and TestFlight gates; follow the
+  [entity and enrollment decision](../operations/legal-entity-and-apple-enrollment.md)
 - the reviewed development-only iOS Firebase API key
 - the separately reviewed beta-only iOS Firebase API key only when running the
   explicit beta proof
@@ -348,5 +351,7 @@ Attest before JavaScript Firebase services, validates the bridged token through
 a `CustomProvider`, and requires the production App Attest entitlement. The
 current Personal Team profile does not contain that capability, so a paid Apple
 Developer Program profile and physical-iPhone token proof remain required.
+Issue [#281](https://github.com/marathoner-app/marathoner/issues/281) owns the
+California entity and Apple organization enrollment that unblock that profile.
 Observation and enforcement remain in #205 and #206; implementation or an
 unsigned compile is not evidence that an API rejects missing tokens.
