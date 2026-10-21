@@ -2,7 +2,7 @@ import { defineConfig } from "@playwright/test";
 
 const port = 4173;
 const origin = `http://127.0.0.1:${port}`;
-const applicationBasePath = "/marathoner/";
+const applicationBasePath = "/";
 
 export default defineConfig({
   testDir: "./tests/viewport",

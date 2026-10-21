@@ -267,7 +267,7 @@ describe('iOS boundary policy', () => {
     ).toEqual(
       expect.arrayContaining([
         'iOS bundle contains marathonerapp-beta',
-        'iOS index.html contains the GitHub Pages base path',
+        'iOS index.html contains the legacy project-site base path',
         'copied iOS bundle changed index.html',
       ]),
     )
