@@ -5,10 +5,10 @@
   --landing-muted: #475569;
   --landing-accent: #1d4ed8;
   --landing-border: #cbd5e1;
-  --landing-content-width: 72rem;
+  --landing-content-width: 100rem;
   --landing-card-radius: 1rem;
   --landing-card-shadow: 0 1.5rem 4rem rgba(15, 23, 42, 0.1);
-  --landing-space-page: clamp(1rem, 4vw, 3rem);
+  --landing-space-page: clamp(1rem, 2.25vw, 2rem);
   --landing-space-section: clamp(2rem, 6vw, 4.5rem);
 
   box-sizing: border-box;
