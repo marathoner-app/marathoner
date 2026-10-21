@@ -87,7 +87,8 @@ export default function TrainingDataProvider({
   const load = useCallback(async () => {
     const generation = loadGenerationRef.current + 1;
     loadGenerationRef.current = generation;
-    setSnapshot((current) => ({ ...current, status: "loading", error: null }));
+    repositoryRef.current = null;
+    setSnapshot(emptySnapshot);
 
     try {
       const repositories = await repositoryFactory(userId);

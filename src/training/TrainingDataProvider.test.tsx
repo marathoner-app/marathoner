@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { act, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it } from "vitest";
 import {
@@ -11,6 +11,7 @@ import {
   createUtcDateTime,
   metersToMiles,
   milesToMeters,
+  type UserId,
 } from "../domain/training";
 import { createDocumentTrainingRepositories } from "../persistence/documentTrainingRepositories";
 import { InMemoryDocumentStore } from "../persistence/testing/InMemoryDocumentStore";
@@ -35,6 +36,37 @@ beforeEach(() => {
   );
   repositoryFactory = async () => repositories;
 });
+
+async function createNamedRepositories(
+  owner: UserId,
+  displayName: string,
+): Promise<TrainingRepositories> {
+  const ownedRepositories = createDocumentTrainingRepositories(
+    new InMemoryDocumentStore(),
+    owner,
+    () => timestamp,
+  );
+  await ownedRepositories.profile.save({
+    displayName,
+    preferredDistanceUnit: "mile",
+    timeZone,
+  });
+  return ownedRepositories;
+}
+
+function createDeferred<T>() {
+  let resolvePromise: ((value: T) => void) | undefined;
+  const promise = new Promise<T>((resolve) => {
+    resolvePromise = resolve;
+  });
+
+  return {
+    promise,
+    resolve(value: T) {
+      resolvePromise?.(value);
+    },
+  };
+}
 
 function IntegrationProbe() {
   const training = useTrainingData();
@@ -312,5 +344,88 @@ describe("TrainingDataProvider", () => {
         "error: Training data is temporarily unavailable.",
       ),
     ).toBeInTheDocument();
+  });
+
+  it("clears the prior account while the replacement account loads", async () => {
+    const secondUserId = createUserId("runner-2");
+    const firstRepositories = await createNamedRepositories(userId, "Runner One");
+    const secondRepositories = await createNamedRepositories(
+      secondUserId,
+      "Runner Two",
+    );
+    const secondLoad = createDeferred<TrainingRepositories>();
+    const switchingFactory: TrainingRepositoryFactory = async (requestedUserId) =>
+      requestedUserId === userId ? firstRepositories : secondLoad.promise;
+
+    const view = render(
+      <TrainingDataProvider
+        userId={userId}
+        repositoryFactory={switchingFactory}
+      >
+        <IntegrationProbe />
+      </TrainingDataProvider>,
+    );
+
+    expect(await screen.findByText("Profile: Runner One")).toBeInTheDocument();
+
+    view.rerender(
+      <TrainingDataProvider
+        userId={secondUserId}
+        repositoryFactory={switchingFactory}
+      >
+        <IntegrationProbe />
+      </TrainingDataProvider>,
+    );
+
+    expect(await screen.findByText("loading")).toBeInTheDocument();
+    expect(screen.queryByText("Profile: Runner One")).not.toBeInTheDocument();
+
+    await act(async () => {
+      secondLoad.resolve(secondRepositories);
+      await secondLoad.promise;
+    });
+
+    expect(await screen.findByText("Profile: Runner Two")).toBeInTheDocument();
+  });
+
+  it("ignores a prior account load that resolves after the account switches", async () => {
+    const secondUserId = createUserId("runner-2");
+    const firstRepositories = await createNamedRepositories(userId, "Runner One");
+    const secondRepositories = await createNamedRepositories(
+      secondUserId,
+      "Runner Two",
+    );
+    const firstLoad = createDeferred<TrainingRepositories>();
+    const switchingFactory: TrainingRepositoryFactory = async (requestedUserId) =>
+      requestedUserId === userId ? firstLoad.promise : secondRepositories;
+
+    const view = render(
+      <TrainingDataProvider
+        userId={userId}
+        repositoryFactory={switchingFactory}
+      >
+        <IntegrationProbe />
+      </TrainingDataProvider>,
+    );
+
+    expect(await screen.findByText("loading")).toBeInTheDocument();
+    view.rerender(
+      <TrainingDataProvider
+        userId={secondUserId}
+        repositoryFactory={switchingFactory}
+      >
+        <IntegrationProbe />
+      </TrainingDataProvider>,
+    );
+
+    expect(await screen.findByText("Profile: Runner Two")).toBeInTheDocument();
+
+    await act(async () => {
+      firstLoad.resolve(firstRepositories);
+      await firstLoad.promise;
+    });
+
+    expect(screen.getByText("Profile: Runner Two")).toBeInTheDocument();
+    expect(screen.queryByText("Profile: Runner One")).not.toBeInTheDocument();
   });
 });

@@ -282,6 +282,34 @@ describe('App authentication state', () => {
     ).not.toBeInTheDocument()
   })
 
+  it('hides participant state while logout is awaiting Firebase', async () => {
+    const user = userEvent.setup()
+    let resolveLogout: (() => void) | undefined
+    mockedLogOut.mockImplementation(
+      () =>
+        new Promise<void>((resolve) => {
+          resolveLogout = resolve
+        })
+    )
+    renderSignedInApp()
+
+    expect(screen.getByTestId('training-data-provider')).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Log out' }))
+
+    expect(screen.getByRole('status')).toHaveTextContent('Signing out...')
+    expect(screen.queryByTestId('training-data-provider')).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole('navigation', { name: 'Training sections' })
+    ).not.toBeInTheDocument()
+
+    act(() => {
+      resolveLogout?.()
+      emitAuthState(null)
+    })
+
+    expect(screen.getByRole('button', { name: 'Log in' })).toBeInTheDocument()
+  })
+
   it('shows a calm error when logout fails', async () => {
     const user = userEvent.setup()
     mockedLogOut.mockRejectedValue(new Error('Network unavailable'))
@@ -292,6 +320,10 @@ describe('App authentication state', () => {
     expect(screen.getByRole('alert')).toHaveTextContent(
       "We couldn't log you out. Please try again."
     )
+    expect(screen.getByTestId('training-data-provider')).toBeInTheDocument()
+    expect(
+      screen.getByRole('navigation', { name: 'Training sections' })
+    ).toBeInTheDocument()
   })
 
   it('opens account settings and restores focus when the dialog closes', async () => {
