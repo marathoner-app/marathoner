@@ -3,7 +3,10 @@
 The Track fixture renders `ShoeTracker` with in-memory callbacks so the browser
 test can exercise the complete interaction without Firebase, App Check, or a
 development account. It runs that workflow at the default text size and at a
-200% root text scale as an early large-text regression barrier. The landing
+200% root text scale as an early large-text regression barrier. The Analyze
+fixture renders deterministic completed-run feedback and verifies both the
+summary cards and the weekly-distance chart's accessible data table at those
+same phone settings. The landing
 fixture renders the signed-out production shell directly and covers both phone
 (`390 × 844`) and desktop (`1440 × 900`) layout plus the existing login dialog.
 
