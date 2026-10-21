@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
 import {
@@ -87,16 +87,49 @@ describe("Calendar", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("opens and closes a persisted workout detail", async () => {
+  it("opens and explicitly closes a named workout dialog", async () => {
     const user = userEvent.setup();
     render(<Calendar plan={plan} workouts={workouts} />);
 
-    await user.click(screen.getByRole("button", { name: "2026-08-03: Easy run" }));
+    const trigger = screen.getByRole("button", {
+      name: "2026-08-03: Easy run",
+    });
+    await user.click(trigger);
+
+    const dialog = screen.getByRole("dialog", {
+      name: "2026-08-03 Details",
+    });
     expect(
-      screen.getByRole("heading", { name: "2026-08-03 Details" }),
+      within(dialog).getByRole("heading", { name: "2026-08-03 Details" }),
+    ).toHaveFocus();
+
+    await user.tab();
+    const closeButton = within(dialog).getByRole("button", { name: "Close" });
+    expect(closeButton).toHaveFocus();
+
+    await user.tab();
+    expect(closeButton).toHaveFocus();
+
+    await user.click(closeButton);
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    await waitFor(() => expect(trigger).toHaveFocus());
+  });
+
+  it("closes the workout dialog with Escape and restores trigger focus", async () => {
+    const user = userEvent.setup();
+    render(<Calendar plan={plan} workouts={workouts} />);
+
+    const trigger = screen.getByRole("button", {
+      name: "2026-08-03: Easy run",
+    });
+    await user.click(trigger);
+    expect(
+      screen.getByRole("dialog", { name: "2026-08-03 Details" }),
     ).toBeInTheDocument();
 
-    await user.click(screen.getByRole("button", { name: "Close" }));
+    await user.keyboard("{Escape}");
+
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    await waitFor(() => expect(trigger).toHaveFocus());
   });
 });

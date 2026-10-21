@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   metersToMiles,
   type PlannedWorkout,
@@ -57,11 +57,27 @@ export default function Calendar({ plan, workouts }: CalendarProps) {
   const [selectedWorkout, setSelectedWorkout] =
     useState<PlannedWorkout | null>(null);
   const [selectedWeek, setSelectedWeek] = useState(1);
+  const workoutDialogHeadingRef = useRef<HTMLHeadingElement>(null);
+  const workoutDialogCloseRef = useRef<HTMLButtonElement>(null);
+  const workoutTriggerRef = useRef<HTMLButtonElement | null>(null);
 
   useEffect(() => {
     setSelectedWeek(1);
     setSelectedWorkout(null);
   }, [plan?.id]);
+
+  useEffect(() => {
+    if (selectedWorkout !== null) {
+      workoutDialogHeadingRef.current?.focus();
+      return;
+    }
+
+    if (workoutTriggerRef.current?.isConnected) {
+      workoutTriggerRef.current.focus();
+    }
+  }, [selectedWorkout]);
+
+  const closeWorkoutDetails = () => setSelectedWorkout(null);
 
   const weekCount = useMemo(() => {
     if (plan === null) return 0;
@@ -126,7 +142,10 @@ export default function Calendar({ plan, workouts }: CalendarProps) {
               key={workout.id}
               type="button"
               className={`plan-day ${workoutColorClass(workout)} ${workout.status}`}
-              onClick={() => setSelectedWorkout(workout)}
+              onClick={(event) => {
+                workoutTriggerRef.current = event.currentTarget;
+                setSelectedWorkout(workout);
+              }}
               aria-label={`${workout.scheduledDate}: ${workoutLabel(workout)}`}
             >
               <span className="plan-day-number">{workout.scheduledDate.slice(5)}</span>
@@ -141,7 +160,19 @@ export default function Calendar({ plan, workouts }: CalendarProps) {
       {selectedWorkout && (
         <div
           className="plan-modal-overlay"
-          onClick={() => setSelectedWorkout(null)}
+          onClick={closeWorkoutDetails}
+          onKeyDown={(event) => {
+            if (event.key === "Escape") {
+              event.stopPropagation();
+              closeWorkoutDetails();
+              return;
+            }
+
+            if (event.key === "Tab") {
+              event.preventDefault();
+              workoutDialogCloseRef.current?.focus();
+            }
+          }}
         >
           <div
             className="plan-modal-content"
@@ -150,7 +181,11 @@ export default function Calendar({ plan, workouts }: CalendarProps) {
             aria-labelledby="workout-detail-title"
             onClick={(event) => event.stopPropagation()}
           >
-            <h3 id="workout-detail-title">
+            <h3
+              id="workout-detail-title"
+              ref={workoutDialogHeadingRef}
+              tabIndex={-1}
+            >
               {selectedWorkout.scheduledDate} Details
             </h3>
             <p>
@@ -166,7 +201,11 @@ export default function Calendar({ plan, workouts }: CalendarProps) {
                   {Number(metersToMiles(selectedWorkout.targetDistance).toFixed(1))} mi
                 </p>
               )}
-            <button type="button" onClick={() => setSelectedWorkout(null)}>
+            <button
+              ref={workoutDialogCloseRef}
+              type="button"
+              onClick={closeWorkoutDetails}
+            >
               Close
             </button>
           </div>
