@@ -1,5 +1,3 @@
-import LoginButton from "./LoginButton";
-
 type PublicAccessNoticeProps = {
   supportEmail?: string;
 };
@@ -69,13 +67,6 @@ export default function PublicAccessNotice({
             </p>
           )}
         </section>
-      </div>
-
-      <div className="existing-account-access">
-        <p id="existing-account-help">
-          Already have an existing Marathoner account?
-        </p>
-        <LoginButton describedBy="existing-account-help" />
       </div>
     </section>
   );
