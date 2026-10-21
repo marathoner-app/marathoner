@@ -140,6 +140,23 @@ async function addShoe(name: string) {
 }
 
 describe("ShoeTracker", () => {
+  it("gives every run-entry control a persistent visible label", () => {
+    render(<Harness />);
+
+    expect(screen.getByRole("form", { name: "Log a completed run" })).toBeInTheDocument();
+    expect(screen.getByLabelText("Run date")).toBeInTheDocument();
+    expect(screen.getByRole("spinbutton", { name: "Distance (miles)" })).toBeInTheDocument();
+    expect(screen.getByRole("textbox", { name: "Elapsed time" })).toBeInTheDocument();
+    expect(screen.getByRole("combobox", { name: "Running shoes" })).toBeInTheDocument();
+    expect(screen.getByRole("combobox", { name: "Planned workout" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("combobox", { name: "Perceived effort (optional)" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("textbox", { name: "Run notes (optional)" }),
+    ).toBeInTheDocument();
+  });
+
   it("adds a persisted shoe with zero starting mileage", async () => {
     render(<Harness />);
 
@@ -197,8 +214,8 @@ describe("ShoeTracker", () => {
     render(<Harness />);
     const user = await addShoe("Daily Trainer");
 
-    await user.type(screen.getByPlaceholderText("Miles"), "5");
-    await user.type(screen.getByPlaceholderText("Time (e.g. 45:30)"), "45:30");
+    await user.type(screen.getByRole("spinbutton", { name: "Distance (miles)" }), "5");
+    await user.type(screen.getByRole("textbox", { name: "Elapsed time" }), "45:30");
     await user.selectOptions(
       screen.getByRole("combobox", { name: "Running shoes" }),
       "shoe-1",
@@ -297,14 +314,14 @@ describe("ShoeTracker", () => {
     render(<Harness />);
     const user = await addShoe("Daily Trainer");
 
-    await user.type(screen.getByPlaceholderText("Miles"), "5");
-    await user.type(screen.getByPlaceholderText("Time (e.g. 45:30)"), "45:30");
+    await user.type(screen.getByRole("spinbutton", { name: "Distance (miles)" }), "5");
+    await user.type(screen.getByRole("textbox", { name: "Elapsed time" }), "45:30");
     await user.selectOptions(
       screen.getByRole("combobox", { name: "Running shoes" }),
       "shoe-1",
     );
     await user.type(
-      screen.getByRole("textbox", { name: "Run notes" }),
+      screen.getByRole("textbox", { name: "Run notes (optional)" }),
       "  Warm afternoon; carried water.  ",
     );
     await user.click(screen.getByRole("button", { name: "Log Run" }));
@@ -318,14 +335,14 @@ describe("ShoeTracker", () => {
     render(<Harness />);
     const user = await addShoe("Daily Trainer");
     const maximumNotes = "n".repeat(COMPLETED_RUN_NOTES_MAX_LENGTH);
-    const notes = screen.getByRole("textbox", { name: "Run notes" });
+    const notes = screen.getByRole("textbox", { name: "Run notes (optional)" });
 
     expect(notes).toHaveAttribute(
       "maxlength",
       String(COMPLETED_RUN_NOTES_MAX_LENGTH),
     );
-    await user.type(screen.getByPlaceholderText("Miles"), "5");
-    await user.type(screen.getByPlaceholderText("Time (e.g. 45:30)"), "45:30");
+    await user.type(screen.getByRole("spinbutton", { name: "Distance (miles)" }), "5");
+    await user.type(screen.getByRole("textbox", { name: "Elapsed time" }), "45:30");
     await user.selectOptions(
       screen.getByRole("combobox", { name: "Running shoes" }),
       "shoe-1",
@@ -466,14 +483,14 @@ describe("ShoeTracker", () => {
     render(<Harness />);
     const user = await addShoe("Daily Trainer");
 
-    await user.type(screen.getByPlaceholderText("Miles"), "5");
-    await user.type(screen.getByPlaceholderText("Time (e.g. 45:30)"), "45:30");
+    await user.type(screen.getByRole("spinbutton", { name: "Distance (miles)" }), "5");
+    await user.type(screen.getByRole("textbox", { name: "Elapsed time" }), "45:30");
     await user.selectOptions(
       screen.getByRole("combobox", { name: "Running shoes" }),
       "shoe-1",
     );
     await user.selectOptions(
-      screen.getByRole("combobox", { name: "Perceived effort" }),
+      screen.getByRole("combobox", { name: "Perceived effort (optional)" }),
       "harder_than_expected",
     );
     await user.click(screen.getByRole("button", { name: "Log Run" }));
@@ -533,14 +550,16 @@ describe("ShoeTracker", () => {
   it("rejects an unsupported perceived-effort value", async () => {
     render(<Harness />);
     const user = await addShoe("Daily Trainer");
-    const effort = screen.getByRole("combobox", { name: "Perceived effort" });
+    const effort = screen.getByRole("combobox", {
+      name: "Perceived effort (optional)",
+    });
     const invalidOption = document.createElement("option");
     invalidOption.value = "impossibly_easy";
     invalidOption.text = "Invalid effort";
     effort.append(invalidOption);
 
-    await user.type(screen.getByPlaceholderText("Miles"), "5");
-    await user.type(screen.getByPlaceholderText("Time (e.g. 45:30)"), "45:30");
+    await user.type(screen.getByRole("spinbutton", { name: "Distance (miles)" }), "5");
+    await user.type(screen.getByRole("textbox", { name: "Elapsed time" }), "45:30");
     await user.selectOptions(
       screen.getByRole("combobox", { name: "Running shoes" }),
       "shoe-1",
