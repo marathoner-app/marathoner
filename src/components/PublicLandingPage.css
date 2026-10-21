@@ -36,6 +36,33 @@
     var(--landing-space-section);
 }
 
+.landing-skip-link {
+  position: fixed;
+  top: 0.75rem;
+  left: 0.75rem;
+  z-index: 1100;
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.75rem;
+  padding: 0.65rem 1rem;
+  border: 2px solid var(--landing-ink);
+  border-radius: 0.5rem;
+  background: var(--landing-surface);
+  color: var(--landing-ink);
+  font-weight: 700;
+  transform: translateY(calc(-100% - 1rem));
+}
+
+.landing-skip-link:focus {
+  outline: 3px solid var(--landing-accent);
+  outline-offset: 3px;
+  transform: translateY(0);
+}
+
+#landing-main-content:focus {
+  outline: none;
+}
+
 .landing-header {
   display: flex;
   align-items: center;
@@ -177,6 +204,12 @@
   font-weight: 650;
   text-underline-offset: 0.2em;
   white-space: nowrap;
+}
+
+.landing-hero__ios-status a:focus-visible,
+.landing-hero__actions .login-btn:focus-visible {
+  outline: 3px solid var(--landing-accent);
+  outline-offset: 3px;
 }
 
 .landing-hero__actions .login-wrapper {
