@@ -34,6 +34,8 @@
 .tracker button {
   box-sizing: border-box;
   width: 100%;
+  min-height: 2.75rem;
+  font: inherit;
 }
 
 .tracker textarea {

@@ -1,4 +1,19 @@
-import { expect, type Page } from "@playwright/test";
+import { expect, type Locator, type Page } from "@playwright/test";
+
+export async function expectMinimumTouchTarget(locator: Locator, label: string) {
+  const bounds = await locator.boundingBox();
+  expect(bounds, `${label} should have visible bounds`).not.toBeNull();
+
+  if (!bounds) return;
+
+  expect(bounds.width, `${label} should be at least 44px wide`).toBeGreaterThanOrEqual(
+    44,
+  );
+  expect(
+    bounds.height,
+    `${label} should be at least 44px tall`,
+  ).toBeGreaterThanOrEqual(44);
+}
 
 export async function expectNoHorizontalOverflow(
   page: Page,
