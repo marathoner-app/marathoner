@@ -206,6 +206,19 @@ export type TrainingSynchronizationEvent =
       readonly message: string
     })
 
+export type TrainingLiveReadEvent = Extract<
+  TrainingSynchronizationEvent,
+  { readonly type: 'source_snapshot' | 'source_error' }
+>
+
+export type TrainingLiveReadEventBatch = readonly TrainingLiveReadEvent[]
+
+export interface TrainingLiveReadSource {
+  subscribe(
+    onEvents: (events: TrainingLiveReadEventBatch) => void,
+  ): () => void
+}
+
 export interface CreateTrainingSynchronizationKernelOptions {
   readonly ownerId: UserId
   readonly sessionGeneration: number

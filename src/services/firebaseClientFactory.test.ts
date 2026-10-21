@@ -10,17 +10,22 @@ const firebase = vi.hoisted(() => {
     },
   }
   const auth = { app }
+  const firestore = { app }
 
   return {
     app,
     auth,
+    firestore,
     getApp: vi.fn(() => app),
     getApps: vi.fn(() => [app].slice(0, 0)),
     getAuth: vi.fn(() => auth),
     initializeApp: vi.fn(() => app),
     initializeAuth: vi.fn(() => auth),
+    initializeFirestore: vi.fn(() => firestore),
     indexedDbPersistence: { storage: 'indexedDB' },
     localStoragePersistence: { storage: 'localStorage' },
+    memoryCache: { storage: 'memory' },
+    memoryLocalCache: vi.fn(),
   }
 })
 
@@ -35,6 +40,11 @@ vi.mock('firebase/auth', () => ({
   getAuth: firebase.getAuth,
   indexedDBLocalPersistence: firebase.indexedDbPersistence,
   initializeAuth: firebase.initializeAuth,
+}))
+
+vi.mock('firebase/firestore', () => ({
+  initializeFirestore: firebase.initializeFirestore,
+  memoryLocalCache: firebase.memoryLocalCache,
 }))
 
 import { createFirebaseClient } from './firebaseClientFactory'
@@ -52,10 +62,18 @@ describe('Firebase client factory', () => {
     vi.clearAllMocks()
   })
 
-  it('initializes App Check before acquiring browser Auth', async () => {
+  it('initializes App Check, memory-only Firestore, then browser Auth', async () => {
     const order: string[] = []
     initializeAppCheck.mockImplementationOnce(async () => {
       order.push('app-check')
+    })
+    firebase.memoryLocalCache.mockImplementationOnce(() => {
+      order.push('memory-cache')
+      return firebase.memoryCache
+    })
+    firebase.initializeFirestore.mockImplementationOnce(() => {
+      order.push('firestore')
+      return firebase.firestore
     })
     firebase.getAuth.mockImplementationOnce(() => {
       order.push('auth')
@@ -67,9 +85,18 @@ describe('Firebase client factory', () => {
     ).resolves.toEqual({
       app: firebase.app,
       auth: firebase.auth,
+      firestore: firebase.firestore,
     })
-    expect(order).toEqual(['app-check', 'auth'])
+    expect(order).toEqual([
+      'app-check',
+      'memory-cache',
+      'firestore',
+      'auth',
+    ])
     expect(firebase.initializeApp).toHaveBeenCalledWith(config)
+    expect(firebase.initializeFirestore).toHaveBeenCalledWith(firebase.app, {
+      localCache: firebase.memoryCache,
+    })
     expect(firebase.getAuth).toHaveBeenCalledWith(firebase.app)
     expect(firebase.initializeAuth).not.toHaveBeenCalled()
   })
@@ -94,6 +121,7 @@ describe('Firebase client factory', () => {
     ).resolves.toEqual({
       app: firebase.app,
       auth: firebase.auth,
+      firestore: firebase.firestore,
     })
     expect(firebase.initializeApp).not.toHaveBeenCalled()
     expect(firebase.initializeAuth).toHaveBeenCalledWith(firebase.app, {
@@ -121,6 +149,7 @@ describe('Firebase client factory', () => {
     ).resolves.toEqual({
       app: firebase.app,
       auth: firebase.auth,
+      firestore: firebase.firestore,
     })
 
     expect(firebase.initializeApp).toHaveBeenCalledOnce()
