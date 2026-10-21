@@ -76,6 +76,30 @@ jobs:
       - name: Run unit and component tests
         run: npm test
 
+  track-mobile-viewport:
+    name: Track mobile viewport
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Exercise Track at phone width
+        run: npm run test:viewport
+
   production-build:
     name: Production build
     runs-on: ubuntu-latest
