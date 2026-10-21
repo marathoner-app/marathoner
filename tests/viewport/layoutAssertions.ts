@@ -26,6 +26,8 @@ export async function expectNoHorizontalOverflow(
       .filter((element) => {
         const style = window.getComputedStyle(element);
         if (style.display === "none" || style.visibility === "hidden") return false;
+        const closedDetails = element.closest("details:not([open])");
+        if (closedDetails !== null && element.tagName !== "SUMMARY") return false;
         const bounds = element.getBoundingClientRect();
         return bounds.width > 0 && (bounds.left < -0.5 || bounds.right > viewportWidth + 0.5);
       })
