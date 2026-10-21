@@ -6,6 +6,7 @@ import {
 
 import type { MaterialCommandEnvelope } from '../domain/materialCommands/contract'
 import { getFirebaseApp } from './firebaseClient'
+import { createCompletedRunCommandClient } from './completedRunCommandClient'
 import {
   createMaterialCommandClient,
   type MaterialCommandTransport,
@@ -47,7 +48,12 @@ const transport: MaterialCommandTransport = {
   },
 }
 
-export const materialCommandClient = createMaterialCommandClient({
+const clientOptions = {
   isOnline: () => navigator.onLine,
   transport,
-})
+}
+
+export const materialCommandClient = createMaterialCommandClient(clientOptions)
+
+export const completedRunCommandClient =
+  createCompletedRunCommandClient(clientOptions)
