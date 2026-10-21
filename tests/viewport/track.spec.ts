@@ -93,7 +93,9 @@ async function exerciseTrackWorkflow(page: Page, textSizeLabel: string) {
       label: `edit run date at ${textSizeLabel}`,
     },
     {
-      locator: editForm.getByRole("spinbutton", { name: "Edit miles" }),
+      locator: editForm.getByRole("spinbutton", {
+        name: "Edit distance (miles)",
+      }),
       label: `edit miles at ${textSizeLabel}`,
     },
     {
@@ -105,11 +107,15 @@ async function exerciseTrackWorkflow(page: Page, textSizeLabel: string) {
       label: `edit running shoes at ${textSizeLabel}`,
     },
     {
-      locator: editForm.getByRole("combobox", { name: "Edit perceived effort" }),
+      locator: editForm.getByRole("combobox", {
+        name: "Edit perceived effort (optional)",
+      }),
       label: `edit perceived effort at ${textSizeLabel}`,
     },
     {
-      locator: editForm.getByRole("textbox", { name: "Edit run notes" }),
+      locator: editForm.getByRole("textbox", {
+        name: "Edit run notes (optional)",
+      }),
       label: `edit run notes at ${textSizeLabel}`,
     },
     {

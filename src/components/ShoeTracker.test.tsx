@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import {
@@ -154,6 +154,59 @@ describe("ShoeTracker", () => {
     ).toBeInTheDocument();
     expect(
       screen.getByRole("textbox", { name: "Run notes (optional)" }),
+    ).toBeInTheDocument();
+  });
+
+  it("gives every run-editor control a persistent visible label", async () => {
+    const shoe: Shoe = {
+      id: createShoeId("shoe-1"),
+      userId,
+      name: "Daily Trainer",
+      startingDistance: createDistanceMeters(0),
+      status: "active",
+      createdAt: timestamp,
+      updatedAt: timestamp,
+    };
+    const run: CompletedRun = {
+      id: createCompletedRunId("run-1"),
+      userId,
+      shoeId: shoe.id,
+      startedAt: timestamp,
+      timeZone: createIanaTimeZone("America/Los_Angeles"),
+      distance: createDistanceMeters(5_000),
+      duration: createDurationSeconds(1_800),
+      createdAt: timestamp,
+      updatedAt: timestamp,
+    };
+    const user = userEvent.setup();
+    render(<Harness initialShoes={[shoe]} initialRuns={[run]} />);
+
+    await user.click(screen.getByRole("button", { name: "Edit" }));
+
+    const editForm = screen.getByRole("form", {
+      name: "Edit run from 2026-08-05",
+    });
+    expect(within(editForm).getByLabelText("Edit run date")).toBeInTheDocument();
+    expect(
+      within(editForm).getByRole("spinbutton", {
+        name: "Edit distance (miles)",
+      }),
+    ).toBeInTheDocument();
+    expect(
+      within(editForm).getByRole("textbox", { name: "Edit elapsed time" }),
+    ).toBeInTheDocument();
+    expect(
+      within(editForm).getByRole("combobox", { name: "Edit running shoes" }),
+    ).toBeInTheDocument();
+    expect(
+      within(editForm).getByRole("combobox", {
+        name: "Edit perceived effort (optional)",
+      }),
+    ).toBeInTheDocument();
+    expect(
+      within(editForm).getByRole("textbox", {
+        name: "Edit run notes (optional)",
+      }),
     ).toBeInTheDocument();
   });
 
@@ -390,21 +443,25 @@ describe("ShoeTracker", () => {
 
     await user.click(screen.getByRole("button", { name: "Edit" }));
     await user.type(
-      screen.getByRole("textbox", { name: "Edit run notes" }),
+      screen.getByRole("textbox", { name: "Edit run notes (optional)" }),
       "Light rain.",
     );
     await user.click(screen.getByRole("button", { name: "Save" }));
     expect(await screen.findByText("Light rain.")).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "Edit" }));
-    const editNotes = screen.getByRole("textbox", { name: "Edit run notes" });
+    const editNotes = screen.getByRole("textbox", {
+      name: "Edit run notes (optional)",
+    });
     await user.clear(editNotes);
     await user.type(editNotes, "Tried a new route.");
     await user.click(screen.getByRole("button", { name: "Save" }));
     expect(await screen.findByText("Tried a new route.")).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "Edit" }));
-    await user.clear(screen.getByRole("textbox", { name: "Edit run notes" }));
+    await user.clear(
+      screen.getByRole("textbox", { name: "Edit run notes (optional)" }),
+    );
     await user.click(screen.getByRole("button", { name: "Save" }));
     expect(screen.queryByText(/^Notes:/)).not.toBeInTheDocument();
   });
@@ -541,7 +598,9 @@ describe("ShoeTracker", () => {
 
     await user.click(screen.getByRole("button", { name: "Edit" }));
     await user.selectOptions(
-      screen.getByRole("combobox", { name: "Edit perceived effort" }),
+      screen.getByRole("combobox", {
+        name: "Edit perceived effort (optional)",
+      }),
       "about_right",
     );
     await user.click(screen.getByRole("button", { name: "Save" }));
@@ -549,7 +608,9 @@ describe("ShoeTracker", () => {
 
     await user.click(screen.getByRole("button", { name: "Edit" }));
     await user.selectOptions(
-      screen.getByRole("combobox", { name: "Edit perceived effort" }),
+      screen.getByRole("combobox", {
+        name: "Edit perceived effort (optional)",
+      }),
       "much_easier_than_expected",
     );
     await user.click(screen.getByRole("button", { name: "Save" }));
@@ -557,7 +618,9 @@ describe("ShoeTracker", () => {
 
     await user.click(screen.getByRole("button", { name: "Edit" }));
     await user.selectOptions(
-      screen.getByRole("combobox", { name: "Edit perceived effort" }),
+      screen.getByRole("combobox", {
+        name: "Edit perceived effort (optional)",
+      }),
       "",
     );
     await user.click(screen.getByRole("button", { name: "Save" }));
@@ -674,8 +737,13 @@ describe("ShoeTracker", () => {
     );
 
     await user.click(screen.getByRole("button", { name: "Edit" }));
-    await user.clear(screen.getByRole("spinbutton", { name: "Edit miles" }));
-    await user.type(screen.getByRole("spinbutton", { name: "Edit miles" }), "3");
+    await user.clear(
+      screen.getByRole("spinbutton", { name: "Edit distance (miles)" }),
+    );
+    await user.type(
+      screen.getByRole("spinbutton", { name: "Edit distance (miles)" }),
+      "3",
+    );
     await user.click(screen.getByRole("button", { name: "Save" }));
 
     expect(await screen.findByText("Total: 3 mi")).toBeInTheDocument();
