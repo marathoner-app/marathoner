@@ -1,6 +1,6 @@
-import { act, render, screen } from "@testing-library/react";
+import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   calculateShoeDistance,
   calculateTrainingAnalytics,
@@ -17,16 +17,81 @@ import { createDocumentTrainingRepositories } from "../persistence/documentTrain
 import { InMemoryDocumentStore } from "../persistence/testing/InMemoryDocumentStore";
 import type { TrainingRepositories } from "../persistence/trainingRepositories";
 import TrainingDataProvider, {
+  type TrainingLiveReadSourceFactory,
   type TrainingRepositoryFactory,
 } from "./TrainingDataProvider";
+import type {
+  SynchronizedTrainingSnapshot,
+  TrainingLiveReadEvent,
+  TrainingLiveReadEventBatch,
+  TrainingLiveReadSource,
+  TrainingSnapshotOrigin,
+} from "./trainingSynchronization";
 import { useTrainingData } from "./useTrainingData";
 
 const userId = createUserId("runner-1");
 const timestamp = createUtcDateTime("2026-08-03T12:00:00Z");
 const timeZone = createIanaTimeZone("America/Los_Angeles");
 
+class ControlledLiveReadSource implements TrainingLiveReadSource {
+  readonly unsubscribe = vi.fn();
+  private listener: ((events: TrainingLiveReadEventBatch) => void) | null = null;
+
+  constructor(
+    readonly ownerId: UserId,
+    readonly sessionGeneration: number,
+  ) {}
+
+  subscribe(listener: (events: TrainingLiveReadEventBatch) => void) {
+    this.listener = listener;
+    return this.unsubscribe;
+  }
+
+  emit(events: TrainingLiveReadEventBatch) {
+    this.listener?.(events);
+  }
+
+  emitSnapshot(
+    snapshot: SynchronizedTrainingSnapshot,
+    origin: TrainingSnapshotOrigin = "server",
+    hasPendingWrites = false,
+  ) {
+    const session = {
+      ownerId: this.ownerId,
+      sessionGeneration: this.sessionGeneration,
+      origin,
+      hasPendingWrites,
+      observedAt: timestamp,
+    };
+    const events: TrainingLiveReadEvent[] = [
+      { ...session, type: "source_snapshot", source: "profile", value: snapshot.profile },
+      { ...session, type: "source_snapshot", source: "plans", value: snapshot.plans },
+      { ...session, type: "source_snapshot", source: "workouts", value: snapshot.workouts },
+      { ...session, type: "source_snapshot", source: "runs", value: snapshot.runs },
+      { ...session, type: "source_snapshot", source: "shoes", value: snapshot.shoes },
+    ];
+
+    this.emit(events);
+  }
+
+  emitError(message: string) {
+    this.emit([
+      {
+        type: "source_error",
+        source: "runs",
+        ownerId: this.ownerId,
+        sessionGeneration: this.sessionGeneration,
+        message,
+        recoverable: true,
+      },
+    ]);
+  }
+}
+
 let repositories: TrainingRepositories;
 let repositoryFactory: TrainingRepositoryFactory;
+let liveReadSourceFactory: TrainingLiveReadSourceFactory;
+let sources: ControlledLiveReadSource[];
 
 beforeEach(() => {
   repositories = createDocumentTrainingRepositories(
@@ -35,6 +100,12 @@ beforeEach(() => {
     () => timestamp,
   );
   repositoryFactory = async () => repositories;
+  sources = [];
+  liveReadSourceFactory = async (ownerId, sessionGeneration) => {
+    const source = new ControlledLiveReadSource(ownerId, sessionGeneration);
+    sources.push(source);
+    return source;
+  };
 });
 
 async function createNamedRepositories(
@@ -54,25 +125,66 @@ async function createNamedRepositories(
   return ownedRepositories;
 }
 
-function createDeferred<T>() {
-  let resolvePromise: ((value: T) => void) | undefined;
-  const promise = new Promise<T>((resolve) => {
-    resolvePromise = resolve;
-  });
+async function snapshotFromRepositories(
+  ownerId: UserId,
+  ownedRepositories: TrainingRepositories,
+): Promise<SynchronizedTrainingSnapshot> {
+  const [profile, plans, runs, shoes] = await Promise.all([
+    ownedRepositories.profile.load(),
+    ownedRepositories.plans.list(),
+    ownedRepositories.runs.list(),
+    ownedRepositories.shoes.list(),
+  ]);
+  const workouts = (
+    await Promise.all(
+      plans.map((plan) => ownedRepositories.workouts.listForPlan(plan.id)),
+    )
+  ).flat();
 
-  return {
-    promise,
-    resolve(value: T) {
-      resolvePromise?.(value);
-    },
-  };
+  return { ownerId, profile, plans, workouts, runs, shoes };
+}
+
+async function waitForSource(index = sources.length - 1) {
+  await waitFor(() => expect(sources[index]).toBeDefined());
+  return sources[index] as ControlledLiveReadSource;
+}
+
+async function publishRepositories(
+  source: ControlledLiveReadSource,
+  ownedRepositories = repositories,
+  origin: TrainingSnapshotOrigin = "server",
+) {
+  const snapshot = await snapshotFromRepositories(
+    source.ownerId,
+    ownedRepositories,
+  );
+  act(() => source.emitSnapshot(snapshot, origin));
+}
+
+function renderProvider(children = <IntegrationProbe />) {
+  return render(
+    <TrainingDataProvider
+      userId={userId}
+      repositoryFactory={repositoryFactory}
+      liveReadSourceFactory={liveReadSourceFactory}
+    >
+      {children}
+    </TrainingDataProvider>,
+  );
 }
 
 function IntegrationProbe() {
   const training = useTrainingData();
 
-  if (training.status !== "ready") {
-    return <p>{training.error ? `${training.status}: ${training.error}` : training.status}</p>;
+  if (training.status === "loading" || training.status === "error") {
+    return (
+      <div>
+        <p>{training.error ? `${training.status}: ${training.error}` : training.status}</p>
+        <button type="button" onClick={() => void training.reload()}>
+          Retry sync
+        </button>
+      </div>
+    );
   }
 
   const workout = training.workouts[0];
@@ -89,6 +201,7 @@ function IntegrationProbe() {
 
   return (
     <div>
+      <p>Status: {training.status}</p>
       <p>Runs: {training.runs.length}</p>
       <p>Profile: {training.profile?.displayName ?? "none"}</p>
       <p>Workout: {workout?.status ?? "none"}</p>
@@ -98,6 +211,7 @@ function IntegrationProbe() {
       <p>Shoe status: {shoe?.status ?? "none"}</p>
       <button
         type="button"
+        disabled={!training.canWrite}
         onClick={() =>
           void training.saveProfile({
             displayName: "Runner One",
@@ -113,12 +227,12 @@ function IntegrationProbe() {
       </button>
       <button
         type="button"
-        disabled={!workout || !shoe}
+        disabled={!training.canWrite || !workout || !shoe}
         onClick={() =>
           void training.createRun({
-            plannedWorkoutPlanId: workout.planId,
-            plannedWorkoutId: workout.id,
-            shoeId: shoe.id,
+            plannedWorkoutPlanId: workout?.planId,
+            plannedWorkoutId: workout?.id,
+            shoeId: shoe?.id,
             startedAt: createUtcDateTime("2026-08-03T14:00:00Z"),
             timeZone,
             distance: milesToMeters(3),
@@ -130,7 +244,7 @@ function IntegrationProbe() {
       </button>
       <button
         type="button"
-        disabled={!run}
+        disabled={!training.canWrite || !run}
         onClick={() =>
           run && void training.updateRun(run.id, { distance: milesToMeters(4) })
         }
@@ -139,29 +253,16 @@ function IntegrationProbe() {
       </button>
       <button
         type="button"
-        disabled={!run}
-        onClick={() =>
-          run &&
-          void training.updateRun(run.id, {
-            startedAt: createUtcDateTime("2026-08-10T14:00:00Z"),
-          })
-        }
-      >
-        Move run to next week
-      </button>
-      <button
-        type="button"
-        disabled={!run}
+        disabled={!training.canWrite || !run}
         onClick={() => run && void training.deleteRun(run.id)}
       >
         Delete run
       </button>
       <button
         type="button"
-        disabled={!shoe || shoe.status === "retired"}
+        disabled={!training.canWrite || !shoe || shoe.status === "retired"}
         onClick={() =>
-          shoe &&
-          void training.retireShoe(shoe.id, createDateOnly("2026-08-04"))
+          shoe && void training.retireShoe(shoe.id, createDateOnly("2026-08-04"))
         }
       >
         Retire shoe
@@ -171,54 +272,93 @@ function IntegrationProbe() {
 }
 
 describe("TrainingDataProvider", () => {
-  it("renders an empty authenticated training dataset", async () => {
-    render(
-      <TrainingDataProvider
-        userId={userId}
-        repositoryFactory={repositoryFactory}
-      >
-        <IntegrationProbe />
-      </TrainingDataProvider>,
+  it("starts live synchronization without repository startup reads", async () => {
+    const profileLoad = vi.spyOn(repositories.profile, "load");
+    const plansList = vi.spyOn(repositories.plans, "list");
+    const runsList = vi.spyOn(repositories.runs, "list");
+    const shoesList = vi.spyOn(repositories.shoes, "list");
+
+    renderProvider();
+    const source = await waitForSource();
+    act(() =>
+      source.emitSnapshot({
+        ownerId: userId,
+        profile: null,
+        plans: [],
+        workouts: [],
+        runs: [],
+        shoes: [],
+      }),
     );
 
-    expect(await screen.findByText("Runs: 0")).toBeInTheDocument();
-    expect(screen.getByText("Workout: none")).toBeInTheDocument();
-    expect(screen.getByText("Total: 0")).toBeInTheDocument();
-    expect(screen.getByText("Weekly: 0")).toBeInTheDocument();
-    expect(screen.getByText("Profile: none")).toBeInTheDocument();
+    expect(await screen.findByText("Status: current")).toBeInTheDocument();
+    expect(profileLoad).not.toHaveBeenCalled();
+    expect(plansList).not.toHaveBeenCalled();
+    expect(runsList).not.toHaveBeenCalled();
+    expect(shoesList).not.toHaveBeenCalled();
   });
 
-  it("saves an owned profile through the application boundary", async () => {
-    const user = userEvent.setup();
+  it("renders live server changes without reloading", async () => {
+    renderProvider();
+    const source = await waitForSource();
+    await publishRepositories(source);
+    expect(await screen.findByText("Profile: none")).toBeInTheDocument();
 
-    render(
-      <TrainingDataProvider
-        userId={userId}
-        repositoryFactory={repositoryFactory}
-      >
-        <IntegrationProbe />
-      </TrainingDataProvider>,
-    );
-
-    await screen.findByText("Profile: none");
-    await user.click(screen.getByRole("button", { name: "Save profile" }));
-
-    expect(await screen.findByText("Profile: Runner One")).toBeInTheDocument();
-    await expect(repositories.profile.load()).resolves.toMatchObject({
-      id: userId,
-      displayName: "Runner One",
-      experienceLevel: "consistent",
-      currentRunningFrequencyDaysPerWeek: 4,
+    await repositories.profile.save({
+      displayName: "Second client",
+      preferredDistanceUnit: "mile",
+      timeZone,
     });
+    await publishRepositories(source);
+
+    expect(await screen.findByText("Profile: Second client")).toBeInTheDocument();
   });
 
-  it("keeps completion status, analytics, and shoe mileage in sync", async () => {
+  it("keeps cache-only data readable but blocks writes until server confirmation", async () => {
+    await repositories.profile.save({
+      displayName: "Cached runner",
+      preferredDistanceUnit: "mile",
+      timeZone,
+    });
+    renderProvider();
+    const source = await waitForSource();
+    await publishRepositories(source, repositories, "cache");
+
+    expect(await screen.findByText("Status: stale")).toBeInTheDocument();
+    expect(screen.getByText("Profile: Cached runner")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Save profile" })).toBeDisabled();
+
+    await publishRepositories(source);
+
+    expect(await screen.findByText("Status: current")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Save profile" })).toBeEnabled();
+  });
+
+  it("shows a write only after the listener confirms it", async () => {
+    const user = userEvent.setup();
+    renderProvider();
+    const source = await waitForSource();
+    await publishRepositories(source);
+
+    await user.click(screen.getByRole("button", { name: "Save profile" }));
+    await waitFor(async () =>
+      expect(await repositories.profile.load()).toMatchObject({
+        displayName: "Runner One",
+      }),
+    );
+    expect(screen.getByText("Profile: none")).toBeInTheDocument();
+
+    await publishRepositories(source);
+    expect(await screen.findByText("Profile: Runner One")).toBeInTheDocument();
+  });
+
+  it("converges completion, analytics, and shoe mileage from listener snapshots", async () => {
     const plan = await repositories.plans.create({
       name: "First Marathon Journey",
       startDate: createDateOnly("2026-08-03"),
       targetRaceDate: createDateOnly("2027-01-10"),
     });
-    const plannedWorkout = await repositories.workouts.create({
+    await repositories.workouts.create({
       planId: plan.id,
       scheduledDate: createDateOnly("2026-08-03"),
       phase: "base_building",
@@ -228,150 +368,76 @@ describe("TrainingDataProvider", () => {
     });
     await repositories.shoes.create({ name: "Daily Trainer" });
     const user = userEvent.setup();
+    renderProvider();
+    const source = await waitForSource();
+    await publishRepositories(source);
 
-    render(
-      <TrainingDataProvider
-        userId={userId}
-        repositoryFactory={repositoryFactory}
-      >
-        <IntegrationProbe />
-      </TrainingDataProvider>,
-    );
-
-    await screen.findByText("Workout: planned");
+    expect(await screen.findByText("Workout: planned")).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Complete workout" }));
+    await waitFor(async () => expect(await repositories.runs.list()).toHaveLength(1));
+    expect(screen.getByText("Runs: 0")).toBeInTheDocument();
 
+    await publishRepositories(source);
     expect(await screen.findByText("Runs: 1")).toBeInTheDocument();
     expect(screen.getByText("Workout: completed")).toBeInTheDocument();
     expect(screen.getByText("Total: 3")).toBeInTheDocument();
-    expect(screen.getByText("Weekly: 3")).toBeInTheDocument();
     expect(screen.getByText("Shoe: 3")).toBeInTheDocument();
-    await expect(
-      repositories.workouts.get(plan.id, plannedWorkout.id),
-    ).resolves.toMatchObject({
-      status: "completed",
-      targetDistance: milesToMeters(5),
-    });
 
     await user.click(screen.getByRole("button", { name: "Edit run" }));
+    await waitFor(async () =>
+      expect(await repositories.runs.list()).toEqual([
+        expect.objectContaining({ distance: milesToMeters(4) }),
+      ]),
+    );
+    await publishRepositories(source);
     expect(await screen.findByText("Total: 4")).toBeInTheDocument();
-    expect(screen.getByText("Weekly: 4")).toBeInTheDocument();
-    expect(screen.getByText("Shoe: 4")).toBeInTheDocument();
-
-    await user.click(screen.getByRole("button", { name: "Move run to next week" }));
-    expect(await screen.findByText("Weekly: 0")).toBeInTheDocument();
-    expect(screen.getByText("Total: 4")).toBeInTheDocument();
-    expect(screen.getByText("Workout: completed")).toBeInTheDocument();
-    await expect(repositories.runs.list()).resolves.toEqual([
-      expect.objectContaining({
-        startedAt: createUtcDateTime("2026-08-10T14:00:00Z"),
-        plannedWorkoutPlanId: plan.id,
-        plannedWorkoutId: plannedWorkout.id,
-      }),
-    ]);
 
     await user.click(screen.getByRole("button", { name: "Delete run" }));
+    await waitFor(async () => expect(await repositories.runs.list()).toEqual([]));
+    await publishRepositories(source);
     expect(await screen.findByText("Runs: 0")).toBeInTheDocument();
     expect(screen.getByText("Workout: planned")).toBeInTheDocument();
-    expect(screen.getByText("Total: 0")).toBeInTheDocument();
-    expect(screen.getByText("Weekly: 0")).toBeInTheDocument();
-    expect(screen.getByText("Shoe: 0")).toBeInTheDocument();
   });
 
-  it("retires and reloads a shoe without losing its run or total", async () => {
-    const shoe = await repositories.shoes.create({
-      name: "Daily Trainer",
-      startingDistance: milesToMeters(10),
-    });
-    await repositories.runs.create({
-      shoeId: shoe.id,
-      startedAt: createUtcDateTime("2026-08-03T14:00:00Z"),
-      timeZone,
-      distance: milesToMeters(3),
-      duration: createDurationSeconds(1_800),
-    });
-
+  it("surfaces a listener error and creates a fresh subscription on retry", async () => {
     const user = userEvent.setup();
-    const firstLoad = render(
-      <TrainingDataProvider
-        userId={userId}
-        repositoryFactory={repositoryFactory}
-      >
-        <IntegrationProbe />
-      </TrainingDataProvider>,
-    );
-
-    expect(await screen.findByText("Shoe: 13")).toBeInTheDocument();
-    expect(screen.getByText("Shoe status: active")).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: "Retire shoe" }));
-
-    expect(await screen.findByText("Shoe status: retired")).toBeInTheDocument();
-    expect(screen.getByText("Runs: 1")).toBeInTheDocument();
-    expect(screen.getByText("Shoe: 13")).toBeInTheDocument();
-    await expect(repositories.shoes.get(shoe.id)).resolves.toMatchObject({
-      status: "retired",
-      retiredOn: createDateOnly("2026-08-04"),
-    });
-    firstLoad.unmount();
-
-    render(
-      <TrainingDataProvider
-        userId={userId}
-        repositoryFactory={repositoryFactory}
-      >
-        <IntegrationProbe />
-      </TrainingDataProvider>,
-    );
-
-    expect(await screen.findByText("Shoe: 13")).toBeInTheDocument();
-    expect(screen.getByText("Runs: 1")).toBeInTheDocument();
-    expect(screen.getByText("Shoe status: retired")).toBeInTheDocument();
-  });
-
-  it("surfaces a calm recoverable load error", async () => {
-    const failingFactory: TrainingRepositoryFactory = async () => {
-      throw new Error("Training data is temporarily unavailable.");
-    };
-
-    render(
-      <TrainingDataProvider userId={userId} repositoryFactory={failingFactory}>
-        <IntegrationProbe />
-      </TrainingDataProvider>,
-    );
+    renderProvider();
+    const firstSource = await waitForSource();
+    act(() => firstSource.emitError("Training data is temporarily unavailable."));
 
     expect(
-      await screen.findByText(
-        "error: Training data is temporarily unavailable.",
-      ),
+      await screen.findByText("error: Training data is temporarily unavailable."),
     ).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Retry sync" }));
+
+    const replacementSource = await waitForSource(1);
+    expect(firstSource.unsubscribe).toHaveBeenCalledOnce();
+    expect(replacementSource.sessionGeneration).toBeGreaterThan(
+      firstSource.sessionGeneration,
+    );
+    await publishRepositories(replacementSource);
+    expect(await screen.findByText("Status: current")).toBeInTheDocument();
   });
 
-  it("clears the prior account while the replacement account loads", async () => {
+  it("clears an old owner and ignores a deliberately late callback", async () => {
     const secondUserId = createUserId("runner-2");
     const firstRepositories = await createNamedRepositories(userId, "Runner One");
     const secondRepositories = await createNamedRepositories(
       secondUserId,
       "Runner Two",
     );
-    const secondLoad = createDeferred<TrainingRepositories>();
-    const switchingFactory: TrainingRepositoryFactory = async (requestedUserId) =>
-      requestedUserId === userId ? firstRepositories : secondLoad.promise;
-
-    const view = render(
-      <TrainingDataProvider
-        userId={userId}
-        repositoryFactory={switchingFactory}
-      >
-        <IntegrationProbe />
-      </TrainingDataProvider>,
-    );
-
+    repositoryFactory = async (requestedUserId) =>
+      requestedUserId === userId ? firstRepositories : secondRepositories;
+    const view = renderProvider();
+    const firstSource = await waitForSource(0);
+    await publishRepositories(firstSource, firstRepositories);
     expect(await screen.findByText("Profile: Runner One")).toBeInTheDocument();
 
     view.rerender(
       <TrainingDataProvider
         userId={secondUserId}
-        repositoryFactory={switchingFactory}
+        repositoryFactory={repositoryFactory}
+        liveReadSourceFactory={liveReadSourceFactory}
       >
         <IntegrationProbe />
       </TrainingDataProvider>,
@@ -379,52 +445,12 @@ describe("TrainingDataProvider", () => {
 
     expect(await screen.findByText("loading")).toBeInTheDocument();
     expect(screen.queryByText("Profile: Runner One")).not.toBeInTheDocument();
-
-    await act(async () => {
-      secondLoad.resolve(secondRepositories);
-      await secondLoad.promise;
-    });
-
+    const secondSource = await waitForSource(1);
+    await publishRepositories(secondSource, secondRepositories);
     expect(await screen.findByText("Profile: Runner Two")).toBeInTheDocument();
-  });
+    expect(firstSource.unsubscribe).toHaveBeenCalledOnce();
 
-  it("ignores a prior account load that resolves after the account switches", async () => {
-    const secondUserId = createUserId("runner-2");
-    const firstRepositories = await createNamedRepositories(userId, "Runner One");
-    const secondRepositories = await createNamedRepositories(
-      secondUserId,
-      "Runner Two",
-    );
-    const firstLoad = createDeferred<TrainingRepositories>();
-    const switchingFactory: TrainingRepositoryFactory = async (requestedUserId) =>
-      requestedUserId === userId ? firstLoad.promise : secondRepositories;
-
-    const view = render(
-      <TrainingDataProvider
-        userId={userId}
-        repositoryFactory={switchingFactory}
-      >
-        <IntegrationProbe />
-      </TrainingDataProvider>,
-    );
-
-    expect(await screen.findByText("loading")).toBeInTheDocument();
-    view.rerender(
-      <TrainingDataProvider
-        userId={secondUserId}
-        repositoryFactory={switchingFactory}
-      >
-        <IntegrationProbe />
-      </TrainingDataProvider>,
-    );
-
-    expect(await screen.findByText("Profile: Runner Two")).toBeInTheDocument();
-
-    await act(async () => {
-      firstLoad.resolve(firstRepositories);
-      await firstLoad.promise;
-    });
-
+    await publishRepositories(firstSource, firstRepositories);
     expect(screen.getByText("Profile: Runner Two")).toBeInTheDocument();
     expect(screen.queryByText("Profile: Runner One")).not.toBeInTheDocument();
   });

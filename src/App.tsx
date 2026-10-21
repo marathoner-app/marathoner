@@ -291,8 +291,10 @@ function AuthenticatedExperience({
           ),
     [activePlan, training.profile, training.workouts],
   );
+  const hasReadableTraining =
+    training.status === "current" || training.status === "stale";
   const showOnboarding =
-    training.status === "ready" &&
+    training.status === "current" &&
     (isOnboardingOpen || (!onboardingComplete && !onboardingDeferred));
 
   const closeOnboarding = () => {
@@ -325,11 +327,24 @@ function AuthenticatedExperience({
         </div>
       )}
 
-      {!activeSection && training.status === "ready" && !showOnboarding && (
+      {!activeSection && training.status === "stale" && (
+        <div className="training-home-status training-stale" role="status">
+          <p>
+            Your training data may be out of date. You can review it, but
+            changes are disabled until Marathoner reconnects.
+          </p>
+          <button type="button" onClick={() => void training.reload()}>
+            Retry connection
+          </button>
+        </div>
+      )}
+
+      {!activeSection && hasReadableTraining && !showOnboarding && (
         <>
           <div className="runner-profile-entry">
             <button
               type="button"
+              disabled={!training.canWrite}
               onClick={() => setIsOnboardingOpen(true)}
             >
               {onboardingComplete ? "Edit runner profile" : "Resume runner setup"}
@@ -398,6 +413,8 @@ type SectionContentProps = {
 
 function SectionContent({ section, title, onClose }: SectionContentProps) {
   const training = useTrainingData();
+  const hasReadableTraining =
+    training.status === "current" || training.status === "stale";
   const activePlan =
     training.plans.find((plan) => plan.status === "active") ??
     training.plans.find((plan) => plan.status === "draft") ??
@@ -435,25 +452,38 @@ function SectionContent({ section, title, onClose }: SectionContentProps) {
           </button>
         </div>
       )}
-      {training.status === "ready" && section === "plan" && (
+      {training.status === "stale" && (
+        <div className="training-stale" role="status">
+          <p>
+            Showing the latest in-memory snapshot. Changes are disabled until
+            Marathoner reconnects.
+          </p>
+          <button type="button" onClick={() => void training.reload()}>
+            Retry connection
+          </button>
+        </div>
+      )}
+      {hasReadableTraining && section === "plan" && (
         <Calendar plan={activePlan} workouts={training.workouts} />
       )}
-      {training.status === "ready" && section === "track" && (
-        <ShoeTracker
-          distanceUnit={training.profile?.preferredDistanceUnit ?? "mile"}
-          runs={training.runs}
-          shoes={training.shoes}
-          plannedWorkouts={training.workouts.filter(
-            (workout) => workout.planId === activePlan?.id,
-          )}
-          onCreateShoe={training.createShoe}
-          onRetireShoe={training.retireShoe}
-          onCreateRun={training.createRun}
-          onUpdateRun={training.updateRun}
-          onDeleteRun={training.deleteRun}
-        />
+      {hasReadableTraining && section === "track" && (
+        <fieldset className="training-read-only" disabled={!training.canWrite}>
+          <ShoeTracker
+            distanceUnit={training.profile?.preferredDistanceUnit ?? "mile"}
+            runs={training.runs}
+            shoes={training.shoes}
+            plannedWorkouts={training.workouts.filter(
+              (workout) => workout.planId === activePlan?.id,
+            )}
+            onCreateShoe={training.createShoe}
+            onRetireShoe={training.retireShoe}
+            onCreateRun={training.createRun}
+            onUpdateRun={training.updateRun}
+            onDeleteRun={training.deleteRun}
+          />
+        </fieldset>
       )}
-      {training.status === "ready" && section === "analyze" && (
+      {hasReadableTraining && section === "analyze" && (
         <Analyze
           runs={training.runs}
           distanceUnit={training.profile?.preferredDistanceUnit ?? "mile"}

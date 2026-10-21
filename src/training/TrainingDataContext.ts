@@ -7,6 +7,7 @@ import type {
   Shoe,
   ShoeId,
   TrainingPlan,
+  UtcDateTime,
   UserProfile,
 } from "../domain/training";
 import type {
@@ -15,17 +16,21 @@ import type {
   SaveUserProfileInput,
   UpdateCompletedRunInput,
 } from "../persistence/trainingRepositories";
+import type { TrainingSynchronizationStaleReason } from "./trainingSynchronization";
 
-export type TrainingDataStatus = "loading" | "ready" | "error";
+export type TrainingDataStatus = "loading" | "current" | "stale" | "error";
 
 export interface TrainingDataContextValue {
   readonly status: TrainingDataStatus;
   readonly error: string | null;
   readonly profile: UserProfile | null;
-  readonly plans: TrainingPlan[];
-  readonly workouts: PlannedWorkout[];
-  readonly runs: CompletedRun[];
-  readonly shoes: Shoe[];
+  readonly plans: readonly TrainingPlan[];
+  readonly workouts: readonly PlannedWorkout[];
+  readonly runs: readonly CompletedRun[];
+  readonly shoes: readonly Shoe[];
+  readonly canWrite: boolean;
+  readonly staleReasons: readonly TrainingSynchronizationStaleReason[];
+  readonly lastServerConfirmedAt: UtcDateTime | null;
   readonly reload: () => Promise<void>;
   readonly saveProfile: (input: SaveUserProfileInput) => Promise<UserProfile>;
   readonly createShoe: (input: CreateShoeInput) => Promise<Shoe>;
