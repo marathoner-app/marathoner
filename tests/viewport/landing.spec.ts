@@ -19,7 +19,13 @@ for (const viewport of viewports) {
     await expect(
       page.getByRole("heading", { name: "New account registration is closed." }),
     ).toBeVisible();
+    const accessLink = page.getByRole("link", { name: "Current access" });
+    await expect(accessLink).toHaveAttribute("href", "#access-status");
+    await accessLink.click();
+    await expect(page).toHaveURL(/#access-status$/);
+    await expect(page.locator("#access-status")).toBeVisible();
     const login = page.getByRole("button", { name: "Log in" });
+    await expect(login).toHaveCount(1);
     await expect(login).toBeVisible();
     await expectNoHorizontalOverflow(
       page,

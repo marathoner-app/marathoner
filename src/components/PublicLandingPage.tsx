@@ -1,6 +1,6 @@
 import PublicAccessNotice from "./PublicAccessNotice";
+import PublicLandingHeader from "./PublicLandingHeader";
 import Subtitle from "./Subtitle";
-import Title from "./Title";
 
 type PublicLandingPageProps = {
   supportEmail?: string;
@@ -12,10 +12,10 @@ export default function PublicLandingPage({
   return (
     <div className="landing-page" data-testid="public-landing-page">
       <div className="landing-page__frame">
-        <header className="landing-page__introduction">
-          <Title />
+        <PublicLandingHeader />
+        <div className="landing-page__lead">
           <Subtitle />
-        </header>
+        </div>
         <PublicAccessNotice supportEmail={supportEmail} />
       </div>
     </div>
