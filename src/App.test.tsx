@@ -179,6 +179,11 @@ const acceptedDeletion: AccountDeletionRequestAcceptedResult = {
 let emitAuthState: (user: AuthUser | null) => void
 let emitAuthError: (error: Error) => void
 let unsubscribe: () => void
+type AuthSubscription = {
+  onChange: (user: AuthUser | null) => void
+  onError: (error: Error) => void
+}
+let authSubscriptions: AuthSubscription[]
 
 const sectionTransitions = [
   ['Plan', 'Plan Your Workouts'],
@@ -206,6 +211,7 @@ function renderSignedInApp() {
 
 beforeEach(() => {
   vi.clearAllMocks()
+  authSubscriptions = []
   trainingMock.status = 'current'
   trainingMock.profile = completeRunnerProfile
   trainingMock.plans = []
@@ -219,6 +225,10 @@ beforeEach(() => {
   mockedSubscribeToAuthState.mockImplementation((onChange, onError) => {
     emitAuthState = onChange
     emitAuthError = onError ?? (() => undefined)
+    authSubscriptions.push({
+      onChange,
+      onError: onError ?? (() => undefined)
+    })
     return unsubscribe
   })
 })
@@ -516,6 +526,49 @@ describe('App authentication state', () => {
     } finally {
       vi.useRealTimers()
     }
+  })
+
+  it('ignores a late user callback from a replaced authentication subscription', () => {
+    renderApp()
+    const replacedSubscription = authSubscriptions[0]
+
+    act(() => {
+      replacedSubscription.onError(new Error('Unable to restore session'))
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Try again' }))
+
+    const currentSubscription = authSubscriptions[1]
+    act(() => {
+      currentSubscription.onChange(signedInUser)
+      replacedSubscription.onChange({
+        uid: 'old-runner',
+        email: 'old-runner@example.com'
+      })
+    })
+
+    expect(screen.getByText('Signed in as runner@example.com')).toBeInTheDocument()
+    expect(screen.queryByText(/old-runner@example.com/i)).not.toBeInTheDocument()
+  })
+
+  it('ignores a late error callback from a replaced authentication subscription', () => {
+    renderApp()
+    const replacedSubscription = authSubscriptions[0]
+
+    act(() => {
+      replacedSubscription.onError(new Error('Unable to restore session'))
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Try again' }))
+
+    const currentSubscription = authSubscriptions[1]
+    act(() => {
+      currentSubscription.onChange(signedInUser)
+      replacedSubscription.onError(new Error('Stale listener failure'))
+    })
+
+    expect(screen.getByText('Signed in as runner@example.com')).toBeInTheDocument()
+    expect(
+      screen.queryByText(/we couldn't restore your session/i)
+    ).not.toBeInTheDocument()
   })
 })
 
