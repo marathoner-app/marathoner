@@ -153,7 +153,9 @@ describe('Firestore training live-read integration', () => {
       await expect
         .poll(() => visibleProfileName(harness), { timeout: 5_000 })
         .toBe('Server update while offline')
-      expect(harness.kernel.state.status).toBe('current')
+      await expect
+        .poll(() => harness.kernel.state.status, { timeout: 5_000 })
+        .toBe('current')
     } finally {
       await enableNetwork(reader)
       harness.unsubscribe()
