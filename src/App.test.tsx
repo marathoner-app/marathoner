@@ -248,6 +248,7 @@ describe('App authentication state', () => {
     expect(
       screen.getByRole('heading', { name: 'New account registration is closed.' })
     ).toBeInTheDocument()
+    expect(screen.getByTestId('public-landing-page')).toBeInTheDocument()
     expect(screen.getByRole('main')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Log in' })).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /sign up/i })).not.toBeInTheDocument()
@@ -289,6 +290,7 @@ describe('App authentication state', () => {
     })
 
     expect(screen.getByText('Signed in as runner@example.com')).toBeInTheDocument()
+    expect(screen.queryByTestId('public-landing-page')).not.toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Log out' })).toBeInTheDocument()
     expect(
       screen.getByRole('navigation', { name: 'Training sections' })

@@ -1,9 +1,10 @@
-# Track viewport test
+# Browser viewport tests
 
-This fixture renders `ShoeTracker` with in-memory callbacks so the browser test
-can exercise the complete Track interaction without Firebase, App Check, or a
-development account. It intentionally tests one representative phone viewport
-(`390 × 844`) rather than starting a broad end-to-end suite.
+The Track fixture renders `ShoeTracker` with in-memory callbacks so the browser
+test can exercise the complete interaction without Firebase, App Check, or a
+development account. The landing fixture renders the signed-out production
+shell directly and covers both phone (`390 × 844`) and desktop (`1440 × 900`)
+layout plus the existing login dialog.
 
 Install Chromium once after `npm install`:
 

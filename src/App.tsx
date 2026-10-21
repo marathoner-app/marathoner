@@ -3,7 +3,7 @@ import { motion, useReducedMotion } from "framer-motion";
 import Title from "./components/Title";
 import Subtitle from "./components/Subtitle";
 import Calendar from "./components/Calendar";
-import PublicAccessNotice from "./components/PublicAccessNotice";
+import PublicLandingPage from "./components/PublicLandingPage";
 import ShoeTracker from "./components/ShoeTracker";
 import Analyze from "./components/Analyze";
 import { useAuth } from "./auth/useAuth";
@@ -187,8 +187,10 @@ function App() {
         !logoutPending &&
         (auth.status === "signedIn" || auth.status === "signedOut") &&
         !activeSection && (
-          <>
-            {auth.status === "signedIn" && (
+          auth.status === "signedOut" ? (
+            <PublicLandingPage supportEmail={publicSupportEmail} />
+          ) : (
+            <>
               <div className="session-controls">
                 <p className="session-user">
                   Signed in as {auth.user.email ?? "Marathoner user"}
@@ -209,18 +211,15 @@ function App() {
                   Log out
                 </button>
               </div>
-            )}
-            <Title />
-            <Subtitle />
-            {auth.status === "signedOut" && (
-              <PublicAccessNotice supportEmail={publicSupportEmail} />
-            )}
-            {logoutError && (
-              <p className="auth-message auth-error" role="alert">
-                {logoutError}
-              </p>
-            )}
-          </>
+              <Title />
+              <Subtitle />
+              {logoutError && (
+                <p className="auth-message auth-error" role="alert">
+                  {logoutError}
+                </p>
+              )}
+            </>
+          )
         )}
 
       {!deletionReceipt && !logoutPending && auth.status === "signedIn" && (
