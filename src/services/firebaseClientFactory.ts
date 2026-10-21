@@ -12,10 +12,16 @@ import {
   initializeAuth,
   type Auth,
 } from 'firebase/auth'
+import {
+  initializeFirestore,
+  memoryLocalCache,
+  type Firestore,
+} from 'firebase/firestore'
 
 export interface FirebaseClient {
   app: FirebaseApp
   auth: Auth
+  firestore: Firestore
 }
 
 type AppCheckInitializer = (app: FirebaseApp) => Promise<void>
@@ -52,11 +58,15 @@ export async function createFirebaseClient(
 
   await initializeAppCheck(app)
 
+  const firestore = initializeFirestore(app, {
+    localCache: memoryLocalCache(),
+  })
+
   const auth = useNativePersistence
     ? initializeAuth(app, {
         persistence: [indexedDBLocalPersistence, browserLocalPersistence],
       })
     : getAuth(app)
 
-  return { app, auth }
+  return { app, auth, firestore }
 }

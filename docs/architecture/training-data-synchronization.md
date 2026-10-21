@@ -1,6 +1,6 @@
 # Training data synchronization
 
-- **Status:** Accepted target architecture; completed-run command lane and two-client behavior proved against local emulators; deployment, provider migration, rules closure, live synchronization, and adaptation commands remain open
+- **Status:** Accepted target architecture; completed-run command lane and two-client behavior proved against local emulators; the owner-scoped live-read adapter and explicit memory cache are implemented; provider migration, deployment, rules closure, and adaptation commands remain open
 - **Decision date:** 2026-09-30
 - **Decision owner:** Marathoner maintainer
 - **Tracking issue:** [#80](https://github.com/marathoner-app/marathoner/issues/80)
@@ -72,11 +72,17 @@ emulator tests, but it is not the production application path yet:
   call this client adapter.
 - Repositories read before writing but do not send a revision precondition, so a
   stale client can overwrite a newer value.
-- The application does not subscribe with `onSnapshot`, expose snapshot
-  freshness metadata, or distinguish a server snapshot from a cached one.
-- The web client uses Firestore's default in-memory cache because no persistent
-  cache is configured. It does not intentionally write training records to
-  IndexedDB, `localStorage`, or another durable client store.
+- `firestoreTrainingLiveReadSource` now provides owner-scoped `onSnapshot`
+  adapters for profile, plans, relevant workouts, runs, and shoes. It translates
+  Firestore freshness metadata into portable synchronization events, assembles
+  plan/workout changes as coherent batches, and owns teardown of every listener.
+  `TrainingDataProvider` does not mount this source yet, so the visible
+  application still uses startup-only repository reads and does not expose the
+  portable freshness states.
+- Firebase startup now initializes Firestore with `memoryLocalCache()` before
+  repositories or listeners can acquire it. Training snapshots are therefore
+  not intentionally written to IndexedDB, `localStorage`, or another durable
+  client store.
 - Issue #283 hides and unmounts `TrainingDataProvider` as soon as logout begins,
   keys the provider by authenticated user, clears its repository and visible
   snapshot before a replacement load, and ignores a late load from the prior
@@ -278,8 +284,10 @@ the write boundary.
    workflow migration and #115 still owns adaptation commands.
 3. Tighten Firestore Security Rules so clients can read their owned records but
    cannot directly write material collections after the endpoints are ready.
-4. Add listener adapters, completeness guards, freshness translation, teardown,
-   and stale-callback suppression; configure memory-only caching explicitly.
+4. The owner-scoped listener adapter, freshness translation, coherent dynamic
+   workout assembly, teardown, late-callback suppression, and explicit
+   memory-only cache are implemented. Mounting the source and feature-specific
+   completeness behavior remain part of the provider migration.
 5. Migrate the web provider from snapshot reads and direct writes to listeners
    and commands. Exercise two browser clients, offline requests, timeouts,
    retries, conflicts, logout, and account switching.

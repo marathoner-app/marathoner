@@ -1,6 +1,7 @@
 import { Capacitor } from '@capacitor/core'
 import type { FirebaseApp } from 'firebase/app'
 import type { Auth } from 'firebase/auth'
+import type { Firestore } from 'firebase/firestore'
 import {
   selectedAppCheckDebugToken,
   selectedFirebaseEnvironment,
@@ -55,4 +56,8 @@ export function getFirebaseApp(): FirebaseApp {
 
 export function getFirebaseAuth(): Auth {
   return requireFirebaseClient().auth
+}
+
+export function getFirebaseFirestore(): Firestore {
+  return requireFirebaseClient().firestore
 }
