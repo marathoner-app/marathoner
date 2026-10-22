@@ -16,6 +16,10 @@ import type { DocumentStore, StoredDocument } from "./documentStore";
 import type { PersistenceClock } from "./documentTrainingRepositories";
 import { PersistenceError, toPersistenceError } from "./errors";
 import {
+  measureOperation,
+  runCreationTimingNames,
+} from "./operationTiming";
+import {
   completedRunFromDocument,
   completedRunToDocument,
   shoeFromDocument,
@@ -180,24 +184,33 @@ class DocumentCompletedRunRepository implements CompletedRunRepository {
   ) {}
 
   create(input: CreateCompletedRunInput): Promise<CompletedRun> {
-    return safely(async () => {
-      const id = createCompletedRunId(
-        this.store.createId(runsCollectionPath(this.userId)),
-      );
-      const now = this.clock();
-      const run: CompletedRun = {
-        ...input,
-        id,
-        userId: this.userId,
-        createdAt: now,
-        updatedAt: now,
-      };
+    return safely(() =>
+      measureOperation(runCreationTimingNames.total, async () => {
+        const id = createCompletedRunId(
+          this.store.createId(runsCollectionPath(this.userId)),
+        );
+        const now = this.clock();
+        const run: CompletedRun = {
+          ...input,
+          id,
+          userId: this.userId,
+          createdAt: now,
+          updatedAt: now,
+        };
 
-      requireValidRun(run);
-      await this.requireAssociations(run);
-      await this.store.set(runDocumentPath(this.userId, id), completedRunToDocument(run));
-      return run;
-    });
+        requireValidRun(run);
+        await measureOperation(runCreationTimingNames.associations, () =>
+          this.requireAssociations(run),
+        );
+        await measureOperation(runCreationTimingNames.writeAcknowledgement, () =>
+          this.store.set(
+            runDocumentPath(this.userId, id),
+            completedRunToDocument(run),
+          ),
+        );
+        return run;
+      }),
+    );
   }
 
   get(id: CompletedRunId): Promise<CompletedRun | null> {
