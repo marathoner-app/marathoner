@@ -6,11 +6,14 @@ export default function PublicLandingHowItWorks() {
     >
       <div className="landing-how-it-works__intro">
         <p className="landing-how-it-works__eyebrow">How Marathoner works</p>
-        <h2 id="landing-how-it-works-title">Plan. Track. Adjust.</h2>
+        <h2 id="landing-how-it-works-title">
+          Start with the week you can actually train.
+        </h2>
         <p>
-          Marathoner is being built to make first-marathon training easier to
-          understand. Here is what the prototype supports now and what remains
-          planned.
+          Tell Marathoner when you can run, which day works for your long run,
+          and what race you are preparing for. The current prototype turns
+          those details into an initial plan and records what you complete.
+          Guided adjustments are still planned.
         </p>
       </div>
 

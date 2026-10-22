@@ -16,10 +16,13 @@ export default function PublicLandingPlatforms({
     >
       <div className="landing-platforms__intro">
         <p className="landing-platforms__eyebrow">Where Marathoner fits</p>
-        <h2 id="landing-platforms-title">One product. Two focused surfaces.</h2>
+        <h2 id="landing-platforms-title">
+          Log runs on your phone. Review the full plan on the web.
+        </h2>
         <p>
-          The product direction pairs an intended iPhone daily companion with
-          more room to plan and review on the responsive web.
+          That is the intended split: a quick iPhone companion for viewing and
+          recording workouts, with more room on the web for setup, history, and
+          analysis. Public iOS access is not open yet.
         </p>
       </div>
 

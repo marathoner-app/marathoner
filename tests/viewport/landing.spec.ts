@@ -92,7 +92,7 @@ for (const viewport of viewports) {
       ),
     ).toBeVisible();
     const preview = page.getByRole("complementary", {
-      name: "A training week, connected.",
+      name: "See how one run connects to the rest of your training.",
     });
     await expect(preview).toBeVisible();
     await preview.hover();
@@ -154,7 +154,7 @@ for (const viewport of viewports) {
     await expect(page.locator("#access-status")).toBeVisible();
     await expect(page.getByText("Invitations are not open yet.")).toBeVisible();
     const explanation = page.getByRole("region", {
-      name: "Plan. Track. Adjust.",
+      name: "Start with the week you can actually train.",
     });
     await expect(explanation).toBeVisible();
     await expect(
@@ -178,7 +178,7 @@ for (const viewport of viewports) {
       )
       .toBe(viewport.explanationColumns);
     const platforms = page.getByRole("region", {
-      name: "One product. Two focused surfaces.",
+      name: "Log runs on your phone. Review the full plan on the web.",
     });
     await expect(platforms).toBeVisible();
     await expect(
@@ -335,7 +335,7 @@ test("keeps the surrounding page fixed during the automatic preview walkthrough"
   };
 
   const preview = page.getByRole("complementary", {
-    name: "A training week, connected.",
+    name: "See how one run connects to the rest of your training.",
   });
   await expect(preview).toHaveAttribute("data-preview-mode", "automatic");
   await expect(preview.getByRole("button", { name: "Track" })).toHaveAttribute(
@@ -357,7 +357,7 @@ test("keeps the stabilized preview static when reduced motion is requested", asy
   await page.goto("tests/viewport/landing.html");
 
   const preview = page.getByRole("complementary", {
-    name: "A training week, connected.",
+    name: "See how one run connects to the rest of your training.",
   });
   const activePanel = preview.getByRole("region", { name: "Plan sample" });
 
