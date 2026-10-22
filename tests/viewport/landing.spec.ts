@@ -183,7 +183,9 @@ for (const viewport of viewports) {
     await expect(
       platforms.getByRole("link", { name: "View current iOS status" }),
     ).toHaveAttribute("href", "#access-status");
-    await expect(platforms.getByRole("button")).toHaveCount(0);
+    await expect(
+      platforms.getByRole("button", { name: "Log in on web" }),
+    ).toBeVisible();
     await expect
       .poll(() =>
         platforms.evaluate(
@@ -219,9 +221,9 @@ for (const viewport of viewports) {
       name: "Log in",
       exact: true,
     });
-    const webLogin = page
-      .getByRole("group", { name: "Marathoner access" })
-      .getByRole("button", { name: "Log in on web" });
+    const webLogin = platforms.getByRole("button", {
+      name: "Log in on web",
+    });
     await expect(headerLogin).toBeVisible();
     await expect(webLogin).toBeVisible();
     await expect(
@@ -242,12 +244,6 @@ for (const viewport of viewports) {
           .getByRole("link", { name: "View current access" }),
         label: "hero access link",
       },
-      {
-        locator: page
-          .locator(".landing-hero")
-          .getByRole("button", { name: "Log in on web" }),
-        label: "hero login button",
-      },
       ...previewAreaButtons.map((locator, index) => ({
         locator,
         label: `${["Plan", "Track", "Analyze"][index]} preview button`,
@@ -258,6 +254,7 @@ for (const viewport of viewports) {
         }),
         label: "iOS status link",
       },
+      { locator: webLogin, label: "platform login button" },
       ...["Access", "Privacy and data", "Support and deletion"].map(
         (name) => ({
           locator: page

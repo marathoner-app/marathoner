@@ -730,7 +730,8 @@
   font-size: 0.88rem;
 }
 
-.landing-platforms__card > a {
+.landing-platforms__card > a,
+.landing-platforms__card .login-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -748,13 +749,21 @@
   text-decoration: none;
 }
 
-.landing-platforms__card > a:hover {
+.landing-platforms__card .login-wrapper {
+  display: block;
+  width: 100%;
+  margin-top: auto;
+}
+
+.landing-platforms__card > a:hover,
+.landing-platforms__card .login-btn:hover {
   border-color: #bfdbfe;
   background: #bfdbfe;
   color: var(--landing-ink);
 }
 
-.landing-platforms__card > a:focus-visible {
+.landing-platforms__card > a:focus-visible,
+.landing-platforms__card .login-btn:focus-visible {
   outline: 3px solid #93c5fd;
   outline-offset: 3px;
 }

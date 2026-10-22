@@ -1,15 +1,6 @@
-import LoginButton from "./LoginButton";
 import PublicLandingPreview from "./PublicLandingPreview";
 
-type PublicLandingHeroProps = {
-  isLoginOpen: boolean;
-  onLoginOpen: (trigger: HTMLButtonElement) => void;
-};
-
-export default function PublicLandingHero({
-  isLoginOpen,
-  onLoginOpen,
-}: PublicLandingHeroProps) {
+export default function PublicLandingHero() {
   return (
     <section className="landing-hero" aria-labelledby="landing-hero-title">
       <div className="landing-hero__copy">
@@ -33,11 +24,6 @@ export default function PublicLandingHero({
             </p>
             <a href="#access-status">View current access</a>
           </div>
-          <LoginButton
-            isOpen={isLoginOpen}
-            label="Log in on web"
-            onOpen={onLoginOpen}
-          />
         </div>
       </div>
       <PublicLandingPreview />
