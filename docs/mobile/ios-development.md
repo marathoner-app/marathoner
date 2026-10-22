@@ -151,10 +151,12 @@ Issue #351 passed its physical-device proof on October 21, 2026 at commit
   documented rotation policy, and the temporary redacted diagnostic log was
   removed.
 
-The onboarding content rendered beneath the iPhone status bar, obscuring the
-top of the page. That safe-area defect does not invalidate the App Check/Auth/
-Firestore proof, but it requires a separate UI issue before the daily companion
-can be considered polished for physical-device use.
+Issue #353 resolved the observed safe-area defect on October 21, 2026 at commit
+`f1c2c06`. A signed development build was compiled, installed, and launched on
+the same physical iPhone 15. The **Tell us where you are starting** onboarding
+heading rendered fully below the clock and Dynamic Island, confirming that the
+shared native WebView inset protects the top of the page without route-specific
+padding.
 
 ## Explicit beta selection and physical proof
 
