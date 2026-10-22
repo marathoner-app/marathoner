@@ -12,6 +12,8 @@ dist
 dist-ios
 dist-ssr
 functions/lib
+functions/.env.*
+!functions/.env.*.example
 playwright-report
 test-results
 *.local

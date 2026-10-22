@@ -428,7 +428,7 @@ describe('material-command handler', () => {
     expect(serializedLogs).not.toContain('proposal')
   })
 
-  it('keeps run completion unavailable when the emulator-only store is absent', async () => {
+  it('keeps run completion unavailable when its store is absent', async () => {
     const boundary = dependencies()
 
     await expect(
@@ -456,7 +456,11 @@ describe('material-command handler', () => {
 
     await expect(
       executeMaterialCommand(
-        { authenticatedUserId: ownerId, data: runCompletionCommand },
+        {
+          appCheckVerified: true,
+          authenticatedUserId: ownerId,
+          data: runCompletionCommand,
+        },
         boundary,
       ),
     ).resolves.toEqual(runStore.result)
@@ -478,6 +482,56 @@ describe('material-command handler', () => {
     })
   })
 
+  it('requires App Check before a completed-run store can be called', async () => {
+    const runStore = new InMemoryRunCompletionStore()
+    const boundary = dependencies(
+      new InMemoryMaterialCommandStore(),
+      undefined,
+      { store: runStore },
+    )
+
+    await expect(
+      executeMaterialCommand(
+        { authenticatedUserId: ownerId, data: runCompletionCommand },
+        boundary,
+      ),
+    ).resolves.toEqual({
+      status: 'authorization_error',
+      commandId: runCompletionCommand.commandId,
+      code: 'app-check-required',
+      message: 'Open the supported Marathoner app before retrying this command.',
+    })
+    expect(runStore.commit).not.toHaveBeenCalled()
+  })
+
+  it('maps a run-store membership rejection without recording a write', async () => {
+    const runStore: RunCompletionStore = {
+      commit: vi.fn(async () => ({ kind: 'membership-required' as const })),
+    }
+    const boundary = dependencies(
+      new InMemoryMaterialCommandStore(),
+      undefined,
+      { store: runStore },
+    )
+
+    await expect(
+      executeMaterialCommand(
+        {
+          appCheckVerified: true,
+          authenticatedUserId: ownerId,
+          data: runCompletionCommand,
+        },
+        boundary,
+      ),
+    ).resolves.toEqual({
+      status: 'authorization_error',
+      commandId: runCompletionCommand.commandId,
+      code: 'approved-beta-membership-required',
+      message:
+        'An approved beta membership is required for completed-run commands.',
+    })
+  })
+
   it('keeps completion payloads and thrown error details out of logs', async () => {
     const sensitiveError = {
       code: 'unavailable',
@@ -496,7 +550,11 @@ describe('material-command handler', () => {
 
     await expect(
       executeMaterialCommand(
-        { authenticatedUserId: ownerId, data: runCompletionCommand },
+        {
+          appCheckVerified: true,
+          authenticatedUserId: ownerId,
+          data: runCompletionCommand,
+        },
         boundary,
       ),
     ).resolves.toEqual(
@@ -535,7 +593,11 @@ describe('material-command handler', () => {
 
     await expect(
       executeMaterialCommand(
-        { authenticatedUserId: ownerId, data: runCompletionCommand },
+        {
+          appCheckVerified: true,
+          authenticatedUserId: ownerId,
+          data: runCompletionCommand,
+        },
         boundary,
       ),
     ).resolves.toEqual(
@@ -563,12 +625,16 @@ describe('material-command handler', () => {
     })
   })
 
-  it('keeps run deletion unavailable when the emulator-only store is absent', async () => {
+  it('keeps run deletion unavailable when its store is absent', async () => {
     const boundary = dependencies()
 
     await expect(
       executeMaterialCommand(
-        { authenticatedUserId: ownerId, data: runDeletionCommand },
+        {
+          appCheckVerified: true,
+          authenticatedUserId: ownerId,
+          data: runDeletionCommand,
+        },
         boundary,
       ),
     ).resolves.toEqual({
@@ -584,6 +650,47 @@ describe('material-command handler', () => {
     })
   })
 
+  it('requires App Check and membership before run deletion', async () => {
+    const runStore: RunDeletionStore = {
+      commit: vi.fn(async () => ({ kind: 'membership-required' as const })),
+    }
+    const boundary = dependencies(
+      new InMemoryMaterialCommandStore(),
+      undefined,
+      undefined,
+      { store: runStore },
+    )
+
+    await expect(
+      executeMaterialCommand(
+        { authenticatedUserId: ownerId, data: runDeletionCommand },
+        boundary,
+      ),
+    ).resolves.toEqual(
+      expect.objectContaining({
+        status: 'authorization_error',
+        code: 'app-check-required',
+      }),
+    )
+    expect(runStore.commit).not.toHaveBeenCalled()
+
+    await expect(
+      executeMaterialCommand(
+        {
+          appCheckVerified: true,
+          authenticatedUserId: ownerId,
+          data: runDeletionCommand,
+        },
+        boundary,
+      ),
+    ).resolves.toEqual(
+      expect.objectContaining({
+        status: 'authorization_error',
+        code: 'approved-beta-membership-required',
+      }),
+    )
+  })
+
   it('passes run deletion to persistence and resolves its redacted receipt', async () => {
     const materialStore = new InMemoryMaterialCommandStore()
     const runStore = new InMemoryRunDeletionStore()
@@ -596,7 +703,11 @@ describe('material-command handler', () => {
 
     await expect(
       executeMaterialCommand(
-        { authenticatedUserId: ownerId, data: runDeletionCommand },
+        {
+          appCheckVerified: true,
+          authenticatedUserId: ownerId,
+          data: runDeletionCommand,
+        },
         boundary,
       ),
     ).resolves.toEqual(runStore.result)
@@ -645,7 +756,11 @@ describe('material-command handler', () => {
 
     await expect(
       executeMaterialCommand(
-        { authenticatedUserId: ownerId, data: runDeletionCommand },
+        {
+          appCheckVerified: true,
+          authenticatedUserId: ownerId,
+          data: runDeletionCommand,
+        },
         boundary,
       ),
     ).resolves.toEqual(

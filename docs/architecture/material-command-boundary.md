@@ -97,9 +97,10 @@ failed create rolls back the plan, every workout, provenance, active state,
 prior-plan update, and receipt together. Resolution by command ID recognizes
 the exact plan-approval receipt through the shared receipt store.
 
-Run completion loads only the authenticated owner's referenced workout, shoe,
-uniqueness guard, and command receipt before any write. A valid planned
-completion creates the run, marks the workout completed, claims the
+Run completion loads the authenticated owner's exact beta membership,
+referenced workout, shoe, uniqueness guard, and command receipt before any
+write. A valid planned completion creates the run, marks the workout completed,
+claims the
 deterministic guard, and records the exact replay receipt in one transaction.
 An unplanned completion creates only the run and receipt. The same command ID
 and signature returns the original run ID; changed content conflicts, and a
@@ -108,14 +109,28 @@ cross-owner, rest-day, completed-workout, and retired-shoe inputs create neither
 a run nor a receipt. A failed create rolls back the run, workout, guard, and
 receipt together.
 
-The Functions entry point installs this store only when
-`FUNCTIONS_EMULATOR=true`. Deployed environments return a typed authorization
-failure before persistence. Production activation remains blocked by the
-deployment, App Check, membership, and client-migration work described below.
+The Functions entry point installs the completed-run stores when
+`FUNCTIONS_EMULATOR=true`, preserving the isolated emulator path. Outside an
+emulator it requires both the exact `marathonerapp-beta` project and the
+disabled-by-default Boolean parameter
+`MARATHONER_COMPLETED_RUN_COMMANDS_ENABLED=true`. Development, unknown,
+missing-project, and disabled configurations omit the stores and return a
+typed authorization failure before persistence.
 
-Run deletion reads the owner-scoped run plus the command's optional workout and
-guard before applying the deletion projection. A valid associated deletion
-removes the run, reopens the completed workout, removes its guard, and records
+The callable remains in project-level App Check observation mode under #205,
+but the handler requires a verified `request.app` for `run.complete` and
+`run.delete` before calling either store. The emulator supplies its explicit
+local exception. Each store then verifies the exact approved beta-membership
+record in the same transaction as the completed-run write. A missing,
+malformed, non-approved, or cross-owner membership returns
+`approved-beta-membership-required` without creating a run, changing a
+workout, or recording a receipt. Other material-command types retain their
+existing authorization policy.
+
+Run deletion reads the same exact beta membership, the owner-scoped run, and
+the command's optional workout and guard before applying the deletion
+projection. A valid associated deletion removes the run, reopens the completed
+workout, removes its guard, and records
 one exact replay receipt. An unplanned run deletes without touching workout
 state. Missing or stale runs and cross-owner, mismatched-association, or
 mismatched-guard state produce typed failures and no receipt. Same-command
@@ -337,10 +352,12 @@ names the same reviewed codebase behind an exact `marathonerapp-beta` check and
 a non-secret operator-intent phrase. Issue #201 establishes that boundary
 without deploying a Function.
 
-The first live deployment remains owned by #205 after #143 and #204 are
-complete. It must preserve the development/beta environment boundary, confirm
-billing and region, apply the beta membership policy, and follow the scoped
-deploy and rollback commands in the
+The first live deployment remains owned by #205; #143, #201, and #204 are
+complete, but their recorded evidence must still be rechecked before the live
+operation. The deployment must preserve the development/beta environment
+boundary, confirm billing and region, activate completed-run stores only
+through the ignored beta parameter file, apply the beta membership policy, and
+follow the scoped deploy and rollback commands in the
 [beta Functions runbook](../operations/beta-functions-deployment.md). Removing
 or weakening the guard merely to make a deploy command succeed is not approved.
 

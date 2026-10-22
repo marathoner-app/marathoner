@@ -66,6 +66,7 @@ export interface RunCompletionStore {
     | { kind: 'completed'; result: RunCompletionReceiptResult }
     | { kind: 'rejected'; result: RunCommandProjectionFailureResult }
     | { kind: 'conflict' }
+    | { kind: 'membership-required' }
   >
 }
 
@@ -77,6 +78,7 @@ export interface RunDeletionStore {
     | { kind: 'deleted'; result: RunDeletionReceiptResult }
     | { kind: 'rejected'; result: RunCommandProjectionFailureResult }
     | { kind: 'conflict' }
+    | { kind: 'membership-required' }
   >
 }
 
@@ -142,6 +144,28 @@ function runCommandNotEnabledResult(commandId: string): MaterialCommandResult {
   }
 }
 
+function runCommandAppCheckRequiredResult(
+  commandId: string,
+): MaterialCommandResult {
+  return {
+    status: 'authorization_error',
+    commandId,
+    code: 'app-check-required',
+    message: 'Open the supported Marathoner app before retrying this command.',
+  }
+}
+
+function runCommandMembershipRequiredResult(
+  commandId: string,
+): MaterialCommandResult {
+  return {
+    status: 'authorization_error',
+    commandId,
+    code: 'approved-beta-membership-required',
+    message: 'An approved beta membership is required for completed-run commands.',
+  }
+}
+
 function retryableResult(commandId: string | null): MaterialCommandResult {
   return {
     status: 'retryable_error',
@@ -195,6 +219,7 @@ function logResult(
 
 export async function executeMaterialCommand(
   options: {
+    appCheckVerified?: boolean
     authenticatedUserId: string | null
     data: unknown
   },
@@ -271,6 +296,18 @@ export async function executeMaterialCommand(
       )
       return result
     }
+    if (options.appCheckVerified !== true) {
+      const result = runCommandAppCheckRequiredResult(
+        parsed.envelope.commandId,
+      )
+      logResult(
+        dependencies,
+        'material-command-result',
+        result,
+        parsed.envelope.command.type,
+      )
+      return result
+    }
 
     try {
       const stored = await runCompletion.store.commit({
@@ -278,9 +315,11 @@ export async function executeMaterialCommand(
         ownerId: options.authenticatedUserId,
       })
       const result =
-        stored.kind === 'conflict'
-          ? conflictResult(parsed.envelope.commandId)
-          : stored.result
+        stored.kind === 'membership-required'
+          ? runCommandMembershipRequiredResult(parsed.envelope.commandId)
+          : stored.kind === 'conflict'
+            ? conflictResult(parsed.envelope.commandId)
+            : stored.result
       logResult(
         dependencies,
         'material-command-result',
@@ -311,6 +350,18 @@ export async function executeMaterialCommand(
       )
       return result
     }
+    if (options.appCheckVerified !== true) {
+      const result = runCommandAppCheckRequiredResult(
+        parsed.envelope.commandId,
+      )
+      logResult(
+        dependencies,
+        'material-command-result',
+        result,
+        parsed.envelope.command.type,
+      )
+      return result
+    }
 
     try {
       const stored = await runDeletion.store.commit({
@@ -318,9 +369,11 @@ export async function executeMaterialCommand(
         ownerId: options.authenticatedUserId,
       })
       const result =
-        stored.kind === 'conflict'
-          ? conflictResult(parsed.envelope.commandId)
-          : stored.result
+        stored.kind === 'membership-required'
+          ? runCommandMembershipRequiredResult(parsed.envelope.commandId)
+          : stored.kind === 'conflict'
+            ? conflictResult(parsed.envelope.commandId)
+            : stored.result
       logResult(
         dependencies,
         'material-command-result',

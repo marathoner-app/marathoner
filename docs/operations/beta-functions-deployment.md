@@ -1,19 +1,20 @@
 # Founding-beta Functions deployment boundary
 
-- **Status:** Repository boundary and console cost controls verified; first
-  live deployment remains prohibited
+- **Status:** Repository boundary, client attestation bootstrap, and console
+  cost controls verified; first live deployment remains owned by #205
 - **Tracking issue:**
   [#201](https://github.com/marathoner-app/marathoner/issues/201)
 - **First deployment owner:**
-  [#205](https://github.com/marathoner-app/marathoner/issues/205), after
-  [#143](https://github.com/marathoner-app/marathoner/issues/143) and
-  [#204](https://github.com/marathoner-app/marathoner/issues/204) are complete
+  [#205](https://github.com/marathoner-app/marathoner/issues/205); completed-run
+  activation is prepared by
+  [#349](https://github.com/marathoner-app/marathoner/issues/349) and verified
+  live by [#347](https://github.com/marathoner-app/marathoner/issues/347)
 - **Operator:** Dedicated `marathonerapp.com` domain administrator
 
-Issue #201 creates a reviewable path to the exact beta project. The maintainer
+Issue #201 created a reviewable path to the exact beta project. The maintainer
 approved and verified the bounded beta billing configuration on October 8,
-2026. This issue still does not authorize a deployment or deploy, delete, or
-invoke a Function. Keep those distinctions visible in every review.
+2026. This runbook does not itself authorize a deployment or deploy, delete,
+or invoke a Function. Keep those distinctions visible in every review.
 
 ## Hard repository boundary
 
@@ -34,6 +35,37 @@ The intent phrase is an acknowledgement, not a credential or an authorization
 by itself. Never put a Firebase token, service-account key, billing identifier,
 payment detail, recovery address, App Check debug token, participant identity,
 or participant record in the command, repository, issue, or deployment log.
+
+## Completed-run activation parameter
+
+The runtime omits completed-run stores by default. It installs them outside the
+emulator only when both of these conditions are true:
+
+1. the built-in Google Cloud project parameter is exactly
+   `marathonerapp-beta`; and
+2. the Boolean Functions parameter
+   `MARATHONER_COMPLETED_RUN_COMMANDS_ENABLED` is `true`.
+
+Prepare the non-secret, ignored Firebase parameter file only in the clean
+release-candidate checkout:
+
+```sh
+cp functions/.env.marathonerapp-beta.example \
+  functions/.env.marathonerapp-beta
+chmod 600 functions/.env.marathonerapp-beta
+```
+
+Edit the copied file so its one activation value is `true`. Do not add tokens,
+credentials, participant identifiers, or unrelated configuration. Confirm
+`git status --short` does not list the ignored file. If the file is missing,
+false, malformed, or loaded for another project, completed-run commands remain
+disabled. Never set the parameter in the development project.
+
+Project-level App Check enforcement remains off during #205's observation
+window. The callable nevertheless requires a verified App Check context for
+`run.complete` and `run.delete`, and each store requires an exact approved
+`betaMemberships/{uid}` record in the same transaction as its write. This
+command-specific protection does not enable global enforcement early.
 
 ## Reviewed codebase and runtime ceiling
 
@@ -97,6 +129,9 @@ section, its reviewer must confirm all of the following:
    pass on that commit.
 7. The beta App Check observation plan remains unenforced, and #205 has an
    active rollback owner and observation window.
+8. The ignored beta parameter file contains only the reviewed completed-run
+   activation value, and the fictional rehearsal account has an exact approved
+   beta membership.
 
 If any item is false or uncertain, stop. Do not remove or weaken the guard to
 make a deployment proceed.
@@ -137,6 +172,26 @@ and require exactly `submitMaterialCommand`, `resolveMaterialCommand`, and
 `requestAccountDeletion`, all in `us-central1`, with no additional export.
 Otherwise stop client testing and follow the rollback procedure.
 
+## Completed-run smoke and negative proof
+
+Before allowing the Track-provider migration to merge, use the reviewed beta
+web or `ios-beta` build and one fictional approved account to:
+
+1. submit one unplanned `run.complete` command and retain only its redacted
+   result status;
+2. wait for the owned run listener to show the committed record;
+3. submit `run.delete` with the returned revision and retain only its redacted
+   result status;
+4. wait for the listener to confirm the run is absent;
+5. confirm both owner-scoped receipts exist and the fictional run is cleaned
+   up; and
+6. prove missing authentication, missing or invalid App Check, and missing or
+   non-approved membership produce typed failures with no run or receipt.
+
+Do not place command IDs, UIDs, emails, notes, request bodies, or raw records in
+GitHub. An unexpected result, listener timeout, or unexplained legitimate
+rejection blocks #346 and begins rollback.
+
 ## Log review
 
 Read only the bounded exports and keep the result in the private operating log:
@@ -153,6 +208,13 @@ and result-status fields. Stop the rehearsal and open a security issue if a UID,
 email, command ID, payload, note, participant record, or error object appears.
 
 ## Rollback
+
+To contain only completed-run commands while retaining the reviewed exports,
+set `MARATHONER_COMPLETED_RUN_COMMANDS_ENABLED=false` in the ignored beta
+parameter file and redeploy the same clean reviewed commit with the exact
+scoped command above. Confirm a fictional run command returns the disabled
+authorization result and creates no record or receipt. This is configuration
+containment, not the full first-deployment rollback.
 
 For the first deployment there is no earlier live Functions revision to
 redeploy. If #205's first-deploy verification fails, stop client testing and
