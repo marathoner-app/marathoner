@@ -14,7 +14,10 @@ import {
 } from "../domain/training";
 import { createDocumentTrainingRepositories } from "./documentTrainingRepositories";
 import { TRAINING_SCHEMA_VERSION } from "./firestore/converters";
-import { runCreationTimingNames } from "./operationTiming";
+import {
+  runCreationTimingNames,
+  runUpdateTimingNames,
+} from "./operationTiming";
 import { InMemoryDocumentStore } from "./testing/InMemoryDocumentStore";
 import type { TrainingRepositories } from "./trainingRepositories";
 
@@ -26,7 +29,10 @@ let store: InMemoryDocumentStore;
 let repositories: TrainingRepositories;
 
 beforeEach(() => {
-  Object.values(runCreationTimingNames).forEach((name) => {
+  [
+    ...Object.values(runCreationTimingNames),
+    ...Object.values(runUpdateTimingNames),
+  ].forEach((name) => {
     performance.clearMeasures(name);
   });
   store = new InMemoryDocumentStore();
@@ -140,6 +146,28 @@ describe("completed run repository", () => {
       distanceMeters: 4828,
       durationSeconds: 1800,
       notes: "Warm afternoon; carried water.",
+    });
+  });
+
+  it("records privacy-safe timing for each run-update phase", async () => {
+    const shoe = await repositories.shoes.create({ name: "Daily Trainer" });
+    const run = await repositories.runs.create({
+      shoeId: shoe.id,
+      startedAt: createUtcDateTime("2026-08-03T14:00:00Z"),
+      timeZone,
+      distance: createDistanceMeters(4828),
+      duration: createDurationSeconds(30 * 60),
+    });
+
+    await repositories.runs.update(run.id, {
+      perceivedEffort: "harder_than_expected",
+    });
+
+    Object.values(runUpdateTimingNames).forEach((name) => {
+      const entries = performance.getEntriesByName(name, "measure");
+
+      expect(entries).toHaveLength(1);
+      expect(entries[0]?.duration).toBeGreaterThanOrEqual(0);
     });
   });
 

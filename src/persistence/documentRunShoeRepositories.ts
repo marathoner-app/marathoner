@@ -18,6 +18,7 @@ import { PersistenceError, toPersistenceError } from "./errors";
 import {
   measureOperation,
   runCreationTimingNames,
+  runUpdateTimingNames,
 } from "./operationTiming";
 import {
   completedRunFromDocument,
@@ -230,40 +231,53 @@ class DocumentCompletedRunRepository implements CompletedRunRepository {
   }
 
   update(id: CompletedRunId, changes: UpdateCompletedRunInput): Promise<CompletedRun> {
-    return safely(async () => {
-      const existing = await this.requireRun(id);
-      const updated: CompletedRun = {
-        ...existing,
-        plannedWorkoutPlanId:
-          changes.plannedWorkoutPlanId === null
-            ? undefined
-            : changes.plannedWorkoutPlanId ?? existing.plannedWorkoutPlanId,
-        plannedWorkoutId:
-          changes.plannedWorkoutId === null
-            ? undefined
-            : changes.plannedWorkoutId ?? existing.plannedWorkoutId,
-        shoeId: changes.shoeId === null ? undefined : changes.shoeId ?? existing.shoeId,
-        startedAt: changes.startedAt ?? existing.startedAt,
-        timeZone: changes.timeZone ?? existing.timeZone,
-        distance: changes.distance ?? existing.distance,
-        duration: changes.duration ?? existing.duration,
-        perceivedEffort:
-          changes.perceivedEffort === null
-            ? undefined
-            : changes.perceivedEffort ?? existing.perceivedEffort,
-        unusualPain:
-          changes.unusualPain === null
-            ? undefined
-            : changes.unusualPain ?? existing.unusualPain,
-        notes: changes.notes === null ? undefined : changes.notes ?? existing.notes,
-        updatedAt: this.clock(),
-      };
+    return safely(() =>
+      measureOperation(runUpdateTimingNames.total, async () => {
+        const existing = await measureOperation(
+          runUpdateTimingNames.existingRead,
+          () => this.requireRun(id),
+        );
+        const updated: CompletedRun = {
+          ...existing,
+          plannedWorkoutPlanId:
+            changes.plannedWorkoutPlanId === null
+              ? undefined
+              : changes.plannedWorkoutPlanId ?? existing.plannedWorkoutPlanId,
+          plannedWorkoutId:
+            changes.plannedWorkoutId === null
+              ? undefined
+              : changes.plannedWorkoutId ?? existing.plannedWorkoutId,
+          shoeId:
+            changes.shoeId === null ? undefined : changes.shoeId ?? existing.shoeId,
+          startedAt: changes.startedAt ?? existing.startedAt,
+          timeZone: changes.timeZone ?? existing.timeZone,
+          distance: changes.distance ?? existing.distance,
+          duration: changes.duration ?? existing.duration,
+          perceivedEffort:
+            changes.perceivedEffort === null
+              ? undefined
+              : changes.perceivedEffort ?? existing.perceivedEffort,
+          unusualPain:
+            changes.unusualPain === null
+              ? undefined
+              : changes.unusualPain ?? existing.unusualPain,
+          notes: changes.notes === null ? undefined : changes.notes ?? existing.notes,
+          updatedAt: this.clock(),
+        };
 
-      requireValidRun(updated);
-      await this.requireAssociations(updated);
-      await this.store.set(runDocumentPath(this.userId, id), completedRunToDocument(updated));
-      return updated;
-    });
+        requireValidRun(updated);
+        await measureOperation(runUpdateTimingNames.associations, () =>
+          this.requireAssociations(updated),
+        );
+        await measureOperation(runUpdateTimingNames.writeAcknowledgement, () =>
+          this.store.set(
+            runDocumentPath(this.userId, id),
+            completedRunToDocument(updated),
+          ),
+        );
+        return updated;
+      }),
+    );
   }
 
   delete(id: CompletedRunId): Promise<void> {
