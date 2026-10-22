@@ -6,6 +6,7 @@ export const expectedIosBoundary = {
   firebaseIosVersion: '12.19.2',
   firebaseJsVersion: '^12.19.0',
   firebaseRulesTestVersion: '^5.0.2',
+  iosContentInset: 'always',
   splashScreenVersion: '8.0.2',
   developmentProjectId: 'marathoner-d9bf9',
   betaProjectId: 'marathonerapp-beta',
@@ -183,6 +184,12 @@ export function findIosProjectViolations({
     violations,
     capacitorConfig,
     `backgroundColor: '${expectedIosBoundary.launchBackgroundColor}'`,
+    'capacitor.config.ts',
+  )
+  requireText(
+    violations,
+    capacitorConfig,
+    `contentInset: '${expectedIosBoundary.iosContentInset}'`,
     'capacitor.config.ts',
   )
   requireText(
@@ -511,6 +518,13 @@ export function findCopiedBundleViolations({
   ) {
     violations.push(
       'generated capacitor.config.json has unexpected iOS backgroundColor',
+    )
+  }
+  if (
+    runtimeConfig.ios?.contentInset !== expectedIosBoundary.iosContentInset
+  ) {
+    violations.push(
+      'generated capacitor.config.json has unexpected iOS contentInset',
     )
   }
   if (runtimeConfig.server?.errorPath !== expectedIosBoundary.startupErrorPath) {

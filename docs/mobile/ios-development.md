@@ -124,6 +124,13 @@ Debug intentionally fails closed because Debug has no App Attest entitlement.
 Release. The JavaScript bridge repeats the same selection but cannot be the
 first selector because its call occurs after native Firebase startup.
 
+The native shell sets Capacitor's iOS `contentInset` policy to `always`. That
+single WebView boundary keeps public, authentication, onboarding, signed-in,
+and overlay content inside the iPhone safe area without adding route-specific
+padding or changing responsive-browser spacing. `npm run check:ios` verifies
+the policy in both the TypeScript source and the generated native runtime
+configuration.
+
 The normal `npm run build` remains the GitHub Pages build with the custom
 domain's root `/` base. It does not read the iOS key.
 

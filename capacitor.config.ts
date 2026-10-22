@@ -6,6 +6,7 @@ const config: CapacitorConfig = {
   webDir: 'dist-ios',
   ios: {
     backgroundColor: '#ffffff',
+    contentInset: 'always',
     preferredContentMode: 'mobile',
   },
   server: {
