@@ -148,22 +148,37 @@ describe("PublicLandingPage", () => {
     });
 
     expect(planButton).toHaveAttribute("aria-pressed", "true");
-    expect(within(preview).getByText("Today · Easy run")).toBeInTheDocument();
-    expect(within(preview).getByText("5.0 mi")).toBeInTheDocument();
-    expect(within(preview).getByText("Easy")).toBeInTheDocument();
+    const planPanel = within(preview).getByRole("region", {
+      name: "Plan sample",
+    });
+    expect(within(planPanel).getByText("Today · Easy run")).toBeInTheDocument();
+    expect(within(planPanel).getByText("5.0 mi")).toBeInTheDocument();
+    expect(within(planPanel).getByText("Easy")).toBeInTheDocument();
+    expect(
+      within(preview).queryByRole("region", { name: "Track sample" }),
+    ).not.toBeInTheDocument();
 
     await user.click(trackButton);
     expect(trackButton).toHaveAttribute("aria-pressed", "true");
-    expect(within(preview).getByText("Run recorded")).toBeInTheDocument();
-    expect(within(preview).getByText("Felt steady")).toBeInTheDocument();
-    expect(within(preview).getByText("Daily trainer")).toBeInTheDocument();
-    expect(within(preview).getByText("214 mi logged")).toBeInTheDocument();
+    const trackPanel = within(preview).getByRole("region", {
+      name: "Track sample",
+    });
+    expect(within(trackPanel).getByText("Run recorded")).toBeInTheDocument();
+    expect(within(trackPanel).getByText("Felt steady")).toBeInTheDocument();
+    expect(within(trackPanel).getByText("Daily trainer")).toBeInTheDocument();
+    expect(within(trackPanel).getByText("214 mi logged")).toBeInTheDocument();
+    expect(
+      within(preview).queryByRole("region", { name: "Plan sample" }),
+    ).not.toBeInTheDocument();
 
     await user.click(analyzeButton);
     expect(analyzeButton).toHaveAttribute("aria-pressed", "true");
-    expect(within(preview).getByText("12.8 mi")).toBeInTheDocument();
+    const analyzePanel = within(preview).getByRole("region", {
+      name: "Analyze sample",
+    });
+    expect(within(analyzePanel).getByText("12.8 mi")).toBeInTheDocument();
     expect(
-      within(preview).getByRole("img", {
+      within(analyzePanel).getByRole("img", {
         name: "Sample weekly distance rises from 8 miles to 20 miles across four weeks",
       }),
     ).toBeInTheDocument();
@@ -193,7 +208,11 @@ describe("PublicLandingPage", () => {
 
       act(() => vi.advanceTimersByTime(1_040));
       expect(trackButton).toHaveAttribute("aria-pressed", "true");
-      expect(within(preview).getByText("Run recorded")).toBeInTheDocument();
+      expect(
+        within(
+          within(preview).getByRole("region", { name: "Track sample" }),
+        ).getByText("Run recorded"),
+      ).toBeInTheDocument();
     } finally {
       vi.useRealTimers();
     }
@@ -217,7 +236,11 @@ describe("PublicLandingPage", () => {
 
       expect(preview).toHaveAttribute("data-preview-mode", "manual");
       expect(analyzeButton).toHaveAttribute("aria-pressed", "true");
-      expect(within(preview).getByText("12.8 mi")).toBeInTheDocument();
+      expect(
+        within(
+          within(preview).getByRole("region", { name: "Analyze sample" }),
+        ).getByText("12.8 mi"),
+      ).toBeInTheDocument();
     } finally {
       vi.useRealTimers();
     }

@@ -200,7 +200,6 @@ export default function PublicLandingPreview() {
     }
   };
 
-  const ActivePanel = previewPanels[activeArea];
   const previewMode = isReducedMotion
     ? "reduced-motion"
     : isManual
@@ -265,13 +264,24 @@ export default function PublicLandingPreview() {
         ) : null}
       </div>
 
-      <section
-        key={activeArea}
-        className="landing-preview__panel"
-        aria-label={`${previewLabels[activeArea]} sample`}
-      >
-        <ActivePanel />
-      </section>
+      <div className="landing-preview__stage">
+        {previewAreas.map((area) => {
+          const PreviewPanel = previewPanels[area];
+          const isActive = activeArea === area;
+
+          return (
+            <section
+              key={area}
+              className="landing-preview__panel"
+              aria-hidden={!isActive}
+              aria-label={`${previewLabels[area]} sample`}
+              data-active={isActive}
+            >
+              <PreviewPanel />
+            </section>
+          );
+        })}
+      </div>
 
       <p id="landing-preview-data-note" className="landing-preview__data-note">
         This preview uses manually entered sample information. It does not show

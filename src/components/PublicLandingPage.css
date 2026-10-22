@@ -390,14 +390,28 @@
   animation: landing-preview-cursor-ring 240ms ease-out;
 }
 
+.landing-preview__stage {
+  display: grid;
+  min-width: 0;
+}
+
 .landing-preview__panel {
-  min-height: 15rem;
+  grid-area: 1 / 1;
+  min-width: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.landing-preview__panel[data-active="true"] {
+  visibility: visible;
   animation: landing-preview-panel-enter 280ms ease-out;
 }
 
 .landing-preview__run-card {
   display: grid;
+  align-content: start;
   gap: 1rem;
+  height: 100%;
   min-height: 15rem;
   padding: 1rem;
   border: 1px solid var(--landing-border);
@@ -790,7 +804,7 @@
     display: none;
   }
 
-  .landing-preview__panel {
+  .landing-preview__panel[data-active="true"] {
     animation: none;
   }
 }
