@@ -14,6 +14,7 @@ import {
 } from "../domain/training";
 import { createDocumentTrainingRepositories } from "./documentTrainingRepositories";
 import { TRAINING_SCHEMA_VERSION } from "./firestore/converters";
+import { runCreationTimingNames } from "./operationTiming";
 import { InMemoryDocumentStore } from "./testing/InMemoryDocumentStore";
 import type { TrainingRepositories } from "./trainingRepositories";
 
@@ -25,6 +26,9 @@ let store: InMemoryDocumentStore;
 let repositories: TrainingRepositories;
 
 beforeEach(() => {
+  Object.values(runCreationTimingNames).forEach((name) => {
+    performance.clearMeasures(name);
+  });
   store = new InMemoryDocumentStore();
   repositories = createDocumentTrainingRepositories(store, userId, () => now);
 });
@@ -91,6 +95,25 @@ describe("shoe repository", () => {
 });
 
 describe("completed run repository", () => {
+  it("records privacy-safe timing for each run-creation phase", async () => {
+    const shoe = await repositories.shoes.create({ name: "Daily Trainer" });
+
+    await repositories.runs.create({
+      shoeId: shoe.id,
+      startedAt: createUtcDateTime("2026-08-03T14:00:00Z"),
+      timeZone,
+      distance: createDistanceMeters(4828),
+      duration: createDurationSeconds(30 * 60),
+    });
+
+    Object.values(runCreationTimingNames).forEach((name) => {
+      const entries = performance.getEntriesByName(name, "measure");
+
+      expect(entries).toHaveLength(1);
+      expect(entries[0]?.duration).toBeGreaterThanOrEqual(0);
+    });
+  });
+
   it("persists a run associated with its plan, workout, and shoe", async () => {
     const { plan, workout } = await createPlanAndWorkout();
     const shoe = await repositories.shoes.create({ name: "Daily Trainer" });
