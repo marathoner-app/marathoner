@@ -96,6 +96,37 @@
   text-align: left;
 }
 
+.elapsed-duration-input {
+  box-sizing: border-box;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  text-align: left;
+}
+
+.elapsed-duration-input legend {
+  margin-bottom: 0.35rem;
+  padding: 0;
+  font-weight: 700;
+}
+
+.elapsed-duration-segments {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.65rem;
+}
+
+.elapsed-duration-segments label {
+  min-width: 0;
+  font-size: 0.85rem;
+}
+
+.elapsed-duration-segments input {
+  min-width: 0;
+  text-align: center;
+}
+
 .shoe-mileage-total {
   font-weight: 700;
 }
