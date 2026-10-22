@@ -501,6 +501,7 @@ function SectionContent({
       {hasReadableTraining && section === "analyze" && (
         <Analyze
           runs={training.runs}
+          shoes={training.shoes}
           distanceUnit={training.profile?.preferredDistanceUnit ?? "mile"}
           timeZone={training.profile?.timeZone}
         />

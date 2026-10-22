@@ -6,6 +6,21 @@ const phoneViewport = { width: 390, height: 844 };
 test.use({ viewport: phoneViewport });
 
 async function exerciseAnalyzeFeedback(page: Page, textSizeLabel: string) {
+  const latestRun = page.locator(".latest-run-summary");
+  await expect(latestRun.getByText("Latest run")).toBeVisible();
+  await expect(
+    latestRun.getByRole("heading", { name: "Oct 22, 2026" }),
+  ).toBeVisible();
+  await expect(latestRun.getByText("5 km")).toBeVisible();
+  await expect(latestRun.getByText("27:30")).toBeVisible();
+  await expect(latestRun.getByText("5:30 /km")).toBeVisible();
+  await expect(latestRun.getByText("Not recorded")).toHaveCount(2);
+  await expectNoHorizontalOverflow(
+    page,
+    "Analyze",
+    `with the latest-run summary at ${textSizeLabel}`,
+  );
+
   await expect(page.getByRole("heading", { name: "Total Distance" })).toBeVisible();
   await expect(
     page.getByRole("heading", { name: "This Week", exact: true }),
