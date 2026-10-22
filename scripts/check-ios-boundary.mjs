@@ -58,6 +58,7 @@ async function run() {
     ),
   )
   const [
+    appDelegate,
     appEntitlements,
     capacitorConfig,
     bridgeViewController,
@@ -76,6 +77,7 @@ async function run() {
     copiedFiles,
     selectedFirebaseConfiguration,
   ] = await Promise.all([
+    readFile(path.join(repositoryRoot, 'ios/App/App/AppDelegate.swift'), 'utf8'),
     readFile(path.join(repositoryRoot, 'ios/App/App/App.entitlements'), 'utf8'),
     readFile(path.join(repositoryRoot, 'capacitor.config.ts'), 'utf8'),
     readFile(
@@ -139,6 +141,7 @@ async function run() {
 
   const violations = [
     ...findIosProjectViolations({
+      appDelegate,
       appEntitlements,
       capacitorConfig,
       bridgeViewController,

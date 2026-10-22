@@ -116,6 +116,7 @@ function requireAppTargetEntitlements(violations, xcodeProject) {
 }
 
 export function findIosProjectViolations({
+  appDelegate,
   appEntitlements,
   capacitorConfig,
   bridgeViewController,
@@ -131,6 +132,16 @@ export function findIosProjectViolations({
   xcodeProject,
 }) {
   const violations = []
+
+  if (
+    !/#if DEBUG[\s\S]*AppCheck\.setAppCheckProviderFactory\(AppCheckDebugProviderFactory\(\)\)[\s\S]*#else[\s\S]*AppCheck\.setAppCheckProviderFactory\(CustomAppCheckProviderFactory\(\)\)[\s\S]*#endif[\s\S]*FirebaseApp\.configure\(\)/.test(
+      appDelegate,
+    )
+  ) {
+    violations.push(
+      'AppDelegate must select Debug and Release App Check providers before FirebaseApp.configure()',
+    )
+  }
 
   requireText(
     violations,

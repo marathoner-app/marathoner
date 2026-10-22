@@ -120,6 +120,12 @@ exposure, loss of custody, or no more than 90 days. `ios-beta`, production, and
 ordinary browser modes reject the native debug selector before Firebase
 services initialize.
 
+Provider selection also occurs in `AppDelegate` before
+`FirebaseApp.configure()`. Debug selects `AppCheckDebugProviderFactory`; Release
+selects the bridge's App Attest-capable `CustomAppCheckProviderFactory`. This
+native ordering is required because the later Capacitor JavaScript call cannot
+replace a provider after Firebase has already configured its default app.
+
 ## Apple App Attest capability
 
 The application target includes `App.entitlements` with

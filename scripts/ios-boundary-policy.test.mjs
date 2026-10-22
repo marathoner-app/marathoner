@@ -7,6 +7,14 @@ import {
 } from './ios-boundary-policy.mjs'
 
 const validProject = {
+  appDelegate: `
+    #if DEBUG
+    AppCheck.setAppCheckProviderFactory(AppCheckDebugProviderFactory())
+    #else
+    AppCheck.setAppCheckProviderFactory(CustomAppCheckProviderFactory())
+    #endif
+    FirebaseApp.configure()
+  `,
   appEntitlements:
     '<key>com.apple.developer.devicecheck.appattest-environment</key><string>production</string>',
   bridgeViewController:
@@ -122,6 +130,17 @@ describe('iOS boundary policy', () => {
         'Package.resolved is missing "identity" : "firebase-ios-sdk"',
         'ios/App/CapApp-SPM/symlinks/CapacitorFirebaseAppCheck is generated or account-local data',
       ]),
+    )
+  })
+
+  it('rejects Firebase configuration before the native provider boundary', () => {
+    expect(
+      findIosProjectViolations({
+        ...validProject,
+        appDelegate: 'FirebaseApp.configure()',
+      }),
+    ).toContain(
+      'AppDelegate must select Debug and Release App Check providers before FirebaseApp.configure()',
     )
   })
 

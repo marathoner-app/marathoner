@@ -119,6 +119,10 @@ Open Xcode with `npm run open:ios`, choose the **Debug** configuration and the
 physical owner iPhone, then run. This build is owner-controlled and must not be
 distributed. The beta proof below must use **Release**; a beta bundle run under
 Debug intentionally fails closed because Debug has no App Attest entitlement.
+`AppDelegate` selects the matching native provider before
+`FirebaseApp.configure()`: the debug provider for Debug and App Attest for
+Release. The JavaScript bridge repeats the same selection but cannot be the
+first selector because its call occurs after native Firebase startup.
 
 The normal `npm run build` remains the GitHub Pages build with the custom
 domain's root `/` base. It does not read the iOS key.

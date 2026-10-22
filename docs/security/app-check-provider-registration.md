@@ -12,7 +12,7 @@
 ## Registered boundary
 
 The same application surfaces exist in two Firebase projects, but no app ID,
-site key, native configuration, or future debug token is shared between them.
+site key, native configuration, or debug token is shared between them.
 The registrations are public client identities, not administrator credentials.
 
 | Environment | Firebase app | Public app identity | Provider | Provider boundary |
@@ -26,7 +26,9 @@ Both providers retain the console's one-hour token TTL. The development web
 domain list was extended and reopened on October 21, 2026 for the #162 Pages
 cutover, with domain verification still enabled. No custom provider,
 reCAPTCHA v3 registration, DeviceCheck fallback, or App Check debug token was
-created by #203.
+created by #203. Issue #351 later registered the owner-only development iPhone
+debug token described below; it does not alter the App Attest registration or
+the beta boundary.
 
 ## Native configuration selection
 
@@ -61,6 +63,12 @@ fallback. Issue #204 may create them only under this policy:
 | --- | --- | --- | --- |
 | Development local | One token per operator/device, named `development-local-<operator>-<device>`; value only in an ignored mode-`0600` `*.local` file | The named operator; console custody remains with the Marathoner administrator | Revoke immediately for suspected exposure, lost/retired device, or custody change; replace at least every 90 days while active |
 | Development CI | A future dedicated `development-ci-github-actions` token may be injected only into an ephemeral Vite **serve** process from a development GitHub environment secret; build and uploaded-artifact use is prohibited | Repository administrator | Rotate on runner/workflow trust changes and at least every 90 days; replace the secret, prove the new served session, then revoke the old token |
+
+The development iOS registration currently has one owner-only token named
+`owner-iphone-development`, created on October 21, 2026 for local physical-device
+dogfooding. Its value is held only in the ignored Xcode user scheme, is never
+copied into this record, and must be rotated or revoked under the policy above.
+No beta, production, or CI debug token exists.
 
 Beta and production output must reject every debug-token value before bundling.
 A beta-local or beta-CI debug provider is not an approved exception; beta proof
