@@ -94,6 +94,7 @@ vi.mock('./training/TrainingDataProvider', () => ({
 
 const trainingMock = vi.hoisted(() => ({
   status: 'current' as 'current' | 'stale',
+  staleReasons: [] as ('cache_only' | 'pending_writes')[],
   profile: null as object | null,
   plans: [] as object[],
   workouts: [] as object[],
@@ -111,7 +112,8 @@ vi.mock('./training/useTrainingData', () => ({
     runs: [],
     shoes: [],
     canWrite: trainingMock.status === 'current',
-    staleReasons: trainingMock.status === 'stale' ? ['cache_only'] : [],
+    staleReasons:
+      trainingMock.status === 'stale' ? trainingMock.staleReasons : [],
     lastServerConfirmedAt: null,
     reload: trainingMock.reload,
     saveProfile: trainingMock.saveProfile,
@@ -219,6 +221,7 @@ beforeEach(() => {
   vi.clearAllMocks()
   authSubscriptions = []
   trainingMock.status = 'current'
+  trainingMock.staleReasons = []
   trainingMock.profile = completeRunnerProfile
   trainingMock.plans = []
   trainingMock.workouts = []
@@ -642,6 +645,7 @@ describe('App training sections', () => {
   it('keeps stale training data readable while disabling mutations', async () => {
     const user = userEvent.setup()
     trainingMock.status = 'stale'
+    trainingMock.staleReasons = ['cache_only']
     renderSignedInApp()
 
     expect(
@@ -662,6 +666,32 @@ describe('App training sections', () => {
     expect(
       screen.getByText(/showing the latest in-memory snapshot/i)
     ).toBeInTheDocument()
+  })
+
+  it('distinguishes a pending server confirmation from disconnected data', async () => {
+    const user = userEvent.setup()
+    trainingMock.status = 'stale'
+    trainingMock.staleReasons = ['pending_writes']
+    renderSignedInApp()
+
+    expect(
+      screen.getByText(/waiting for the server to confirm your latest change/i)
+    ).toBeInTheDocument()
+    expect(
+      screen.queryByText(/training data may be out of date/i)
+    ).not.toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'Check server again' }))
+    expect(trainingMock.reload).toHaveBeenCalledOnce()
+
+    await user.click(screen.getByRole('button', { name: 'Track' }))
+    expect(document.querySelector('fieldset.training-read-only')).toBeDisabled()
+    expect(
+      screen.getByText(/waiting for the server to confirm your latest change/i)
+    ).toBeInTheDocument()
+    expect(
+      screen.queryByText(/showing the latest in-memory snapshot/i)
+    ).not.toBeInTheDocument()
   })
 
   it('opens Plan from the persisted next-workout summary', async () => {

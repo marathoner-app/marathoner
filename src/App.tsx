@@ -332,12 +332,22 @@ function AuthenticatedExperience({
 
       {!activeSection && training.status === "stale" && (
         <div className="training-home-status training-stale" role="status">
-          <p>
-            Your training data may be out of date. You can review it, but
-            changes are disabled until Marathoner reconnects.
-          </p>
+          {training.staleReasons.includes("pending_writes") ? (
+            <p>
+              Marathoner is waiting for the server to confirm your latest
+              change. It is visible here, but not confirmed yet. Keep the app
+              open and do not submit it again.
+            </p>
+          ) : (
+            <p>
+              Your training data may be out of date. You can review it, but
+              changes are disabled until Marathoner reconnects.
+            </p>
+          )}
           <button type="button" onClick={() => void training.reload()}>
-            Retry connection
+            {training.staleReasons.includes("pending_writes")
+              ? "Check server again"
+              : "Retry connection"}
           </button>
         </div>
       )}
@@ -464,12 +474,22 @@ function SectionContent({
       )}
       {training.status === "stale" && (
         <div className="training-stale" role="status">
-          <p>
-            Showing the latest in-memory snapshot. Changes are disabled until
-            Marathoner reconnects.
-          </p>
+          {training.staleReasons.includes("pending_writes") ? (
+            <p>
+              Marathoner is waiting for the server to confirm your latest
+              change. It is visible here, but not confirmed yet. Keep the app
+              open and do not submit it again.
+            </p>
+          ) : (
+            <p>
+              Showing the latest in-memory snapshot. Changes are disabled until
+              Marathoner reconnects.
+            </p>
+          )}
           <button type="button" onClick={() => void training.reload()}>
-            Retry connection
+            {training.staleReasons.includes("pending_writes")
+              ? "Check server again"
+              : "Retry connection"}
           </button>
         </div>
       )}
