@@ -199,14 +199,22 @@
 
 @media (max-width: 768px) {
   .session-controls {
-    right: 0.75rem;
-    left: 0.75rem;
+    position: static;
+    box-sizing: border-box;
+    width: min(calc(100% - 1.5rem), 34rem);
+    margin: 1rem auto 1.5rem;
     justify-content: center;
     flex-wrap: wrap;
   }
 
   .session-user {
-    flex-basis: 100%;
+    flex: 1 0 100%;
+    width: 100%;
+    max-width: 100%;
+    overflow: visible;
+    overflow-wrap: anywhere;
+    white-space: normal;
+    text-overflow: clip;
     text-align: center;
   }
 
