@@ -127,9 +127,14 @@ section, its reviewer must confirm all of the following:
    changes.
 6. Lint, the complete test suite, the Functions build, and the production build
    pass on that commit.
-7. The beta App Check observation plan remains unenforced, and #205 has an
+7. The beta project's default build service account holds only the reviewed
+   project roles required for Functions builds, including
+   `roles/cloudbuild.builds.builder`. This role lets the build read its uploaded
+   source, publish its Artifact Registry image, and write build logs; it does
+   not authorize a human or any development-project resource.
+8. The beta App Check observation plan remains unenforced, and #205 has an
    active rollback owner and observation window.
-8. The ignored beta parameter file contains only the reviewed completed-run
+9. The ignored beta parameter file contains only the reviewed completed-run
    activation value, and the fictional rehearsal account has an exact approved
    beta membership.
 
