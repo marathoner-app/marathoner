@@ -1,6 +1,6 @@
 import { createDateOnly, type DateOnly } from "./dates";
 import type { ShoeId, UserId } from "./identifiers";
-import type { CompletedRun, Shoe } from "./types";
+import type { CompletedRun, PerceivedEffort, Shoe } from "./types";
 import {
   calculatePace,
   createDistanceMeters,
@@ -30,6 +30,13 @@ export interface RecentRunPacePoint {
   readonly runDate: DateOnly;
   readonly startedAt: CompletedRun["startedAt"];
   readonly pace: Pace;
+}
+
+export interface RecentRunEffortPoint {
+  readonly runId: CompletedRun["id"];
+  readonly runDate: DateOnly;
+  readonly startedAt: CompletedRun["startedAt"];
+  readonly perceivedEffort?: PerceivedEffort;
 }
 
 export function calculateTotalDistance(runs: readonly CompletedRun[]): DistanceMeters {
@@ -161,6 +168,25 @@ export function calculateRecentRunPaceTrend(
         },
       ];
     })
+    .sort((first, second) => first.startedAt.localeCompare(second.startedAt))
+    .slice(-runCount);
+}
+
+export function calculateRecentRunEffortPattern(
+  runs: readonly CompletedRun[],
+  runCount: number,
+): RecentRunEffortPoint[] {
+  if (!Number.isInteger(runCount) || runCount <= 0) {
+    throw new RangeError("Recent effort pattern requires at least one run.");
+  }
+
+  return runs
+    .map((run) => ({
+      runId: run.id,
+      runDate: getRunLocalDate(run),
+      startedAt: run.startedAt,
+      perceivedEffort: run.perceivedEffort,
+    }))
     .sort((first, second) => first.startedAt.localeCompare(second.startedAt))
     .slice(-runCount);
 }

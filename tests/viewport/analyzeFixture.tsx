@@ -20,6 +20,7 @@ const run: CompletedRun = {
   timeZone,
   distance: createDistanceMeters(5_000),
   duration: createDurationSeconds(1_800),
+  perceivedEffort: "about_right",
   createdAt: timestamp,
   updatedAt: timestamp,
 };
@@ -29,6 +30,7 @@ const laterRun: CompletedRun = {
   id: createCompletedRunId("viewport-run-2"),
   startedAt: laterTimestamp,
   duration: createDurationSeconds(1_650),
+  perceivedEffort: "harder_than_expected",
   createdAt: laterTimestamp,
   updatedAt: laterTimestamp,
 };

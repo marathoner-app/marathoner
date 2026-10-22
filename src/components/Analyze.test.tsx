@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import { expect, it, vi } from "vitest";
 import {
   createCompletedRunId,
@@ -87,7 +87,8 @@ it("shows analytics calculated from completed runs", async () => {
   expect(screen.getByText("40:00")).toBeInTheDocument();
   expect(screen.getAllByText("8:00 /mi")).toHaveLength(2);
   expect(screen.getByText("Daily trainer")).toBeInTheDocument();
-  expect(screen.getByText("About as expected")).toBeInTheDocument();
+  const latestRunSummary = screen.getByRole("region", { name: "Aug 5, 2026" });
+  expect(within(latestRunSummary).getByText("About as expected")).toBeInTheDocument();
   expect(screen.getByText("Average Pace")).toBeInTheDocument();
   expect(screen.getByText("Total Runs")).toBeInTheDocument();
   expect(screen.getAllByText("1")).toHaveLength(2);
@@ -210,5 +211,6 @@ it("selects the latest run regardless of snapshot order and updates with new dat
   );
 
   expect(screen.getByRole("heading", { name: "Aug 7, 2026" })).toBeInTheDocument();
-  expect(screen.getAllByText("Not recorded")).toHaveLength(2);
+  const latestRunSummary = screen.getByRole("region", { name: "Aug 7, 2026" });
+  expect(within(latestRunSummary).getAllByText("Not recorded")).toHaveLength(2);
 });

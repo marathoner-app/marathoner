@@ -93,7 +93,8 @@
 }
 
 .weekly-trend,
-.pace-trend {
+.pace-trend,
+.effort-pattern {
   box-sizing: border-box;
   width: 100%;
   max-width: 56rem;
@@ -108,18 +109,22 @@
 .weekly-trend h2,
 .weekly-trend-context,
 .pace-trend h2,
-.pace-trend-context {
+.pace-trend-context,
+.effort-pattern h2,
+.effort-pattern-context {
   margin: 0;
 }
 
 .weekly-trend h2,
-.pace-trend h2 {
+.pace-trend h2,
+.effort-pattern h2 {
   color: #005fcc;
   font-size: 1.25rem;
 }
 
 .weekly-trend-context,
-.pace-trend-context {
+.pace-trend-context,
+.effort-pattern-context {
   margin-top: 0.35rem;
   color: #34495e;
 }
@@ -134,19 +139,22 @@
 }
 
 .weekly-trend-data,
-.pace-trend-data {
+.pace-trend-data,
+.effort-pattern-data {
   margin-top: 0.75rem;
 }
 
 .weekly-trend-data summary,
-.pace-trend-data summary {
+.pace-trend-data summary,
+.effort-pattern-data summary {
   color: #005fcc;
   cursor: pointer;
   font-weight: 600;
 }
 
 .weekly-trend-data table,
-.pace-trend-data table {
+.pace-trend-data table,
+.effort-pattern-data table {
   width: 100%;
   margin-top: 0.75rem;
   border-collapse: collapse;
@@ -154,7 +162,8 @@
 }
 
 .weekly-trend-data caption,
-.pace-trend-data caption {
+.pace-trend-data caption,
+.effort-pattern-data caption {
   padding-bottom: 0.5rem;
   font-weight: 600;
   text-align: left;
@@ -163,11 +172,64 @@
 .weekly-trend-data th,
 .weekly-trend-data td,
 .pace-trend-data th,
-.pace-trend-data td {
+.pace-trend-data td,
+.effort-pattern-data th,
+.effort-pattern-data td {
   padding: 0.5rem;
   border-bottom: 1px solid #d9e2ec;
   overflow-wrap: anywhere;
   text-align: left;
+}
+
+.effort-pattern-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr));
+  gap: 0.75rem;
+  margin: 1rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.effort-pattern-item {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.75rem;
+  border: 1px solid #c7d5e3;
+  border-left: 0.35rem solid #627d98;
+  border-radius: 8px;
+  background: #f7fafc;
+}
+
+.effort-pattern-item--much_easier_than_expected,
+.effort-pattern-item--easier_than_expected {
+  border-left-color: #2f855a;
+}
+
+.effort-pattern-item--about_right {
+  border-left-color: #2b6cb0;
+}
+
+.effort-pattern-item--harder_than_expected,
+.effort-pattern-item--much_harder_than_expected {
+  border-left-color: #b7791f;
+}
+
+.effort-pattern-item--missing {
+  border-left-color: #718096;
+}
+
+.effort-pattern-item time {
+  color: #52667a;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.effort-pattern-item span {
+  color: #102a43;
+  font-weight: 700;
+  overflow-wrap: anywhere;
 }
 
 @media (max-width: 768px) {
@@ -177,7 +239,8 @@
   }
 
   .weekly-trend,
-  .pace-trend {
+  .pace-trend,
+  .effort-pattern {
     padding: 0.75rem;
   }
 
@@ -187,7 +250,8 @@
   }
 
   .weekly-trend-data,
-  .pace-trend-data {
+  .pace-trend-data,
+  .effort-pattern-data {
     overflow-x: auto;
   }
 }

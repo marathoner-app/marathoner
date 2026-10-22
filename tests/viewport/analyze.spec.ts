@@ -14,7 +14,8 @@ async function exerciseAnalyzeFeedback(page: Page, textSizeLabel: string) {
   await expect(latestRun.getByText("5 km")).toBeVisible();
   await expect(latestRun.getByText("27:30")).toBeVisible();
   await expect(latestRun.getByText("5:30 /km")).toBeVisible();
-  await expect(latestRun.getByText("Not recorded")).toHaveCount(2);
+  await expect(latestRun.getByText("Not recorded")).toHaveCount(1);
+  await expect(latestRun.getByText("Harder than expected")).toBeVisible();
   await expectNoHorizontalOverflow(
     page,
     "Analyze",
@@ -73,6 +74,34 @@ async function exerciseAnalyzeFeedback(page: Page, textSizeLabel: string) {
     page,
     "Analyze",
     `with the recent pace data table open at ${textSizeLabel}`,
+  );
+
+  await expect(page.getByRole("heading", { name: "Recent Effort" })).toBeVisible();
+  const effortSequence = page.getByRole("list", {
+    name: "Recent run effort sequence",
+  });
+  await expect(effortSequence).toContainText("About as expected");
+  await expect(effortSequence).toContainText("Harder than expected");
+  await expectNoHorizontalOverflow(
+    page,
+    "Analyze",
+    `with the recent effort sequence at ${textSizeLabel}`,
+  );
+
+  await page.getByText("View recent effort data").click();
+  const effortTable = page.getByRole("table", {
+    name: "Recent recorded perceived effort",
+  });
+  await expect(
+    effortTable.getByRole("row", { name: "2026-10-21 About as expected" }),
+  ).toBeVisible();
+  await expect(
+    effortTable.getByRole("row", { name: "2026-10-22 Harder than expected" }),
+  ).toBeVisible();
+  await expectNoHorizontalOverflow(
+    page,
+    "Analyze",
+    `with the recent effort table open at ${textSizeLabel}`,
   );
 }
 

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   calculatePace,
+  calculateRecentRunEffortPattern,
   calculateRecentRunPaceTrend,
   calculateShoeDistance,
   calculateTrainingAnalytics,
@@ -486,6 +487,50 @@ describe("training domain calculations", () => {
       [],
     );
     expect(() => calculateRecentRunPaceTrend([run], "mile", 0)).toThrow(
+      /at least one run/i,
+    );
+  });
+
+  it("keeps missing effort visible in the bounded chronological run pattern", () => {
+    const earlierRun: CompletedRun = {
+      ...run,
+      id: createCompletedRunId("run-earlier-effort"),
+      startedAt: createUtcDateTime("2026-08-01T06:30:00Z"),
+      timeZone: createIanaTimeZone("Pacific/Honolulu"),
+      perceivedEffort: "easier_than_expected",
+    };
+    const laterRun: CompletedRun = {
+      ...run,
+      id: createCompletedRunId("run-later-effort"),
+      startedAt: createUtcDateTime("2026-08-07T14:00:00Z"),
+      perceivedEffort: "harder_than_expected",
+    };
+    const missingEffortRun: CompletedRun = {
+      ...run,
+      perceivedEffort: undefined,
+    };
+
+    const points = calculateRecentRunEffortPattern(
+      [laterRun, earlierRun, missingEffortRun],
+      2,
+    );
+
+    expect(points.map((point) => point.runId)).toEqual([
+      missingEffortRun.id,
+      laterRun.id,
+    ]);
+    expect(points.map((point) => point.runDate)).toEqual([
+      "2026-08-03",
+      "2026-08-07",
+    ]);
+    expect(points.map((point) => point.perceivedEffort)).toEqual([
+      undefined,
+      "harder_than_expected",
+    ]);
+  });
+
+  it("rejects an invalid recent-effort run limit", () => {
+    expect(() => calculateRecentRunEffortPattern([run], 0)).toThrow(
       /at least one run/i,
     );
   });
