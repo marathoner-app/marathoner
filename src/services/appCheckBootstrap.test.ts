@@ -85,13 +85,49 @@ describe('App Check bootstrap', () => {
       isNativePlatform: true,
     })
 
-    expect(dependencies.initializeNativeAppCheck).toHaveBeenCalledOnce()
+    expect(dependencies.initializeNativeAppCheck).toHaveBeenCalledWith(false)
     expect(dependencies.createCustomProvider).toHaveBeenCalledOnce()
     expect(dependencies.getNativeToken).toHaveBeenCalledOnce()
     expect(dependencies.initializeJsAppCheck).toHaveBeenCalledWith(app, {
       provider: nativeProvider,
       isTokenAutoRefreshEnabled: true,
     })
+  })
+
+  it('selects the native debug provider only when the build requests it', async () => {
+    const dependencies = createDependencies()
+    const initialize = createAppCheckInitializer(dependencies)
+
+    await initialize({
+      app,
+      appCheckSiteKey: 'unused-on-native',
+      isNativePlatform: true,
+      nativeDebugProvider: true,
+    })
+
+    expect(dependencies.initializeNativeAppCheck).toHaveBeenCalledWith(true)
+    expect(dependencies.getNativeToken).toHaveBeenCalledOnce()
+    expect(dependencies.initializeJsAppCheck).toHaveBeenCalledWith(app, {
+      provider: nativeProvider,
+      isTokenAutoRefreshEnabled: true,
+    })
+  })
+
+  it('rejects native debug selection in a browser', async () => {
+    const dependencies = createDependencies()
+    const initialize = createAppCheckInitializer(dependencies)
+
+    await expect(
+      initialize({
+        app,
+        appCheckSiteKey: 'environment-specific-site-key',
+        isNativePlatform: false,
+        nativeDebugProvider: true,
+      }),
+    ).rejects.toBeInstanceOf(AppCheckStartupError)
+
+    expect(dependencies.initializeNativeAppCheck).not.toHaveBeenCalled()
+    expect(dependencies.initializeJsAppCheck).not.toHaveBeenCalled()
   })
 
   it('rejects an expired native token without exposing it', async () => {

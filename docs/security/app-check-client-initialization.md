@@ -1,7 +1,8 @@
 # App Check client initialization
 
-- **Status:** Implementation and automated boundaries complete; live browser
-  and physical-iPhone token evidence pending
+- **Status:** Implementation and automated boundaries complete; owner-only
+  development iPhone debug proof passed; live browser and beta App Attest proof
+  pending
 - **Implementation date:** 2026-10-06
 - **Tracking issue:**
   [#204](https://github.com/marathoner-app/marathoner/issues/204)
@@ -47,7 +48,8 @@ to `marathonerapp.com` and `www.marathonerapp.com`.
 iOS uses the separately selected `GoogleService-Info.plist` identities described
 in the [provider registration record](app-check-provider-registration.md).
 
-Normal builds never select a debug provider. A fixed browser debug token may be
+Beta, production-web, and iOS Release builds never select a debug provider. A
+fixed browser debug token may be
 provided only through `VITE_FIREBASE_APP_CHECK_DEBUG_TOKEN` when all of these
 conditions are true:
 
@@ -92,27 +94,59 @@ reviewed procedure, not a claim of console or traffic evidence:
    suspected exposure or loss of custody, and at least every 90 days while the
    token remains active.
 
-Never use the development token for beta, iOS, production output, another
+Never use the development browser token for beta, iOS, production output, another
 operator/device, or CI artifacts. Never set the debug global manually.
+
+### Owner-only iOS development debug workflow
+
+The explicit `ios-development` build is the only native exception to the
+no-debug-build rule. It must set
+`VITE_FIREBASE_NATIVE_APP_CHECK_DEBUG=true`, select the development Firebase
+project, and run with Xcode's Debug configuration. The value is a non-secret
+provider selector. It tells the native bridge to use Firebase's Apple debug
+provider, but it does not contain or generate the credential inside the web
+bundle.
+
+The administrator creates one fixed debug token under the **development iOS
+App Check registration only**. The owner supplies that token privately to the
+Xcode Run scheme as the `AppCheckDebugToken` environment variable. Xcode's
+user-local scheme data is ignored, and the token must not appear in source,
+`*.local` Vite files, tracked schemes, copied web output, screenshots, logs, or
+GitHub. Do not add `-FIRDebugEnabled`; this workflow deliberately avoids
+printing a generated credential.
+
+The token is for the owner's development phone and development project only.
+Do not distribute that build. Rotate or revoke the token after suspected
+exposure, loss of custody, or no more than 90 days. `ios-beta`, production, and
+ordinary browser modes reject the native debug selector before Firebase
+services initialize.
+
+Provider selection also occurs in `AppDelegate` before
+`FirebaseApp.configure()`. Debug selects `AppCheckDebugProviderFactory`; Release
+selects the bridge's App Attest-capable `CustomAppCheckProviderFactory`. This
+native ordering is required because the later Capacitor JavaScript call cannot
+replace a provider after Firebase has already configured its default app.
 
 ## Apple App Attest capability
 
-The application target now includes `App.entitlements` with
+The application target includes `App.entitlements` with
 `com.apple.developer.devicecheck.appattest-environment` set to `production`.
-This is intentional for development and release configurations: Firebase does
-not accept App Attest sandbox tokens. The iOS boundary test requires both the
-entitlement and the target's `CODE_SIGN_ENTITLEMENTS` setting so a Capacitor
-sync or project edit cannot silently remove the capability.
+Firebase does not accept App Attest sandbox tokens. The Xcode Release
+configuration must reference this entitlement for beta and distribution. The
+Debug configuration intentionally does not reference it, allowing an
+owner-controlled Personal Team development build to use the development-only
+debug provider. The iOS boundary test rejects the inverse configuration.
 
-The 2026-10-06 signed-device build stopped before compilation because the
-current Personal Team provisioning profile does not contain App Attest. This is
-the expected fail-closed behavior. A Marathoner Apple Developer Program team
-must enable the capability and issue a new profile before the physical-iPhone
-App Attest acceptance test can pass. The approved
+The 2026-10-06 App Attest signed-device build stopped before compilation
+because the current Personal Team provisioning profile does not contain App
+Attest. This remains expected for Release and beta. A Marathoner Apple
+Developer Program team must enable the capability and issue a new profile
+before the physical-iPhone App Attest acceptance test can pass. The approved
 [entity and Apple organization-enrollment path](../operations/legal-entity-and-apple-enrollment.md)
 is tracked in [#281](https://github.com/marathoner-app/marathoner/issues/281).
-Unsigned compilation is still useful for code and dependency verification but
-is not attestation evidence.
+The development Debug workflow can support owner dogfooding, but it is not App
+Attest evidence and cannot satisfy #204, #205, TestFlight, or an external-beta
+gate.
 
 ## Evidence and remaining proof
 
@@ -130,8 +164,14 @@ Automated tests cover:
   and Release signing settings.
 
 Development and beta web builds and copied iOS bundles pass. Both iOS boundary
-variants select the correct native Firebase configuration. The final #204 proof
-still requires:
+variants select the correct native Firebase configuration. On October 21, 2026,
+the owner-only development Debug build at commit `ed40094` obtained an accepted
+debug token on an iPhone 15 running iOS build `23G90`, completed Email/Password
+sign-in, and reached the Firestore-backed onboarding state. No token value,
+credential, device identifier, or beta configuration was recorded. This proves
+the #351 development exception only; it is not App Attest evidence.
+
+The final #204 proof still requires:
 
 1. enroll or select an Apple Developer Program team, enable App Attest for the
    explicit App ID, and regenerate the development profile;

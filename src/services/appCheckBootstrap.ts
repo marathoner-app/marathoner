@@ -34,7 +34,7 @@ interface AppCheckBootstrapDependencies {
     appCheck: AppCheck,
     forceRefresh: boolean,
   ) => Promise<{ token: string }>
-  initializeNativeAppCheck: () => Promise<void>
+  initializeNativeAppCheck: (debugProvider: boolean) => Promise<void>
   getNativeToken: () => Promise<NativeTokenResult>
   now: () => number
   timeoutMs: number
@@ -45,6 +45,7 @@ export interface AppCheckBootstrapOptions {
   appCheckSiteKey: string
   debugToken?: string
   isNativePlatform: boolean
+  nativeDebugProvider?: boolean
 }
 
 export class AppCheckStartupError extends Error {
@@ -124,8 +125,11 @@ const defaultDependencies: AppCheckBootstrapDependencies = {
   initializeJsAppCheck: (app, options) => initializeAppCheck(app, options),
   getJsToken: (appCheck, forceRefresh) =>
     getToken(appCheck, forceRefresh),
-  initializeNativeAppCheck: () =>
-    FirebaseAppCheck.initialize({ isTokenAutoRefreshEnabled: true }),
+  initializeNativeAppCheck: (debugProvider) =>
+    FirebaseAppCheck.initialize({
+      debugToken: debugProvider,
+      isTokenAutoRefreshEnabled: true,
+    }),
   getNativeToken: () => FirebaseAppCheck.getToken({ forceRefresh: false }),
   now: () => Date.now(),
   timeoutMs: appCheckStartupTimeoutMs,
@@ -143,6 +147,7 @@ export function createAppCheckInitializer(
     appCheckSiteKey,
     debugToken,
     isNativePlatform,
+    nativeDebugProvider = false,
   }: AppCheckBootstrapOptions): Promise<void> {
     try {
       if (appCheckSiteKey.trim() === '') {
@@ -150,6 +155,12 @@ export function createAppCheckInitializer(
       }
 
       configureDebugToken(debugToken)
+
+      if (!isNativePlatform && nativeDebugProvider) {
+        throw new Error(
+          'The native App Check debug provider cannot initialize in a browser.',
+        )
+      }
 
       if (initializedApp !== null && initializedApp !== app) {
         throw new Error(
@@ -169,7 +180,7 @@ export function createAppCheckInitializer(
 
           if (nativeInitialization === null) {
             const initializationAttempt =
-              dependencies.initializeNativeAppCheck()
+              dependencies.initializeNativeAppCheck(nativeDebugProvider)
             const trackedInitialization = initializationAttempt.catch(
               (error: unknown) => {
                 if (nativeInitialization === trackedInitialization) {

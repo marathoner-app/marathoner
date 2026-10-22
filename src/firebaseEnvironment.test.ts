@@ -9,6 +9,7 @@ import {
   resolveAppCheckDebugTokenForMode,
   resolveFirebaseEnvironment as resolveFirebaseEnvironmentWithRegistry,
   resolveFirebaseEnvironmentForMode as resolveFirebaseEnvironmentForModeWithRegistry,
+  resolveNativeAppCheckDebugForMode,
 } from './firebaseEnvironment'
 
 type ModeOptions = Parameters<
@@ -108,6 +109,75 @@ describe('Firebase environment selection', () => {
       ).toThrow('must contain a fixed Firebase App Check debug token')
     },
   )
+
+  it('allows native App Check debug only for explicit iOS development builds', () => {
+    expect(
+      resolveNativeAppCheckDebugForMode({
+        mode: 'ios-development',
+        environmentName: 'development',
+        nativeDebugRequested: ' true ',
+      }),
+    ).toBe(true)
+  })
+
+  it.each([
+    ['production', 'development'],
+    ['production', 'beta'],
+    ['ios-beta', 'beta'],
+    ['development', 'development'],
+  ] as const)(
+    'rejects native App Check debug for %s/%s',
+    (mode, environmentName) => {
+      expect(() =>
+        resolveNativeAppCheckDebugForMode({
+          mode,
+          environmentName,
+          nativeDebugRequested: 'true',
+        }),
+      ).toThrow(
+        'allowed only in the development Firebase environment built with ios-development mode',
+      )
+    },
+  )
+
+  it('requires native debug selection to be explicit in iOS development', () => {
+    expect(() =>
+      resolveNativeAppCheckDebugForMode({
+        mode: 'ios-development',
+        environmentName: 'development',
+        nativeDebugRequested: undefined,
+      }),
+    ).toThrow(
+      'ios-development build must explicitly enable the native App Check debug provider',
+    )
+  })
+
+  it('rejects an ambiguous native App Check debug value', () => {
+    expect(() =>
+      resolveNativeAppCheckDebugForMode({
+        mode: 'ios-development',
+        environmentName: 'development',
+        nativeDebugRequested: 'generate',
+      }),
+    ).toThrow('must be either "true" or "false"')
+  })
+
+  it('keeps native App Check debug off in ordinary and beta builds', () => {
+    expect(
+      resolveNativeAppCheckDebugForMode({
+        mode: 'production',
+        environmentName: 'beta',
+        nativeDebugRequested: undefined,
+      }),
+    ).toBe(false)
+    expect(
+      resolveNativeAppCheckDebugForMode({
+        mode: 'ios-beta',
+        environmentName: 'beta',
+        nativeDebugRequested: 'false',
+      }),
+    ).toBe(false)
+  })
 
   it('allows the Functions emulator only in local development mode', () => {
     expect(() =>

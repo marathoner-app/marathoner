@@ -7,6 +7,14 @@ import {
 } from './ios-boundary-policy.mjs'
 
 const validProject = {
+  appDelegate: `
+    #if DEBUG
+    AppCheck.setAppCheckProviderFactory(AppCheckDebugProviderFactory())
+    #else
+    AppCheck.setAppCheckProviderFactory(CustomAppCheckProviderFactory())
+    #endif
+    FirebaseApp.configure()
+  `,
   appEntitlements:
     '<key>com.apple.developer.devicecheck.appattest-environment</key><string>production</string>',
   bridgeViewController:
@@ -44,7 +52,7 @@ const validProject = {
     APPDEBUG0001 /* Debug */ = {
       isa = XCBuildConfiguration;
       buildSettings = {
-        CODE_SIGN_ENTITLEMENTS = App/App.entitlements;
+        CODE_SIGN_STYLE = Automatic;
       };
       name = Debug;
     };
@@ -125,6 +133,17 @@ describe('iOS boundary policy', () => {
     )
   })
 
+  it('rejects Firebase configuration before the native provider boundary', () => {
+    expect(
+      findIosProjectViolations({
+        ...validProject,
+        appDelegate: 'FirebaseApp.configure()',
+      }),
+    ).toContain(
+      'AppDelegate must select Debug and Release App Check providers before FirebaseApp.configure()',
+    )
+  })
+
   it('rejects an App Attest entitlement that is not bound to production', () => {
     expect(
       findIosProjectViolations({
@@ -137,26 +156,31 @@ describe('iOS boundary policy', () => {
     )
   })
 
-  it.each([
-    ['Debug', 'APPDEBUG0001'],
-    ['Release', 'APPRELEASE01'],
-  ])(
-    'rejects a missing App target %s entitlement setting',
-    (configurationName, configurationId) => {
-      const xcodeProject = validProject.xcodeProject.replace(
-        new RegExp(
-          `(${configurationId} \/\\* ${configurationName} \\*\/ = \\{[\\s\\S]*?buildSettings = \\{[\\s\\S]*?)CODE_SIGN_ENTITLEMENTS = App/App.entitlements;`,
-        ),
-        '$1',
-      )
+  it('rejects a Debug target that requests the production App Attest entitlement', () => {
+    const xcodeProject = validProject.xcodeProject.replace(
+      'CODE_SIGN_STYLE = Automatic;',
+      'CODE_SIGN_ENTITLEMENTS = App/App.entitlements;',
+    )
 
-      expect(
-        findIosProjectViolations({ ...validProject, xcodeProject }),
-      ).toContain(
-        `App target ${configurationName} configuration is missing CODE_SIGN_ENTITLEMENTS = App/App.entitlements;`,
-      )
-    },
-  )
+    expect(
+      findIosProjectViolations({ ...validProject, xcodeProject }),
+    ).toContain(
+      'App target Debug configuration must not request the production App Attest entitlement',
+    )
+  })
+
+  it('rejects a Release target without the production App Attest entitlement', () => {
+    const xcodeProject = validProject.xcodeProject.replace(
+      /CODE_SIGN_ENTITLEMENTS = App\/App\.entitlements;/u,
+      '',
+    )
+
+    expect(
+      findIosProjectViolations({ ...validProject, xcodeProject }),
+    ).toContain(
+      'App target Release configuration is missing CODE_SIGN_ENTITLEMENTS = App/App.entitlements;',
+    )
+  })
 
   it('accepts an exact copied development bundle', () => {
     const builtFiles = new Map([

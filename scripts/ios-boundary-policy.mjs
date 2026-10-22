@@ -52,6 +52,30 @@ function requireText(violations, source, expected, label) {
   }
 }
 
+function appTargetConfigurationBlock(
+  violations,
+  xcodeProject,
+  configurationList,
+  configurationName,
+) {
+  const configurationId = configurationList.match(
+    new RegExp(`([A-Za-z0-9]+) \/\\* ${configurationName} \\*\/`),
+  )?.[1]
+
+  if (!configurationId) {
+    violations.push(
+      `Xcode project is missing the App target ${configurationName} configuration`,
+    )
+    return null
+  }
+
+  return xcodeProject.match(
+    new RegExp(
+      `${configurationId} \/\\* ${configurationName} \\*\/ = \\{[\\s\\S]*?buildSettings = \\{([\\s\\S]*?)\\n\\s*\\};`,
+    ),
+  )?.[1] ?? null
+}
+
 function requireAppTargetEntitlements(violations, xcodeProject) {
   const configurationList = xcodeProject.match(
     /\/\* Build configuration list for PBXNativeTarget "App" \*\/ = \{[\s\S]*?buildConfigurations = \(([\s\S]*?)\);/,
@@ -62,37 +86,37 @@ function requireAppTargetEntitlements(violations, xcodeProject) {
     return
   }
 
-  for (const configurationName of ['Debug', 'Release']) {
-    const configurationId = configurationList.match(
-      new RegExp(`([A-Za-z0-9]+) \/\\* ${configurationName} \\*\/`),
-    )?.[1]
+  const debugBlock = appTargetConfigurationBlock(
+    violations,
+    xcodeProject,
+    configurationList,
+    'Debug',
+  )
+  if (debugBlock?.includes('CODE_SIGN_ENTITLEMENTS')) {
+    violations.push(
+      'App target Debug configuration must not request the production App Attest entitlement',
+    )
+  }
 
-    if (!configurationId) {
-      violations.push(
-        `Xcode project is missing the App target ${configurationName} configuration`,
-      )
-      continue
-    }
-
-    const configurationBlock = xcodeProject.match(
-      new RegExp(
-        `${configurationId} \/\\* ${configurationName} \\*\/ = \\{[\\s\\S]*?buildSettings = \\{([\\s\\S]*?)\\n\\s*\\};`,
-      ),
-    )?.[1]
-
-    if (
-      !configurationBlock?.includes(
-        'CODE_SIGN_ENTITLEMENTS = App/App.entitlements;',
-      )
-    ) {
-      violations.push(
-        `App target ${configurationName} configuration is missing CODE_SIGN_ENTITLEMENTS = App/App.entitlements;`,
-      )
-    }
+  const releaseBlock = appTargetConfigurationBlock(
+    violations,
+    xcodeProject,
+    configurationList,
+    'Release',
+  )
+  if (
+    !releaseBlock?.includes(
+      'CODE_SIGN_ENTITLEMENTS = App/App.entitlements;',
+    )
+  ) {
+    violations.push(
+      'App target Release configuration is missing CODE_SIGN_ENTITLEMENTS = App/App.entitlements;',
+    )
   }
 }
 
 export function findIosProjectViolations({
+  appDelegate,
   appEntitlements,
   capacitorConfig,
   bridgeViewController,
@@ -108,6 +132,16 @@ export function findIosProjectViolations({
   xcodeProject,
 }) {
   const violations = []
+
+  if (
+    !/#if DEBUG[\s\S]*AppCheck\.setAppCheckProviderFactory\(AppCheckDebugProviderFactory\(\)\)[\s\S]*#else[\s\S]*AppCheck\.setAppCheckProviderFactory\(CustomAppCheckProviderFactory\(\)\)[\s\S]*#endif[\s\S]*FirebaseApp\.configure\(\)/.test(
+      appDelegate,
+    )
+  ) {
+    violations.push(
+      'AppDelegate must select Debug and Release App Check providers before FirebaseApp.configure()',
+    )
+  }
 
   requireText(
     violations,

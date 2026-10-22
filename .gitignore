@@ -18,6 +18,8 @@ playwright-report
 test-results
 *.local
 ios/App/App/GoogleService-Info.plist
+ios/**/xcuserdata/
+*.xcuserstate
 
 # Terraform working data and local state must never enter the repository.
 **/.terraform/*

@@ -5,6 +5,7 @@ import type { Firestore } from 'firebase/firestore'
 import {
   selectedAppCheckDebugToken,
   selectedFirebaseEnvironment,
+  selectedNativeAppCheckDebug,
 } from '../selectedFirebaseEnvironment'
 import { initializeAppCheckBeforeServices } from './appCheckBootstrap'
 import {
@@ -28,6 +29,7 @@ export async function initializeFirebaseClient(): Promise<FirebaseClient> {
           selectedFirebaseEnvironment.config.appCheckSiteKey,
         debugToken: selectedAppCheckDebugToken,
         isNativePlatform: Capacitor.isNativePlatform(),
+        nativeDebugProvider: selectedNativeAppCheckDebug,
       }),
   )
 
