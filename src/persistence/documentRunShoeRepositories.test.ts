@@ -1,5 +1,5 @@
 import { Timestamp } from "firebase/firestore";
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   calculateShoeDistance,
   createDateOnly,
@@ -169,6 +169,51 @@ describe("completed run repository", () => {
       expect(entries).toHaveLength(1);
       expect(entries[0]?.duration).toBeGreaterThanOrEqual(0);
     });
+  });
+
+  it("revalidates only associations that change during a run update", async () => {
+    const first = await createPlanAndWorkout();
+    const second = await createPlanAndWorkout();
+    const firstShoe = await repositories.shoes.create({ name: "Daily Trainer" });
+    const secondShoe = await repositories.shoes.create({ name: "Tempo Shoe" });
+    const run = await repositories.runs.create({
+      plannedWorkoutPlanId: first.plan.id,
+      plannedWorkoutId: first.workout.id,
+      shoeId: firstShoe.id,
+      startedAt: createUtcDateTime("2026-08-03T14:00:00Z"),
+      timeZone,
+      distance: createDistanceMeters(4828),
+      duration: createDurationSeconds(30 * 60),
+    });
+    const getSpy = vi.spyOn(store, "get");
+
+    await repositories.runs.update(run.id, {
+      perceivedEffort: "harder_than_expected",
+    });
+
+    expect(getSpy).toHaveBeenCalledTimes(1);
+    expect(getSpy).toHaveBeenCalledWith(`users/${userId}/runs/${run.id}`);
+
+    getSpy.mockClear();
+    await repositories.runs.update(run.id, { shoeId: secondShoe.id });
+
+    expect(getSpy).toHaveBeenCalledTimes(2);
+    expect(getSpy).toHaveBeenCalledWith(`users/${userId}/runs/${run.id}`);
+    expect(getSpy).toHaveBeenCalledWith(
+      `users/${userId}/shoes/${secondShoe.id}`,
+    );
+
+    getSpy.mockClear();
+    await repositories.runs.update(run.id, {
+      plannedWorkoutPlanId: second.plan.id,
+      plannedWorkoutId: second.workout.id,
+    });
+
+    expect(getSpy).toHaveBeenCalledTimes(2);
+    expect(getSpy).toHaveBeenCalledWith(`users/${userId}/runs/${run.id}`);
+    expect(getSpy).toHaveBeenCalledWith(
+      `users/${userId}/plans/${second.plan.id}/workouts/${second.workout.id}`,
+    );
   });
 
   it("lists runs newest first and supports editing and deleting", async () => {
