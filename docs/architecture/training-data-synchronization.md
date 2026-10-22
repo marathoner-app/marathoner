@@ -79,8 +79,10 @@ emulator tests, but it is not the production application path yet:
   Firestore freshness metadata into portable synchronization events, assembles
   plan/workout changes as coherent batches, and owns teardown of every listener.
   The provider exposes loading, current, stale, and recoverable error states,
-  retries with a new session generation, and does not publish direct-write
-  results until a listener snapshot confirms them.
+  retries with a new session generation, and reconciles a direct-write result
+  once the repository promise proves that Firestore accepted it remotely. The
+  live listener remains the cross-client convergence path, but a delayed
+  metadata-only callback no longer leaves an acknowledged result hidden.
 - Two independent authenticated Firestore emulator clients prove that a commit
   from one client reaches the other without reload, a disconnected listener
   becomes stale, every required source returns to server-confirmed current state
@@ -297,6 +299,9 @@ the write boundary.
    memory-only cache are implemented.
 5. The web provider now uses listeners for reads, publishes stale/current state,
    blocks mutations outside a current session, and clears old-session state.
+   While the temporary direct-write path remains, a successful remote repository
+   acknowledgement is reduced into the same current-session snapshot instead of
+   requiring a second listener-metadata event before the result becomes visible.
    Two authenticated emulator clients retain evidence for listener convergence,
    disconnect/reconnect, teardown, and owner isolation, while the build rejects
    durable training snapshot storage. The read migration is complete; direct

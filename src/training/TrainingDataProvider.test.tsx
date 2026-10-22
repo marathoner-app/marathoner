@@ -11,6 +11,7 @@ import {
   createUtcDateTime,
   metersToMiles,
   milesToMeters,
+  type CompletedRun,
   type UserId,
 } from "../domain/training";
 import { createDocumentTrainingRepositories } from "../persistence/documentTrainingRepositories";
@@ -334,7 +335,7 @@ describe("TrainingDataProvider", () => {
     expect(screen.getByRole("button", { name: "Save profile" })).toBeEnabled();
   });
 
-  it("shows a write only after the listener confirms it", async () => {
+  it("publishes an acknowledged repository write without waiting for listener metadata", async () => {
     const user = userEvent.setup();
     renderProvider();
     const source = await waitForSource();
@@ -346,10 +347,62 @@ describe("TrainingDataProvider", () => {
         displayName: "Runner One",
       }),
     );
-    expect(screen.getByText("Profile: none")).toBeInTheDocument();
-
-    await publishRepositories(source);
     expect(await screen.findByText("Profile: Runner One")).toBeInTheDocument();
+    expect(screen.getByText("Status: current")).toBeInTheDocument();
+  });
+
+  it("recovers from pending listener metadata when the write promise is acknowledged", async () => {
+    const shoe = await repositories.shoes.create({ name: "Daily Trainer" });
+    const run = await repositories.runs.create({
+      shoeId: shoe.id,
+      startedAt: createUtcDateTime("2026-08-03T14:00:00Z"),
+      timeZone,
+      distance: milesToMeters(3),
+      duration: createDurationSeconds(1_800),
+    });
+    let resolveUpdate: (run: CompletedRun) => void = () => undefined;
+    const updateRequest = new Promise<CompletedRun>((resolve) => {
+      resolveUpdate = resolve;
+    });
+    vi.spyOn(repositories.runs, "update").mockReturnValue(updateRequest);
+    const user = userEvent.setup();
+    renderProvider();
+    const source = await waitForSource();
+    await publishRepositories(source);
+    expect(await screen.findByText("Total: 3")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Edit run" }));
+    const updatedRun: CompletedRun = {
+      ...run,
+      distance: milesToMeters(4),
+      updatedAt: createUtcDateTime("2026-08-03T12:01:00Z"),
+    };
+    act(() =>
+      source.emit([
+        {
+          type: "source_snapshot",
+          source: "runs",
+          value: [updatedRun],
+          ownerId: userId,
+          sessionGeneration: source.sessionGeneration,
+          origin: "cache",
+          hasPendingWrites: true,
+          observedAt: createUtcDateTime("2026-08-03T12:01:00Z"),
+        },
+      ]),
+    );
+
+    expect(screen.getByText("Status: stale")).toBeInTheDocument();
+    expect(screen.getByText("Total: 3")).toBeInTheDocument();
+
+    await act(async () => {
+      resolveUpdate(updatedRun);
+      await updateRequest;
+    });
+
+    expect(await screen.findByText("Status: current")).toBeInTheDocument();
+    expect(screen.getByText("Total: 4")).toBeInTheDocument();
+    expect(sources).toHaveLength(1);
   });
 
   it("converges completion, analytics, and shoe mileage from listener snapshots", async () => {
@@ -375,9 +428,6 @@ describe("TrainingDataProvider", () => {
     expect(await screen.findByText("Workout: planned")).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Complete workout" }));
     await waitFor(async () => expect(await repositories.runs.list()).toHaveLength(1));
-    expect(screen.getByText("Runs: 0")).toBeInTheDocument();
-
-    await publishRepositories(source);
     expect(await screen.findByText("Runs: 1")).toBeInTheDocument();
     expect(screen.getByText("Workout: completed")).toBeInTheDocument();
     expect(screen.getByText("Total: 3")).toBeInTheDocument();
@@ -389,12 +439,10 @@ describe("TrainingDataProvider", () => {
         expect.objectContaining({ distance: milesToMeters(4) }),
       ]),
     );
-    await publishRepositories(source);
     expect(await screen.findByText("Total: 4")).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "Delete run" }));
     await waitFor(async () => expect(await repositories.runs.list()).toEqual([]));
-    await publishRepositories(source);
     expect(await screen.findByText("Runs: 0")).toBeInTheDocument();
     expect(screen.getByText("Workout: planned")).toBeInTheDocument();
   });
