@@ -212,6 +212,16 @@ async function seedShoe(options: {
   return path
 }
 
+async function seedApprovedMembership(userId: string) {
+  await database.doc(`betaMemberships/${userId}`).set({
+    schemaVersion: 1,
+    userId,
+    status: 'approved',
+    approvedAt: Timestamp.fromDate(new Date('2026-10-01T18:00:00.000Z')),
+    approvedBy: 'material-command-emulator',
+  })
+}
+
 function approvalCommand(
   commandId: string,
   expectedActivePlanRevision: number | null,
@@ -425,6 +435,10 @@ beforeAll(async () => {
 
 beforeEach(async () => {
   await clearFirestoreEmulator()
+  await Promise.all([
+    seedApprovedMembership(ownerId),
+    seedApprovedMembership(otherOwnerId),
+  ])
   await signOut(auth)
   await signOut(otherAuth)
 })
@@ -921,6 +935,30 @@ describe('material-command emulator boundary', () => {
         .doc(`materialCommandReceipts/${ownerId}/commands/${command.commandId}`)
         .get(),
     ).resolves.toEqual(expect.objectContaining({ exists: true }))
+  })
+
+  it('rejects completed-run writes without an approved beta membership', async () => {
+    await database.doc(`betaMemberships/${ownerId}`).delete()
+    await signInOwner()
+    const command = runCompletionCommand(
+      'complete-run-emulator-membership-required',
+    )
+
+    expect((await submit(command)).data).toEqual({
+      status: 'authorization_error',
+      commandId: command.commandId,
+      code: 'approved-beta-membership-required',
+      message:
+        'An approved beta membership is required for completed-run commands.',
+    })
+    await expect(
+      database.collection(`users/${ownerId}/runs`).get(),
+    ).resolves.toEqual(expect.objectContaining({ empty: true }))
+    await expect(
+      database
+        .doc(`materialCommandReceipts/${ownerId}/commands/${command.commandId}`)
+        .get(),
+    ).resolves.toEqual(expect.objectContaining({ exists: false }))
   })
 
   it('rejects stale, retired-shoe, and cross-owner state without receipts or runs', async () => {

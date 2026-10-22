@@ -17,6 +17,10 @@ import {
   ACCOUNT_DELETION_WORKFLOW_SCHEMA_VERSION,
 } from './accountDeletionManifest.js'
 import type { AccountDeletionRequestStore } from './accountDeletionRequestHandler.js'
+import {
+  approvedBetaMembershipPath,
+  isApprovedBetaMembership,
+} from './approvedBetaMembership.js'
 
 const materialCommandReceiptSchemaVersion = 1
 const completionWindowMilliseconds = 7 * 24 * 60 * 60 * 1_000
@@ -27,35 +31,6 @@ function receiptPath(ownerId: string, commandId: string) {
 
 function deletionRequestPath(requestId: string) {
   return `accountDeletionRequests/${requestId}`
-}
-
-function exactKeys(data: DocumentData, keys: readonly string[]) {
-  const actual = Object.keys(data).sort()
-  const expected = [...keys].sort()
-  return (
-    actual.length === expected.length &&
-    actual.every((key, index) => key === expected[index])
-  )
-}
-
-function isApprovedMembership(data: DocumentData | undefined, ownerId: string) {
-  return (
-    data !== undefined &&
-    exactKeys(data, [
-      'approvedAt',
-      'approvedBy',
-      'schemaVersion',
-      'status',
-      'userId',
-    ]) &&
-    data.schemaVersion === 1 &&
-    data.userId === ownerId &&
-    data.status === 'approved' &&
-    typeof data.approvedBy === 'string' &&
-    data.approvedBy.length > 0 &&
-    data.approvedBy.length <= 128 &&
-    typeof data.approvedAt?.toDate === 'function'
-  )
 }
 
 function acceptedResult(data: unknown): AccountDeletionRequestAcceptedResult {
@@ -97,7 +72,7 @@ export class FirestoreAccountDeletionRequestStore
       receiptPath(options.ownerId, options.envelope.commandId),
     )
     const membershipReference = this.database.doc(
-      `betaMemberships/${options.ownerId}`,
+      approvedBetaMembershipPath(options.ownerId),
     )
     const proposedRequestId =
       this.options.createRequestId?.() ?? randomUUID()
@@ -125,7 +100,12 @@ export class FirestoreAccountDeletionRequestStore
       }
 
       const membershipSnapshot = await transaction.get(membershipReference)
-      if (!isApprovedMembership(membershipSnapshot.data(), options.ownerId)) {
+      if (
+        !isApprovedBetaMembership(
+          membershipSnapshot.data(),
+          options.ownerId,
+        )
+      ) {
         return { kind: 'membership-required' as const }
       }
 

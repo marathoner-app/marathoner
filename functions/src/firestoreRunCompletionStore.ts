@@ -29,6 +29,10 @@ import {
   materialCommandReceiptPath,
 } from './firestoreMaterialCommandStore.js'
 import type { RunCompletionStore } from './materialCommandHandler.js'
+import {
+  approvedBetaMembershipPath,
+  isApprovedBetaMembership,
+} from './approvedBetaMembership.js'
 
 export interface FirestoreRunCompletionStoreOptions {
   createRunId?: () => string
@@ -65,11 +69,25 @@ export class FirestoreRunCompletionStore implements RunCompletionStore {
     const receiptReference = this.database.doc(
       materialCommandReceiptPath(options.ownerId, options.envelope.commandId),
     )
+    const membershipReference = this.database.doc(
+      approvedBetaMembershipPath(options.ownerId),
+    )
     const workoutReference = options.envelope.command.input.plannedWorkout
     const shoeId = options.envelope.command.input.shoeId
 
     return this.database.runTransaction(async (transaction) => {
-      const receiptSnapshot = await transaction.get(receiptReference)
+      const [membershipSnapshot, receiptSnapshot] = await Promise.all([
+        transaction.get(membershipReference),
+        transaction.get(receiptReference),
+      ])
+      if (
+        !isApprovedBetaMembership(
+          membershipSnapshot.data(),
+          options.ownerId,
+        )
+      ) {
+        return { kind: 'membership-required' as const }
+      }
       if (receiptSnapshot.exists) {
         const receipt = receiptSnapshot.data()
         if (!receipt || receipt.signature !== signature) {

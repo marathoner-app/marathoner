@@ -2,6 +2,7 @@ import { getApps, initializeApp } from 'firebase-admin/app'
 import { getAuth } from 'firebase-admin/auth'
 import { getFirestore } from 'firebase-admin/firestore'
 import { logger } from 'firebase-functions'
+import { defineBoolean, gcloudProject } from 'firebase-functions/params'
 import { setGlobalOptions } from 'firebase-functions/v2'
 import { onCall } from 'firebase-functions/v2/https'
 
@@ -14,6 +15,10 @@ import {
   executeAccountDeletionRequest,
   type AccountDeletionRequestLogEntry,
 } from './accountDeletionRequestHandler.js'
+import {
+  COMPLETED_RUN_COMMANDS_ENABLED_PARAM,
+  shouldInstallCompletedRunCommandStores,
+} from './completedRunCommandActivation.js'
 import { FirebaseAccountAccessManager } from './firebaseAccountAccessManager.js'
 import { FirestoreAccountDeletionRequestStore } from './firestoreAccountDeletionRequestStore.js'
 import { FirestoreMaterialCommandStore } from './firestoreMaterialCommandStore.js'
@@ -53,10 +58,21 @@ const emulatorPlanApprovalPolicy: readonly PlanApprovalArtifactPolicyRecord[] = 
     reviewState: 'approved',
   },
 ]
-const useEmulatorPlanApprovalPolicy =
-  process.env.FUNCTIONS_EMULATOR === 'true'
-const useEmulatorCompletedRunCommands =
-  process.env.FUNCTIONS_EMULATOR === 'true'
+const functionsEmulator = process.env.FUNCTIONS_EMULATOR === 'true'
+const useEmulatorPlanApprovalPolicy = functionsEmulator
+const completedRunCommandsEnabled = defineBoolean(
+  COMPLETED_RUN_COMMANDS_ENABLED_PARAM,
+  {
+    default: false,
+    description:
+      'Installs completed-run command stores only in the reviewed beta project.',
+  },
+)
+const useCompletedRunCommands = shouldInstallCompletedRunCommandStores({
+  activationEnabled: completedRunCommandsEnabled.value(),
+  functionsEmulator,
+  projectId: gcloudProject.value(),
+})
 
 const dependencies = {
   store: new FirestoreMaterialCommandStore(database),
@@ -69,7 +85,7 @@ const dependencies = {
       ? emulatorPlanApprovalScopeId
       : null,
   },
-  ...(useEmulatorCompletedRunCommands
+  ...(useCompletedRunCommands
     ? {
         runCompletion: { store: new FirestoreRunCompletionStore(database) },
         runDeletion: { store: new FirestoreRunDeletionStore(database) },
@@ -89,14 +105,17 @@ const accountDeletionDependencies = {
   },
 }
 
-export const submitMaterialCommand = onCall((request) =>
-  executeMaterialCommand(
-    {
-      authenticatedUserId: request.auth?.uid ?? null,
-      data: request.data,
-    },
-    dependencies,
-  ),
+export const submitMaterialCommand = onCall(
+  { enforceAppCheck: false },
+  (request) =>
+    executeMaterialCommand(
+      {
+        appCheckVerified: request.app !== undefined || functionsEmulator,
+        authenticatedUserId: request.auth?.uid ?? null,
+        data: request.data,
+      },
+      dependencies,
+    ),
 )
 
 export const resolveMaterialCommand = onCall((request) =>
@@ -111,9 +130,8 @@ export const resolveMaterialCommand = onCall((request) =>
 
 // The verified request.app value is enforced inside the handler so unsupported
 // clients receive a typed result. Invalid or missing tokens cannot populate it.
-// Live attestation and deployment remain blocked by unresolved #143 and #204
-// gates plus #205 authorization. The exact beta-project guard is prepared but
-// does not authorize or perform that deployment.
+// Live deployment and the observation window remain owned by #205. The exact
+// beta-project guard is prepared but does not authorize or perform a deploy.
 export const requestAccountDeletion = onCall(
   { enforceAppCheck: false, consumeAppCheckToken: true },
   (request) =>
