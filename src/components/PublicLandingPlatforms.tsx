@@ -1,14 +1,4 @@
-import LoginButton from "./LoginButton";
-
-type PublicLandingPlatformsProps = {
-  isLoginOpen: boolean;
-  onLoginOpen: (trigger: HTMLButtonElement) => void;
-};
-
-export default function PublicLandingPlatforms({
-  isLoginOpen,
-  onLoginOpen,
-}: PublicLandingPlatformsProps) {
+export default function PublicLandingPlatforms() {
   return (
     <section
       className="landing-platforms"
@@ -62,12 +52,6 @@ export default function PublicLandingPlatforms({
             <strong>Available now:</strong> Existing-account login only. New
             registration remains closed.
           </p>
-          <LoginButton
-            describedBy="landing-platforms-web-status"
-            isOpen={isLoginOpen}
-            label="Log in on web"
-            onOpen={onLoginOpen}
-          />
         </article>
       </div>
     </section>

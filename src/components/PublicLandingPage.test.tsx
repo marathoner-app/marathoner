@@ -87,7 +87,7 @@ describe("PublicLandingPage", () => {
     ).toBeInTheDocument();
     expect(
       screen.getAllByRole("button", { name: "Log in on web" }),
-    ).toHaveLength(2);
+    ).toHaveLength(1);
     expect(
       screen.queryByRole("button", { name: /request ios beta access/i }),
     ).not.toBeInTheDocument();
@@ -127,15 +127,10 @@ describe("PublicLandingPage", () => {
       name: "See how one run connects to the rest of your training.",
     });
 
-    expect(
-      within(preview).getByText("Interactive product preview"),
-    ).toBeInTheDocument();
     expect(within(preview).getByText("Sample data")).toBeInTheDocument();
     expect(
-      within(preview).getByText(
-        "Synthetic walkthrough only. This is not a live plan or training recommendation.",
-      ),
-    ).toBeInTheDocument();
+      within(preview).queryByText(/synthetic|not a live plan|manually entered/i),
+    ).not.toBeInTheDocument();
     const productAreas = within(preview).getByRole("group", {
       name: "Marathoner product areas",
     });
@@ -149,37 +144,37 @@ describe("PublicLandingPage", () => {
 
     expect(planButton).toHaveAttribute("aria-pressed", "true");
     const planPanel = within(preview).getByRole("region", {
-      name: "Plan sample",
+      name: "Plan preview",
     });
     expect(within(planPanel).getByText("Today · Easy run")).toBeInTheDocument();
     expect(within(planPanel).getByText("5.0 mi")).toBeInTheDocument();
     expect(within(planPanel).getByText("Easy")).toBeInTheDocument();
     expect(
-      within(preview).queryByRole("region", { name: "Track sample" }),
+      within(preview).queryByRole("region", { name: "Track preview" }),
     ).not.toBeInTheDocument();
 
     await user.click(trackButton);
     expect(trackButton).toHaveAttribute("aria-pressed", "true");
     const trackPanel = within(preview).getByRole("region", {
-      name: "Track sample",
+      name: "Track preview",
     });
     expect(within(trackPanel).getByText("Run recorded")).toBeInTheDocument();
     expect(within(trackPanel).getByText("Felt steady")).toBeInTheDocument();
     expect(within(trackPanel).getByText("Daily trainer")).toBeInTheDocument();
     expect(within(trackPanel).getByText("214 mi logged")).toBeInTheDocument();
     expect(
-      within(preview).queryByRole("region", { name: "Plan sample" }),
+      within(preview).queryByRole("region", { name: "Plan preview" }),
     ).not.toBeInTheDocument();
 
     await user.click(analyzeButton);
     expect(analyzeButton).toHaveAttribute("aria-pressed", "true");
     const analyzePanel = within(preview).getByRole("region", {
-      name: "Analyze sample",
+      name: "Analyze preview",
     });
     expect(within(analyzePanel).getByText("12.8 mi")).toBeInTheDocument();
     expect(
       within(analyzePanel).getByRole("img", {
-        name: "Sample weekly distance rises from 8 miles to 20 miles across four weeks",
+        name: "Weekly distance rises from 8 miles to 20 miles across four weeks",
       }),
     ).toBeInTheDocument();
     expect(preview).toHaveAttribute("data-preview-mode", "manual");
@@ -210,7 +205,7 @@ describe("PublicLandingPage", () => {
       expect(trackButton).toHaveAttribute("aria-pressed", "true");
       expect(
         within(
-          within(preview).getByRole("region", { name: "Track sample" }),
+          within(preview).getByRole("region", { name: "Track preview" }),
         ).getByText("Run recorded"),
       ).toBeInTheDocument();
     } finally {
@@ -238,7 +233,7 @@ describe("PublicLandingPage", () => {
       expect(analyzeButton).toHaveAttribute("aria-pressed", "true");
       expect(
         within(
-          within(preview).getByRole("region", { name: "Analyze sample" }),
+          within(preview).getByRole("region", { name: "Analyze preview" }),
         ).getByText("12.8 mi"),
       ).toBeInTheDocument();
     } finally {
@@ -337,10 +332,8 @@ describe("PublicLandingPage", () => {
       "Existing-account login only. New registration remains closed.",
     );
     expect(
-      within(platformCards[1]).getByRole("button", {
-        name: "Log in on web",
-      }),
-    ).toBeInTheDocument();
+      within(platformCards[1]).queryByRole("button"),
+    ).not.toBeInTheDocument();
     expect(
       within(platforms).queryByRole("link", { name: /TestFlight|App Store/i }),
     ).not.toBeInTheDocument();
@@ -356,7 +349,7 @@ describe("PublicLandingPage", () => {
       ...screen.getAllByRole("button", { name: "Log in on web" }),
     ];
 
-    expect(loginTriggers).toHaveLength(3);
+    expect(loginTriggers).toHaveLength(2);
 
     for (const loginTrigger of loginTriggers) {
       await user.click(loginTrigger);

@@ -54,10 +54,7 @@ export default function PublicLandingPage({
             onLoginOpen={openLogin}
           />
           <PublicLandingHowItWorks />
-          <PublicLandingPlatforms
-            isLoginOpen={isLoginOpen}
-            onLoginOpen={openLogin}
-          />
+          <PublicLandingPlatforms />
           <PublicAccessNotice supportEmail={supportEmail} />
         </div>
       </div>

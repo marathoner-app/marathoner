@@ -97,14 +97,10 @@ for (const viewport of viewports) {
     await expect(preview).toBeVisible();
     await preview.hover();
     await expect(preview).toHaveAttribute("data-preview-mode", "paused");
+    await expect(preview.getByText("Sample data")).toBeVisible();
     await expect(
-      preview.getByText("Interactive product preview"),
-    ).toBeVisible();
-    await expect(
-      preview.getByText(
-        "Synthetic walkthrough only. This is not a live plan or training recommendation.",
-      ),
-    ).toBeVisible();
+      preview.getByText(/synthetic|not a live plan|manually entered/i),
+    ).toHaveCount(0);
     const previewAreaButtons = ["Plan", "Track", "Analyze"].map((name) =>
       preview.getByRole("button", { name }),
     );
@@ -187,9 +183,7 @@ for (const viewport of viewports) {
     await expect(
       platforms.getByRole("link", { name: "View current iOS status" }),
     ).toHaveAttribute("href", "#access-status");
-    await expect(
-      platforms.getByRole("button", { name: "Log in on web" }),
-    ).toBeVisible();
+    await expect(platforms.getByRole("button")).toHaveCount(0);
     await expect
       .poll(() =>
         platforms.evaluate(
@@ -232,7 +226,7 @@ for (const viewport of viewports) {
     await expect(webLogin).toBeVisible();
     await expect(
       page.getByRole("button", { name: "Log in on web" }),
-    ).toHaveCount(2);
+    ).toHaveCount(1);
 
     const touchTargets = [
       {
@@ -264,7 +258,6 @@ for (const viewport of viewports) {
         }),
         label: "iOS status link",
       },
-      { locator: webLogin, label: "platform login button" },
       ...["Access", "Privacy and data", "Support and deletion"].map(
         (name) => ({
           locator: page
@@ -359,7 +352,7 @@ test("keeps the stabilized preview static when reduced motion is requested", asy
   const preview = page.getByRole("complementary", {
     name: "See how one run connects to the rest of your training.",
   });
-  const activePanel = preview.getByRole("region", { name: "Plan sample" });
+  const activePanel = preview.getByRole("region", { name: "Plan preview" });
 
   await expect(preview).toHaveAttribute("data-preview-mode", "reduced-motion");
   await expect(preview.getByTestId("landing-preview-cursor")).toHaveCount(0);
