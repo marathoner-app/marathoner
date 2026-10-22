@@ -246,7 +246,7 @@
   grid-column: 3 / 11;
   grid-row: 1;
   min-width: 0;
-  height: 100%;
+  height: calc(100% - 2rem);
   overflow: hidden;
   border-radius: var(--landing-card-radius);
   background: #cbd5e1;
