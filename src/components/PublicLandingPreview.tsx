@@ -224,7 +224,9 @@ export default function PublicLandingPreview() {
           <p className="landing-preview__label">Interactive product preview</p>
           <span className="landing-preview__sample-badge">Sample data</span>
         </div>
-        <h2 id="landing-preview-title">A training week, connected.</h2>
+        <h2 id="landing-preview-title">
+          See how one run connects to the rest of your training.
+        </h2>
         <p id="landing-preview-boundary">
           Synthetic walkthrough only. This is not a live plan or training
           recommendation.

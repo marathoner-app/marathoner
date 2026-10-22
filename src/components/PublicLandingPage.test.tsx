@@ -124,7 +124,7 @@ describe("PublicLandingPage", () => {
     renderPublicLandingPage();
 
     const preview = screen.getByRole("complementary", {
-      name: "A training week, connected.",
+      name: "See how one run connects to the rest of your training.",
     });
 
     expect(
@@ -193,7 +193,7 @@ describe("PublicLandingPage", () => {
       renderPublicLandingPage();
 
       const preview = screen.getByRole("complementary", {
-        name: "A training week, connected.",
+        name: "See how one run connects to the rest of your training.",
       });
       const trackButton = within(preview).getByRole("button", {
         name: "Track",
@@ -225,7 +225,7 @@ describe("PublicLandingPage", () => {
       renderPublicLandingPage();
 
       const preview = screen.getByRole("complementary", {
-        name: "A training week, connected.",
+        name: "See how one run connects to the rest of your training.",
       });
       const analyzeButton = within(preview).getByRole("button", {
         name: "Analyze",
@@ -267,7 +267,7 @@ describe("PublicLandingPage", () => {
       renderPublicLandingPage();
 
       const preview = screen.getByRole("complementary", {
-        name: "A training week, connected.",
+        name: "See how one run connects to the rest of your training.",
       });
       const planButton = within(preview).getByRole("button", { name: "Plan" });
 
@@ -290,7 +290,7 @@ describe("PublicLandingPage", () => {
     renderPublicLandingPage();
 
     const explanation = screen.getByRole("region", {
-      name: "Plan. Track. Adjust.",
+      name: "Start with the week you can actually train.",
     });
     const cards = within(explanation).getAllByRole("article");
 
@@ -318,7 +318,7 @@ describe("PublicLandingPage", () => {
     renderPublicLandingPage();
 
     const platforms = screen.getByRole("region", {
-      name: "One product. Two focused surfaces.",
+      name: "Log runs on your phone. Review the full plan on the web.",
     });
     const platformCards = within(platforms).getAllByRole("article");
 
