@@ -47,16 +47,20 @@ jobs:
         uses: actions/setup-node@v6
         with:
           node-version: 22
-          cache: npm
 
-      - name: Install supported npm audit client
-        run: npm install --global npm@11.21.1
-
-      - name: Record npm audit client version
+      - name: Record dependency inventory client version
         run: npm --version
 
+      - name: Create production dependency inventory
+        run: |
+          npm query '.prod' --package-lock-only > production-dependencies.json
+          node scripts/create-production-osv-inventory.mjs production-dependencies.json production-dependencies.osv-scanner.json
+
       - name: Reject production dependency advisories
-        run: npm audit --omit=dev --package-lock-only
+        uses: google/osv-scanner-action/osv-scanner-action@b1d267aea5211fa648d9d442fa64b90dbdcbdd36 # v2.7.0
+        with:
+          scan-args: |-
+            --lockfile=osv-scanner:production-dependencies.osv-scanner.json
 
   unit-tests:
     name: Unit tests
