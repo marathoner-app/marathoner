@@ -324,7 +324,9 @@ class DocumentCompletedRunRepository implements CompletedRunRepository {
   }
 
   private async requireRun(id: CompletedRunId): Promise<CompletedRun> {
-    const document = await this.store.get(runDocumentPath(this.userId, id));
+    const document = await this.store.getCachedOrServer(
+      runDocumentPath(this.userId, id),
+    );
 
     if (document === null) {
       throw new PersistenceError("not_found", "Completed run was not found.");

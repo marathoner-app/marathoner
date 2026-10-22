@@ -186,31 +186,43 @@ describe("completed run repository", () => {
       duration: createDurationSeconds(30 * 60),
     });
     const getSpy = vi.spyOn(store, "get");
+    const cachedGetSpy = vi.spyOn(store, "getCachedOrServer");
 
     await repositories.runs.update(run.id, {
       perceivedEffort: "harder_than_expected",
     });
 
-    expect(getSpy).toHaveBeenCalledTimes(1);
-    expect(getSpy).toHaveBeenCalledWith(`users/${userId}/runs/${run.id}`);
+    expect(cachedGetSpy).toHaveBeenCalledOnce();
+    expect(cachedGetSpy).toHaveBeenCalledWith(
+      `users/${userId}/runs/${run.id}`,
+    );
+    expect(getSpy).not.toHaveBeenCalled();
 
     getSpy.mockClear();
+    cachedGetSpy.mockClear();
     await repositories.runs.update(run.id, { shoeId: secondShoe.id });
 
-    expect(getSpy).toHaveBeenCalledTimes(2);
-    expect(getSpy).toHaveBeenCalledWith(`users/${userId}/runs/${run.id}`);
+    expect(cachedGetSpy).toHaveBeenCalledOnce();
+    expect(cachedGetSpy).toHaveBeenCalledWith(
+      `users/${userId}/runs/${run.id}`,
+    );
+    expect(getSpy).toHaveBeenCalledOnce();
     expect(getSpy).toHaveBeenCalledWith(
       `users/${userId}/shoes/${secondShoe.id}`,
     );
 
     getSpy.mockClear();
+    cachedGetSpy.mockClear();
     await repositories.runs.update(run.id, {
       plannedWorkoutPlanId: second.plan.id,
       plannedWorkoutId: second.workout.id,
     });
 
-    expect(getSpy).toHaveBeenCalledTimes(2);
-    expect(getSpy).toHaveBeenCalledWith(`users/${userId}/runs/${run.id}`);
+    expect(cachedGetSpy).toHaveBeenCalledOnce();
+    expect(cachedGetSpy).toHaveBeenCalledWith(
+      `users/${userId}/runs/${run.id}`,
+    );
+    expect(getSpy).toHaveBeenCalledOnce();
     expect(getSpy).toHaveBeenCalledWith(
       `users/${userId}/plans/${second.plan.id}/workouts/${second.workout.id}`,
     );
