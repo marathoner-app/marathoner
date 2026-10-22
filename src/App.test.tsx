@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { HTMLAttributes, ReactNode } from 'react'
 import App from './App'
 import AuthProvider, { authSessionTimeoutMs } from './auth/AuthProvider'
+import { staleNoticeDelayMs } from './training/useDelayedStaleNotice'
 import {
   createDateOnly,
   createDistanceMeters,
@@ -642,56 +643,101 @@ describe('App training sections', () => {
     expect(screen.getByRole('button', { name: 'Analyze' })).toBeInTheDocument()
   })
 
-  it('keeps stale training data readable while disabling mutations', async () => {
-    const user = userEvent.setup()
-    trainingMock.status = 'stale'
-    trainingMock.staleReasons = ['cache_only']
-    renderSignedInApp()
+  it('keeps a reconnecting snapshot readable without flashing technical recovery UI', () => {
+    vi.useFakeTimers()
 
-    expect(
-      screen.getByText(/training data may be out of date/i)
-    ).toBeInTheDocument()
-    expect(
-      screen.getByRole('button', { name: 'Edit runner profile' })
-    ).toBeDisabled()
-    expect(
-      screen.getByRole('navigation', { name: 'Training sections' })
-    ).toBeInTheDocument()
+    try {
+      trainingMock.status = 'stale'
+      trainingMock.staleReasons = ['cache_only']
+      renderSignedInApp()
 
-    await user.click(screen.getByRole('button', { name: 'Retry connection' }))
-    expect(trainingMock.reload).toHaveBeenCalledOnce()
+      expect(
+        screen.queryByText(/Marathoner is reconnecting/i)
+      ).not.toBeInTheDocument()
+      expect(
+        screen.getByRole('button', { name: 'Edit runner profile' })
+      ).toBeDisabled()
+      expect(
+        screen.getByRole('navigation', { name: 'Training sections' })
+      ).toBeInTheDocument()
 
-    await user.click(screen.getByRole('button', { name: 'Track' }))
-    expect(document.querySelector('fieldset.training-read-only')).toBeDisabled()
-    expect(
-      screen.getByText(/showing the latest in-memory snapshot/i)
-    ).toBeInTheDocument()
+      act(() => {
+        vi.advanceTimersByTime(staleNoticeDelayMs)
+      })
+
+      expect(
+        screen.getByText(/Marathoner is reconnecting/i)
+      ).toBeInTheDocument()
+      expect(
+        screen.getByText(/editing will resume automatically/i)
+      ).toBeInTheDocument()
+      expect(screen.queryByRole('button', { name: /retry|check/i })).not.toBeInTheDocument()
+
+      fireEvent.click(screen.getByRole('button', { name: 'Track' }))
+      expect(document.querySelector('fieldset.training-read-only')).toBeDisabled()
+      expect(
+        screen.getByText(/Marathoner is reconnecting/i)
+      ).toBeInTheDocument()
+    } finally {
+      vi.useRealTimers()
+    }
   })
 
-  it('distinguishes a pending server confirmation from disconnected data', async () => {
-    const user = userEvent.setup()
-    trainingMock.status = 'stale'
-    trainingMock.staleReasons = ['pending_writes']
-    renderSignedInApp()
+  it('never presents pending listener metadata as a global user action', () => {
+    vi.useFakeTimers()
 
-    expect(
-      screen.getByText(/waiting for the server to confirm your latest change/i)
-    ).toBeInTheDocument()
-    expect(
-      screen.queryByText(/training data may be out of date/i)
-    ).not.toBeInTheDocument()
+    try {
+      trainingMock.status = 'stale'
+      trainingMock.staleReasons = ['pending_writes']
+      renderSignedInApp()
 
-    await user.click(screen.getByRole('button', { name: 'Check server again' }))
-    expect(trainingMock.reload).toHaveBeenCalledOnce()
+      act(() => {
+        vi.advanceTimersByTime(staleNoticeDelayMs * 2)
+      })
 
-    await user.click(screen.getByRole('button', { name: 'Track' }))
-    expect(document.querySelector('fieldset.training-read-only')).toBeDisabled()
-    expect(
-      screen.getByText(/waiting for the server to confirm your latest change/i)
-    ).toBeInTheDocument()
-    expect(
-      screen.queryByText(/showing the latest in-memory snapshot/i)
-    ).not.toBeInTheDocument()
+      expect(
+        screen.queryByText(/saving|server|snapshot|reconnecting/i)
+      ).not.toBeInTheDocument()
+      expect(screen.queryByRole('button', { name: /retry|check/i })).not.toBeInTheDocument()
+
+      fireEvent.click(screen.getByRole('button', { name: 'Track' }))
+      expect(document.querySelector('fieldset.training-read-only')).toBeDisabled()
+      expect(
+        screen.queryByText(/saving|server|snapshot|reconnecting/i)
+      ).not.toBeInTheDocument()
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('cancels the reconnecting notice when freshness returns in time', () => {
+    vi.useFakeTimers()
+
+    try {
+      trainingMock.status = 'stale'
+      trainingMock.staleReasons = ['cache_only']
+      const view = renderSignedInApp()
+
+      act(() => {
+        vi.advanceTimersByTime(staleNoticeDelayMs - 1)
+      })
+      trainingMock.status = 'current'
+      trainingMock.staleReasons = []
+      view.rerender(
+        <AuthProvider>
+          <App />
+        </AuthProvider>
+      )
+      act(() => {
+        vi.advanceTimersByTime(1)
+      })
+
+      expect(
+        screen.queryByText(/Marathoner is reconnecting/i)
+      ).not.toBeInTheDocument()
+    } finally {
+      vi.useRealTimers()
+    }
   })
 
   it('opens Plan from the persisted next-workout summary', async () => {

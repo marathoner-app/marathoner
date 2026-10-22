@@ -9,6 +9,7 @@ import Analyze from "./components/Analyze";
 import { useAuth } from "./auth/useAuth";
 import TrainingDataProvider from "./training/TrainingDataProvider";
 import { useTrainingData } from "./training/useTrainingData";
+import useDelayedStaleNotice from "./training/useDelayedStaleNotice";
 import RunnerOnboarding from "./onboarding/RunnerOnboarding";
 import { isRunnerProfileOnboardingComplete } from "./onboarding/runnerProfileDraft";
 import {
@@ -299,6 +300,10 @@ function AuthenticatedExperience({
   );
   const hasReadableTraining =
     training.status === "current" || training.status === "stale";
+  const hasOtherStaleReason =
+    training.status === "stale" &&
+    training.staleReasons.some((reason) => reason !== "pending_writes");
+  const showSynchronizationNotice = useDelayedStaleNotice(hasOtherStaleReason);
   const showOnboarding =
     training.status === "current" &&
     (isOnboardingOpen || (!onboardingComplete && !onboardingDeferred));
@@ -334,25 +339,12 @@ function AuthenticatedExperience({
         </div>
       )}
 
-      {!activeSection && training.status === "stale" && (
+      {!activeSection && showSynchronizationNotice && (
         <div className="training-home-status training-stale" role="status">
-          {training.staleReasons.includes("pending_writes") ? (
-            <p>
-              Marathoner is waiting for the server to confirm your latest
-              change. It is visible here, but not confirmed yet. Keep the app
-              open and do not submit it again.
-            </p>
-          ) : (
-            <p>
-              Your training data may be out of date. You can review it, but
-              changes are disabled until Marathoner reconnects.
-            </p>
-          )}
-          <button type="button" onClick={() => void training.reload()}>
-            {training.staleReasons.includes("pending_writes")
-              ? "Check server again"
-              : "Retry connection"}
-          </button>
+          <p>
+            Marathoner is reconnecting. You can review your training, and
+            editing will resume automatically when the connection returns.
+          </p>
         </div>
       )}
 
@@ -415,6 +407,7 @@ function AuthenticatedExperience({
             section={activeSection}
             title={activeSectionDetails.title}
             transitionDuration={sectionTransitionDuration}
+            showSynchronizationNotice={showSynchronizationNotice}
             onClose={onCloseSection}
           />
         </motion.section>
@@ -427,6 +420,7 @@ type SectionContentProps = {
   section: Section;
   title: string;
   transitionDuration: number;
+  showSynchronizationNotice: boolean;
   onClose: () => void;
 };
 
@@ -434,6 +428,7 @@ function SectionContent({
   section,
   title,
   transitionDuration,
+  showSynchronizationNotice,
   onClose,
 }: SectionContentProps) {
   const training = useTrainingData();
@@ -444,7 +439,6 @@ function SectionContent({
     training.plans.find((plan) => plan.status === "draft") ??
     training.plans.find((plan) => plan.status !== "archived") ??
     null;
-
   return (
     <motion.div
       className="section-panel-content"
@@ -476,25 +470,12 @@ function SectionContent({
           </button>
         </div>
       )}
-      {training.status === "stale" && (
+      {showSynchronizationNotice && (
         <div className="training-stale" role="status">
-          {training.staleReasons.includes("pending_writes") ? (
-            <p>
-              Marathoner is waiting for the server to confirm your latest
-              change. It is visible here, but not confirmed yet. Keep the app
-              open and do not submit it again.
-            </p>
-          ) : (
-            <p>
-              Showing the latest in-memory snapshot. Changes are disabled until
-              Marathoner reconnects.
-            </p>
-          )}
-          <button type="button" onClick={() => void training.reload()}>
-            {training.staleReasons.includes("pending_writes")
-              ? "Check server again"
-              : "Retry connection"}
-          </button>
+          <p>
+            Marathoner is reconnecting. You can review your training, and
+            editing will resume automatically when the connection returns.
+          </p>
         </div>
       )}
       {hasReadableTraining && section === "plan" && (

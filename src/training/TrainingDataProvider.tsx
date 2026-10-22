@@ -7,12 +7,16 @@ import {
   type ReactNode,
 } from "react";
 import {
+  createUtcDateTime,
   createUserId,
+  type CompletedRun,
   type CompletedRunId,
   type DateOnly,
   type PlannedWorkout,
+  type Shoe,
   type ShoeId,
   type UserId,
+  type UserProfile,
 } from "../domain/training";
 import type {
   CreateCompletedRunInput,
@@ -30,6 +34,8 @@ import {
   reduceTrainingSynchronization,
   type SynchronizedTrainingSnapshot,
   type TrainingLiveReadSource,
+  type TrainingSourceSnapshotEvent,
+  type TrainingSynchronizationKernel,
   type TrainingSynchronizationState,
 } from "./trainingSynchronization";
 
@@ -84,6 +90,20 @@ function errorFor(state: TrainingSynchronizationState): string | null {
   }
 
   return null;
+}
+
+type AcknowledgedSource =
+  | { readonly source: "profile"; readonly value: UserProfile | null }
+  | { readonly source: "workouts"; readonly value: readonly PlannedWorkout[] }
+  | { readonly source: "runs"; readonly value: readonly CompletedRun[] }
+  | { readonly source: "shoes"; readonly value: readonly Shoe[] };
+
+function replaceById<Value extends { readonly id: string }>(
+  values: readonly Value[],
+  replacement: Value,
+): Value[] {
+  const remaining = values.filter((value) => value.id !== replacement.id);
+  return [...remaining, replacement];
 }
 
 export default function TrainingDataProvider({
@@ -167,6 +187,40 @@ export default function TrainingDataProvider({
     };
   }, [startSynchronization]);
 
+  const acknowledgeServerWrites = useCallback(
+    (
+      acknowledgedSources: (
+        kernel: TrainingSynchronizationKernel,
+      ) => readonly AcknowledgedSource[],
+    ) => {
+      const generation = sessionGenerationRef.current;
+
+      setSynchronization((current) => {
+        if (current.sessionGeneration !== generation) return current;
+
+        // Firestore write promises resolve only after the remote backend accepts
+        // the write. Feed that acknowledgement through the same synchronization
+        // reducer so the UI does not depend on a second metadata-only callback.
+        const observedAt = createUtcDateTime(new Date().toISOString());
+        const sources = acknowledgedSources(current);
+        return sources.reduce(
+          (kernel, source) =>
+            reduceTrainingSynchronization(kernel, {
+              ...source,
+              type: "source_snapshot",
+              ownerId: userId,
+              sessionGeneration: generation,
+              origin: "server",
+              hasPendingWrites: false,
+              observedAt,
+            } as TrainingSourceSnapshotEvent),
+          current,
+        );
+      });
+    },
+    [userId],
+  );
+
   const synchronizedSnapshot = snapshotFor(synchronization.state);
   const status =
     synchronization.state.status === "current"
@@ -194,23 +248,43 @@ export default function TrainingDataProvider({
 
   const createShoe = useCallback(
     async (input: CreateShoeInput) => {
-      return requireRepositories().shoes.create(input);
+      const shoe = await requireRepositories().shoes.create(input);
+      acknowledgeServerWrites((kernel) => [
+        {
+          source: "shoes",
+          value: replaceById(kernel.sources.shoes.value, shoe).sort((left, right) =>
+            left.name.localeCompare(right.name),
+          ),
+        },
+      ]);
+      return shoe;
     },
-    [requireRepositories],
+    [acknowledgeServerWrites, requireRepositories],
   );
 
   const retireShoe = useCallback(
     async (id: ShoeId, retiredOn: DateOnly) => {
-      return requireRepositories().shoes.retire(id, retiredOn);
+      const shoe = await requireRepositories().shoes.retire(id, retiredOn);
+      acknowledgeServerWrites((kernel) => [
+        {
+          source: "shoes",
+          value: replaceById(kernel.sources.shoes.value, shoe).sort((left, right) =>
+            left.name.localeCompare(right.name),
+          ),
+        },
+      ]);
+      return shoe;
     },
-    [requireRepositories],
+    [acknowledgeServerWrites, requireRepositories],
   );
 
   const saveProfile = useCallback(
     async (input: SaveUserProfileInput) => {
-      return requireRepositories().profile.save(input);
+      const profile = await requireRepositories().profile.save(input);
+      acknowledgeServerWrites(() => [{ source: "profile", value: profile }]);
+      return profile;
     },
-    [requireRepositories],
+    [acknowledgeServerWrites, requireRepositories],
   );
 
   const createRun = useCallback(
@@ -243,13 +317,14 @@ export default function TrainingDataProvider({
       }
 
       const run = await repositories.runs.create(input);
+      let completedWorkout: PlannedWorkout | null = null;
 
       if (
         run.plannedWorkoutPlanId !== undefined &&
         run.plannedWorkoutId !== undefined
       ) {
         try {
-          await repositories.workouts.update(
+          completedWorkout = await repositories.workouts.update(
             run.plannedWorkoutPlanId,
             run.plannedWorkoutId,
             { status: "completed" },
@@ -260,16 +335,51 @@ export default function TrainingDataProvider({
         }
       }
 
+      acknowledgeServerWrites((kernel) => [
+        {
+          source: "runs",
+          value: replaceById(kernel.sources.runs.value, run).sort((left, right) =>
+            right.startedAt.localeCompare(left.startedAt),
+          ),
+        },
+        ...(completedWorkout === null
+          ? []
+          : [
+              {
+                source: "workouts" as const,
+                value: replaceById(
+                  kernel.sources.workouts.value,
+                  completedWorkout,
+                ).sort((left, right) =>
+                  left.scheduledDate.localeCompare(right.scheduledDate),
+                ),
+              },
+            ]),
+      ]);
+
       return run;
     },
-    [requireRepositories, synchronizedSnapshot?.workouts],
+    [
+      acknowledgeServerWrites,
+      requireRepositories,
+      synchronizedSnapshot?.workouts,
+    ],
   );
 
   const updateRun = useCallback(
     async (id: CompletedRunId, changes: UpdateCompletedRunInput) => {
-      return requireRepositories().runs.update(id, changes);
+      const run = await requireRepositories().runs.update(id, changes);
+      acknowledgeServerWrites((kernel) => [
+        {
+          source: "runs",
+          value: replaceById(kernel.sources.runs.value, run).sort((left, right) =>
+            right.startedAt.localeCompare(left.startedAt),
+          ),
+        },
+      ]);
+      return run;
     },
-    [requireRepositories],
+    [acknowledgeServerWrites, requireRepositories],
   );
 
   const deleteRun = useCallback(
@@ -316,8 +426,28 @@ export default function TrainingDataProvider({
         }
         throw error;
       }
+
+      acknowledgeServerWrites((kernel) => [
+        {
+          source: "runs",
+          value: kernel.sources.runs.value.filter((candidate) => candidate.id !== id),
+        },
+        ...(reopenedWorkout === null
+          ? []
+          : [
+              {
+                source: "workouts" as const,
+                value: replaceById(
+                  kernel.sources.workouts.value,
+                  reopenedWorkout,
+                ).sort((left, right) =>
+                  left.scheduledDate.localeCompare(right.scheduledDate),
+                ),
+              },
+            ]),
+      ]);
     },
-    [requireRepositories, synchronizedSnapshot],
+    [acknowledgeServerWrites, requireRepositories, synchronizedSnapshot],
   );
 
   const value: TrainingDataContextValue = {
