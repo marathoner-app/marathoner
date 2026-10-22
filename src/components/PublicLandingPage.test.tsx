@@ -94,6 +94,19 @@ describe("PublicLandingPage", () => {
     expect(
       screen.queryByRole("button", { name: /sign up/i }),
     ).not.toBeInTheDocument();
+    const heroVideo = screen.getByTestId("landing-hero-video");
+    expect(heroVideo).toHaveAttribute("autoplay");
+    expect(heroVideo).toHaveAttribute("loop");
+    expect(heroVideo).toHaveProperty("muted", true);
+    expect(heroVideo).toHaveAttribute("playsinline");
+    expect(heroVideo).toHaveAttribute(
+      "poster",
+      "/landing/runner-hero-poster.jpg",
+    );
+    expect(heroVideo.querySelector("source")).toHaveAttribute(
+      "src",
+      "/landing/runner-hero.mp4",
+    );
   });
 
   it("moves keyboard users from the skip link to the main content", async () => {
@@ -272,6 +285,11 @@ describe("PublicLandingPage", () => {
       expect(
         within(preview).queryByTestId("landing-preview-cursor"),
       ).not.toBeInTheDocument();
+      expect(screen.queryByTestId("landing-hero-video")).not.toBeInTheDocument();
+      expect(screen.getByTestId("landing-hero-poster")).toHaveAttribute(
+        "src",
+        "/landing/runner-hero-poster.jpg",
+      );
     } finally {
       vi.useRealTimers();
       Object.defineProperty(window, "matchMedia", {
