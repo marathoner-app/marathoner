@@ -1,4 +1,11 @@
-import { render, screen, waitFor, within } from "@testing-library/react";
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import PublicLandingPage from "./PublicLandingPage";
@@ -112,34 +119,148 @@ describe("PublicLandingPage", () => {
     ).toHaveFocus();
   });
 
-  it("presents supported sample logging concepts without fake controls", () => {
+  it("lets visitors explore the sample Plan, Track, and Analyze workflow", async () => {
+    const user = userEvent.setup();
     renderPublicLandingPage();
 
     const preview = screen.getByRole("complementary", {
-      name: "One run, clearly recorded.",
+      name: "A training week, connected.",
     });
 
     expect(
-      within(preview).getByText("Illustrative product preview"),
+      within(preview).getByText("Interactive product preview"),
     ).toBeInTheDocument();
     expect(within(preview).getByText("Sample data")).toBeInTheDocument();
     expect(
       within(preview).getByText(
-        "Synthetic example only. This is not a live plan or training recommendation.",
+        "Synthetic walkthrough only. This is not a live plan or training recommendation.",
       ),
     ).toBeInTheDocument();
-    expect(
-      within(preview).getByRole("list", {
-        name: "Marathoner product areas",
-      }),
-    ).toHaveTextContent("PlanTrackAnalyze");
+    const productAreas = within(preview).getByRole("group", {
+      name: "Marathoner product areas",
+    });
+    const planButton = within(productAreas).getByRole("button", { name: "Plan" });
+    const trackButton = within(productAreas).getByRole("button", {
+      name: "Track",
+    });
+    const analyzeButton = within(productAreas).getByRole("button", {
+      name: "Analyze",
+    });
+
+    expect(planButton).toHaveAttribute("aria-pressed", "true");
+    expect(within(preview).getByText("Today · Easy run")).toBeInTheDocument();
     expect(within(preview).getByText("5.0 mi")).toBeInTheDocument();
     expect(within(preview).getByText("Easy")).toBeInTheDocument();
+
+    await user.click(trackButton);
+    expect(trackButton).toHaveAttribute("aria-pressed", "true");
+    expect(within(preview).getByText("Run recorded")).toBeInTheDocument();
     expect(within(preview).getByText("Felt steady")).toBeInTheDocument();
     expect(within(preview).getByText("Daily trainer")).toBeInTheDocument();
     expect(within(preview).getByText("214 mi logged")).toBeInTheDocument();
-    expect(within(preview).queryByRole("button")).not.toBeInTheDocument();
+
+    await user.click(analyzeButton);
+    expect(analyzeButton).toHaveAttribute("aria-pressed", "true");
+    expect(within(preview).getByText("12.8 mi")).toBeInTheDocument();
+    expect(
+      within(preview).getByRole("img", {
+        name: "Sample weekly distance rises from 8 miles to 20 miles across four weeks",
+      }),
+    ).toBeInTheDocument();
+    expect(preview).toHaveAttribute("data-preview-mode", "manual");
     expect(within(preview).queryByRole("link")).not.toBeInTheDocument();
+  });
+
+  it("moves the enlarged cursor through the automatic walkthrough", () => {
+    vi.useFakeTimers();
+
+    try {
+      renderPublicLandingPage();
+
+      const preview = screen.getByRole("complementary", {
+        name: "A training week, connected.",
+      });
+      const trackButton = within(preview).getByRole("button", {
+        name: "Track",
+      });
+      const cursor = within(preview).getByTestId("landing-preview-cursor");
+
+      expect(preview).toHaveAttribute("data-preview-mode", "automatic");
+      expect(cursor).toHaveClass("landing-preview__demo-cursor--plan");
+
+      act(() => vi.advanceTimersByTime(1_400));
+      expect(cursor).toHaveClass("landing-preview__demo-cursor--track");
+
+      act(() => vi.advanceTimersByTime(1_040));
+      expect(trackButton).toHaveAttribute("aria-pressed", "true");
+      expect(within(preview).getByText("Run recorded")).toBeInTheDocument();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("does not fight a visitor's manual preview selection", () => {
+    vi.useFakeTimers();
+
+    try {
+      renderPublicLandingPage();
+
+      const preview = screen.getByRole("complementary", {
+        name: "A training week, connected.",
+      });
+      const analyzeButton = within(preview).getByRole("button", {
+        name: "Analyze",
+      });
+
+      fireEvent.click(analyzeButton);
+      act(() => vi.advanceTimersByTime(10_000));
+
+      expect(preview).toHaveAttribute("data-preview-mode", "manual");
+      expect(analyzeButton).toHaveAttribute("aria-pressed", "true");
+      expect(within(preview).getByText("12.8 mi")).toBeInTheDocument();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("keeps the preview static when reduced motion is requested", () => {
+    const originalMatchMedia = window.matchMedia;
+    vi.useFakeTimers();
+    Object.defineProperty(window, "matchMedia", {
+      configurable: true,
+      value: vi.fn().mockReturnValue({
+        matches: true,
+        media: "(prefers-reduced-motion: reduce)",
+        onchange: null,
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+        addListener: vi.fn(),
+        removeListener: vi.fn(),
+        dispatchEvent: vi.fn(),
+      }),
+    });
+
+    try {
+      renderPublicLandingPage();
+
+      const preview = screen.getByRole("complementary", {
+        name: "A training week, connected.",
+      });
+      const planButton = within(preview).getByRole("button", { name: "Plan" });
+
+      act(() => vi.advanceTimersByTime(10_000));
+      expect(preview).toHaveAttribute("data-preview-mode", "reduced-motion");
+      expect(planButton).toHaveAttribute("aria-pressed", "true");
+      expect(
+        within(preview).queryByTestId("landing-preview-cursor"),
+      ).not.toBeInTheDocument();
+    } finally {
+      vi.useRealTimers();
+      Object.defineProperty(window, "matchMedia", {
+        configurable: true,
+        value: originalMatchMedia,
+      });
+    }
   });
 
   it("distinguishes current and planned capabilities in the product model", () => {

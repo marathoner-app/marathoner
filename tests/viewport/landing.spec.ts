@@ -92,19 +92,37 @@ for (const viewport of viewports) {
       ),
     ).toBeVisible();
     const preview = page.getByRole("complementary", {
-      name: "One run, clearly recorded.",
+      name: "A training week, connected.",
     });
     await expect(preview).toBeVisible();
+    await preview.hover();
+    await expect(preview).toHaveAttribute("data-preview-mode", "paused");
     await expect(
-      preview.getByText("Illustrative product preview"),
+      preview.getByText("Interactive product preview"),
     ).toBeVisible();
     await expect(
       preview.getByText(
-        "Synthetic example only. This is not a live plan or training recommendation.",
+        "Synthetic walkthrough only. This is not a live plan or training recommendation.",
       ),
     ).toBeVisible();
-    await expect(preview.getByRole("button")).toHaveCount(0);
+    const previewAreaButtons = ["Plan", "Track", "Analyze"].map((name) =>
+      preview.getByRole("button", { name }),
+    );
+    await expect(preview.getByRole("button")).toHaveCount(3);
     await expect(preview.getByRole("link")).toHaveCount(0);
+    const demoCursor = preview.getByTestId("landing-preview-cursor");
+    await expect(demoCursor).toBeVisible();
+    const cursorBounds = await demoCursor.boundingBox();
+    expect(cursorBounds, "demo cursor should have visible bounds").not.toBeNull();
+    if (cursorBounds) {
+      expect(cursorBounds.width).toBeGreaterThanOrEqual(32);
+      expect(cursorBounds.height).toBeGreaterThanOrEqual(40);
+    }
+    await previewAreaButtons[1].click();
+    await expect(preview.getByText("Run recorded")).toBeVisible();
+    await previewAreaButtons[2].click();
+    await expect(preview.getByText("12.8 mi")).toBeVisible();
+    await expect(preview).toHaveAttribute("data-preview-mode", "manual");
     await expect(
       page.getByRole("heading", { name: "New account registration is closed." }),
     ).toBeVisible();
@@ -218,6 +236,10 @@ for (const viewport of viewports) {
           .getByRole("button", { name: "Log in on web" }),
         label: "hero login button",
       },
+      ...previewAreaButtons.map((locator, index) => ({
+        locator,
+        label: `${["Plan", "Track", "Analyze"][index]} preview button`,
+      })),
       {
         locator: platforms.getByRole("link", {
           name: "View current iOS status",
