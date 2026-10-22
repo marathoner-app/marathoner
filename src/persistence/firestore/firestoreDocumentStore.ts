@@ -3,6 +3,7 @@ import {
   deleteDoc,
   doc,
   getDoc,
+  getDocFromCache,
   getDocs,
   setDoc,
   writeBatch,
@@ -24,6 +25,22 @@ export class FirestoreDocumentStore implements DocumentStore {
     return snapshot.exists()
       ? { id: snapshot.id, data: snapshot.data() as DocumentData }
       : null;
+  }
+
+  async getCachedOrServer(
+    documentPath: string,
+  ): Promise<StoredDocument | null> {
+    const reference = doc(this.database, documentPath);
+
+    try {
+      const snapshot = await getDocFromCache(reference);
+
+      return snapshot.exists()
+        ? { id: snapshot.id, data: snapshot.data() as DocumentData }
+        : null;
+    } catch {
+      return this.get(documentPath);
+    }
   }
 
   async list(collectionPath: string): Promise<StoredDocument[]> {

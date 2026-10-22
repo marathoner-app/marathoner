@@ -18,6 +18,14 @@ export class InMemoryDocumentStore implements DocumentStore {
       : { id: documentPath.split("/").at(-1) ?? "", data };
   }
 
+  async getCachedOrServer(documentPath: string): Promise<StoredDocument | null> {
+    const data = this.documents.get(documentPath);
+
+    return data === undefined
+      ? null
+      : { id: documentPath.split("/").at(-1) ?? "", data };
+  }
+
   async list(collectionPath: string): Promise<StoredDocument[]> {
     const prefix = `${collectionPath}/`;
 
