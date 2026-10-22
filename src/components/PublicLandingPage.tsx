@@ -49,12 +49,12 @@ export default function PublicLandingPage({
           className="landing-page__content"
           tabIndex={-1}
         >
-          <PublicLandingHero
+          <PublicLandingHero />
+          <PublicLandingHowItWorks />
+          <PublicLandingPlatforms
             isLoginOpen={isLoginOpen}
             onLoginOpen={openLogin}
           />
-          <PublicLandingHowItWorks />
-          <PublicLandingPlatforms />
           <PublicAccessNotice supportEmail={supportEmail} />
         </div>
       </div>

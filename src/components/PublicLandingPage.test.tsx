@@ -332,8 +332,10 @@ describe("PublicLandingPage", () => {
       "Existing-account login only. New registration remains closed.",
     );
     expect(
-      within(platformCards[1]).queryByRole("button"),
-    ).not.toBeInTheDocument();
+      within(platformCards[1]).getByRole("button", {
+        name: "Log in on web",
+      }),
+    ).toBeInTheDocument();
     expect(
       within(platforms).queryByRole("link", { name: /TestFlight|App Store/i }),
     ).not.toBeInTheDocument();
