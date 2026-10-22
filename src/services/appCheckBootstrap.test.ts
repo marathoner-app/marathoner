@@ -90,7 +90,7 @@ describe('App Check bootstrap', () => {
     expect(dependencies.getNativeToken).toHaveBeenCalledOnce()
     expect(dependencies.initializeJsAppCheck).toHaveBeenCalledWith(app, {
       provider: nativeProvider,
-      isTokenAutoRefreshEnabled: true,
+      isTokenAutoRefreshEnabled: false,
     })
   })
 
@@ -109,7 +109,7 @@ describe('App Check bootstrap', () => {
     expect(dependencies.getNativeToken).toHaveBeenCalledOnce()
     expect(dependencies.initializeJsAppCheck).toHaveBeenCalledWith(app, {
       provider: nativeProvider,
-      isTokenAutoRefreshEnabled: true,
+      isTokenAutoRefreshEnabled: false,
     })
   })
 

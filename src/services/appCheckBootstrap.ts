@@ -229,7 +229,12 @@ export function createAppCheckInitializer(
 
         appCheck = dependencies.initializeJsAppCheck(app, {
           provider,
-          isTokenAutoRefreshEnabled: true,
+          // The native Firebase SDK already refreshes its App Check token.
+          // A second proactive refresher in the JavaScript SDK can repeatedly
+          // bridge back to the native provider when their refresh windows
+          // disagree. Firebase services still request and cache a JavaScript
+          // token on demand, starting with the explicit proof below.
+          isTokenAutoRefreshEnabled: !isNativePlatform,
         })
         initializedApp = app
       }
