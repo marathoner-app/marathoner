@@ -4,11 +4,13 @@ The root application is the canonical web and iOS product. Capacitor copies an
 iOS-specific Vite build into the committed Swift Package Manager Xcode project;
 there is no second feature application under `ios/`.
 
-The ordinary workflow proves the selected development shell. A separate,
+The ordinary workflow proves the selected owner-only development shell with
+the development App Check debug provider. A separate,
 explicit beta proof below verifies environment selection without changing the
 development, CI, Pages, or production-web defaults. Both workflows now select
-and validate the corresponding public native Firebase configuration and
-initialize App Attest before JavaScript Firebase services. Live signed-device
+and validate the corresponding public native Firebase configuration. Beta and
+Release initialize App Attest before JavaScript Firebase services; the
+development Debug workflow uses a private fixed debug token. Live App Attest
 token proof and enforcement remain open, as do migrated material mobile
 workflows, TestFlight, and Android. The
 local command foundation is proved in #158; workflow migration, live reads,
@@ -21,8 +23,9 @@ and release work remain in #72, #115, #138, #159, #161, #122, and #90.
 - an iOS simulator for unsigned compilation
 - the physical test iPhone and an owner-controlled Apple development identity
   only when recording device evidence
-- an organization-owned Apple Developer Program team for the signed App Attest
-  and TestFlight gates; follow the
+- the current Personal Team for the owner-only development Debug build
+- an organization-owned Apple Developer Program team for signed Release App
+  Attest and TestFlight gates; follow the
   [entity and enrollment decision](../operations/legal-entity-and-apple-enrollment.md)
 - the reviewed development-only iOS Firebase API key
 - the separately reviewed beta-only iOS Firebase API key only when running the
@@ -48,9 +51,20 @@ Create the ignored Firebase environment file:
 cp .env.ios-development.example .env.ios-development.local
 ```
 
-Set `VITE_FIREBASE_IOS_API_KEY` in that local file. The `ios-development` mode
-fails closed when the value is absent or when the selected environment is not
-`development`.
+Set `VITE_FIREBASE_IOS_API_KEY` in that local file and retain
+`VITE_FIREBASE_NATIVE_APP_CHECK_DEBUG=true`. The `ios-development` mode fails
+closed when either value is absent, when the provider selector is not exactly
+`true`, or when the selected environment is not `development`. The selector is
+not the debug token.
+
+In the development Firebase project's iOS App Check registration, create one
+fixed debug token for the owner/device. In Xcode, edit the user-local **App**
+scheme's **Run > Arguments > Environment Variables** and add
+`AppCheckDebugToken` with the token as its private value. Do not add
+`-FIRDebugEnabled`, because that prints a generated credential. Xcode stores
+the local scheme below ignored `xcuserdata`; verify `git status --short` does
+not show it. Never paste the token into a Vite file, tracked scheme, issue,
+screenshot, or command output.
 
 Do not reuse the development key for beta. The beta proof uses a separate
 ignored file:
@@ -97,7 +111,14 @@ That command:
 6. verifies that the copied bundle exactly matches the development build and
    contains no beta configuration; and
 7. validates both native Firebase registrations, selects development, and
-   proves the Xcode resource is byte-equivalent to that source.
+   proves the Xcode resource is byte-equivalent to that source; and
+8. verifies Debug omits the production App Attest entitlement while Release
+   retains it.
+
+Open Xcode with `npm run open:ios`, choose the **Debug** configuration and the
+physical owner iPhone, then run. This build is owner-controlled and must not be
+distributed. The beta proof below must use **Release**; a beta bundle run under
+Debug intentionally fails closed because Debug has no App Attest entitlement.
 
 The normal `npm run build` remains the GitHub Pages build with the custom
 domain's root `/` base. It does not read the iOS key.

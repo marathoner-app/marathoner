@@ -34,6 +34,12 @@ interface AppCheckDebugTokenForModeOptions {
   isViteServe: boolean
 }
 
+interface NativeAppCheckDebugForModeOptions {
+  mode: string
+  environmentName: FirebaseEnvironmentName
+  nativeDebugRequested: string | undefined
+}
+
 export function assertFirebaseEnvironmentForMode(
   mode: string,
   environmentName: FirebaseEnvironmentName,
@@ -87,6 +93,37 @@ export function resolveAppCheckDebugTokenForMode({
   }
 
   return normalizedDebugToken
+}
+
+export function resolveNativeAppCheckDebugForMode({
+  mode,
+  environmentName,
+  nativeDebugRequested,
+}: NativeAppCheckDebugForModeOptions): boolean {
+  const normalizedRequest = nativeDebugRequested?.trim().toLowerCase()
+
+  if (!normalizedRequest || normalizedRequest === 'false') {
+    if (mode === 'ios-development') {
+      throw new Error(
+        'The ios-development build must explicitly enable the native App Check debug provider.',
+      )
+    }
+    return false
+  }
+
+  if (normalizedRequest !== 'true') {
+    throw new Error(
+      'VITE_FIREBASE_NATIVE_APP_CHECK_DEBUG must be either "true" or "false".',
+    )
+  }
+
+  if (mode !== 'ios-development' || environmentName !== 'development') {
+    throw new Error(
+      'The native App Check debug provider is allowed only in the development Firebase environment built with ios-development mode.',
+    )
+  }
+
+  return true
 }
 
 function isEnvironmentName(value: string): value is FirebaseEnvironmentName {

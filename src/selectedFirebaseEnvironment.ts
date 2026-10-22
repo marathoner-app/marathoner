@@ -7,6 +7,7 @@ import {
 import {
   resolveAppCheckDebugTokenForMode,
   resolveFirebaseEnvironmentForMode,
+  resolveNativeAppCheckDebugForMode,
 } from './firebaseEnvironment'
 
 function registryForMode(mode: string): FirebaseConfigurationRegistry {
@@ -41,4 +42,11 @@ export const selectedAppCheckDebugToken = resolveAppCheckDebugTokenForMode({
   environmentName: selectedFirebaseEnvironment.name,
   debugToken: import.meta.env.VITE_FIREBASE_APP_CHECK_DEBUG_TOKEN,
   isViteServe: import.meta.env.DEV,
+})
+
+export const selectedNativeAppCheckDebug = resolveNativeAppCheckDebugForMode({
+  mode: import.meta.env.MODE,
+  environmentName: selectedFirebaseEnvironment.name,
+  nativeDebugRequested:
+    import.meta.env.VITE_FIREBASE_NATIVE_APP_CHECK_DEBUG,
 })

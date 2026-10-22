@@ -19,11 +19,13 @@ coverage is necessary but is not physical-device evidence. Issue #140 passes
 only after this checklist is completed against an installable candidate and a
 non-owner completes the supported journey.
 
-The production App Attest entitlement intentionally prevents the current
-Personal Team from provisioning the tracked iOS target. Until #281 supplies an
-organization-signed, App Attest-capable build, record physical cases as
-`Blocked`; do not remove the entitlement, weaken App Check, or substitute a
-browser or simulator result and call it an iPhone pass.
+The owner-only development Debug build may use the development App Check debug
+provider for early physical-device defect discovery. That evidence must be
+identified as internal development evidence and cannot satisfy this external
+candidate checklist. Until #281 supplies an organization-signed, App
+Attest-capable Release build, record the candidate cases as `Blocked`; do not
+substitute the development debug build, browser, or simulator result and call
+it an external-candidate pass.
 
 ## Result language
 

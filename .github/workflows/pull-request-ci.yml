@@ -146,6 +146,7 @@ jobs:
         env:
           VITE_FIREBASE_ENVIRONMENT: development
           VITE_FIREBASE_IOS_API_KEY: ci-non-live-ios-key
+          VITE_FIREBASE_NATIVE_APP_CHECK_DEBUG: true
 
       - name: Build, sync, and inspect explicit beta iOS selection
         run: npm run check:ios:beta
