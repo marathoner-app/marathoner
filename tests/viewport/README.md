@@ -9,6 +9,9 @@ summary cards and the weekly-distance chart's accessible data table at those
 same phone settings. The landing
 fixture renders the signed-out production shell directly and covers both phone
 (`390 × 844`) and desktop (`1440 × 900`) layout plus the existing login dialog.
+The signed-in home fixture verifies that account controls, welcome content,
+runner setup, next workout, and section navigation remain in readable order on
+the phone while preserving the desktop header treatment.
 
 Install Chromium once after `npm install`:
 

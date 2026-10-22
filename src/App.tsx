@@ -135,7 +135,11 @@ function App() {
 
   return (
     <motion.main
-      className={`main${auth.status === "signedOut" ? " public-entry" : ""}`}
+      className={`main${auth.status === "signedOut" ? " public-entry" : ""}${
+        auth.status === "signedIn" && activeSection === null
+          ? " signed-in-home"
+          : ""
+      }`}
       initial={false}
       animate={{ opacity: 1 }}
       transition={{ duration: reduceMotion ? 0 : 1, ease: "easeOut" }}
