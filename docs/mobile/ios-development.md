@@ -127,6 +127,28 @@ first selector because its call occurs after native Firebase startup.
 The normal `npm run build` remains the GitHub Pages build with the custom
 domain's root `/` base. It does not read the iOS key.
 
+## Recorded owner-only development proof
+
+Issue #351 passed its physical-device proof on October 21, 2026 at commit
+`ed40094`, using Xcode 27.0 and an iPhone 15 running iOS build `23G90`:
+
+- `npm run check:ios` selected the development Firebase project, rejected beta
+  configuration, and preserved the reviewed Debug/Release boundary;
+- the Debug build obtained an accepted development App Check token through the
+  native debug provider without exposing its value;
+- the existing development account completed Email/Password sign-in;
+- the owner-scoped Firestore startup read completed and presented the expected
+  **Tell us where you are starting** onboarding state; and
+- the ignored Xcode user scheme and local signing/environment files remained
+  outside Git. The owner token remains active for local dogfooding under the
+  documented rotation policy, and the temporary redacted diagnostic log was
+  removed.
+
+The onboarding content rendered beneath the iPhone status bar, obscuring the
+top of the page. That safe-area defect does not invalidate the App Check/Auth/
+Firestore proof, but it requires a separate UI issue before the daily companion
+can be considered polished for physical-device use.
+
 ## Explicit beta selection and physical proof
 
 This is an operator proof, not a day-to-day development command. Start with a

@@ -1,7 +1,8 @@
 # App Check client initialization
 
-- **Status:** Implementation and automated boundaries complete; live browser
-  and physical-iPhone token evidence pending
+- **Status:** Implementation and automated boundaries complete; owner-only
+  development iPhone debug proof passed; live browser and beta App Attest proof
+  pending
 - **Implementation date:** 2026-10-06
 - **Tracking issue:**
   [#204](https://github.com/marathoner-app/marathoner/issues/204)
@@ -163,8 +164,14 @@ Automated tests cover:
   and Release signing settings.
 
 Development and beta web builds and copied iOS bundles pass. Both iOS boundary
-variants select the correct native Firebase configuration. The final #204 proof
-still requires:
+variants select the correct native Firebase configuration. On October 21, 2026,
+the owner-only development Debug build at commit `ed40094` obtained an accepted
+debug token on an iPhone 15 running iOS build `23G90`, completed Email/Password
+sign-in, and reached the Firestore-backed onboarding state. No token value,
+credential, device identifier, or beta configuration was recorded. This proves
+the #351 development exception only; it is not App Attest evidence.
+
+The final #204 proof still requires:
 
 1. enroll or select an Apple Developer Program team, enable App Attest for the
    explicit App ID, and regenerate the development profile;

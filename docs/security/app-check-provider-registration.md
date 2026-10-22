@@ -1,8 +1,9 @@
 # App Check provider registration
 
 - **Status:** Development and beta web/iOS providers registered; client
-  initialization implemented with live token evidence pending; observation and
-  enforcement remain off
+  initialization implemented and owner-only development iPhone debug proof
+  passed; browser and beta App Attest proof, observation, and enforcement remain
+  open
 - **Registration date:** 2026-10-06
 - **Tracking issue:**
   [#203](https://github.com/marathoner-app/marathoner/issues/203)
