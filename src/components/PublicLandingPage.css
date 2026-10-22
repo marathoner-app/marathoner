@@ -145,7 +145,7 @@
   padding: clamp(1.5rem, 3vw, 2.5rem);
   border: 1px solid var(--landing-border);
   border-radius: var(--landing-card-radius);
-  background: rgba(231, 236, 248, 0.82);
+  background: var(--landing-banner);
 }
 
 .landing-hero h1 {
@@ -243,10 +243,10 @@
 .landing-hero__media {
   position: relative;
   z-index: 1;
-  grid-column: 5 / 11;
+  grid-column: 3 / 11;
   grid-row: 1;
   min-width: 0;
-  height: calc(100% - 3rem);
+  height: 100%;
   overflow: hidden;
   border-radius: var(--landing-card-radius);
   background: #cbd5e1;
@@ -295,6 +295,13 @@
 .landing-preview__header {
   display: grid;
   gap: 0.5rem;
+}
+
+@media (min-width: 1101px) {
+  .landing-preview {
+    gap: 1rem;
+    padding: 1.25rem clamp(1.25rem, 2vw, 1.5rem);
+  }
 }
 
 .landing-preview__run-heading {
