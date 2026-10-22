@@ -14,9 +14,9 @@ async function exerciseAnalyzeFeedback(page: Page, textSizeLabel: string) {
   await expect(page.getByRole("heading", { name: "Total Runs" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Runs This Week" })).toBeVisible();
   const summaryCards = page.locator(".analyze-cards");
-  await expect(summaryCards.getByText("5 km")).toHaveCount(2);
-  await expect(summaryCards.getByText("6:00 /km")).toBeVisible();
-  await expect(summaryCards.getByText("1", { exact: true })).toHaveCount(2);
+  await expect(summaryCards.getByText("10 km")).toHaveCount(2);
+  await expect(summaryCards.getByText("5:45 /km")).toBeVisible();
+  await expect(summaryCards.getByText("2", { exact: true })).toHaveCount(2);
 
   await expect(page.getByRole("heading", { name: "Weekly Distance" })).toBeVisible();
   await expectNoHorizontalOverflow(
@@ -28,7 +28,7 @@ async function exerciseAnalyzeFeedback(page: Page, textSizeLabel: string) {
   await page.getByText("View weekly distance data").click();
   const table = page.getByRole("table", { name: "Weekly running distance" });
   await expect(table).toBeVisible();
-  const currentWeek = table.getByRole("row", { name: "2026-10-19 5 km 1" });
+  const currentWeek = table.getByRole("row", { name: "2026-10-19 10 km 2" });
   await expect(currentWeek).toBeVisible();
   await currentWeek.scrollIntoViewIfNeeded();
   await expect(currentWeek).toBeInViewport();
@@ -36,6 +36,28 @@ async function exerciseAnalyzeFeedback(page: Page, textSizeLabel: string) {
     page,
     "Analyze",
     `with the weekly data table open at ${textSizeLabel}`,
+  );
+
+  await expect(page.getByRole("heading", { name: "Recent Pace" })).toBeVisible();
+  await expectNoHorizontalOverflow(
+    page,
+    "Analyze",
+    `with the recent pace chart at ${textSizeLabel}`,
+  );
+
+  await page.getByText("View recent pace data").click();
+  const paceTable = page.getByRole("table", { name: "Recent recorded pace" });
+  await expect(paceTable.getByRole("row", { name: "2026-10-21 6:00 /km" })).toBeVisible();
+  const latestPace = paceTable.getByRole("row", {
+    name: "2026-10-22 5:30 /km",
+  });
+  await expect(latestPace).toBeVisible();
+  await latestPace.scrollIntoViewIfNeeded();
+  await expect(latestPace).toBeInViewport();
+  await expectNoHorizontalOverflow(
+    page,
+    "Analyze",
+    `with the recent pace data table open at ${textSizeLabel}`,
   );
 }
 

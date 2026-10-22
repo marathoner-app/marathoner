@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   calculatePace,
+  calculateRecentRunPaceTrend,
   calculateShoeDistance,
   calculateTrainingAnalytics,
   calculateTotalDistance,
@@ -437,5 +438,55 @@ describe("training domain calculations", () => {
     expect(() =>
       calculateWeeklyDistanceTrend([], createDateOnly("2026-08-10"), 0),
     ).toThrow(/at least one whole week/i);
+  });
+
+  it("returns the most recent valid run paces in chronological order", () => {
+    const earlierRun: CompletedRun = {
+      ...run,
+      id: createCompletedRunId("run-earlier"),
+      startedAt: createUtcDateTime("2026-08-01T06:30:00Z"),
+      timeZone: createIanaTimeZone("Pacific/Honolulu"),
+      distance: milesToMeters(4),
+      duration: createDurationSeconds(36 * 60),
+    };
+    const laterRun: CompletedRun = {
+      ...run,
+      id: createCompletedRunId("run-later"),
+      startedAt: createUtcDateTime("2026-08-07T14:00:00Z"),
+      distance: milesToMeters(2),
+      duration: createDurationSeconds(16 * 60),
+    };
+
+    const points = calculateRecentRunPaceTrend(
+      [laterRun, earlierRun, run],
+      "mile",
+      2,
+    );
+
+    expect(points.map((point) => point.runId)).toEqual([run.id, laterRun.id]);
+    expect(points.map((point) => point.runDate)).toEqual([
+      "2026-08-03",
+      "2026-08-07",
+    ]);
+    expect(points.map((point) => point.pace.secondsPerUnit)).toEqual([
+      expect.closeTo(600, 0),
+      expect.closeTo(480, 0),
+    ]);
+    expect(points.every((point) => point.pace.unit === "mile")).toBe(true);
+  });
+
+  it("omits runs without a pace and rejects an invalid recent-run limit", () => {
+    const zeroDurationRun: CompletedRun = {
+      ...run,
+      id: createCompletedRunId("run-zero-duration"),
+      duration: createDurationSeconds(0),
+    };
+
+    expect(calculateRecentRunPaceTrend([zeroDurationRun], "mile", 8)).toEqual(
+      [],
+    );
+    expect(() => calculateRecentRunPaceTrend([run], "mile", 0)).toThrow(
+      /at least one run/i,
+    );
   });
 });

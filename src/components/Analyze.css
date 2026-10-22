@@ -39,7 +39,8 @@
   font-size: 1.5rem;
 }
 
-.weekly-trend {
+.weekly-trend,
+.pace-trend {
   box-sizing: border-box;
   width: 100%;
   max-width: 56rem;
@@ -52,21 +53,26 @@
 }
 
 .weekly-trend h2,
-.weekly-trend-context {
+.weekly-trend-context,
+.pace-trend h2,
+.pace-trend-context {
   margin: 0;
 }
 
-.weekly-trend h2 {
+.weekly-trend h2,
+.pace-trend h2 {
   color: #005fcc;
   font-size: 1.25rem;
 }
 
-.weekly-trend-context {
+.weekly-trend-context,
+.pace-trend-context {
   margin-top: 0.35rem;
   color: #34495e;
 }
 
-.weekly-trend-chart {
+.weekly-trend-chart,
+.pace-trend-chart {
   width: 100%;
   min-width: 0;
   height: 18rem;
@@ -74,31 +80,37 @@
   overflow: hidden;
 }
 
-.weekly-trend-data {
+.weekly-trend-data,
+.pace-trend-data {
   margin-top: 0.75rem;
 }
 
-.weekly-trend-data summary {
+.weekly-trend-data summary,
+.pace-trend-data summary {
   color: #005fcc;
   cursor: pointer;
   font-weight: 600;
 }
 
-.weekly-trend-data table {
+.weekly-trend-data table,
+.pace-trend-data table {
   width: 100%;
   margin-top: 0.75rem;
   border-collapse: collapse;
   table-layout: fixed;
 }
 
-.weekly-trend-data caption {
+.weekly-trend-data caption,
+.pace-trend-data caption {
   padding-bottom: 0.5rem;
   font-weight: 600;
   text-align: left;
 }
 
 .weekly-trend-data th,
-.weekly-trend-data td {
+.weekly-trend-data td,
+.pace-trend-data th,
+.pace-trend-data td {
   padding: 0.5rem;
   border-bottom: 1px solid #d9e2ec;
   overflow-wrap: anywhere;
@@ -111,15 +123,18 @@
     margin: 0 auto;
   }
 
-  .weekly-trend {
+  .weekly-trend,
+  .pace-trend {
     padding: 0.75rem;
   }
 
-  .weekly-trend-chart {
+  .weekly-trend-chart,
+  .pace-trend-chart {
     height: 16rem;
   }
 
-  .weekly-trend-data {
+  .weekly-trend-data,
+  .pace-trend-data {
     overflow-x: auto;
   }
 }

@@ -2,6 +2,7 @@ import { lazy, Suspense } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import {
   calculateTrainingAnalytics,
+  calculateRecentRunPaceTrend,
   calculateWeeklyDistanceTrend,
   createDateOnly,
   createIanaTimeZone,
@@ -14,6 +15,7 @@ import {
 } from "../domain/training";
 
 const WeeklyDistanceTrend = lazy(() => import("./WeeklyDistanceTrend"));
+const RecentRunPaceTrend = lazy(() => import("./RecentRunPaceTrend"));
 
 type AnalyzeProps = {
   readonly runs: readonly CompletedRun[];
@@ -72,6 +74,7 @@ export default function Analyze({
   const currentWeekStart = mondayFor(now, timeZone);
   const analytics = calculateTrainingAnalytics(runs, currentWeekStart, distanceUnit);
   const weeklyDistance = calculateWeeklyDistanceTrend(runs, currentWeekStart, 8);
+  const recentPace = calculateRecentRunPaceTrend(runs, distanceUnit, 8);
 
   return (
     <motion.div
@@ -116,6 +119,18 @@ export default function Analyze({
       >
         <WeeklyDistanceTrend
           buckets={weeklyDistance}
+          distanceUnit={distanceUnit}
+        />
+      </Suspense>
+      <Suspense
+        fallback={
+          <p className="training-status" role="status">
+            Loading recent pace chart...
+          </p>
+        }
+      >
+        <RecentRunPaceTrend
+          points={recentPace}
           distanceUnit={distanceUnit}
         />
       </Suspense>

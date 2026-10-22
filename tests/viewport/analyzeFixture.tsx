@@ -23,12 +23,21 @@ const run: CompletedRun = {
   createdAt: timestamp,
   updatedAt: timestamp,
 };
+const laterTimestamp = createUtcDateTime("2026-10-22T14:00:00Z");
+const laterRun: CompletedRun = {
+  ...run,
+  id: createCompletedRunId("viewport-run-2"),
+  startedAt: laterTimestamp,
+  duration: createDurationSeconds(1_650),
+  createdAt: laterTimestamp,
+  updatedAt: laterTimestamp,
+};
 
 const root = document.querySelector("#root");
 if (root === null) throw new Error("Analyze viewport fixture root was not found.");
 createRoot(root).render(
   <Analyze
-    runs={[run]}
+    runs={[laterRun, run]}
     distanceUnit="kilometer"
     timeZone={timeZone}
     now={new Date("2026-10-21T18:00:00Z")}
