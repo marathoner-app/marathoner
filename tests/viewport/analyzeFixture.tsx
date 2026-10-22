@@ -38,6 +38,7 @@ if (root === null) throw new Error("Analyze viewport fixture root was not found.
 createRoot(root).render(
   <Analyze
     runs={[laterRun, run]}
+    shoes={[]}
     distanceUnit="kilometer"
     timeZone={timeZone}
     now={new Date("2026-10-21T18:00:00Z")}

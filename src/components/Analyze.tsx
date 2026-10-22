@@ -1,8 +1,9 @@
 import { lazy, Suspense } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import {
-  calculateTrainingAnalytics,
+  calculatePace,
   calculateRecentRunPaceTrend,
+  calculateTrainingAnalytics,
   calculateWeeklyDistanceTrend,
   createDateOnly,
   createIanaTimeZone,
@@ -12,17 +13,49 @@ import {
   type DistanceMeters,
   type DistanceUnit,
   type IanaTimeZone,
+  type Shoe,
 } from "../domain/training";
+import { formatPerceivedEffort } from "./perceivedEffort";
 
 const WeeklyDistanceTrend = lazy(() => import("./WeeklyDistanceTrend"));
 const RecentRunPaceTrend = lazy(() => import("./RecentRunPaceTrend"));
 
 type AnalyzeProps = {
   readonly runs: readonly CompletedRun[];
+  readonly shoes: readonly Shoe[];
   readonly distanceUnit: DistanceUnit;
   readonly timeZone?: IanaTimeZone;
   readonly now?: Date;
 };
+
+function findLatestRun(runs: readonly CompletedRun[]): CompletedRun | undefined {
+  return runs.reduce<CompletedRun | undefined>((latest, run) => {
+    if (latest === undefined) return run;
+
+    const startedAtOrder = run.startedAt.localeCompare(latest.startedAt);
+    if (startedAtOrder > 0) return run;
+    if (startedAtOrder < 0) return latest;
+
+    return run.id.localeCompare(latest.id) > 0 ? run : latest;
+  }, undefined);
+}
+
+function formatRunDate(run: CompletedRun): string {
+  return new Intl.DateTimeFormat("en-US", {
+    dateStyle: "medium",
+    timeZone: run.timeZone,
+  }).format(new Date(run.startedAt));
+}
+
+function formatDuration(totalSeconds: number): string {
+  const hours = Math.floor(totalSeconds / 3_600);
+  const minutes = Math.floor((totalSeconds % 3_600) / 60);
+  const seconds = String(totalSeconds % 60).padStart(2, "0");
+
+  return hours > 0
+    ? `${hours}:${String(minutes).padStart(2, "0")}:${seconds}`
+    : `${minutes}:${seconds}`;
+}
 
 function currentTimeZone(): IanaTimeZone {
   return createIanaTimeZone(
@@ -66,6 +99,7 @@ function formatPace(
 
 export default function Analyze({
   runs,
+  shoes,
   distanceUnit,
   timeZone = currentTimeZone(),
   now = new Date(),
@@ -75,6 +109,8 @@ export default function Analyze({
   const analytics = calculateTrainingAnalytics(runs, currentWeekStart, distanceUnit);
   const weeklyDistance = calculateWeeklyDistanceTrend(runs, currentWeekStart, 8);
   const recentPace = calculateRecentRunPaceTrend(runs, distanceUnit, 8);
+  const latestRun = findLatestRun(runs);
+  const latestRunShoe = shoes.find((shoe) => shoe.id === latestRun?.shoeId);
 
   return (
     <motion.div
@@ -87,6 +123,47 @@ export default function Analyze({
         <p className="training-empty-state">
           Log your first run to begin building your training picture.
         </p>
+      )}
+      {latestRun !== undefined && (
+        <section className="latest-run-summary" aria-labelledby="latest-run-heading">
+          <div>
+            <p className="latest-run-eyebrow">Latest run</p>
+            <h2 id="latest-run-heading">
+              <time dateTime={latestRun.startedAt}>{formatRunDate(latestRun)}</time>
+            </h2>
+          </div>
+          <dl className="latest-run-details">
+            <div>
+              <dt>Distance</dt>
+              <dd>{formatDistance(latestRun.distance, distanceUnit)}</dd>
+            </div>
+            <div>
+              <dt>Elapsed time</dt>
+              <dd>{formatDuration(latestRun.duration)}</dd>
+            </div>
+            <div>
+              <dt>Pace</dt>
+              <dd>
+                {formatPace(
+                  calculatePace(
+                    latestRun.distance,
+                    latestRun.duration,
+                    distanceUnit,
+                  )?.secondsPerUnit,
+                  distanceUnit,
+                )}
+              </dd>
+            </div>
+            <div>
+              <dt>Shoe</dt>
+              <dd>{latestRunShoe?.name ?? "Not recorded"}</dd>
+            </div>
+            <div>
+              <dt>Perceived effort</dt>
+              <dd>{formatPerceivedEffort(latestRun.perceivedEffort)}</dd>
+            </div>
+          </dl>
+        </section>
       )}
       <div className="analyze-cards">
         <div className="analyze-card">

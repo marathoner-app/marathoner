@@ -27,7 +27,6 @@ import {
   type DistanceMeters,
   type DistanceUnit,
   type IanaTimeZone,
-  type PerceivedEffort,
   type PlannedWorkout,
   type Shoe,
   type ShoeId,
@@ -39,6 +38,10 @@ import type {
 } from "../persistence/trainingRepositories";
 import ElapsedDurationInput from "./ElapsedDurationInput";
 import { readElapsedDuration } from "./elapsedDuration";
+import {
+  formatPerceivedEffort,
+  perceivedEffortOptions,
+} from "./perceivedEffort";
 
 type ShoeTrackerProps = {
   readonly distanceUnit: DistanceUnit;
@@ -175,17 +178,6 @@ function ConfirmationDialog({
   );
 }
 
-const perceivedEffortOptions = [
-  { value: "much_easier_than_expected", label: "Much easier than expected" },
-  { value: "easier_than_expected", label: "Easier than expected" },
-  { value: "about_right", label: "About as expected" },
-  { value: "harder_than_expected", label: "Harder than expected" },
-  { value: "much_harder_than_expected", label: "Much harder than expected" },
-] as const satisfies readonly {
-  readonly value: PerceivedEffort;
-  readonly label: string;
-}[];
-
 function parsePerceivedEffort(value: FormDataEntryValue | null) {
   if (value === null || value === "") return undefined;
 
@@ -197,11 +189,6 @@ function parsePerceivedEffort(value: FormDataEntryValue | null) {
   }
 
   return option.value;
-}
-
-function formatPerceivedEffort(value: PerceivedEffort | undefined) {
-  if (value === undefined) return "Not recorded";
-  return perceivedEffortOptions.find((option) => option.value === value)?.label;
 }
 
 function parseRunNotes(value: FormDataEntryValue | null) {

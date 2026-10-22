@@ -18,6 +18,59 @@
   gap: 20px;
 }
 
+.latest-run-summary {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 56rem;
+  margin: 0 auto 2rem;
+  padding: 1.25rem;
+  border: 1px solid #c7d5e3;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 8px 24px rgba(31, 42, 55, 0.08);
+  text-align: left;
+}
+
+.latest-run-eyebrow {
+  margin: 0;
+  color: #4a6075;
+  font-size: 0.875rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.latest-run-summary h2 {
+  margin: 0.25rem 0 0;
+  color: #102a43;
+  font-size: clamp(1.35rem, 4vw, 1.75rem);
+}
+
+.latest-run-details {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr));
+  gap: 1rem;
+  margin: 1.25rem 0 0;
+}
+
+.latest-run-details div {
+  min-width: 0;
+}
+
+.latest-run-details dt {
+  color: #52667a;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.latest-run-details dd {
+  margin: 0.25rem 0 0;
+  color: #102a43;
+  font-size: 1rem;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
 .analyze-card {
   width: 30%;
   min-width: 10em;
