@@ -4,6 +4,13 @@ export const runCreationTimingNames = {
   writeAcknowledgement: "marathoner:run-create:write-acknowledgement",
 } as const;
 
+export const runUpdateTimingNames = {
+  total: "marathoner:run-update:total",
+  existingRead: "marathoner:run-update:existing-read",
+  associations: "marathoner:run-update:associations",
+  writeAcknowledgement: "marathoner:run-update:write-acknowledgement",
+} as const;
+
 export async function measureOperation<T>(
   name: string,
   operation: () => Promise<T>,
