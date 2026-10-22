@@ -267,7 +267,7 @@ class DocumentCompletedRunRepository implements CompletedRunRepository {
 
         requireValidRun(updated);
         await measureOperation(runUpdateTimingNames.associations, () =>
-          this.requireAssociations(updated),
+          this.requireAssociations(updated, existing),
         );
         await measureOperation(runUpdateTimingNames.writeAcknowledgement, () =>
           this.store.set(
@@ -284,8 +284,17 @@ class DocumentCompletedRunRepository implements CompletedRunRepository {
     return safely(() => this.store.delete(runDocumentPath(this.userId, id)));
   }
 
-  private async requireAssociations(run: CompletedRun): Promise<void> {
+  private async requireAssociations(
+    run: CompletedRun,
+    existing?: CompletedRun,
+  ): Promise<void> {
+    const workoutAssociationChanged =
+      existing === undefined ||
+      run.plannedWorkoutPlanId !== existing.plannedWorkoutPlanId ||
+      run.plannedWorkoutId !== existing.plannedWorkoutId;
+
     if (
+      workoutAssociationChanged &&
       run.plannedWorkoutPlanId !== undefined &&
       run.plannedWorkoutId !== undefined
     ) {
@@ -296,7 +305,10 @@ class DocumentCompletedRunRepository implements CompletedRunRepository {
       this.requireAssociation(workout, "Planned workout was not found.");
     }
 
-    if (run.shoeId !== undefined) {
+    const shoeAssociationChanged =
+      existing === undefined || run.shoeId !== existing.shoeId;
+
+    if (shoeAssociationChanged && run.shoeId !== undefined) {
       const shoe = await this.shoes.get(run.shoeId);
       this.requireAssociation(shoe, "Shoe was not found.");
     }
