@@ -236,7 +236,6 @@
   gap: 0.5rem;
 }
 
-.landing-preview__label-row,
 .landing-preview__run-heading {
   display: flex;
   align-items: flex-start;
@@ -244,7 +243,6 @@
   gap: 1rem;
 }
 
-.landing-preview__label,
 .landing-preview__product-areas > p,
 .landing-preview__run-heading p {
   margin: 0;
@@ -256,6 +254,7 @@
 }
 
 .landing-preview__sample-badge {
+  justify-self: end;
   flex: 0 0 auto;
   padding: 0.2rem 0.5rem;
   border-radius: 999px;
@@ -271,14 +270,6 @@
   font-size: clamp(1.55rem, 3vw, 2rem);
   line-height: 1.1;
   letter-spacing: -0.035em;
-}
-
-.landing-preview__header > p,
-.landing-preview__data-note {
-  margin: 0;
-  color: var(--landing-muted);
-  font-size: 0.85rem;
-  line-height: 1.5;
 }
 
 .landing-preview__product-areas {
@@ -531,11 +522,6 @@
   overflow-wrap: anywhere;
 }
 
-.landing-preview__data-note {
-  padding-top: 1rem;
-  border-top: 1px solid var(--landing-border);
-}
-
 @keyframes landing-preview-cursor-press {
   50% {
     transform: scale(0.82);
@@ -744,8 +730,7 @@
   font-size: 0.88rem;
 }
 
-.landing-platforms__card > a,
-.landing-platforms__card .login-btn {
+.landing-platforms__card > a {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -763,21 +748,13 @@
   text-decoration: none;
 }
 
-.landing-platforms__card .login-wrapper {
-  display: block;
-  width: 100%;
-  margin-top: auto;
-}
-
-.landing-platforms__card > a:hover,
-.landing-platforms__card .login-btn:hover {
+.landing-platforms__card > a:hover {
   border-color: #bfdbfe;
   background: #bfdbfe;
   color: var(--landing-ink);
 }
 
-.landing-platforms__card > a:focus-visible,
-.landing-platforms__card .login-btn:focus-visible {
+.landing-platforms__card > a:focus-visible {
   outline: 3px solid #93c5fd;
   outline-offset: 3px;
 }

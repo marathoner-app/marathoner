@@ -20,7 +20,7 @@ function PlanPreview() {
     <div className="landing-preview__run-card">
       <div className="landing-preview__run-heading">
         <div>
-          <p>Sample plan</p>
+          <p>Today&apos;s plan</p>
           <h3>Today · Easy run</h3>
         </div>
         <div className="landing-preview__distance">
@@ -61,11 +61,11 @@ function TrackPreview() {
       <div className="landing-preview__run-heading">
         <div>
           <p>Manual run log</p>
-          <h3>Sample morning run</h3>
+          <h3>Morning run</h3>
         </div>
         <div className="landing-preview__distance">
           <strong>5.0 mi</strong>
-          <span>sample distance</span>
+          <span>recorded distance</span>
         </div>
       </div>
 
@@ -101,7 +101,7 @@ function AnalyzePreview() {
     <div className="landing-preview__run-card">
       <div className="landing-preview__run-heading">
         <div>
-          <p>Sample weekly trend</p>
+          <p>Weekly trend</p>
           <h3>Distance building steadily</h3>
         </div>
         <div className="landing-preview__distance">
@@ -113,7 +113,7 @@ function AnalyzePreview() {
       <div
         className="landing-preview__trend"
         role="img"
-        aria-label="Sample weekly distance rises from 8 miles to 20 miles across four weeks"
+        aria-label="Weekly distance rises from 8 miles to 20 miles across four weeks"
       >
         <span aria-hidden="true" />
         <span aria-hidden="true" />
@@ -212,7 +212,6 @@ export default function PublicLandingPreview() {
     <aside
       className="landing-preview"
       aria-labelledby="landing-preview-title"
-      aria-describedby="landing-preview-boundary landing-preview-data-note"
       data-preview-mode={previewMode}
       onPointerEnter={() => setIsTemporarilyPaused(true)}
       onPointerLeave={() => setIsTemporarilyPaused(false)}
@@ -220,17 +219,10 @@ export default function PublicLandingPreview() {
       onBlurCapture={resumeAfterFocusLeaves}
     >
       <div className="landing-preview__header">
-        <div className="landing-preview__label-row">
-          <p className="landing-preview__label">Interactive product preview</p>
-          <span className="landing-preview__sample-badge">Sample data</span>
-        </div>
+        <span className="landing-preview__sample-badge">Sample data</span>
         <h2 id="landing-preview-title">
           See how one run connects to the rest of your training.
         </h2>
-        <p id="landing-preview-boundary">
-          Synthetic walkthrough only. This is not a live plan or training
-          recommendation.
-        </p>
       </div>
 
       <div className="landing-preview__product-areas">
@@ -276,7 +268,7 @@ export default function PublicLandingPreview() {
               key={area}
               className="landing-preview__panel"
               aria-hidden={!isActive}
-              aria-label={`${previewLabels[area]} sample`}
+              aria-label={`${previewLabels[area]} preview`}
               data-active={isActive}
             >
               <PreviewPanel />
@@ -285,10 +277,6 @@ export default function PublicLandingPreview() {
         })}
       </div>
 
-      <p id="landing-preview-data-note" className="landing-preview__data-note">
-        This preview uses manually entered sample information. It does not show
-        GPS, connected-device, or live account data.
-      </p>
     </aside>
   );
 }
