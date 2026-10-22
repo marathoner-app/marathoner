@@ -19,7 +19,7 @@ const validProject = {
     '<key>com.apple.developer.devicecheck.appattest-environment</key><string>production</string>',
   bridgeViewController:
     'installStartupOverlay() registerPluginInstance(StartupOverlayPlugin()) DispatchQueue.main.asyncAfter(deadline: .now() + 10',
-  capacitorConfig: `appId: 'com.marathonerapp.marathoner'\nappName: 'Marathoner'\nwebDir: 'dist-ios'\nbackgroundColor: '#ffffff'\nerrorPath: 'startup-error.html'\nlaunchAutoHide: true\nlaunchShowDuration: 10_000\nbackgroundColor: '#ffffffff'\n'@capacitor-firebase/app-check'\nsymlink: true`,
+  capacitorConfig: `appId: 'com.marathonerapp.marathoner'\nappName: 'Marathoner'\nwebDir: 'dist-ios'\nbackgroundColor: '#ffffff'\ncontentInset: 'always'\nerrorPath: 'startup-error.html'\nlaunchAutoHide: true\nlaunchShowDuration: 10_000\nbackgroundColor: '#ffffffff'\n'@capacitor-firebase/app-check'\nsymlink: true`,
   debugConfig: '#include? "local.xcconfig"',
   infoPlist:
     '<string>Marathoner</string><key>UIUserInterfaceStyle</key><string>Light</string>',
@@ -144,6 +144,18 @@ describe('iOS boundary policy', () => {
     )
   })
 
+  it('rejects a native shell that can render beneath the iOS safe area', () => {
+    expect(
+      findIosProjectViolations({
+        ...validProject,
+        capacitorConfig: validProject.capacitorConfig.replace(
+          "contentInset: 'always'",
+          "contentInset: 'never'",
+        ),
+      }),
+    ).toContain("capacitor.config.ts is missing contentInset: 'always'")
+  })
+
   it('rejects an App Attest entitlement that is not bound to production', () => {
     expect(
       findIosProjectViolations({
@@ -205,7 +217,10 @@ describe('iOS boundary policy', () => {
           appId: 'com.marathonerapp.marathoner',
           appName: 'Marathoner',
           webDir: 'dist-ios',
-          ios: { backgroundColor: '#ffffff' },
+          ios: {
+            backgroundColor: '#ffffff',
+            contentInset: 'always',
+          },
           server: { errorPath: 'startup-error.html' },
           plugins: {
             SplashScreen: {
@@ -243,7 +258,10 @@ describe('iOS boundary policy', () => {
           appId: 'com.marathonerapp.marathoner',
           appName: 'Marathoner',
           webDir: 'dist-ios',
-          ios: { backgroundColor: '#ffffff' },
+          ios: {
+            backgroundColor: '#ffffff',
+            contentInset: 'always',
+          },
           server: { errorPath: 'startup-error.html' },
           plugins: {
             SplashScreen: {
@@ -294,6 +312,48 @@ describe('iOS boundary policy', () => {
         'iOS index.html contains the legacy project-site base path',
         'copied iOS bundle changed index.html',
       ]),
+    )
+  })
+
+  it('rejects a copied native config without the shared safe-area boundary', () => {
+    const builtFiles = new Map([
+      [
+        'index.html',
+        Buffer.from(
+          '<main data-marathoner-startup>Loading your session...<a data-startup-recovery>Reload</a></main><script>10000</script><script src="./assets/app.js"></script>',
+        ),
+      ],
+      [
+        'startup-error.html',
+        Buffer.from('Marathoner could not start. Reload Marathoner'),
+      ],
+      ['assets/app.js', Buffer.from('project="marathoner-d9bf9"')],
+    ])
+
+    expect(
+      findCopiedBundleViolations({
+        builtFiles,
+        copiedFiles: new Map(builtFiles),
+        capacitorRuntimeConfig: JSON.stringify({
+          appId: 'com.marathonerapp.marathoner',
+          appName: 'Marathoner',
+          webDir: 'dist-ios',
+          ios: {
+            backgroundColor: '#ffffff',
+            contentInset: 'never',
+          },
+          server: { errorPath: 'startup-error.html' },
+          plugins: {
+            SplashScreen: {
+              backgroundColor: '#ffffffff',
+              launchAutoHide: true,
+              launchShowDuration: 10_000,
+            },
+          },
+        }),
+      }),
+    ).toContain(
+      'generated capacitor.config.json has unexpected iOS contentInset',
     )
   })
 })
