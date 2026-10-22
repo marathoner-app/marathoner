@@ -41,7 +41,16 @@ async function exerciseTrackWorkflow(page: Page, textSizeLabel: string) {
 
   const runDate = page.getByRole("textbox", { name: "Run date" });
   const runDistance = page.getByRole("spinbutton", { name: "Distance (miles)" });
-  const runDuration = page.getByRole("textbox", { name: "Elapsed time" });
+  const runDuration = page.getByRole("group", { name: "Elapsed time" });
+  const runDurationHours = runDuration.getByRole("spinbutton", {
+    name: "Elapsed time hours",
+  });
+  const runDurationMinutes = runDuration.getByRole("spinbutton", {
+    name: "Elapsed time minutes",
+  });
+  const runDurationSeconds = runDuration.getByRole("spinbutton", {
+    name: "Elapsed time seconds",
+  });
   const runningShoes = page.getByRole("combobox", { name: "Running shoes" });
   const plannedWorkout = page.getByRole("combobox", { name: "Planned workout" });
   const perceivedEffort = page.getByRole("combobox", {
@@ -52,7 +61,15 @@ async function exerciseTrackWorkflow(page: Page, textSizeLabel: string) {
   await expectMinimumTouchTargets([
     { locator: runDate, label: `run date at ${textSizeLabel}` },
     { locator: runDistance, label: `run distance at ${textSizeLabel}` },
-    { locator: runDuration, label: `run duration at ${textSizeLabel}` },
+    { locator: runDurationHours, label: `run duration hours at ${textSizeLabel}` },
+    {
+      locator: runDurationMinutes,
+      label: `run duration minutes at ${textSizeLabel}`,
+    },
+    {
+      locator: runDurationSeconds,
+      label: `run duration seconds at ${textSizeLabel}`,
+    },
     { locator: runningShoes, label: `running shoes at ${textSizeLabel}` },
     { locator: plannedWorkout, label: `planned workout at ${textSizeLabel}` },
     { locator: perceivedEffort, label: `perceived effort at ${textSizeLabel}` },
@@ -61,7 +78,8 @@ async function exerciseTrackWorkflow(page: Page, textSizeLabel: string) {
   ]);
 
   await runDistance.fill("5");
-  await runDuration.fill("45:30");
+  await runDurationMinutes.fill("45");
+  await runDurationSeconds.fill("30");
   await runningShoes.selectOption({
     label: "Daily Trainer (0 mi)",
   });
@@ -99,8 +117,22 @@ async function exerciseTrackWorkflow(page: Page, textSizeLabel: string) {
       label: `edit miles at ${textSizeLabel}`,
     },
     {
-      locator: editForm.getByRole("textbox", { name: "Edit elapsed time" }),
-      label: `edit elapsed time at ${textSizeLabel}`,
+      locator: editForm.getByRole("spinbutton", {
+        name: "Edit elapsed time hours",
+      }),
+      label: `edit elapsed hours at ${textSizeLabel}`,
+    },
+    {
+      locator: editForm.getByRole("spinbutton", {
+        name: "Edit elapsed time minutes",
+      }),
+      label: `edit elapsed minutes at ${textSizeLabel}`,
+    },
+    {
+      locator: editForm.getByRole("spinbutton", {
+        name: "Edit elapsed time seconds",
+      }),
+      label: `edit elapsed seconds at ${textSizeLabel}`,
     },
     {
       locator: editForm.getByRole("combobox", { name: "Edit running shoes" }),

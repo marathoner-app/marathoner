@@ -159,6 +159,33 @@ async function addShoe(name: string) {
   return user;
 }
 
+async function enterElapsedDuration(
+  user: ReturnType<typeof userEvent.setup>,
+  {
+    hours,
+    minutes,
+    seconds,
+    legend = "Elapsed time",
+  }: {
+    hours?: number;
+    minutes?: number;
+    seconds?: number;
+    legend?: string;
+  },
+) {
+  const group = screen.getByRole("group", { name: legend });
+  const entries = { hours, minutes, seconds };
+
+  for (const [segment, value] of Object.entries(entries)) {
+    if (value === undefined) continue;
+    const input = within(group).getByRole("spinbutton", {
+      name: `${legend} ${segment}`,
+    });
+    await user.clear(input);
+    await user.type(input, String(value));
+  }
+}
+
 describe("ShoeTracker", () => {
   it("gives every run-entry control a persistent visible label", () => {
     render(<Harness />);
@@ -166,7 +193,23 @@ describe("ShoeTracker", () => {
     expect(screen.getByRole("form", { name: "Log a completed run" })).toBeInTheDocument();
     expect(screen.getByLabelText("Run date")).toBeInTheDocument();
     expect(screen.getByRole("spinbutton", { name: "Distance (miles)" })).toBeInTheDocument();
-    expect(screen.getByRole("textbox", { name: "Elapsed time" })).toBeInTheDocument();
+    const elapsedTime = screen.getByRole("group", { name: "Elapsed time" });
+    expect(elapsedTime).toBeInTheDocument();
+    expect(
+      within(elapsedTime).getByRole("spinbutton", {
+        name: "Elapsed time hours",
+      }),
+    ).toBeInTheDocument();
+    expect(
+      within(elapsedTime).getByRole("spinbutton", {
+        name: "Elapsed time minutes",
+      }),
+    ).toBeInTheDocument();
+    expect(
+      within(elapsedTime).getByRole("spinbutton", {
+        name: "Elapsed time seconds",
+      }),
+    ).toBeInTheDocument();
     expect(screen.getByRole("combobox", { name: "Running shoes" })).toBeInTheDocument();
     expect(screen.getByRole("combobox", { name: "Planned workout" })).toBeInTheDocument();
     expect(
@@ -212,9 +255,24 @@ describe("ShoeTracker", () => {
         name: "Edit distance (miles)",
       }),
     ).toBeInTheDocument();
+    const elapsedTime = within(editForm).getByRole("group", {
+      name: "Edit elapsed time",
+    });
     expect(
-      within(editForm).getByRole("textbox", { name: "Edit elapsed time" }),
-    ).toBeInTheDocument();
+      within(elapsedTime).getByRole("spinbutton", {
+        name: "Edit elapsed time hours",
+      }),
+    ).toHaveValue(0);
+    expect(
+      within(elapsedTime).getByRole("spinbutton", {
+        name: "Edit elapsed time minutes",
+      }),
+    ).toHaveValue(30);
+    expect(
+      within(elapsedTime).getByRole("spinbutton", {
+        name: "Edit elapsed time seconds",
+      }),
+    ).toHaveValue(0);
     expect(
       within(editForm).getByRole("combobox", { name: "Edit running shoes" }),
     ).toBeInTheDocument();
@@ -259,10 +317,7 @@ describe("ShoeTracker", () => {
       within(runForm).getByRole("spinbutton", { name: "Distance (miles)" }),
       "5",
     );
-    await user.type(
-      within(runForm).getByRole("textbox", { name: "Elapsed time" }),
-      "45:30",
-    );
+    await enterElapsedDuration(user, { minutes: 45, seconds: 30 });
     await user.selectOptions(
       within(runForm).getByRole("combobox", { name: "Running shoes" }),
       "shoe-1",
@@ -356,7 +411,7 @@ describe("ShoeTracker", () => {
     const user = await addShoe("Daily Trainer");
 
     await user.type(screen.getByRole("spinbutton", { name: "Distance (miles)" }), "5");
-    await user.type(screen.getByRole("textbox", { name: "Elapsed time" }), "45:30");
+    await enterElapsedDuration(user, { minutes: 45, seconds: 30 });
     await user.selectOptions(
       screen.getByRole("combobox", { name: "Running shoes" }),
       "shoe-1",
@@ -372,6 +427,28 @@ describe("ShoeTracker", () => {
     expect(screen.getByText("Total: 5 mi")).toBeInTheDocument();
     expect(screen.getByText(/Starting: 0 mi/)).toBeInTheDocument();
     expect(screen.getByText(/Recorded by Marathoner: 5 mi/)).toBeInTheDocument();
+  });
+
+  it("rejects an empty elapsed duration before creating a run", async () => {
+    const onCreateRunCall = vi.fn();
+    render(<Harness onCreateRunCall={onCreateRunCall} />);
+    const user = await addShoe("Daily Trainer");
+
+    await user.type(
+      screen.getByRole("spinbutton", { name: "Distance (miles)" }),
+      "5",
+    );
+    await user.selectOptions(
+      screen.getByRole("combobox", { name: "Running shoes" }),
+      "shoe-1",
+    );
+    await user.click(screen.getByRole("button", { name: "Log Run" }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Elapsed time must be greater than zero.",
+    );
+    expect(onCreateRunCall).not.toHaveBeenCalled();
+    expect(screen.getByText("No runs logged yet.")).toBeInTheDocument();
   });
 
   it("uses kilometers throughout run entry, editing, history, and deletion", async () => {
@@ -390,7 +467,7 @@ describe("ShoeTracker", () => {
       screen.getByRole("spinbutton", { name: "Distance (kilometers)" }),
       "5",
     );
-    await user.type(screen.getByRole("textbox", { name: "Elapsed time" }), "30:00");
+    await enterElapsedDuration(user, { minutes: 30 });
     await user.selectOptions(
       screen.getByRole("combobox", { name: "Running shoes" }),
       "shoe-1",
@@ -398,7 +475,10 @@ describe("ShoeTracker", () => {
     await user.click(screen.getByRole("button", { name: "Log Run" }));
 
     expect(onCreateRunCall).toHaveBeenCalledWith(
-      expect.objectContaining({ distance: createDistanceMeters(5_000) }),
+      expect.objectContaining({
+        distance: createDistanceMeters(5_000),
+        duration: createDurationSeconds(1_800),
+      }),
     );
     expect(
       await screen.findByText(/5 km in 30:00 wearing Daily Trainer/),
@@ -513,7 +593,7 @@ describe("ShoeTracker", () => {
     const user = await addShoe("Daily Trainer");
 
     await user.type(screen.getByRole("spinbutton", { name: "Distance (miles)" }), "5");
-    await user.type(screen.getByRole("textbox", { name: "Elapsed time" }), "45:30");
+    await enterElapsedDuration(user, { minutes: 45, seconds: 30 });
     await user.selectOptions(
       screen.getByRole("combobox", { name: "Running shoes" }),
       "shoe-1",
@@ -540,7 +620,7 @@ describe("ShoeTracker", () => {
       String(COMPLETED_RUN_NOTES_MAX_LENGTH),
     );
     await user.type(screen.getByRole("spinbutton", { name: "Distance (miles)" }), "5");
-    await user.type(screen.getByRole("textbox", { name: "Elapsed time" }), "45:30");
+    await enterElapsedDuration(user, { minutes: 45, seconds: 30 });
     await user.selectOptions(
       screen.getByRole("combobox", { name: "Running shoes" }),
       "shoe-1",
@@ -694,7 +774,7 @@ describe("ShoeTracker", () => {
     const user = await addShoe("Daily Trainer");
 
     await user.type(screen.getByRole("spinbutton", { name: "Distance (miles)" }), "5");
-    await user.type(screen.getByRole("textbox", { name: "Elapsed time" }), "45:30");
+    await enterElapsedDuration(user, { minutes: 45, seconds: 30 });
     await user.selectOptions(
       screen.getByRole("combobox", { name: "Running shoes" }),
       "shoe-1",
@@ -775,7 +855,7 @@ describe("ShoeTracker", () => {
     effort.append(invalidOption);
 
     await user.type(screen.getByRole("spinbutton", { name: "Distance (miles)" }), "5");
-    await user.type(screen.getByRole("textbox", { name: "Elapsed time" }), "45:30");
+    await enterElapsedDuration(user, { minutes: 45, seconds: 30 });
     await user.selectOptions(
       screen.getByRole("combobox", { name: "Running shoes" }),
       "shoe-1",

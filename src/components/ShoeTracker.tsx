@@ -14,7 +14,6 @@ import {
   createPlannedWorkoutId,
   createShoeId,
   createTrainingPlanId,
-  createDurationSeconds,
   createIanaTimeZone,
   createUtcDateTimeAtLocalNoon,
   getRunLocalDate,
@@ -38,6 +37,8 @@ import type {
   CreateShoeInput,
   UpdateCompletedRunInput,
 } from "../persistence/trainingRepositories";
+import ElapsedDurationInput from "./ElapsedDurationInput";
+import { readElapsedDuration } from "./elapsedDuration";
 
 type ShoeTrackerProps = {
   readonly distanceUnit: DistanceUnit;
@@ -248,24 +249,6 @@ function parseCompletedRunDate(date: string, timeZone: IanaTimeZone) {
   return createUtcDateTimeAtLocalNoon(localDate, timeZone);
 }
 
-function parseDuration(value: string) {
-  const parts = value.split(":").map(Number);
-  const isValidPart = parts.every((part) => Number.isInteger(part) && part >= 0);
-
-  if (!isValidPart || (parts.length !== 2 && parts.length !== 3)) {
-    throw new Error("Use MM:SS or H:MM:SS for elapsed time.");
-  }
-
-  const [hours, minutes, seconds] =
-    parts.length === 3 ? parts : [0, parts[0], parts[1]];
-
-  if (seconds >= 60 || (parts.length === 3 && minutes >= 60)) {
-    throw new Error("Seconds, and minutes after an hour, must be less than 60.");
-  }
-
-  return createDurationSeconds(hours * 3600 + minutes * 60 + seconds);
-}
-
 function formatDuration(totalSeconds: number): string {
   const hours = Math.floor(totalSeconds / 3600);
   const minutes = Math.floor((totalSeconds % 3600) / 60);
@@ -472,7 +455,7 @@ export default function ShoeTracker({
         startedAt: parseCompletedRunDate(runDate, timeZone),
         timeZone,
         distance: parseDistance(String(formData.get("distance")), distanceUnit),
-        duration: parseDuration(String(formData.get("time"))),
+        duration: readElapsedDuration(formData, "duration"),
         perceivedEffort: parsePerceivedEffort(formData.get("perceivedEffort")),
         notes: parseRunNotes(formData.get("notes")),
       });
@@ -521,10 +504,7 @@ export default function ShoeTracker({
             Distance ({distanceUnitName(distanceUnit)})
             <input name="distance" type="number" min="0.01" step="0.01" required />
           </label>
-          <label>
-            Elapsed time
-            <input name="time" type="text" placeholder="e.g. 45:30" required />
-          </label>
+          <ElapsedDurationInput legend="Elapsed time" name="duration" />
           <label>
             Running shoes
             <select name="shoe" required>
@@ -623,7 +603,7 @@ export default function ShoeTracker({
                                 String(data.get("distance")),
                                 distanceUnit,
                               ),
-                              duration: parseDuration(String(data.get("time"))),
+                              duration: readElapsedDuration(data, "duration"),
                               shoeId: createShoeId(String(data.get("shoe"))),
                               perceivedEffort:
                                 parsePerceivedEffort(data.get("perceivedEffort")) ?? null,
@@ -668,14 +648,11 @@ export default function ShoeTracker({
                             required
                           />
                         </label>
-                        <label>
-                          Edit elapsed time
-                          <input
-                            name="time"
-                            defaultValue={formatDuration(run.duration)}
-                            required
-                          />
-                        </label>
+                        <ElapsedDurationInput
+                          legend="Edit elapsed time"
+                          name="duration"
+                          defaultValue={run.duration}
+                        />
                         <label>
                           Edit running shoes
                           <select
