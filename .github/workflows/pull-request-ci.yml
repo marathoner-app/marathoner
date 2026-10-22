@@ -49,11 +49,14 @@ jobs:
           node-version: 22
           cache: npm
 
-      - name: Install dependencies
-        run: npm ci
+      - name: Install supported npm audit client
+        run: npm install --global npm@11.21.1
+
+      - name: Record npm audit client version
+        run: npm --version
 
       - name: Reject production dependency advisories
-        run: npm audit --omit=dev
+        run: npm audit --omit=dev --package-lock-only
 
   unit-tests:
     name: Unit tests
