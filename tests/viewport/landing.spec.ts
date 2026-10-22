@@ -108,6 +108,19 @@ for (const viewport of viewports) {
     const previewAreaButtons = ["Plan", "Track", "Analyze"].map((name) =>
       preview.getByRole("button", { name }),
     );
+    const followingSection = page.locator(".landing-how-it-works");
+    const followingSectionTop = await followingSection.evaluate(
+      (section) => section.getBoundingClientRect().top + window.scrollY,
+    );
+    const expectStablePreviewLayout = async () => {
+      await expect
+        .poll(() =>
+          followingSection.evaluate(
+            (section) => section.getBoundingClientRect().top + window.scrollY,
+          ),
+        )
+        .toBeCloseTo(followingSectionTop, 1);
+    };
     await expect(preview.getByRole("button")).toHaveCount(3);
     await expect(preview.getByRole("link")).toHaveCount(0);
     const demoCursor = preview.getByTestId("landing-preview-cursor");
@@ -120,8 +133,13 @@ for (const viewport of viewports) {
     }
     await previewAreaButtons[1].click();
     await expect(preview.getByText("Run recorded")).toBeVisible();
+    await expectStablePreviewLayout();
     await previewAreaButtons[2].click();
     await expect(preview.getByText("12.8 mi")).toBeVisible();
+    await expectStablePreviewLayout();
+    await previewAreaButtons[0].click();
+    await expect(preview.getByText("Today · Easy run")).toBeVisible();
+    await expectStablePreviewLayout();
     await expect(preview).toHaveAttribute("data-preview-mode", "manual");
     await expect(
       page.getByRole("heading", { name: "New account registration is closed." }),
@@ -295,3 +313,55 @@ for (const viewport of viewports) {
     await expect(webLogin).toBeFocused();
   });
 }
+
+test("keeps the surrounding page fixed during the automatic preview walkthrough", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1_280, height: 800 });
+  await page.goto("tests/viewport/landing.html");
+
+  const followingSection = page.locator(".landing-how-it-works");
+  const initialTop = await followingSection.evaluate(
+    (section) => section.getBoundingClientRect().top + window.scrollY,
+  );
+  const expectFollowingSectionToStayPut = async () => {
+    await expect
+      .poll(() =>
+        followingSection.evaluate(
+          (section) => section.getBoundingClientRect().top + window.scrollY,
+        ),
+      )
+      .toBeCloseTo(initialTop, 1);
+  };
+
+  const preview = page.getByRole("complementary", {
+    name: "A training week, connected.",
+  });
+  await expect(preview).toHaveAttribute("data-preview-mode", "automatic");
+  await expect(preview.getByRole("button", { name: "Track" })).toHaveAttribute(
+    "aria-pressed",
+    "true",
+    { timeout: 4_000 },
+  );
+  await expectFollowingSectionToStayPut();
+  await expect(
+    preview.getByRole("button", { name: "Analyze" }),
+  ).toHaveAttribute("aria-pressed", "true", { timeout: 4_000 });
+  await expectFollowingSectionToStayPut();
+});
+
+test("keeps the stabilized preview static when reduced motion is requested", async ({
+  page,
+}) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.goto("tests/viewport/landing.html");
+
+  const preview = page.getByRole("complementary", {
+    name: "A training week, connected.",
+  });
+  const activePanel = preview.getByRole("region", { name: "Plan sample" });
+
+  await expect(preview).toHaveAttribute("data-preview-mode", "reduced-motion");
+  await expect(preview.getByTestId("landing-preview-cursor")).toHaveCount(0);
+  await expect(activePanel).toHaveCSS("animation-name", "none");
+});
