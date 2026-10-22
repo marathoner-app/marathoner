@@ -297,13 +297,6 @@
   gap: 0.5rem;
 }
 
-@media (min-width: 1101px) {
-  .landing-preview {
-    gap: 1rem;
-    padding: 1.25rem clamp(1.25rem, 2vw, 1.5rem);
-  }
-}
-
 .landing-preview__run-heading {
   display: flex;
   align-items: flex-start;
@@ -588,6 +581,51 @@
   font-size: 0.9rem;
   font-weight: 700;
   overflow-wrap: anywhere;
+}
+
+@media (min-width: 1101px) {
+  .landing-preview {
+    grid-column: 9 / 13;
+    gap: 0.8rem;
+    width: min(100%, 25rem);
+    padding: 1rem 1.125rem;
+  }
+
+  .landing-preview__header {
+    gap: 0.35rem;
+  }
+
+  .landing-preview__header h2 {
+    font-size: 1.4rem;
+    line-height: 1.12;
+  }
+
+  .landing-preview__product-areas {
+    gap: 0.35rem;
+  }
+
+  .landing-preview__area-buttons {
+    gap: 0.25rem;
+    padding: 0.25rem;
+  }
+
+  .landing-preview__run-card {
+    gap: 0.75rem;
+    min-height: 13rem;
+    padding: 0.85rem;
+  }
+
+  .landing-preview__coach-note {
+    padding: 0.65rem;
+  }
+
+  .landing-preview__trend {
+    height: 3.75rem;
+  }
+
+  .landing-preview__details {
+    gap: 0.65rem 0.85rem;
+  }
 }
 
 @keyframes landing-preview-cursor-press {
