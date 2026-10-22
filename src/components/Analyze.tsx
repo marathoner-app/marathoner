@@ -2,6 +2,7 @@ import { lazy, Suspense } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import {
   calculatePace,
+  calculateRecentRunEffortPattern,
   calculateRecentRunPaceTrend,
   calculateTrainingAnalytics,
   calculateWeeklyDistanceTrend,
@@ -16,6 +17,7 @@ import {
   type Shoe,
 } from "../domain/training";
 import { formatPerceivedEffort } from "./perceivedEffort";
+import RecentRunEffortPattern from "./RecentRunEffortPattern";
 
 const WeeklyDistanceTrend = lazy(() => import("./WeeklyDistanceTrend"));
 const RecentRunPaceTrend = lazy(() => import("./RecentRunPaceTrend"));
@@ -109,6 +111,7 @@ export default function Analyze({
   const analytics = calculateTrainingAnalytics(runs, currentWeekStart, distanceUnit);
   const weeklyDistance = calculateWeeklyDistanceTrend(runs, currentWeekStart, 8);
   const recentPace = calculateRecentRunPaceTrend(runs, distanceUnit, 8);
+  const recentEffort = calculateRecentRunEffortPattern(runs, 8);
   const latestRun = findLatestRun(runs);
   const latestRunShoe = shoes.find((shoe) => shoe.id === latestRun?.shoeId);
 
@@ -211,6 +214,7 @@ export default function Analyze({
           distanceUnit={distanceUnit}
         />
       </Suspense>
+      <RecentRunEffortPattern points={recentEffort} />
     </motion.div>
   );
 }
