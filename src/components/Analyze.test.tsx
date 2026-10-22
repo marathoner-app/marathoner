@@ -9,6 +9,7 @@ import {
   createUtcDateTime,
   type CompletedRun,
   type DistanceUnit,
+  type RecentRunPacePoint,
   type WeeklyDistanceBucket,
 } from "../domain/training";
 import Analyze from "./Analyze";
@@ -27,6 +28,19 @@ vi.mock("./WeeklyDistanceTrend", () => ({
   }) => (
     <div data-testid="weekly-distance-trend">
       {distanceUnit}:{buckets.at(-1)?.distance ?? 0}
+    </div>
+  ),
+}));
+vi.mock("./RecentRunPaceTrend", () => ({
+  default: ({
+    points,
+    distanceUnit,
+  }: {
+    points: readonly RecentRunPacePoint[];
+    distanceUnit: DistanceUnit;
+  }) => (
+    <div data-testid="recent-pace-trend">
+      {distanceUnit}:{points.map((point) => Math.round(point.pace.secondsPerUnit)).join(",")}
     </div>
   ),
 }));
@@ -62,6 +76,9 @@ it("shows analytics calculated from completed runs", async () => {
   expect(await screen.findByTestId("weekly-distance-trend")).toHaveTextContent(
     "mile:8047",
   );
+  expect(await screen.findByTestId("recent-pace-trend")).toHaveTextContent(
+    "mile:480",
+  );
 });
 
 it("shows sensible values for an empty history", async () => {
@@ -80,6 +97,9 @@ it("shows sensible values for an empty history", async () => {
   expect(await screen.findByTestId("weekly-distance-trend")).toHaveTextContent(
     "mile:0",
   );
+  expect(await screen.findByTestId("recent-pace-trend")).toHaveTextContent(
+    "mile:",
+  );
 });
 
 it("uses the runner distance preference for analytics and trends", async () => {
@@ -96,6 +116,9 @@ it("uses the runner distance preference for analytics and trends", async () => {
   expect(screen.getByText("4:58 /km")).toBeInTheDocument();
   expect(await screen.findByTestId("weekly-distance-trend")).toHaveTextContent(
     "kilometer:8047",
+  );
+  expect(await screen.findByTestId("recent-pace-trend")).toHaveTextContent(
+    "kilometer:298",
   );
 });
 

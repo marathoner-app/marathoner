@@ -25,6 +25,13 @@ export interface WeeklyDistanceBucket {
   readonly runCount: number;
 }
 
+export interface RecentRunPacePoint {
+  readonly runId: CompletedRun["id"];
+  readonly runDate: DateOnly;
+  readonly startedAt: CompletedRun["startedAt"];
+  readonly pace: Pace;
+}
+
 export function calculateTotalDistance(runs: readonly CompletedRun[]): DistanceMeters {
   const total = runs.reduce((sum, run) => sum + run.distance, 0);
   return createDistanceMeters(total);
@@ -129,4 +136,31 @@ export function calculateWeeklyDistanceTrend(
       runCount: runCountByWeek[index],
     };
   });
+}
+
+export function calculateRecentRunPaceTrend(
+  runs: readonly CompletedRun[],
+  distanceUnit: DistanceUnit,
+  runCount: number,
+): RecentRunPacePoint[] {
+  if (!Number.isInteger(runCount) || runCount <= 0) {
+    throw new RangeError("Recent pace trend requires at least one run.");
+  }
+
+  return runs
+    .flatMap((run) => {
+      const pace = calculatePace(run.distance, run.duration, distanceUnit);
+      if (pace === null) return [];
+
+      return [
+        {
+          runId: run.id,
+          runDate: getRunLocalDate(run),
+          startedAt: run.startedAt,
+          pace,
+        },
+      ];
+    })
+    .sort((first, second) => first.startedAt.localeCompare(second.startedAt))
+    .slice(-runCount);
 }
