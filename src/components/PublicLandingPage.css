@@ -125,8 +125,9 @@
   isolation: isolate;
   display: grid;
   grid-template-columns: repeat(12, minmax(0, 1fr));
-  grid-template-rows: minmax(0, 1fr);
+  grid-template-rows: clamp(38rem, 72svh, 44rem);
   align-items: center;
+  column-gap: clamp(0.75rem, 1vw, 1rem);
   min-height: calc(100svh - 7.25rem);
   padding: clamp(1.5rem, 3vw, 3rem) 0;
 }
@@ -137,13 +138,14 @@
   grid-column: 1 / 5;
   grid-row: 1;
   display: grid;
+  grid-template-rows: auto auto 1fr;
+  align-self: stretch;
   gap: clamp(1rem, 2vw, 1.35rem);
   min-width: 0;
   padding: clamp(1.5rem, 3vw, 2.5rem);
   border: 1px solid var(--landing-border);
   border-radius: var(--landing-card-radius);
-  background: rgba(248, 250, 252, 0.96);
-  box-shadow: var(--landing-card-shadow);
+  background: rgba(231, 236, 248, 0.82);
 }
 
 .landing-hero h1 {
@@ -167,6 +169,7 @@
 .landing-hero__actions {
   display: flex;
   align-items: center;
+  align-self: end;
   gap: 1rem;
   margin-top: 0;
 }
@@ -240,10 +243,10 @@
 .landing-hero__media {
   position: relative;
   z-index: 1;
-  grid-column: 4 / 9;
+  grid-column: 5 / 11;
   grid-row: 1;
   min-width: 0;
-  height: clamp(34rem, 72svh, 44rem);
+  height: calc(100% - 3rem);
   overflow: hidden;
   border-radius: var(--landing-card-radius);
   background: #cbd5e1;
