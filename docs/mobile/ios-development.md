@@ -319,6 +319,13 @@ evidence. Complete that procedure against an organization-signed,
 App Attest-capable candidate; this setup section or a simulator result is not an
 accessibility pass.
 
+Issue #137 uses the dedicated
+[iOS session and account-isolation rehearsal](ios-session-isolation-rehearsal.md)
+for approved, unapproved, offline, revoked-session, account-switch, cold-start,
+late-callback, and unsupported-version evidence. Owner-device Debug checks may
+find session defects early, but they do not replace the organization-signed
+candidate gates described in that procedure.
+
 ### Launch-continuity acceptance test
 
 Run this test after a startup, authentication-bootstrap, WebView, or native

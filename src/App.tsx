@@ -38,6 +38,7 @@ type Section = (typeof sections)[number]["id"];
 
 function App() {
   const auth = useAuth();
+  const logout = auth.logout;
   const reduceMotion = useReducedMotion();
   const [activeSection, setActiveSection] = useState<Section | null>(null);
   const [logoutPending, setLogoutPending] = useState(false);
@@ -78,6 +79,23 @@ function App() {
   }, [auth.status, deletionReceipt]);
 
   useEffect(() => {
+    if (!logoutPending || deletionReceipt !== null) return;
+
+    let attemptIsCurrent = true;
+
+    void logout().catch(() => {
+      if (!attemptIsCurrent) return;
+
+      setLogoutPending(false);
+      setLogoutError("We couldn't log you out. Please try again.");
+    });
+
+    return () => {
+      attemptIsCurrent = false;
+    };
+  }, [deletionReceipt, logout, logoutPending]);
+
+  useEffect(() => {
     if (
       !accountSettingsOpen &&
       restoreAccountSettingsFocus.current &&
@@ -115,16 +133,9 @@ function App() {
     setActiveSection(null);
   };
 
-  const handleLogout = async () => {
+  const handleLogout = () => {
     setLogoutError(null);
     setLogoutPending(true);
-
-    try {
-      await auth.logout();
-    } catch {
-      setLogoutPending(false);
-      setLogoutError("We couldn't log you out. Please try again.");
-    }
   };
 
   const activeSectionDetails = sections.find(({ id }) => id === activeSection);
