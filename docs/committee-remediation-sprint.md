@@ -9,6 +9,8 @@
 - **Current trust slice:** [GitHub issue #205](https://github.com/marathoner-app/marathoner/issues/205)
 - **Strategy realignment:** [GitHub issue #223](https://github.com/marathoner-app/marathoner/issues/223)
 - **Pending external gates:** [GitHub issue #191](https://github.com/marathoner-app/marathoner/issues/191), [GitHub issue #281](https://github.com/marathoner-app/marathoner/issues/281), and [GitHub issue #122](https://github.com/marathoner-app/marathoner/issues/122)
+- **Methodology initiation decision:**
+  [Independent review required](methodology/founding-beta-review-decision.md)
 - **Related plans:** [Zero-to-beta plan](zero-to-beta-plan.md),
   [product vision](product-vision.md),
   [founding cohort plan](founding-cohort-plan.md),
@@ -109,7 +111,7 @@ Critical items can have prerequisites in earlier high-priority work.
 
 | ID | Priority | Type | Required outcome | Existing home | Gate | Status |
 | --- | --- | --- | --- | --- | --- | --- |
-| CR-01 | Critical | Safety | Name the qualified reviewer role and obtain dated approval for the supported rules, eligibility, escalation boundaries, and guidance. | #70, #107, #119, #148 | Invitations | Protocol ready; reviewers and approval pending |
+| CR-01 | Critical | Safety | Name the qualified reviewer role and obtain dated approval for the supported rules, eligibility, escalation boundaries, and guidance. | #70, #107, #119, #148 | Invitations | Independent endurance review required October 23; candidate-specific outreach authorization, reviewers, and approval pending |
 | CR-02 | Critical | Product | Ratify one narrow beta segment, participant count, adaptation boundary, client capability matrix, and explicit exclusions. | #117, #104 | Wave 00 | Complete |
 | CR-03 | Critical | Investment | Record problem evidence, alternatives, differentiation, participant commitments, and willingness-to-pay signals. | #110, #126, #211–#218, #223 | Optional post-beta commercial decision | Risk explicitly accepted October 8; participant evidence not collected |
 | CR-04 | High | Governance | Repair contradictory platform, parent, milestone, design, audit, and current-state sources. | #118, #104 | Wave 00 | Complete |
