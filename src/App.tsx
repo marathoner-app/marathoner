@@ -210,7 +210,10 @@ function App() {
         (auth.status === "signedIn" || auth.status === "signedOut") &&
         !activeSection && (
           auth.status === "signedOut" ? (
-            <PublicLandingPage supportEmail={publicSupportEmail} />
+            <PublicLandingPage
+              supportEmail={publicSupportEmail}
+              statusNotice={auth.notice}
+            />
           ) : (
             <>
               <div className="session-controls">

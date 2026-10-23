@@ -544,7 +544,7 @@ describe('App authentication state', () => {
   })
 
   it.each(['session_expired', 'account_disabled'] as const)(
-    'returns %s sessions to signed-out UI without participant data',
+    'returns %s sessions to signed-out UI with a recovery notice and no participant data',
     (errorCode) => {
       renderSignedInApp()
 
@@ -552,8 +552,17 @@ describe('App authentication state', () => {
         emitAuthError(new AuthenticationError(errorCode))
       })
 
+      act(() => {
+        emitAuthState(null)
+      })
+
       expect(mockedLogOut).toHaveBeenCalledOnce()
       expect(screen.getByRole('button', { name: 'Log in' })).toBeInTheDocument()
+      expect(screen.getByRole('alert')).toHaveTextContent(
+        errorCode === 'session_expired'
+          ? 'Your session has ended. Log in again.'
+          : 'This account is disabled. Contact support if you need help.'
+      )
       expect(
         screen.queryByTestId('training-data-provider')
       ).not.toBeInTheDocument()

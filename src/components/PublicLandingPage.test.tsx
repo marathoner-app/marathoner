@@ -23,6 +23,21 @@ const renderPublicLandingPage = () =>
   );
 
 describe("PublicLandingPage", () => {
+  it("announces a session recovery notice without opening the login dialog", () => {
+    render(
+      <PublicLandingPage
+        supportEmail="support@marathonerapp.com"
+        statusNotice="Your session has ended. Log in again."
+      />,
+    );
+
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "Your session has ended. Log in again.",
+    );
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Log in" })).toBeInTheDocument();
+  });
+
   it("keeps honest access information in a navigable public shell", () => {
     renderPublicLandingPage();
 

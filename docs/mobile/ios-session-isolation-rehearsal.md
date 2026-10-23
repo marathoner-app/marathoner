@@ -140,7 +140,7 @@ Use this table in the issue or pull request without fixture identifiers:
 | S01 approved restoration | Pending | |
 | S02 logout persistence | Pending | |
 | S03 account isolation | Pending | |
-| S04 offline restoration | Pending | |
+| S04 offline restoration | Pass | Owner development evidence is recorded in the [2026-10-23 failure-state rehearsal](evidence/2026-10-23-ios-failure-state-rehearsal.md); the cold-start observation occurred on 2026-10-22 at commit `fd7db19`. |
 | S05 revoked session | Pending | |
 | S06 unapproved account | Pending | |
 | S07 unsupported version | Blocked on active command migration | |

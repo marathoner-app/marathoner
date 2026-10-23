@@ -44,11 +44,13 @@ export default function AuthProvider({ children }: AuthProviderProps) {
         if (!subscriptionIsCurrent) return;
 
         window.clearTimeout(timeout);
-        setSession(
-          user
-            ? { status: "signedIn", user }
-            : { status: "signedOut", user: null },
-        );
+        setSession((currentSession) => {
+          if (user) return { status: "signedIn", user };
+
+          return currentSession.status === "signedOut" && currentSession.notice
+            ? currentSession
+            : { status: "signedOut", user: null };
+        });
       },
       (error) => {
         if (!subscriptionIsCurrent) return;
@@ -56,7 +58,11 @@ export default function AuthProvider({ children }: AuthProviderProps) {
         window.clearTimeout(timeout);
 
         if (requiresNewSignIn(error)) {
-          setSession({ status: "signedOut", user: null });
+          setSession({
+            status: "signedOut",
+            user: null,
+            notice: error.message,
+          });
           void logOut().catch(() => undefined);
           return;
         }
