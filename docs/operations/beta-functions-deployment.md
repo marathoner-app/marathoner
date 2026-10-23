@@ -177,6 +177,73 @@ and require exactly `submitMaterialCommand`, `resolveMaterialCommand`, and
 `requestAccountDeletion`, all in `us-central1`, with no additional export.
 Otherwise stop client testing and follow the rollback procedure.
 
+## Callable transport verification
+
+Firebase callable authentication and App Check validation run inside the
+Function handler. The underlying Cloud Run service must therefore accept the
+request far enough for that handler to reject an unauthenticated caller. Public
+transport does not make a Marathoner command anonymously usable: the handler's
+authentication, App Check, membership, ownership, and revision checks remain
+the application authorization boundary.
+
+Immediately after the inventory check, send an empty callable envelope to each
+of the three reviewed URLs from `functions:list`:
+
+```sh
+curl --silent --show-error \
+  --header 'Content-Type: application/json' \
+  --data '{"data":{}}' \
+  https://us-central1-marathonerapp-beta.cloudfunctions.net/submitMaterialCommand
+```
+
+Repeat the same request for `resolveMaterialCommand` and
+`requestAccountDeletion`. Each endpoint must return JSON with the typed
+Marathoner result `authentication_error` / `authentication-required`. An HTML
+`403 Forbidden` response is a platform rejection before Marathoner code runs;
+do not begin client testing while any endpoint has that result.
+
+### Domain Restricted Sharing recovery
+
+The Marathoner organization inherits the legacy Domain Restricted Sharing
+constraint. If a create reports that Firebase could not set the invoker IAM
+policy, do not weaken that organization policy and do not add an `allUsers` IAM
+binding. For only the three reviewed Cloud Run services, open **Security**,
+select **Allow public access**, review the authentication-only diff, and deploy
+the change. In this configuration the console disables the Cloud Run invoker
+IAM check, which is the documented path for a public endpoint when Domain
+Restricted Sharing prevents an `allUsers` grant.
+
+Require each service to return to healthy status, confirm the selected access
+setting, and repeat the empty-envelope transport test above. If the setting
+cannot be applied or the response remains a platform HTML 403, stop and keep
+the Functions out of client use.
+
+An interrupted first create can leave healthy service resources without the
+required callable transport setting. A later Firebase update does not prove
+that the missed create-time invoker step was repaired. With rollback-owner
+approval, delete only the three named beta exports, verify the remote inventory
+is empty, and recreate them from the same clean reviewed commit using the
+guarded scoped command. Do not change Firestore rules, Authentication users,
+or beta fixtures as part of that recovery.
+
+## Deployment-artifact retention
+
+After the first successful create, set the reviewed seven-day cleanup policy
+for Functions container artifacts in the deployment region:
+
+```sh
+npx firebase --interactive functions:artifacts:setpolicy \
+  --project marathonerapp-beta \
+  --location us-central1 \
+  --days 7
+```
+
+Keep the interactive confirmation and require Firebase to report that the
+policy was created successfully. Do not add `--force`, change the retention
+window, or broaden the location without a separate review. This policy removes
+old deployment images; it does not delete the active Functions, Firestore data,
+Authentication users, or application records.
+
 ## Completed-run smoke and negative proof
 
 Before allowing the Track-provider migration to merge, use the reviewed beta
