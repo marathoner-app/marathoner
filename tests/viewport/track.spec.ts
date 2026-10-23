@@ -16,6 +16,71 @@ async function expectMinimumTouchTargets(
   }
 }
 
+async function expectEvenDurationSegments(
+  segments: readonly [Locator, Locator, Locator],
+  textSizeLabel: string,
+) {
+  const boxes = await Promise.all(segments.map((segment) => segment.boundingBox()));
+  expect(boxes, `duration segments should be visible at ${textSizeLabel}`).not.toContain(
+    null,
+  );
+
+  const [hours, minutes, seconds] = boxes as [
+    NonNullable<(typeof boxes)[number]>,
+    NonNullable<(typeof boxes)[number]>,
+    NonNullable<(typeof boxes)[number]>,
+  ];
+  const widths = [hours.width, minutes.width, seconds.width];
+  const gaps = [
+    minutes.x - (hours.x + hours.width),
+    seconds.x - (minutes.x + minutes.width),
+  ];
+
+  expect(
+    Math.max(...widths) - Math.min(...widths),
+    `duration segments should have equal widths at ${textSizeLabel}: ${widths.join(", ")}`,
+  ).toBeLessThanOrEqual(1);
+  expect(
+    Math.abs(gaps[0] - gaps[1]),
+    `duration segments should have equal gaps at ${textSizeLabel}: ${gaps.join(", ")}`,
+  ).toBeLessThanOrEqual(1);
+}
+
+async function expectTrackerCardsToContainControls(
+  page: Page,
+  textSizeLabel: string,
+) {
+  const cards = page.locator(".entry, .shoe-tracking");
+
+  for (let index = 0; index < (await cards.count()); index += 1) {
+    const card = cards.nth(index);
+    const overflow = await card.evaluate((element) => {
+      const cardBounds = element.getBoundingClientRect();
+      return Array.from(
+        element.querySelectorAll<HTMLElement>("h2, h3, input, select, textarea, button"),
+      )
+        .filter((child) => {
+          const style = window.getComputedStyle(child);
+          if (style.display === "none" || style.visibility === "hidden") return false;
+          const bounds = child.getBoundingClientRect();
+          return (
+            bounds.left < cardBounds.left - 0.5 ||
+            bounds.right > cardBounds.right + 0.5
+          );
+        })
+        .map((child) => {
+          const bounds = child.getBoundingClientRect();
+          return `${child.tagName.toLowerCase()} (${Math.round(bounds.left)}..${Math.round(bounds.right)}) ${child.textContent?.trim() ?? child.getAttribute("name") ?? ""}`;
+        });
+    });
+
+    expect(
+      overflow,
+      `Track card ${index + 1} should contain its headings and controls at ${textSizeLabel}`,
+    ).toEqual([]);
+  }
+}
+
 async function exerciseTrackWorkflow(page: Page, textSizeLabel: string) {
   const shoeName = page.getByPlaceholder("Shoe Name");
   const startingDistance = page.getByLabel(/Distance already on this shoe/);
@@ -38,6 +103,7 @@ async function exerciseTrackWorkflow(page: Page, textSizeLabel: string) {
     "Track",
     `after adding a shoe at ${textSizeLabel}`,
   );
+  await expectTrackerCardsToContainControls(page, textSizeLabel);
 
   const runDate = page.getByRole("textbox", { name: "Run date" });
   const runDistance = page.getByRole("spinbutton", { name: "Distance (miles)" });
@@ -51,6 +117,10 @@ async function exerciseTrackWorkflow(page: Page, textSizeLabel: string) {
   const runDurationSeconds = runDuration.getByRole("spinbutton", {
     name: "Elapsed time seconds",
   });
+  await expectEvenDurationSegments(
+    [runDurationHours, runDurationMinutes, runDurationSeconds],
+    textSizeLabel,
+  );
   const runningShoes = page.getByRole("combobox", { name: "Running shoes" });
   const plannedWorkout = page.getByRole("combobox", { name: "Planned workout" });
   const perceivedEffort = page.getByRole("combobox", {
@@ -164,6 +234,7 @@ async function exerciseTrackWorkflow(page: Page, textSizeLabel: string) {
     "Track",
     `while editing a run at ${textSizeLabel}`,
   );
+  await expectTrackerCardsToContainControls(page, textSizeLabel);
   await page.getByRole("button", { name: "Cancel" }).click();
 
   await deleteRun.scrollIntoViewIfNeeded();

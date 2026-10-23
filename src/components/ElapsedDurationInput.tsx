@@ -11,6 +11,12 @@ type ElapsedDurationInputProps = {
   readonly defaultValue?: DurationSeconds;
 };
 
+const segmentLabels = {
+  hours: "Hr",
+  minutes: "Min",
+  seconds: "Sec",
+} as const;
+
 export default function ElapsedDurationInput({
   legend,
   name,
@@ -25,7 +31,7 @@ export default function ElapsedDurationInput({
       <div className="elapsed-duration-segments">
         {durationSegments.map((segment) => (
           <label key={segment}>
-            <span>{segment[0]?.toUpperCase() + segment.slice(1)}</span>
+            <span>{segmentLabels[segment]}</span>
             <input
               aria-label={`${legend} ${segment}`}
               name={segmentName(name, segment)}

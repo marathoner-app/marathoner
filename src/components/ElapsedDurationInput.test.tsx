@@ -35,6 +35,9 @@ describe("ElapsedDurationInput", () => {
       name: "Elapsed time seconds",
     });
 
+    expect(within(group).getByText("Hr")).toBeVisible();
+    expect(within(group).getByText("Min")).toBeVisible();
+    expect(within(group).getByText("Sec")).toBeVisible();
     expect(hours).toHaveAttribute("inputmode", "numeric");
     expect(hours).not.toHaveAttribute("max");
     expect(minutes).toHaveAttribute("max", "59");
