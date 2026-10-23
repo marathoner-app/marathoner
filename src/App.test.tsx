@@ -1,7 +1,7 @@
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import type { HTMLAttributes, ReactNode } from 'react'
+import { useEffect, type HTMLAttributes, type ReactNode } from 'react'
 import App from './App'
 import AuthProvider, { authSessionTimeoutMs } from './auth/AuthProvider'
 import { staleNoticeDelayMs } from './training/useDelayedStaleNotice'
@@ -88,9 +88,20 @@ vi.mock('./services/accountDeletionService', () => ({
 }))
 
 vi.mock('./training/TrainingDataProvider', () => ({
-  default: ({ children }: { children: ReactNode }) => (
-    <div data-testid="training-data-provider">{children}</div>
-  )
+  default: function MockTrainingDataProvider({
+    children
+  }: {
+    children: ReactNode
+  }) {
+    useEffect(
+      () => () => {
+        sessionLifecycleEvents.push('training-provider-unmounted')
+      },
+      []
+    )
+
+    return <div data-testid="training-data-provider">{children}</div>
+  }
 }))
 
 const trainingMock = vi.hoisted(() => ({
@@ -193,6 +204,7 @@ type AuthSubscription = {
   onError: (error: Error) => void
 }
 let authSubscriptions: AuthSubscription[]
+let sessionLifecycleEvents: string[]
 
 const sectionTransitions = [
   ['Plan', 'Plan Your Workouts'],
@@ -221,6 +233,7 @@ function renderSignedInApp() {
 beforeEach(() => {
   vi.clearAllMocks()
   authSubscriptions = []
+  sessionLifecycleEvents = []
   trainingMock.status = 'current'
   trainingMock.staleReasons = []
   trainingMock.profile = completeRunnerProfile
@@ -364,6 +377,23 @@ describe('App authentication state', () => {
     })
 
     expect(screen.getByRole('button', { name: 'Log in' })).toBeInTheDocument()
+  })
+
+  it('unmounts training state before ending the Firebase session', async () => {
+    const user = userEvent.setup()
+    mockedLogOut.mockImplementation(async () => {
+      sessionLifecycleEvents.push('firebase-sign-out')
+    })
+    renderSignedInApp()
+
+    await user.click(screen.getByRole('button', { name: 'Log out' }))
+
+    await waitFor(() =>
+      expect(sessionLifecycleEvents).toEqual([
+        'training-provider-unmounted',
+        'firebase-sign-out'
+      ])
+    )
   })
 
   it('shows a calm error when logout fails', async () => {
