@@ -299,6 +299,8 @@ function AuthenticatedExperience({
   const training = useTrainingData();
   const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
   const [onboardingDeferred, setOnboardingDeferred] = useState(false);
+  const runnerProfileTriggerRef = useRef<HTMLButtonElement>(null);
+  const restoreRunnerProfileFocus = useRef(false);
   const onboardingComplete = isRunnerProfileOnboardingComplete(training.profile);
   const activePlan = useMemo(
     () => training.plans.find((plan) => plan.status === "active") ?? null,
@@ -327,9 +329,17 @@ function AuthenticatedExperience({
   const sectionTransitionDuration = reduceMotion ? 0 : 0.25;
 
   const closeOnboarding = () => {
+    restoreRunnerProfileFocus.current = true;
     setIsOnboardingOpen(false);
     setOnboardingDeferred(true);
   };
+
+  useEffect(() => {
+    if (showOnboarding || !restoreRunnerProfileFocus.current) return;
+
+    runnerProfileTriggerRef.current?.focus();
+    restoreRunnerProfileFocus.current = false;
+  }, [showOnboarding]);
 
   return (
     <>
@@ -369,6 +379,7 @@ function AuthenticatedExperience({
         <>
           <div className="runner-profile-entry">
             <button
+              ref={runnerProfileTriggerRef}
               type="button"
               disabled={!training.canWrite}
               onClick={() => setIsOnboardingOpen(true)}
@@ -394,8 +405,6 @@ function AuthenticatedExperience({
                 ref={(element) => onRegisterTrigger(id, element)}
                 type="button"
                 className="section-trigger"
-                aria-controls={`${id}-panel`}
-                aria-expanded="false"
                 onClick={() => onOpenSection(id)}
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}

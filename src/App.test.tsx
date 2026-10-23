@@ -647,12 +647,15 @@ describe('App training sections', () => {
 
     await user.click(screen.getByRole('button', { name: 'Continue later' }))
 
-    expect(screen.getByRole('button', { name: 'Resume runner setup' })).toBeInTheDocument()
+    const resumeSetup = screen.getByRole('button', {
+      name: 'Resume runner setup'
+    })
+    await waitFor(() => expect(resumeSetup).toHaveFocus())
     expect(
       screen.getByRole('navigation', { name: 'Training sections' })
     ).toBeInTheDocument()
 
-    await user.click(screen.getByRole('button', { name: 'Resume runner setup' }))
+    await user.click(resumeSetup)
 
     expect(
       screen.getByRole('dialog', { name: 'Tell us where you are starting' })
@@ -671,6 +674,32 @@ describe('App training sections', () => {
     expect(screen.getByRole('button', { name: 'Plan' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Track' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Analyze' })).toBeInTheDocument()
+    for (const sectionName of ['Plan', 'Track', 'Analyze']) {
+      const sectionTrigger = screen.getByRole('button', { name: sectionName })
+      expect(sectionTrigger).not.toHaveAttribute('aria-expanded')
+      expect(sectionTrigger).not.toHaveAttribute('aria-controls')
+    }
+  })
+
+  it('returns focus to the runner profile trigger after canceling setup', async () => {
+    const user = userEvent.setup()
+    renderSignedInApp()
+
+    const editProfile = screen.getByRole('button', {
+      name: 'Edit runner profile'
+    })
+    await user.click(editProfile)
+    expect(
+      screen.getByRole('dialog', { name: 'Review your starting point' })
+    ).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'Cancel' }))
+
+    await waitFor(() =>
+      expect(
+        screen.getByRole('button', { name: 'Edit runner profile' })
+      ).toHaveFocus()
+    )
   })
 
   it('keeps a reconnecting snapshot readable without flashing technical recovery UI', () => {
