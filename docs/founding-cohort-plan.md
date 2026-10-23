@@ -323,6 +323,12 @@ proposition.
 
 ## Validation signals
 
+The versioned definitions, formulas, evidence owners, and Proceed / Refine /
+Pause cutoffs are precommitted in the
+[founding-cohort decision thresholds](founding-cohort-decision-thresholds.md).
+That document is the authority when a narrative description here is less
+specific.
+
 ### Activation
 
 A participant is activated when they:
