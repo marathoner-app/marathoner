@@ -53,6 +53,39 @@ const firebaseCodeMap: Record<string, AuthenticationErrorCode> = {
   "auth/network-request-failed": "network_unavailable",
 };
 
+const authSessionMarkerKey = "marathoner:auth-session-present";
+
+const authSessionStorage = (): Storage | null =>
+  typeof window === "undefined" ? null : window.localStorage;
+
+const markAuthSessionPresent = (): void => {
+  try {
+    authSessionStorage()?.setItem(authSessionMarkerKey, "true");
+  } catch {
+    // Browser storage must never prevent authentication from succeeding.
+  }
+};
+
+const clearAuthSessionMarker = (): void => {
+  try {
+    authSessionStorage()?.removeItem(authSessionMarkerKey);
+  } catch {
+    // Browser storage must never prevent authentication from signing out.
+  }
+};
+
+const consumeUnexpectedAuthSessionEnd = (): boolean => {
+  try {
+    const storage = authSessionStorage();
+    if (storage?.getItem(authSessionMarkerKey) !== "true") return false;
+
+    storage.removeItem(authSessionMarkerKey);
+    return true;
+  } catch {
+    return false;
+  }
+};
+
 export class AuthenticationError extends Error {
   readonly code: AuthenticationErrorCode;
   readonly firebaseCode?: string;
@@ -93,7 +126,10 @@ export const requiresNewSignIn = (error: unknown): boolean =>
 
 const validateRestoredUser = async (user: User): Promise<AuthUser> => {
   try {
-    await getIdToken(user);
+    const deviceIsOnline =
+      typeof navigator === "undefined" || navigator.onLine;
+    await getIdToken(user, deviceIsOnline);
+    markAuthSessionPresent();
     return { uid: user.uid, email: user.email };
   } catch (error) {
     if (
@@ -138,6 +174,7 @@ export const requestPasswordReset = async (email: string): Promise<void> => {
 };
 
 export const logOut = async (): Promise<void> => {
+  clearAuthSessionMarker();
   try {
     await signOut(getFirebaseAuth());
   } catch (error) {
@@ -176,6 +213,15 @@ export const subscribeToAuthState = (
       authEventGeneration = generation;
 
       if (user === null) {
+        if (consumeUnexpectedAuthSessionEnd()) {
+          const error = new AuthenticationError("session_expired");
+          if (onError) {
+            onError(error);
+          } else {
+            onChange(null);
+          }
+          return;
+        }
         onChange(null);
         return;
       }
