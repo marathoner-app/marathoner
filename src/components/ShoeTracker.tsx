@@ -311,6 +311,9 @@ export default function ShoeTracker({
   const editRunButtonRefs = useRef(
     new Map<CompletedRunId, HTMLButtonElement>(),
   );
+  const editRunDateInputRefs = useRef(
+    new Map<CompletedRunId, HTMLInputElement>(),
+  );
   const editButtonToRestoreRef = useRef<CompletedRunId | null>(null);
   const activeShoes = shoes.filter((shoe) => shoe.status === "active");
   const availableWorkouts = plannedWorkouts.filter(
@@ -325,12 +328,17 @@ export default function ShoeTracker({
   );
 
   useEffect(() => {
+    if (editingRunId !== null) {
+      editRunDateInputRefs.current.get(editingRunId)?.focus();
+      return;
+    }
+
     const runId = editButtonToRestoreRef.current;
-    if (editingRunId !== null || runId === null) return;
+    if (runId === null) return;
 
     editRunButtonRefs.current.get(runId)?.focus();
     editButtonToRestoreRef.current = null;
-  }, [editingRunId, runs]);
+  }, [editingRunId]);
 
   const closeRunEditor = (runId: CompletedRunId) => {
     editButtonToRestoreRef.current = runId;
@@ -608,6 +616,13 @@ export default function ShoeTracker({
                         <label>
                           Edit run date
                           <input
+                            ref={(input) => {
+                              if (input === null) {
+                                editRunDateInputRefs.current.delete(run.id);
+                              } else {
+                                editRunDateInputRefs.current.set(run.id, input);
+                              }
+                            }}
                             aria-describedby={`edit-run-date-help-${run.id}`}
                             name="date"
                             type="date"
@@ -727,6 +742,7 @@ export default function ShoeTracker({
                             }
                           }}
                           type="button"
+                          aria-label={`Edit run from ${getRunLocalDate(run)}`}
                           onClick={() => {
                             setError(null);
                             setActionStatus(null);

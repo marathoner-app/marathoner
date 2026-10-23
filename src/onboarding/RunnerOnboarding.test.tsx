@@ -43,6 +43,38 @@ beforeEach(() => {
 });
 
 describe("RunnerOnboarding", () => {
+  it("moves focus into the modal, contains it, and closes with Escape", async () => {
+    const user = userEvent.setup();
+    render(
+      <RunnerOnboarding profile={null} onSave={onSave} onClose={onClose} />,
+    );
+
+    const dialog = screen.getByRole("dialog", {
+      name: "Tell us where you are starting",
+    });
+    const heading = screen.getByRole("heading", {
+      name: "Tell us where you are starting",
+    });
+
+    expect(dialog).toHaveAttribute("aria-modal", "true");
+    expect(dialog).toHaveAccessibleDescription(
+      /These answers give Marathoner the context/i,
+    );
+    await waitFor(() => expect(heading).toHaveFocus());
+
+    await user.tab();
+    expect(
+      screen.getByRole("button", { name: "Continue later" }),
+    ).toHaveFocus();
+    await user.tab({ shift: true });
+    expect(
+      screen.getByRole("button", { name: "Complete setup" }),
+    ).toHaveFocus();
+
+    await user.keyboard("{Escape}");
+    expect(onClose).toHaveBeenCalledOnce();
+  });
+
   it("explains the intake and saves a complete first-marathon profile", async () => {
     const user = userEvent.setup();
     render(

@@ -1,7 +1,9 @@
 import {
+  useLayoutEffect,
   useRef,
   useState,
   type FormEvent,
+  type KeyboardEvent,
 } from "react";
 import type {
   DistanceUnit,
@@ -77,6 +79,8 @@ export default function RunnerOnboarding({
   const [errors, setErrors] = useState<RunnerProfileDraftErrors>({});
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const dialogRef = useRef<HTMLElement>(null);
+  const headingRef = useRef<HTMLHeadingElement>(null);
   const errorSummaryRef = useRef<HTMLDivElement>(null);
   const wasComplete = isRunnerProfileOnboardingComplete(profile);
   const unitLabel = distanceLabel(draft.preferredDistanceUnit);
@@ -154,6 +158,36 @@ export default function RunnerOnboarding({
 
   const hasErrors = Object.keys(errors).length > 0 || submitError !== null;
 
+  useLayoutEffect(() => {
+    headingRef.current?.focus();
+  }, []);
+
+  const handleDialogKeyDown = (event: KeyboardEvent<HTMLElement>) => {
+    if (event.key === "Escape" && !isSaving) {
+      event.preventDefault();
+      onClose();
+      return;
+    }
+
+    if (event.key !== "Tab" || dialogRef.current === null) return;
+
+    const focusableElements = Array.from(
+      dialogRef.current.querySelectorAll<HTMLElement>(
+        'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [href], [tabindex]:not([tabindex="-1"])',
+      ),
+    );
+    const firstElement = focusableElements[0];
+    const lastElement = focusableElements.at(-1);
+
+    if (event.shiftKey && document.activeElement === firstElement) {
+      event.preventDefault();
+      lastElement?.focus();
+    } else if (!event.shiftKey && document.activeElement === lastElement) {
+      event.preventDefault();
+      firstElement?.focus();
+    }
+  };
+
   function focusErrorSummary() {
     if (typeof window.requestAnimationFrame === "function") {
       window.requestAnimationFrame(() => errorSummaryRef.current?.focus());
@@ -165,19 +199,22 @@ export default function RunnerOnboarding({
 
   return (
     <section
+      ref={dialogRef}
       className="onboarding-panel"
       role="dialog"
       aria-modal="true"
       aria-labelledby="onboarding-title"
+      aria-describedby="onboarding-description"
+      onKeyDown={handleDialogKeyDown}
     >
       <div className="onboarding-card">
         <header className="onboarding-header">
           <div>
             <p className="onboarding-eyebrow">Runner setup</p>
-            <h1 id="onboarding-title">
+            <h1 ref={headingRef} id="onboarding-title" tabIndex={-1}>
               {wasComplete ? "Review your starting point" : "Tell us where you are starting"}
             </h1>
-            <p>
+            <p id="onboarding-description">
               These answers give Marathoner the context to evaluate a first-marathon
               path. They do not create a plan or promise a finish time yet.
             </p>
