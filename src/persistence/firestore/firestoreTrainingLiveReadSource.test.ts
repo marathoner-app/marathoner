@@ -283,6 +283,43 @@ describe('Firestore training live-read source', () => {
     ])
   })
 
+  it('refreshes the derived empty workout source when empty plans reach the server', () => {
+    const { backend, batches } = createHarness()
+    const plansListener = backend.latestCollection(plansCollectionPath(ownerId))
+
+    plansListener.onSnapshot(
+      collectionSnapshot([], { fromCache: true, hasPendingWrites: false }),
+    )
+    plansListener.onSnapshot(collectionSnapshot())
+
+    expect(batches).toEqual([
+      [
+        expect.objectContaining({
+          source: 'plans',
+          value: [],
+          origin: 'cache',
+        }),
+        expect.objectContaining({
+          source: 'workouts',
+          value: [],
+          origin: 'cache',
+        }),
+      ],
+      [
+        expect.objectContaining({
+          source: 'plans',
+          value: [],
+          origin: 'server',
+        }),
+        expect.objectContaining({
+          source: 'workouts',
+          value: [],
+          origin: 'server',
+        }),
+      ],
+    ])
+  })
+
   it('rebuilds changed workout listeners and ignores callbacks from the old set', () => {
     const { backend, batches } = createHarness()
     const plansListener = backend.latestCollection(plansCollectionPath(ownerId))

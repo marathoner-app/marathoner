@@ -403,7 +403,16 @@ export function createFirestoreTrainingLiveReadSourceWithBackend({
                 samePlanIds(currentPlanIds, planIds)
               ) {
                 currentPlansEvent = plansEvent
-                if (workoutGroupReady) emit([plansEvent])
+                if (workoutGroupReady) {
+                  emit(
+                    plans.length === 0
+                      ? [
+                          plansEvent,
+                          sourceSnapshot('workouts', [], snapshot.metadata),
+                        ]
+                      : [plansEvent],
+                  )
+                }
                 return
               }
 
