@@ -4,7 +4,7 @@ import type { AuthUser } from "../services/authService";
 export type AuthSession =
   | { status: "loading"; user: null }
   | { status: "error"; user: null; message: string }
-  | { status: "signedOut"; user: null }
+  | { status: "signedOut"; user: null; notice?: string }
   | { status: "signedIn"; user: AuthUser };
 
 export type AuthContextValue = AuthSession & {

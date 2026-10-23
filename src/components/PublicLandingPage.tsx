@@ -8,10 +8,12 @@ import PublicLandingPlatforms from "./PublicLandingPlatforms";
 
 type PublicLandingPageProps = {
   supportEmail?: string;
+  statusNotice?: string;
 };
 
 export default function PublicLandingPage({
   supportEmail,
+  statusNotice,
 }: PublicLandingPageProps) {
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const activeLoginTriggerRef = useRef<HTMLButtonElement | null>(null);
@@ -44,6 +46,11 @@ export default function PublicLandingPage({
           isLoginOpen={isLoginOpen}
           onLoginOpen={openLogin}
         />
+        {statusNotice && (
+          <p className="auth-message auth-error" role="alert">
+            {statusNotice}
+          </p>
+        )}
         <div
           id="landing-main-content"
           className="landing-page__content"

@@ -1,8 +1,9 @@
 # iOS accessibility and critical-failure rehearsal
 
-- **Status:** Procedure approved; physical execution remains open
+- **Status:** Owner development evidence is in progress; the external candidate and non-owner passes remain blocked
 - **Procedure issue:** [#336](https://github.com/marathoner-app/marathoner/issues/336)
 - **Acceptance issue:** [#140](https://github.com/marathoner-app/marathoner/issues/140)
+- **Current failure-state evidence:** [2026-10-23 owner development rehearsal](evidence/2026-10-23-ios-failure-state-rehearsal.md)
 - **Current signing blocker:** [#281](https://github.com/marathoner-app/marathoner/issues/281)
 - **Companion setup:** [iOS development](ios-development.md)
 
@@ -246,7 +247,7 @@ when the repository does not yet provide a safe induction path.
 | --- | --- | --- |
 | F01 | Startup/bootstrap failure, using the approved #137 or native-startup test method | The branded recovery state replaces indefinite loading, is announced as an alert, and offers a working retry. |
 | F02 | Empty approved account with no profile, plan, runs, or shoes | Each surface distinguishes empty from loading or failure and exposes the next valid action. |
-| F03 | Put the device in Airplane Mode after a current training view has loaded | The last in-memory view is labeled potentially stale, material writes are disabled, and Retry connection is reachable. |
+| F03 | Put the device in Airplane Mode after a current training view has loaded | After the brief reconnect grace period, the last in-memory view is labeled as review-only, material writes are disabled, and editing resumes automatically after server freshness returns. Do not add a manual retry control to a connection state that already recovers automatically. |
 | F04 | Launch while offline using the approved account and existing session | The app reaches a bounded recovery or honest stale state; it never implies that a mutation was saved or queued. |
 | F05 | Expired or revoked session, induced by the approved #137 procedure on a disposable account | Private data disappears, a new sign-in is required, and stale callbacks cannot restore the prior account. |
 | F06 | Account switch between two approved fictional accounts under #137 | No data, pending result, form value, or announcement from the first account appears in the second. |
