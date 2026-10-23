@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import Title from "./components/Title";
 import Subtitle from "./components/Subtitle";
@@ -19,8 +19,14 @@ import {
 import type { AccountDeletionRequestAcceptedResult } from "./domain/materialCommands/contract";
 import { selectNextPlannedWorkout } from "./domain/training";
 import NextWorkoutSummary from "./components/NextWorkoutSummary";
+import { isBetaRunCommandRehearsalMode } from "./components/betaRunCommandRehearsalMode";
 
 const publicSupportEmail = "kevin@marathonerapp.com";
+const BetaRunCommandRehearsal = isBetaRunCommandRehearsalMode(
+  import.meta.env.MODE,
+)
+  ? lazy(() => import("./components/BetaRunCommandRehearsalLive"))
+  : null;
 
 const sections = [
   { id: "plan", label: "Plan", title: "Plan Your Workouts" },
@@ -388,6 +394,19 @@ function AuthenticatedExperience({
               </motion.button>
             ))}
           </nav>
+          {BetaRunCommandRehearsal && (
+            <Suspense
+              fallback={
+                <div className="training-home-status" role="status">
+                  <p>Loading the beta command rehearsal...</p>
+                </div>
+              }
+            >
+              <BetaRunCommandRehearsal
+                completedRunIds={training.runs.map(({ id }) => id)}
+              />
+            </Suspense>
+          )}
         </>
       )}
 

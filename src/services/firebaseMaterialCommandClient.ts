@@ -38,7 +38,7 @@ function getCallables() {
   return callables
 }
 
-const transport: MaterialCommandTransport = {
+export const firebaseMaterialCommandTransport: MaterialCommandTransport = {
   async submit(command) {
     return (await getCallables().submit(command)).data
   },
@@ -49,5 +49,5 @@ const transport: MaterialCommandTransport = {
 
 export const materialCommandClient = createMaterialCommandClient({
   isOnline: () => navigator.onLine,
-  transport,
+  transport: firebaseMaterialCommandTransport,
 })

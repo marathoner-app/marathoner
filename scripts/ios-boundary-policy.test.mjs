@@ -246,7 +246,12 @@ describe('iOS boundary policy', () => {
         'startup-error.html',
         Buffer.from('Marathoner could not start. Reload Marathoner'),
       ],
-      ['assets/app.js', Buffer.from('project="marathonerapp-beta"')],
+      [
+        'assets/app.js',
+        Buffer.from(
+          'project="marathonerapp-beta" Live run-command rehearsal',
+        ),
+      ],
     ])
 
     expect(
@@ -288,6 +293,57 @@ describe('iOS boundary policy', () => {
         capacitorRuntimeConfig: JSON.stringify({}),
       }),
     ).toContain('iOS bundle contains marathoner-d9bf9')
+  })
+
+  it('requires the rehearsal only in the beta iOS bundle', () => {
+    const files = new Map([
+      [
+        'index.html',
+        Buffer.from(
+          '<main data-marathoner-startup>Loading your session...<a data-startup-recovery>Reload</a></main><script>10000</script><script src="./assets/app.js"></script>',
+        ),
+      ],
+      [
+        'startup-error.html',
+        Buffer.from('Marathoner could not start. Reload Marathoner'),
+      ],
+      ['assets/app.js', Buffer.from('project="marathonerapp-beta"')],
+    ])
+    const runtimeConfig = JSON.stringify({
+      appId: 'com.marathonerapp.marathoner',
+      appName: 'Marathoner',
+      webDir: 'dist-ios',
+      ios: { backgroundColor: '#ffffff', contentInset: 'always' },
+      server: { errorPath: 'startup-error.html' },
+      plugins: {
+        SplashScreen: {
+          backgroundColor: '#ffffffff',
+          launchAutoHide: true,
+          launchShowDuration: 10_000,
+        },
+      },
+    })
+
+    expect(
+      findCopiedBundleViolations({
+        builtFiles: files,
+        copiedFiles: new Map(files),
+        environmentName: 'beta',
+        capacitorRuntimeConfig: runtimeConfig,
+      }),
+    ).toContain('beta iOS bundle is missing the live run-command rehearsal')
+
+    files.set(
+      'assets/app.js',
+      Buffer.from('project="marathoner-d9bf9" Live run-command rehearsal'),
+    )
+    expect(
+      findCopiedBundleViolations({
+        builtFiles: files,
+        copiedFiles: new Map(files),
+        capacitorRuntimeConfig: runtimeConfig,
+      }),
+    ).toContain('non-beta iOS bundle contains the live run-command rehearsal')
   })
 
   it('rejects beta configuration and a changed copied asset', () => {
