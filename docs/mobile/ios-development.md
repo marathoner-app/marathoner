@@ -212,6 +212,21 @@ window and open `ios/App/App.xcodeproj` directly. Do not recreate the project.
 4. Sign out, force-quit, reopen, and confirm no approved-account state or
    training data appears.
 
+For #347's completed-run proof, return to the approved fictional account in the
+same `ios-beta` Release build. After training data reaches its ready state and
+the onboarding overlay is closed, the signed-in home shows **Live run-command
+rehearsal**. This panel is compiled only into `ios-beta`; the iOS boundary check
+requires it in beta and rejects it from development. It does not switch the
+normal Track provider, which remains owned by #346.
+
+Select **Run reversible beta check** once. The panel submits a fixed fictional
+unplanned 5 km run, waits for the signed-in Firestore listener to observe the
+server record, deletes that exact receipt, and waits for the listener to
+confirm the record is absent. A pass must report all four stages without
+displaying a command ID, completed-run ID, account identifier, or payload. If
+the panel says cleanup is required, retry the exact synthetic-run cleanup and
+do not remove the fixture account until the record is absent.
+
 Record the date, iOS and Xcode versions, source commit, beta project ID,
 approved ready-state result, denied permission-state result, and cleanup result
 in the issue or pull request. Do not record account emails, UIDs, passwords,

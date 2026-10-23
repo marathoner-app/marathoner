@@ -38,6 +38,8 @@ const alwaysForbiddenBundleValues = [
   'Disposable architecture spike',
 ]
 
+const betaRunCommandRehearsalMarker = 'Live run-command rehearsal'
+
 const forbiddenTrackedExtensions = [
   '.cer',
   '.key',
@@ -478,6 +480,18 @@ export function findCopiedBundleViolations({
     violations.push(
       `iOS bundle does not contain the ${environmentName} project`,
     )
+  }
+  if (
+    environmentName === 'beta' &&
+    !builtText.includes(betaRunCommandRehearsalMarker)
+  ) {
+    violations.push('beta iOS bundle is missing the live run-command rehearsal')
+  }
+  if (
+    environmentName !== 'beta' &&
+    builtText.includes(betaRunCommandRehearsalMarker)
+  ) {
+    violations.push('non-beta iOS bundle contains the live run-command rehearsal')
   }
   for (const forbiddenValue of [
     ...environmentBoundary.forbiddenValues,

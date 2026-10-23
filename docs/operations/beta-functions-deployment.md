@@ -247,7 +247,8 @@ Authentication users, or application records.
 ## Completed-run smoke and negative proof
 
 Before allowing the Track-provider migration to merge, use the reviewed beta
-web or `ios-beta` build and one fictional approved account to:
+`ios-beta` Release build and one fictional approved account. Use its
+beta-only **Live run-command rehearsal** panel to:
 
 1. submit one unplanned `run.complete` command and retain only its redacted
    result status;
