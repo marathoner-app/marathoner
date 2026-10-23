@@ -3,11 +3,12 @@
 - **Status:** Active
 - **Started:** September 22, 2026
 - **Owner:** Kevin Tulloch
+- **Current-state header reviewed:** October 23, 2026
 - **Review scope:** The Marathoner product repository, excluding Creator Radar
 - **Parent tracker:** [GitHub issue #104](https://github.com/marathoner-app/marathoner/issues/104)
-- **Current trust slice:** [GitHub issue #204](https://github.com/marathoner-app/marathoner/issues/204)
+- **Current trust slice:** [GitHub issue #205](https://github.com/marathoner-app/marathoner/issues/205)
 - **Strategy realignment:** [GitHub issue #223](https://github.com/marathoner-app/marathoner/issues/223)
-- **Pending external gates:** [GitHub issue #191](https://github.com/marathoner-app/marathoner/issues/191) and [GitHub issue #201](https://github.com/marathoner-app/marathoner/issues/201)
+- **Pending external gates:** [GitHub issue #191](https://github.com/marathoner-app/marathoner/issues/191), [GitHub issue #281](https://github.com/marathoner-app/marathoner/issues/281), and [GitHub issue #122](https://github.com/marathoner-app/marathoner/issues/122)
 - **Related plans:** [Zero-to-beta plan](zero-to-beta-plan.md),
   [product vision](product-vision.md),
   [founding cohort plan](founding-cohort-plan.md),

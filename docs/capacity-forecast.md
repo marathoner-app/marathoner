@@ -1,6 +1,7 @@
 # Capacity-based founding-beta forecast
 
-- **Status:** Active product-first forecast
+- **Status:** Active product-first forecast; calibrated snapshot, not a live
+  issue inventory
 - **As of:** October 8, 2026
 - **Owner:** Kevin Tulloch
 - **Baseline issue:** [#116](https://github.com/marathoner-app/marathoner/issues/116)
@@ -9,6 +10,22 @@
 - **Entity-path update:** October 21, 2026; [#280](https://github.com/marathoner-app/marathoner/issues/280)
 - **Master tracker:** [#104](https://github.com/marathoner-app/marathoner/issues/104)
 - **Scope:** Marathoner beta critical path; Creator Radar is excluded
+
+## How to interpret this snapshot
+
+This forecast preserves the October 8 scope, estimates, and measured-velocity
+calibration. Work merged after that date—including live-read synchronization,
+additional iOS and accessibility evidence, and later trust slices—appears in
+live issues and milestones but has not been silently subtracted from the tables
+below. February 21, 2027 remains the recorded likely invitation forecast until
+the next formal reforecast; it is not a claim that the October 8 issue inventory
+is still current line by line.
+
+The operating partner added in October contributes relationship development,
+participant discovery, channel learning, interviews, and feedback. That work
+may reduce recruitment uncertainty or create product changes, but it is not
+counted as owner-developer capacity. A sustained change in technical capacity,
+scope, gates, or external waits triggers the existing reforecast rules.
 
 ## Decision summary
 
@@ -308,7 +325,7 @@ They must be started as early as their input package allows.
 | --- | --- | --- | --- |
 | Qualified reviewer availability | 2–6 calendar weeks to identify and schedule | Start #191 immediately; overlap the wait with non-prescriptive implementation and trust work | If no qualified reviewer is committed when #70 is ready, choose the non-prescriptive fallback or move the date |
 | Rules and content review | 1–3 calendar weeks per complete review packet | Owner preparation is in #119, #134, and #135 estimates; reviewer elapsed time is separate | Unapproved high-risk rules or content cannot ship |
-| California entity formation, D-U-N-S synchronization, Apple organization enrollment, signing, and App Store Connect setup | 1–3 calendar weeks after accepted formation as a planning allowance | Execute [#281](https://github.com/marathoner-app/marathoner/issues/281) as early as practical; overlap the external wait with product work rather than waiting for Wave 04 | The Personal Team cannot supply the intended seller identity or App Attest profile; unresolved enrollment blocks #204 and external distribution |
+| California entity formation, D-U-N-S synchronization, Apple organization enrollment, signing, and App Store Connect setup | 1–3 calendar weeks after accepted formation as a planning allowance | Execute [#281](https://github.com/marathoner-app/marathoner/issues/281) as early as practical; overlap the external wait with product work rather than waiting for Wave 04 | The Personal Team cannot supply the intended seller identity or App Attest profile; unresolved enrollment blocks #205 beta proof and external distribution |
 | First external TestFlight review | 1 week likely; 2 weeks conservative including correction allowance | Prioritize #122 early enough to overlap review with the remaining iOS work | No external invitation without an approved build |
 | Non-owner device rehearsal | 1–3 calendar weeks to schedule | Book after the first installable candidate exists; owner execution effort is in #122 and #140 | A failed critical journey creates a blocking issue |
 
@@ -374,8 +391,8 @@ The recommended response is therefore:
    expectation;
 3. use February 21, 2027 as the current likely forecast and August 22, 2027 as
    the conservative bound;
-4. prioritize the product waves while #191, #204, and #122 advance when their
-   trust and external dependencies permit;
+4. prioritize the product waves while #191, #281/#205, and #122 advance when
+   their trust and external dependencies permit;
 5. keep product payments outside beta and condition bounded adaptation on
    qualified review rather than payment evidence; and
 6. reforecast after Wave 02 or four additional delivery weeks.

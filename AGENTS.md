@@ -50,9 +50,11 @@ understand every line they commit.
   `Resolves #<issue-number>` in the pull request body.
 - Do not merge until required checks pass and all review conversations are
   resolved.
-- Required approving reviews remain at zero while this is a solo repository.
-  The maintainer performs the final diff review and merge. Raise the rule to one
-  approving review after a collaborator is added.
+- Required approving reviews remain at zero while there is one active technical
+  maintainer. The maintainer performs the final diff review and merge. Raise the
+  rule to one approving review only after another technical maintainer can
+  provide meaningful independent code review; non-engineering partner access
+  alone does not trigger that change.
 
 ## Code expectations
 

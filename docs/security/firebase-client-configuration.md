@@ -42,8 +42,8 @@ would not turn them into secrets.
 | Cloud Firestore | The default `nam5` database is active. The live rule editor is byte-equivalent after whitespace normalization to the tracked `firestore.rules`. | Current rules enforce owner-path access and schema version 1. The separate [beta membership candidate](firebase-beta-membership.md) adds verified-email and approved-membership access but remains undeployed; #121 and the server-command migration must close the remaining beta rule boundary. |
 | Realtime Database | The console offers **Create Database**; no database exists. | Remain disabled. |
 | Cloud Storage | Storage is not configured and the Spark project cannot enable it without billing. | Remain disabled unless a future approved feature and ruleset require it. |
-| App Check | Development and beta each have a distinct Fraud Defense web registration and App Attest iOS registration. One owner-only development iPhone debug token exists for local dogfooding; its value remains outside Git, and no beta, production, or CI debug token exists. Client initialization now fails closed before Firebase services, while live browser and paid-team physical-iPhone token evidence remain pending and API enforcement remains off. | The [registration record](app-check-provider-registration.md) is the authority for provider identity, native configuration selection, debug-token custody, and the #204–#206 rollout gates; the [initialization record](app-check-client-initialization.md) separates implemented behavior from pending live proof. |
-| GitHub Pages | The repository custom domain is registered as `marathonerapp.com`; authoritative apex and `www` DNS is in place. The currently deployed build still uses the legacy `/marathoner/` asset base until #162 merges. | Do not treat the custom domain as live until the root-path workflow deploys, GitHub provisions the certificate, HTTPS enforcement is enabled, and the post-deployment smoke test passes. |
+| App Check | Development and beta each have a distinct Fraud Defense web registration and App Attest iOS registration. One owner-only development iPhone debug token exists for local dogfooding; its value remains outside Git, and no beta, production, or CI debug token exists. The #204 fail-closed initialization and supported development proof are complete; paid-team beta App Attest evidence and API enforcement remain pending. | The [registration record](app-check-provider-registration.md) is the authority for provider identity, native configuration selection, debug-token custody, and the #204–#206 rollout; the [initialization record](app-check-client-initialization.md) separates completed development behavior from the #281/#205 beta proof. |
+| GitHub Pages | The supported web surface is live at `marathonerapp.com` from the root-path build. Authoritative apex and `www` DNS is in place, and the legacy `/marathoner/` project URL redirects to the custom domain. | Keep Pages on GitHub Actions, preserve HTTPS and the canonical redirect, and use the [custom-domain runbook](../operations/github-pages-custom-domain.md) for regression checks and recovery. |
 | Repository credentials | Current tracked files and historical filenames contain no Marathoner service-account file, private key, password, Firebase CLI token, or administrative credential. | Continue to prohibit privileged credentials in source. Use workload identity or provider-managed operator sessions. |
 | GitHub secret controls | Secret scanning and push protection were disabled at audit start and are now enabled for the public repository. Alerts #1 and #2 identify the development and beta browser keys; alerts #3 and #4 identify the versioned beta and development Apple client keys. | All four were resolved as documented false positives after their exact public-client locations and intended Firebase registrations were verified. |
 
@@ -145,9 +145,10 @@ before client and observation evidence would be premature. The mobile ADR
 selects Capacitor. Issue #202 approved and compiled the pinned native App Attest
 bridge. Issue #203 then registered distinct development and beta Fraud Defense
 web providers plus App Attest iOS providers and added fail-closed native
-configuration selection. Issue #204 implements the App Check-before-services
-bootstrap, bounded error/retry UI, and production App Attest entitlement. No
-live browser or physical-iPhone token has been proven yet, and enforcement
+configuration selection. Issue #204 implemented the App Check-before-services
+bootstrap, bounded error/retry UI, production App Attest entitlement, and
+supported development evidence before closing on October 22. The paid-team beta
+App Attest profile and monitored beta traffic remain unproved, and enforcement
 remains off. The
 [registration record](app-check-provider-registration.md) distinguishes those
 facts from the remaining rollout; the
@@ -300,9 +301,9 @@ Additional evidence recorded on 2026-10-21 for issue #162:
    `www` after saving and reopening; domain verification remained enabled.
 4. The existing Pages application still initialized, authenticated, and loaded
    owner-scoped Firestore data after the browser-key change.
-5. The custom-domain application smoke test remains pending until the root-path
-   build is merged and deployed; the existing-origin result is not a substitute
-   for that post-deployment evidence.
+5. The root-path build later merged and became the supported deployment at
+   `marathonerapp.com`; the legacy project URL now redirects there. Issue #162
+   is closed, and the operational runbook owns regression checks and recovery.
 
 Any later console change must update this record or its owning issue. A Firebase
 setting is not complete merely because the application still builds locally.

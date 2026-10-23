@@ -1,11 +1,15 @@
 # App Check client initialization
 
-- **Status:** Implementation and automated boundaries complete; owner-only
-  development iPhone debug proof passed; live browser and beta App Attest proof
-  pending
+- **Status:** #204 implementation closeout complete; owner-only development
+  browser and iPhone debug proof passed; paid-team beta App Attest, observation,
+  and enforcement remain in #281 and #205–#206
 - **Implementation date:** 2026-10-06
-- **Tracking issue:**
-  [#204](https://github.com/marathoner-app/marathoner/issues/204)
+- **Implementation issue:**
+  [#204](https://github.com/marathoner-app/marathoner/issues/204) (closed
+  October 22, 2026)
+- **Remaining rollout:**
+  [#281](https://github.com/marathoner-app/marathoner/issues/281) and
+  [#205–#206](https://github.com/marathoner-app/marathoner/issues/205)
 - **Hardening issue:**
   [#270](https://github.com/marathoner-app/marathoner/issues/270)
 - **Parent:**
@@ -145,8 +149,7 @@ before the physical-iPhone App Attest acceptance test can pass. The approved
 [entity and Apple organization-enrollment path](../operations/legal-entity-and-apple-enrollment.md)
 is tracked in [#281](https://github.com/marathoner-app/marathoner/issues/281).
 The development Debug workflow can support owner dogfooding, but it is not App
-Attest evidence and cannot satisfy #204, #205, TestFlight, or an external-beta
-gate.
+Attest evidence and cannot satisfy #205, TestFlight, or an external-beta gate.
 
 ## Evidence and remaining proof
 
@@ -171,11 +174,11 @@ sign-in, and reached the Firestore-backed onboarding state. No token value,
 credential, device identifier, or beta configuration was recorded. This proves
 the #351 development exception only; it is not App Attest evidence.
 
-The final #204 proof still requires:
+The paid-team beta rollout still requires:
 
 1. enroll or select an Apple Developer Program team, enable App Attest for the
    explicit App ID, and regenerate the development profile;
-2. run the development build on the physical iPhone and prove App Attest token,
+2. run the release-shaped build on a physical iPhone and prove App Attest token,
    sign-in, Firestore read, sign-out, persistence, cold start, and the bounded
    failure/retry state;
 3. create a separately custodied development-local browser debug token only if
@@ -184,10 +187,13 @@ The final #204 proof still requires:
 4. confirm live browser Auth and Firestore traffic carries valid App Check
    tokens; and
 5. reconfirm Authentication, Firestore, and Functions enforcement remains off
-   before closing #204.
+   through the #205 observation and rollback window.
 
-Issue #205 owns observation and rollback rehearsal; issue #206 alone may enable
-beta enforcement after the evidence passes.
+Issue #281 owns the paid-team provisioning dependency, #205 owns the remaining
+beta token evidence plus observation and rollback rehearsal, and #206 alone may
+enable beta enforcement after that evidence passes. Closing #204 recorded the
+implemented fail-closed bootstrap and supported development evidence; it did
+not waive these external-beta gates.
 
 ## References
 

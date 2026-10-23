@@ -4,7 +4,8 @@
 - **Decision date:** October 21, 2026
 - **Planning issue:** [#280](https://github.com/marathoner-app/marathoner/issues/280)
 - **Execution issue:** [#281](https://github.com/marathoner-app/marathoner/issues/281)
-- **App Attest dependency:** [#204](https://github.com/marathoner-app/marathoner/issues/204)
+- **App Attest rollout:** [#281](https://github.com/marathoner-app/marathoner/issues/281)
+  then [#205](https://github.com/marathoner-app/marathoner/issues/205)
 - **TestFlight dependency:** [#122](https://github.com/marathoner-app/marathoner/issues/122)
 
 This record is an operating decision, not legal, tax, or trademark advice. It
@@ -101,8 +102,8 @@ Issue #281 owns execution in this order:
     website, organization email, two-factor authentication, and the $99 annual
     membership fee. Apple displays the legal entity name as the seller.
 14. After enrollment, enable App Attest for the explicit App ID, regenerate the
-    development and distribution profiles, complete #204's signed-device proof,
-    and resume #122's external TestFlight work.
+    development and distribution profiles, complete #205's beta signed-device
+    proof and observation window, and resume #122's external TestFlight work.
 
 Apple does not accept a DBA, trade name, or branch as the organization being
 enrolled. Its [program-enrollment requirements](https://developer.apple.com/help/account/membership/program-enrollment/)

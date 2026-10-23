@@ -57,8 +57,9 @@ The production-only audit now reports zero findings. In particular:
 - the reviewed Functions dependencies do not carry a production audit finding.
 
 This removes the dependency-audit blocker from the reviewed code graph. It does
-not authorize a deployment by itself: #204 and #205 retain App Check,
-observation, rollback, and operator-approval ownership.
+not authorize a deployment by itself: #205 retains beta App Check proof,
+observation, rollback, and operator-approval ownership after #204's completed
+client implementation.
 
 ## Remaining development-tool findings
 

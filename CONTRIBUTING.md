@@ -1,10 +1,14 @@
 # Contributing to Marathoner
 
-Marathoner uses a small, issue-led workflow so the current owner can understand
-every line that reaches `main`. The same workflow is available to future
-contributors, but no delivery plan assumes that another contributor joins.
+Marathoner uses a small, issue-led workflow so the current technical maintainer
+can understand every line that reaches `main`. The same workflow is available
+to contributors. The operating partner may also use issues to review strategy,
+record privacy-safe field observations, and propose changes without writing
+code. The technical delivery plan still assumes one owner-developer.
 
 The [README](README.md) explains the current application and local commands.
+First-time strategic reviewers should follow the numbered
+[operating partner guide](docs/operating-partner-guide.md).
 The [zero-to-beta plan](docs/zero-to-beta-plan.md) defines the delivery gates,
 and the [committee remediation sprint](docs/committee-remediation-sprint.md)
 records the active evidence backlog. Creator Radar is not a Marathoner product
@@ -169,8 +173,10 @@ must:
 5. verify that no secret, participant data, or unrelated change is present; and
 6. record any follow-up risk as a focused issue rather than an informal note.
 
-Raise the ruleset to one required approving review after an active collaborator
-is added and can provide meaningful independent review.
+Raise the ruleset to one required approving review after another active
+technical maintainer is added and can provide meaningful independent code
+review. Repository access or non-engineering partnership alone does not satisfy
+that condition.
 
 ## 9. Merge and update local `main`
 

@@ -2,6 +2,7 @@
 
 - **Status:** Active product strategy
 - **Effective:** October 8, 2026
+- **Operating-role update:** October 23, 2026
 - **Owner:** Kevin Tulloch
 - **Tracking issue:** [#223](https://github.com/marathoner-app/marathoner/issues/223)
 - **Founding-beta contract:** [#117](https://github.com/marathoner-app/marathoner/issues/117)
@@ -62,7 +63,7 @@ Issues [#215](https://github.com/marathoner-app/marathoner/issues/215) through
 the beta critical path. They may be reopened or replaced only through a later
 recorded commercial-priority decision.
 
-## Feedback without a pre-product interview program
+## Field discovery without a pre-product commercial gate
 
 The founding beta still requires human feedback. The distinction is that
 participants respond to a functional product rather than being asked to prove
@@ -70,6 +71,19 @@ the product deserves to be built. The cohort should report defects, confusing
 behavior, comprehension, usefulness, trust, safety signals, and support burden.
 Optional feedback and privacy-respecting product telemetry may inform later
 commercial research without turning payment proof into a release gate.
+
+An operating partner may begin relationship development, in-person problem
+discovery, expectation checks, prototype walkthroughs, and product-feedback
+conversations before the beta is ready. That work can improve language,
+segment assumptions, channel choices, and roadmap priorities. It is an input to
+product judgment, not a substitute for a functional beta, qualified methodology
+review, consent, safety evidence, or observed payment behavior.
+
+Friendly or informal conversations are not represented as qualified research,
+beta enrollment, demand proof, or willingness-to-pay evidence. Any systematic
+collection of identifiable responses must use the approved private research
+boundary and appropriate consent. Only aggregate counts, anonymized themes,
+public materials, and resulting decisions belong in this public repository.
 
 ## Revisit triggers
 

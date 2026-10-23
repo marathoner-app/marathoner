@@ -23,7 +23,7 @@ adults who already run consistently and are preparing for a first marathon.
 
 ## Rationale
 
-The current application is a foundation-stage prototype. Its methodology and
+The current application is a deployed pre-beta product. Its methodology and
 safety guidance are not approved, participant invitation operations and full
 privacy controls are not complete, and deletion operations have not been
 rehearsed.
