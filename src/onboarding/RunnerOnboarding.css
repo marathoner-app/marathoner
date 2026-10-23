@@ -79,7 +79,7 @@
 .onboarding-question {
   min-width: 0;
   margin: 0;
-  padding: 1.15rem;
+  padding: clamp(16px, 1.15rem, 20px);
   border: 1px solid #cbd5e1;
   border-radius: 0.85rem;
   background: #fff;
@@ -91,11 +91,23 @@
 
 .onboarding-question > label:first-child,
 .onboarding-question legend {
+  max-width: 100%;
   padding: 0;
   color: #111827;
   font-size: 1.05rem;
   font-weight: 750;
   line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+
+.onboarding-question legend {
+  float: left;
+  width: 100%;
+  margin: 0 0 0.8rem;
+}
+
+.onboarding-question legend + * {
+  clear: both;
 }
 
 .onboarding-question label span,
@@ -118,6 +130,8 @@
 .onboarding-question textarea {
   box-sizing: border-box;
   width: 100%;
+  max-width: 100%;
+  min-width: 0;
   min-height: 2.75rem;
   padding: 0.6rem 0.7rem;
   border: 1px solid #64748b;
@@ -126,6 +140,22 @@
   color: #111827;
   font: inherit;
   line-height: 1.3;
+}
+
+.onboarding-question input[type="date"] {
+  display: block;
+  inline-size: 100%;
+  min-inline-size: 0;
+  max-inline-size: 100%;
+  appearance: none;
+  -webkit-appearance: none;
+  overflow: hidden;
+}
+
+.onboarding-question input[type="date"]::-webkit-date-and-time-value {
+  inline-size: 100%;
+  min-inline-size: 0;
+  text-align: left;
 }
 
 .onboarding-question textarea {
@@ -212,6 +242,7 @@
 .onboarding-three-column-row label {
   display: grid;
   gap: 0.35rem;
+  min-width: 0;
   color: #1f2937;
   font-weight: 650;
 }
@@ -311,7 +342,11 @@
 
 @media (max-width: 768px) {
   .onboarding-card {
-    padding: 1rem;
+    padding: clamp(16px, 1rem, 20px);
+  }
+
+  .onboarding-header h1 {
+    overflow-wrap: anywhere;
   }
 
   .onboarding-header,
@@ -328,7 +363,7 @@
   .onboarding-option-grid,
   .onboarding-date-row,
   .onboarding-three-column-row {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .onboarding-question-wide {

@@ -15,7 +15,7 @@
   box-sizing: border-box;
   flex: 1;
   min-width: 0;
-  padding: 1.5rem;
+  padding: clamp(16px, 1.5rem, 24px);
   border-radius: 8px;
   background: #f9f9f9;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
@@ -34,6 +34,8 @@
 .tracker button {
   box-sizing: border-box;
   width: 100%;
+  max-width: 100%;
+  min-width: 0;
   min-height: 2.75rem;
   font: inherit;
 }
@@ -48,6 +50,14 @@
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
+  min-width: 0;
+}
+
+.entry h2,
+.entry h3,
+.shoe-tracking h3 {
+  max-width: 100%;
+  overflow-wrap: anywhere;
 }
 
 .tracker ul {
@@ -92,6 +102,7 @@
   display: grid;
   gap: 0.35rem;
   width: 100%;
+  min-width: 0;
   font-weight: 700;
   text-align: left;
 }
@@ -99,6 +110,9 @@
 .elapsed-duration-input {
   box-sizing: border-box;
   width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  min-inline-size: 0;
   margin: 0;
   padding: 0;
   border: 0;
@@ -114,15 +128,33 @@
 .elapsed-duration-segments {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 0.65rem;
+  gap: clamp(8px, 0.35rem, 12px);
+  width: 100%;
+  min-width: 0;
 }
 
 .elapsed-duration-segments label {
+  box-sizing: border-box;
+  grid-template-columns: minmax(0, 1fr);
+  width: auto;
+  max-width: none;
   min-width: 0;
-  font-size: 0.85rem;
+  font-size: clamp(16px, 0.85rem, 24px);
+}
+
+.elapsed-duration-segments label span {
+  max-width: 100%;
+  white-space: nowrap;
+  text-align: center;
 }
 
 .elapsed-duration-segments input {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  inline-size: 100%;
+  max-inline-size: 100%;
+  min-inline-size: 0;
   min-width: 0;
   text-align: center;
 }
