@@ -2,7 +2,7 @@
 
 **Status:** Active direction
 
-**Last updated:** October 8, 2026
+**Last updated:** October 23, 2026
 
 **Product owner:** Kevin Tulloch
 
@@ -49,6 +49,19 @@ qualified experts before they are treated as production-ready.
 Marathoner will develop original, expert-reviewed methodology. It will not
 depend on reproducing a proprietary plan or presenting the founder as a
 professional coach.
+
+## Operating model
+
+Kevin remains the product owner and active technical maintainer. An operating
+partner contributes through in-person relationships, potential-user discovery,
+recruitment-channel learning, interviews, and feedback synthesis. Both people
+may challenge the product, segment, positioning, cohort, and roadmap; current
+final decision, merge, release, privacy, and security authority remains defined
+in [governance](../GOVERNANCE.md).
+
+The operating role does not assign Android implementation or add unmeasured
+engineering capacity to the delivery forecast. It creates a deliberate path for
+field evidence to change product decisions through focused issues.
 
 ## Primary user
 

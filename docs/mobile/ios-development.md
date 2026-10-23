@@ -431,12 +431,14 @@ they define and pin the reproducible native graph.
 
 Issue #202 linked the App Check bridge without invoking it. Issue #203
 registered the distinct development and beta native apps and implemented exact,
-fail-closed configuration selection. Issue #204 now initializes native App
-Attest before JavaScript Firebase services, validates the bridged token through
-a `CustomProvider`, and requires the production App Attest entitlement. The
-current Personal Team profile does not contain that capability, so a paid Apple
-Developer Program profile and physical-iPhone token proof remain required.
+fail-closed configuration selection. Issue #204 closed after implementing
+native App Attest before JavaScript Firebase services, validating the bridged
+token through a `CustomProvider`, requiring the production App Attest
+entitlement, and recording supported development proof. The current Personal
+Team profile does not contain that capability, so a paid Apple Developer
+Program profile and beta physical-iPhone token proof remain required.
 Issue [#281](https://github.com/marathoner-app/marathoner/issues/281) owns the
 California entity and Apple organization enrollment that unblock that profile.
-Observation and enforcement remain in #205 and #206; implementation or an
-unsigned compile is not evidence that an API rejects missing tokens.
+Beta proof, observation, and enforcement remain in #205 and #206;
+implementation or an unsigned compile is not evidence that an API rejects
+missing tokens.

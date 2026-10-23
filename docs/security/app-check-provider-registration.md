@@ -1,9 +1,8 @@
 # App Check provider registration
 
-- **Status:** Development and beta web/iOS providers registered; client
-  initialization implemented and owner-only development iPhone debug proof
-  passed; browser and beta App Attest proof, observation, and enforcement remain
-  open
+- **Status:** Development and beta web/iOS providers registered; #204 client
+  initialization closed and owner-only development proof passed; paid-team beta
+  App Attest proof, observation, and enforcement remain open
 - **Registration date:** 2026-10-06
 - **Tracking issue:**
   [#203](https://github.com/marathoner-app/marathoner/issues/203)
@@ -58,7 +57,7 @@ token; none of those belong in Git.
 ## Debug-token custody
 
 Debug providers are an exception for local and CI testing, not a beta runtime
-fallback. Issue #204 may create them only under this policy:
+fallback. Development debug tokens may be created only under this policy:
 
 | Scope | Identity and storage | Owner | Rotation and revocation |
 | --- | --- | --- | --- |
@@ -93,19 +92,20 @@ console review left enforcement off:
 
 The rollout remains deliberately staged:
 
-1. #204 initializes the correct provider before Firebase services are acquired,
-   proves release builds exclude debug mode, and fails closed on mismatches.
+1. #204 closed after initializing the correct provider before Firebase services
+   are acquired, proving release builds exclude debug mode, and failing closed
+   on mismatches.
 2. #205 observes valid/invalid traffic and rehearses rollback without blocking
    users.
 3. #206 alone may enable beta enforcement after the observation evidence passes
    and must prove rejected-client behavior for Authentication, Firestore, and
    Functions.
 
-Do not treat the four registered rows or the #204 client implementation as live
-token evidence. The
+Do not treat the four registered rows or the #204 client implementation as
+paid-team beta token evidence. The
 [client initialization record](app-check-client-initialization.md) documents
-the remaining browser and Apple provisioning proof. No backend rejects missing
-tokens while enforcement is off.
+the completed development proof and the remaining Apple provisioning and beta
+rollout work. No backend rejects missing tokens while enforcement is off.
 
 ## Console verification evidence
 

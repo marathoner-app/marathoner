@@ -120,7 +120,9 @@ Issue #205 owns the first deployment. Before running any command in the next
 section, its reviewer must confirm all of the following:
 
 1. #143 records no unresolved deployment-blocking production advisory.
-2. #204 has passed its supported browser and physical-iPhone App Check proof.
+2. #204's completed implementation and development evidence have been
+   rechecked, #281 has supplied the paid-team profile, and the #205 release
+   candidate has passed browser and physical-iPhone App Attest proof.
 3. The console approval record above is complete and freshly rechecked.
 4. Firebase CLI is signed in as the dedicated domain administrator.
 5. The checked-out commit is the reviewed release candidate with no local

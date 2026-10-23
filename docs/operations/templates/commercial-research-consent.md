@@ -19,7 +19,7 @@ illness, pain signals, missed training, work, family, or another disruption
 makes an existing schedule uncertain. You are invited to a research session
 about that problem and two fictional product concepts.
 
-Marathoner is a foundation-stage prototype. This session does not provide a
+Marathoner is a deployed pre-beta product. This session does not provide a
 training plan, medical care, diagnosis, injury-prevention service, or
 individual recommendation. The concepts may show fictional hold, repeat,
 reschedule, reconsider, or no-change choices only so we can learn whether the

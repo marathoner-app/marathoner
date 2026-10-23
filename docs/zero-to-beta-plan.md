@@ -1,7 +1,7 @@
 # Marathoner zero-to-beta plan
 
 - **Status:** Active delivery plan
-- **Last updated:** October 21, 2026
+- **Last updated:** October 23, 2026
 - **Product owner and current implementer:** Kevin Tulloch
 - **Decision checkpoint:** January 15, 2027; it is the optimistic invitation floor, precedes the likely forecast, and is not a delivery promise
 - **Master tracker:** [GitHub issue #104](https://github.com/marathoner-app/marathoner/issues/104)
@@ -122,7 +122,9 @@ a first-class product surface and is not replaced by the iOS work.
   distribution path unless a later recorded decision changes it.
 - Android external distribution, integrations, payments, AI planning, GPS,
   push notifications, and health-platform data are excluded.
-- No delivery commitment assumes another contributor joins.
+- No technical delivery commitment assumes another maintainer joins. The
+  operating partner's field work is tracked separately from engineering
+  throughput.
 
 No payment or refundable-reservation flow is required for the founding beta.
 Any future payment research requires a separate activation decision and the
@@ -406,12 +408,21 @@ weaken the evidence gate or rename unfinished work as beta-ready.
 
 ## Working model
 
-The repository is currently planned for one owner-developer working around a
-full-time job, marathon training, and personal commitments. Issues should
-therefore fit a focused 60-to-90-minute slice when practical, make dependencies
-visible, and leave every line understandable to the owner.
+The technical roadmap is currently planned for one owner-developer working
+around a full-time job, marathon training, and personal commitments. Issues
+should therefore fit a focused 60-to-90-minute slice when practical, make
+dependencies visible, and leave every line understandable to the owner.
+
+An operating partner now owns a non-engineering lane: in-person relationships,
+potential-participant discovery, recruitment-channel learning, interviews, and
+feedback synthesis. That work can run alongside product delivery and can
+propose changes to any assumption. It does not add engineering throughput to
+the forecast, authorize beta invitations, replace qualified review, or make
+formal commercial proof a release gate.
 
 The plan does not reserve Android or any other area for a hypothetical future
-contributor. If someone joins, ownership follows demonstrated capacity and an
-explicit issue assignment; dates and gates remain unchanged until the roadmap
-is deliberately revised.
+technical contributor. Android remains a post-founding-beta follow-on rather
+than the operating partner's assigned implementation lane. If another technical
+maintainer joins, ownership follows demonstrated capacity and an explicit issue
+assignment; dates and gates remain unchanged until the roadmap is deliberately
+revised.

@@ -1,7 +1,7 @@
 # Founding cohort recruitment and validation plan
 
 - **Status:** Active founding-beta plan
-- **Last updated:** October 8, 2026
+- **Last updated:** October 23, 2026
 - **Product owner:** Kevin Tulloch
 - **Related issue:** [#35](https://github.com/marathoner-app/marathoner/issues/35)
 - **Invitation milestone:** [06A Founding Cohort Invitations](https://github.com/marathoner-app/marathoner/milestone/2)
@@ -38,6 +38,25 @@ The first objective is learning, not download volume or revenue. A small group
 that uses the product for several weeks and provides honest feedback is more
 valuable than a large number of unqualified registrations.
 
+## Operating responsibilities
+
+- **Product owner and technical maintainer:** Kevin owns the implemented
+  product, repository and release workflow, security and privacy posture,
+  invitation-readiness decision, and final decisions under the current
+  governance model.
+- **Operating partner:** leads trusted in-person relationship development,
+  local-channel learning, potential-participant discovery, face-to-face
+  interviews and feedback, expectation testing, and privacy-safe synthesis of
+  recurring themes.
+- **Shared work:** challenge the participant definition, value proposition,
+  cohort offer, recruitment sequence, feedback questions, and roadmap; convert
+  proposed changes into focused GitHub issues before they become commitments.
+
+This is an operating split, not an assignment of Android or other engineering
+work. It does not add technical throughput to the capacity forecast, grant
+production or participant-data access, or open invitations before the product
+and responsibility gates pass.
+
 ## Product use before commercial proof
 
 The [product-first decision](product-first-beta-decision.md) allows founding
@@ -45,6 +64,13 @@ beta invitations after the functional, methodology, safety, privacy, security,
 integrity, support, and distribution gates pass. Formal interviews,
 refundable reservations, and a paid concierge experiment are optional future
 commercial research, not prerequisites for the cohort.
+
+Relationship building and non-prescriptive field discovery may begin before
+the cohort. Those conversations may test problems, language, expectations,
+prototype comprehension, and channel fit, but they do not count as beta use,
+qualified methodology review, demand proof, or a release gate. Identifiable or
+systematically collected responses require the approved private operating and
+consent boundary.
 
 The live cohort supplies product evidence: defects, onboarding completion,
 comprehension, usefulness, adaptation trust, safety signals, engagement, and
@@ -168,6 +194,11 @@ recommendations.
 Channels should be tested in this order. Each stage should teach the team what
 language, concerns, and product promises resonate before a broader stage
 begins.
+
+The operating partner leads relationship development and in-person learning
+across these channels. The product owner confirms that any invitation,
+prototype claim, data collection, or public material matches the current
+product, consent, privacy, safety, and readiness boundaries.
 
 ### 1. Personal network and introductions
 
@@ -390,8 +421,9 @@ their name.
 ## Open questions
 
 - Which qualified experts will review the training rules and safety guidance?
-- When should the single-operator Google Workspace research boundary expand,
-  and what additional live-product adapter will #124 require?
+- When should the current private research boundary expand beyond one operator,
+  and what access, consent, retention, and live-product controls must be proved
+  first?
 - Which local clubs, stores, and races are appropriate first partners?
 - What evidence should permit the first paid acquisition experiment?
 - How should participation end when a runner graduates, withdraws, or changes

@@ -86,7 +86,8 @@ Local development, CI defaults, the selected iOS development build, and the
 current GitHub Pages deployment remain explicitly pinned to development. The
 pull-request iOS job checks both environment bundles with non-live placeholder
 keys, but it does not contact beta. App Check providers are registered and the
-client now initializes them before Firebase services, but live browser and
-paid-team physical-iPhone token evidence remain pending and enforcement remains
-off. The remaining #204 proof, #205–#206 rollout, completion of the #162
-custom-domain deployment, and invitation controls stay separate gates.
+client now initializes them before Firebase services. The #204 implementation
+and supported development proof are complete, while paid-team beta App Attest,
+the #205–#206 observation/enforcement rollout, and invitation controls stay
+separate gates. The live custom-domain Pages deployment remains pinned to the
+development project; its publication did not activate beta.

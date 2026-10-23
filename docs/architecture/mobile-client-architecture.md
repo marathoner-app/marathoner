@@ -214,11 +214,12 @@ beta native apps plus web providers and added exact native-configuration
 selection. The
 [registration record](../security/app-check-provider-registration.md) captures
 the public identities, debug-token custody, and unenforced console state. Issue
-#204 implements the native provider before the JavaScript Firebase clients, a
-bounded fail-closed startup state, and the production App Attest entitlement.
-Its physical-device proof is blocked until an Apple Developer Program
-provisioning profile carries that entitlement. Issues #205 and #206 own
-observation, rollback, and staged enforcement.
+#204 closed after implementing the native provider before the JavaScript
+Firebase clients, a bounded fail-closed startup state, the production App Attest
+entitlement, and supported development proof. Paid-team beta App Attest remains
+blocked until #281 supplies an Apple Developer Program profile with that
+entitlement. Issues #205 and #206 own beta proof, observation, rollback, and
+staged enforcement.
 
 A custom App Check provider and token-minting backend are outside this decision
 because they create a new security service. Do not build one without a separate

@@ -1,8 +1,7 @@
 # GitHub Pages custom-domain runbook
 
-- **Status:** Cutover in progress; organization verification, authoritative
-  DNS, and development Firebase allowlists complete; repository deployment,
-  certificate, HTTPS enforcement, and custom-domain smoke test pending
+- **Status:** Cutover complete; `marathonerapp.com` is the supported HTTPS web
+  surface and the legacy project URL redirects to it
 - **Cutover date:** October 21, 2026
 - **Owner:** Kevin Tulloch
 - **Tracking issue:**
@@ -50,9 +49,9 @@ development-web controls and the saved settings were reopened to verify them:
    alongside the retained `marathoner-app.github.io` entry.
 
 The existing Pages application continued to initialize, authenticate, and read
-its owner-scoped Firestore data after the browser-key change. That protects the
-current origin from a cutover regression, but it is not evidence for the custom
-domain until the root-path build is deployed there.
+its owner-scoped Firestore data after the browser-key change. The root-path
+build subsequently deployed at the canonical custom domain, and the legacy
+project URL now redirects there.
 
 The beta browser and App Check keys already name the two custom-domain hosts,
 but the beta project remains an explicit non-default environment. Domain
@@ -63,9 +62,11 @@ action handler because `requestPasswordReset` supplies no custom action URL.
 The application support path remains `kevin@marathonerapp.com`; it does not
 depend on the Pages hostname.
 
-## Deployment verification
+## Deployment verification and regression checks
 
-After the root-path change reaches `main` and the Pages workflow succeeds:
+The root-path change has reached `main`, issue #162 is closed, and the canonical
+origin is live. Repeat these checks after any relevant Pages, DNS, certificate,
+Firebase-domain, or asset-base change:
 
 1. confirm public DNS returns all four apex A records and the `www` CNAME;
 2. wait until GitHub reports the custom domain healthy, then enable and confirm

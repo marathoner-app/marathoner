@@ -11,10 +11,17 @@ already run consistently and are preparing for a first marathon. The existing
 responsive web application remains the planning and analysis surface; Android
 external release is not on the beta critical path.
 
+If you are reviewing Marathoner for the first time, follow the numbered
+[operating partner start-here guide](docs/operating-partner-guide.md). It
+separates implemented behavior, active commitments, dated forecasts, and
+historical evidence so a new reviewer does not have to reconstruct the project
+from hundreds of issues.
+
 ## Project status
 
-Marathoner is currently a foundation-stage prototype. The existing experience
-includes:
+Marathoner is currently a deployed pre-beta product under active development.
+It is not open for public signup or founding-beta invitations. The existing
+experience includes:
 
 - **Plan:** browse persisted training weeks and inspect planned-workout details.
 - **Track:** persist shoes and runs, associate runs with planned workouts, and
@@ -32,20 +39,23 @@ being built next.
 
 ## Governance and security
 
-Marathoner is currently maintained by Kevin Tulloch as a founder-led solo
-project. The [governance record](GOVERNANCE.md) names current decision and merge
-authority and explains how required reviews change when another maintainer
-becomes active. [CONTRIBUTING.md](CONTRIBUTING.md) defines the issue-to-PR
-workflow, and [SECURITY.md](SECURITY.md) provides the private vulnerability
-reporting path and safe-research boundaries.
+Marathoner is founder-led, with Kevin Tulloch as the one active technical
+maintainer and an operating-partner role focused on in-person relationships,
+participant discovery, recruiting, interviews, and feedback. The
+[governance record](GOVERNANCE.md) separates that operating role from current
+merge, release, credential, and participant-data authority. Repository access
+does not establish equity or legal co-ownership. [CONTRIBUTING.md](CONTRIBUTING.md)
+defines the issue-to-PR workflow, and [SECURITY.md](SECURITY.md) provides the
+private vulnerability reporting path and safe-research boundaries.
 
 The active [product-first free-beta decision](docs/product-first-beta-decision.md)
 makes a functional, responsibly testable product the critical path. Formal
-interviews, refundable reservations, and payment evidence are optional future
-commercial work rather than release gates. The canonical
+commercial interviews, refundable reservations, and payment evidence are
+optional future work rather than release gates. The canonical
 [zero-to-beta plan](docs/zero-to-beta-plan.md) defines the product
-commitments, delivery waves, monthly evidence gates, safety boundary, and solo
-working model. The [capacity forecast](docs/capacity-forecast.md) tests those
+commitments, delivery waves, monthly evidence gates, safety boundary, and
+single-maintainer technical delivery model. The
+[capacity forecast](docs/capacity-forecast.md) tests those
 gates against measured AI-assisted delivery and external waits. The dormant
 [commercial proof sprint](docs/commercial-proof-sprint.md) and completed
 preparation artifacts remain available if commercial validation becomes a
@@ -85,22 +95,26 @@ and validation.
 - React and TypeScript
 - Vite
 - Capacitor 8 for the selected root iOS shell
-- Firebase Authentication and Cloud Firestore
+- Firebase Authentication, Cloud Firestore, and Cloud Functions
 - Framer Motion
 - Vitest and Testing Library
 - ESLint
 
 ## Current architecture
 
-Marathoner is currently a client-only, single-page React application. It does
-not have a deployed application server, API, or router. Its authenticated
-training data uses typed repositories backed by Cloud Firestore. The accepted
+Marathoner is centered on a single-page React application with no client-side
+router or general-purpose application server. Its authenticated training data
+uses typed repositories backed by Cloud Firestore, and the repository contains
+a bounded Cloud Functions backend for trusted material commands. That backend
+is emulator-proven; its first controlled beta deployment and observation remain
+gated by issue #205. The accepted
 [mobile client ADR](docs/architecture/mobile-client-architecture.md) selects a
 thin Capacitor iOS shell around this root application. The committed shell is a
-development foundation. App Check now gates Firebase client startup in code,
-but live browser observation and an Apple Developer Program profile carrying
-App Attest remain unproved; beta activation, daily-use behavior, accessibility,
-and TestFlight are still explicit release gates.
+development foundation. App Check gates Firebase client startup in code and an
+owner-only development browser and iPhone debug path has passed, but monitored
+beta traffic and a paid Apple Developer Program profile carrying App Attest
+remain unproved; beta activation, daily-use behavior, accessibility, and
+TestFlight are still explicit release gates.
 
 | Path | Responsibility |
 | --- | --- |
@@ -113,6 +127,8 @@ and TestFlight are still explicit release gates.
 | `src/persistence/` | Defines typed training repositories, Firestore conversion, storage paths, ownership integration tests, and recoverable persistence errors. |
 | `src/training/` | Owns authenticated training-data loading, shared feature state, and cross-feature mutations. |
 | `src/onboarding/` | Owns the resumable runner-profile intake, validation, unit conversion, and completion checks. |
+| `functions/` | Contains the bounded trusted material-command and account-deletion handlers plus their emulator coverage. |
+| `packages/training-contract/` | Contains versioned portable command and record contracts shared across client and server boundaries. |
 | `src/services/appCheckBootstrap.ts` | Selects the browser or iOS App Check provider, proves a bounded token, and enables refresh before Firebase services. |
 | `src/services/firebaseClient.ts` | Initializes the shared Firebase app, waits for App Check, and only then exposes Authentication or the app to lazy data services. |
 | `src/services/authService.ts` | Contains authentication operations and safe Firebase error mapping against the shared client. |
@@ -130,13 +146,16 @@ The current application flow is deliberately small:
 2. The gate proves a browser Enterprise or native App Attest token before
    Firebase services; failure stays in an accessible retry state.
 3. `AuthProvider` resolves the Firebase session and gates personal features.
-4. `TrainingDataProvider` loads repositories for the signed-in user and keeps
-   one shared profile, plan, workout, run, and shoe snapshot.
+4. `TrainingDataProvider` mounts owner-scoped Firestore listeners and keeps one
+   shared profile, plan, workout, run, and shoe view. Cache-originated results
+   remain visibly stale until server confirmation arrives.
 5. An incomplete runner profile opens the resumable onboarding intake before
    plan evaluation; saving progress writes through the same profile repository.
 6. Opening Plan, Track, or Analyze mounts a view over that shared snapshot.
-7. Feature mutations persist through repositories and update the shared state,
-   so every open panel observes the same records.
+7. Current feature mutations persist through repositories and reconcile with
+   server-confirmed listener results, so every open panel observes the same
+   records. Migration of every material write to trusted server commands is
+   still in progress.
 
 The shared training domain model is documented in
 [`docs/architecture/training-domain-model.md`](docs/architecture/training-domain-model.md).
@@ -180,16 +199,17 @@ The development/test-only Creator Radar boundary is documented in
   and accounts without a plan receive an honest empty state. The production
   generation path is tracked in
   [issue #29](https://github.com/marathoner-app/marathoner/issues/29).
-- Training data currently loads as a persisted snapshot. Mutations remain
-  synchronized inside the current session, while the accepted real-time read
-  and server-confirmed write architecture remains implementation work.
+- Owner-scoped real-time training reads and memory-only cache isolation are
+  implemented. Most production mutations still write through the client
+  repository boundary; moving every material write to the authenticated,
+  atomic, revision-safe command backend remains implementation work.
 - The deletion-request lock and fixed, idempotent deletion runner are
-  implemented and tested locally. Live projects remain deliberately blocked;
-  the private-record adapter, user interface, complete rehearsal, #204 live
-  App Check proof, and #205-authorized backend deployment remain required
-  before Marathoner can claim complete in-product account deletion. The
-  beta-only Blaze and budget boundary is verified but does not authorize that
-  deployment.
+  implemented and tested locally, and the shared responsive account-settings
+  experience is complete. Live projects remain deliberately blocked; the
+  private-record adapter, complete rehearsal, and #205-authorized backend
+  deployment remain required before Marathoner can claim complete in-product
+  account deletion. The beta-only Blaze and budget boundary is verified but
+  does not authorize that deployment.
 - The Track flow captures date, distance, elapsed time, shoe, optional planned-
   workout association, perceived effort, and notes. Guidance entries remain
   disabled draft placeholders; no participant-facing coaching or safety
