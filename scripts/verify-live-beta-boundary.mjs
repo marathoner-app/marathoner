@@ -311,6 +311,34 @@ export async function deleteFixtureAccount({
   assertRequestSucceeded(result, `Delete Auth fixture ${uid}`)
 }
 
+export async function setFixtureAccountDisabled({
+  accessToken,
+  disabled,
+  projectId,
+  uid,
+}) {
+  const result = await requestJson({
+    body: {
+      disableUser: disabled,
+      localId: uid,
+      validSince: String(Math.floor(Date.now() / 1_000)),
+    },
+    headers: {
+      ...bearerHeaders(accessToken),
+      Referer: FIXTURE_ORIGIN,
+    },
+    label: `${disabled ? 'Disable' : 'Enable'} Auth fixture ${uid}`,
+    url: identityToolkitUrl(
+      `projects/${encodeURIComponent(projectId)}/accounts:update`,
+    ),
+  })
+
+  assertRequestSucceeded(
+    result,
+    `${disabled ? 'Disable' : 'Enable'} Auth fixture ${uid}`,
+  )
+}
+
 async function signInFixture({ apiKey, email, password }) {
   const result = await requestJson({
     body: { email, password, returnSecureToken: true },

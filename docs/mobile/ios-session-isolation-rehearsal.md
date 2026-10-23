@@ -1,6 +1,6 @@
 # iOS session and account-isolation rehearsal
 
-- **Status:** Automated session boundaries are implemented; physical execution and the unsupported-version command proof remain open
+- **Status:** Physical account switching and revoked-session recovery pass; the unapproved-account and unsupported-version proofs remain open
 - **Tracking issue:** [#137](https://github.com/marathoner-app/marathoner/issues/137)
 - **Selected client:** Capacitor with the Firebase JavaScript SDK
 
@@ -22,8 +22,13 @@ The repository must keep all of these checks green before recording device
 evidence:
 
 - a restored Firebase user is not published to React until its token validates;
+- an online restored user is validated against Firebase while a known-offline
+  launch deliberately uses the cached token;
 - expired, invalid, missing-user, and disabled-account tokens resolve to a safe
   signed-out state without participant UI;
+- a silent unexpected signed-out restoration consumes a non-sensitive
+  prior-session marker and explains that a new sign-in is required, while
+  explicit logout clears the marker;
 - a slow validation result cannot replace a newer user or sign-out event;
 - pressing **Log out** first hides and unmounts training state, which invalidates
   the session generation and detaches listeners, and only then calls Firebase
@@ -48,6 +53,32 @@ the WebView lifecycle, storage, network, or credential-revocation checks below.
    only when its environment and membership procedure are already approved.
 5. Confirm every fixture can be removed after the rehearsal. Do not use a real
    participant account to test revocation or disablement.
+
+### Development fixture manager
+
+Issue #428 adds a fail-closed manager for the two development-only accounts used
+by S01, S02, S03, and S05. It generates new random fictional identifiers and
+passwords for each rehearsal, creates visibly different profile, shoe, and run
+records, and stores the credentials only in the ignored, mode-`0600` local file
+`.ios-account-isolation.local`.
+
+Run each action only as `kevin-admin@marathonerapp.com` and only against
+`marathoner-d9bf9`:
+
+```sh
+npm run prepare:ios-account-isolation -- --project marathoner-d9bf9 --confirm CREATE-IOS-ACCOUNT-ISOLATION-FIXTURES
+npm run disable:ios-account-isolation -- --project marathoner-d9bf9 --confirm DISABLE-IOS-ACCOUNT-ISOLATION-B
+npm run enable:ios-account-isolation -- --project marathoner-d9bf9 --confirm ENABLE-IOS-ACCOUNT-ISOLATION-B
+npm run cleanup:ios-account-isolation -- --project marathoner-d9bf9 --confirm DELETE-IOS-ACCOUNT-ISOLATION-FIXTURES
+```
+
+Open the local manifest only on the operator machine to enter the credentials on
+the physical device. Never paste its contents into a terminal transcript, issue,
+pull request, screenshot, or chat. `disable-b` also advances the account's
+`validSince` boundary so an online cold start cannot accept its prior token.
+`enable-b` exists only as a reversible recovery step; it requires a new sign-in.
+Always finish with `cleanup`, which deletes the exact seeded run, shoe, profile,
+both Auth users, and the local credential file.
 
 The Personal Team Debug build is suitable for owner-device defect discovery and
 the development checks in this procedure. It does not substitute for the
@@ -101,7 +132,9 @@ race boundary.
 1. Sign in using a disposable fictional account and leave its training state
    visible.
 2. Revoke or disable that fixture using the approved Firebase operator path.
-3. Trigger a fresh token check by force-quitting and reopening the application.
+3. Trigger a fresh token check by force-quitting and reopening the application
+   while online. The client forces server validation for online restoration and
+   deliberately uses its cached token only when the device reports offline.
 4. Confirm participant state disappears and the application requires a new
    sign-in. Retry and cold-start once more to confirm the old session cannot
    reappear.
@@ -137,11 +170,11 @@ Use this table in the issue or pull request without fixture identifiers:
 
 | Case | Result | Evidence note |
 | --- | --- | --- |
-| S01 approved restoration | Pending | |
-| S02 logout persistence | Pending | |
-| S03 account isolation | Pending | |
+| S01 approved restoration | Pass | Two disposable development accounts were used in the [2026-10-23 account-isolation rehearsal](evidence/2026-10-23-ios-account-isolation-rehearsal.md); account A restored cleanly across three cold starts. |
+| S02 logout persistence | Pass | Logout remained signed out across two cold starts without showing prior-account state in the [2026-10-23 account-isolation rehearsal](evidence/2026-10-23-ios-account-isolation-rehearsal.md). |
+| S03 account isolation | Pass | Same-process A-to-B switching, Plan/Track/Analyze isolation, and account B cold-start restoration passed in the [2026-10-23 account-isolation rehearsal](evidence/2026-10-23-ios-account-isolation-rehearsal.md). |
 | S04 offline restoration | Pass | Owner development evidence is recorded in the [2026-10-23 failure-state rehearsal](evidence/2026-10-23-ios-failure-state-rehearsal.md); the cold-start observation occurred on 2026-10-22 at commit `fd7db19`. |
-| S05 revoked session | Pending | |
+| S05 revoked session | Pass | Disabling and revoking only disposable account B removed private state, showed the actionable session-ended notice after a focused correction, and remained signed out on the next cold start in the [2026-10-23 account-isolation rehearsal](evidence/2026-10-23-ios-account-isolation-rehearsal.md). |
 | S06 unapproved account | Pending | |
 | S07 unsupported version | Blocked on active command migration | |
 

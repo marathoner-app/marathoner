@@ -24,6 +24,7 @@ vi.mock('./firebaseClient', () => ({ getFirebaseAuth: () => testAuth }))
 
 import {
   AuthenticationError,
+  logOut,
   reauthenticateWithPassword,
   requiresNewSignIn,
   requestPasswordReset,
@@ -35,6 +36,11 @@ import {
 describe('authentication error mapping', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    window.localStorage.clear()
+    Object.defineProperty(navigator, 'onLine', {
+      configurable: true,
+      value: true,
+    })
     testAuth.currentUser.email = 'runner@example.com'
     firebaseAuth.getIdToken.mockResolvedValue('valid-token')
   })
@@ -228,11 +234,108 @@ describe('authentication error mapping', () => {
         email: 'runner@example.com',
       }),
     )
-    expect(firebaseAuth.getIdToken).toHaveBeenCalledWith(testAuth.currentUser)
+    expect(firebaseAuth.getIdToken).toHaveBeenCalledWith(testAuth.currentUser, true)
     expect(onError).not.toHaveBeenCalled()
 
     stop()
     expect(unsubscribe).toHaveBeenCalledOnce()
+  })
+
+  it('uses the cached token when the device is known to be offline', async () => {
+    Object.defineProperty(navigator, 'onLine', {
+      configurable: true,
+      value: false,
+    })
+    const onChange = vi.fn()
+    let receiveUser: ((user: typeof testAuth.currentUser | null) => void) | undefined
+    firebaseAuth.onAuthStateChanged.mockImplementation(
+      (_auth, onUser: (user: typeof testAuth.currentUser | null) => void) => {
+        receiveUser = onUser
+        return vi.fn()
+      },
+    )
+
+    subscribeToAuthState(onChange)
+    receiveUser?.(testAuth.currentUser)
+
+    await vi.waitFor(() => expect(onChange).toHaveBeenCalledOnce())
+    expect(firebaseAuth.getIdToken).toHaveBeenCalledWith(testAuth.currentUser, false)
+  })
+
+  it('explains an unexpected signed-out startup after a validated session', async () => {
+    const firstOnChange = vi.fn()
+    let receiveFirstUser:
+      | ((user: typeof testAuth.currentUser | null) => void)
+      | undefined
+    firebaseAuth.onAuthStateChanged.mockImplementationOnce(
+      (_auth, onUser: (user: typeof testAuth.currentUser | null) => void) => {
+        receiveFirstUser = onUser
+        return vi.fn()
+      },
+    )
+
+    subscribeToAuthState(firstOnChange)
+    receiveFirstUser?.(testAuth.currentUser)
+    await vi.waitFor(() => expect(firstOnChange).toHaveBeenCalledOnce())
+
+    const secondOnChange = vi.fn()
+    const secondOnError = vi.fn()
+    let receiveSecondUser:
+      | ((user: typeof testAuth.currentUser | null) => void)
+      | undefined
+    firebaseAuth.onAuthStateChanged.mockImplementationOnce(
+      (_auth, onUser: (user: typeof testAuth.currentUser | null) => void) => {
+        receiveSecondUser = onUser
+        return vi.fn()
+      },
+    )
+
+    subscribeToAuthState(secondOnChange, secondOnError)
+    receiveSecondUser?.(null)
+
+    expect(secondOnError).toHaveBeenCalledWith(
+      expect.objectContaining({
+        code: 'session_expired',
+        message: 'Your session has ended. Log in again.',
+      }),
+    )
+    expect(secondOnChange).not.toHaveBeenCalled()
+  })
+
+  it('does not report an expected explicit logout as an expired session', async () => {
+    const firstOnChange = vi.fn()
+    let receiveFirstUser:
+      | ((user: typeof testAuth.currentUser | null) => void)
+      | undefined
+    firebaseAuth.onAuthStateChanged.mockImplementationOnce(
+      (_auth, onUser: (user: typeof testAuth.currentUser | null) => void) => {
+        receiveFirstUser = onUser
+        return vi.fn()
+      },
+    )
+    subscribeToAuthState(firstOnChange)
+    receiveFirstUser?.(testAuth.currentUser)
+    await vi.waitFor(() => expect(firstOnChange).toHaveBeenCalledOnce())
+
+    firebaseAuth.signOut.mockResolvedValue(undefined)
+    await logOut()
+
+    const onChange = vi.fn()
+    const onError = vi.fn()
+    let receiveSignedOutUser:
+      | ((user: typeof testAuth.currentUser | null) => void)
+      | undefined
+    firebaseAuth.onAuthStateChanged.mockImplementationOnce(
+      (_auth, onUser: (user: typeof testAuth.currentUser | null) => void) => {
+        receiveSignedOutUser = onUser
+        return vi.fn()
+      },
+    )
+    subscribeToAuthState(onChange, onError)
+    receiveSignedOutUser?.(null)
+
+    expect(onChange).toHaveBeenCalledWith(null)
+    expect(onError).not.toHaveBeenCalled()
   })
 
   it.each([

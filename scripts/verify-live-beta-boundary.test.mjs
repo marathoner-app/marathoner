@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import {
   LIVE_BETA_CONFIRMATION,
   LIVE_BETA_OPERATOR_EMAIL,
@@ -9,6 +9,7 @@ import {
   fixtureAccounts,
   fixtureDocumentPaths,
   parseBetaPublicConfiguration,
+  setFixtureAccountDisabled,
 } from './verify-live-beta-boundary.mjs'
 
 describe('live beta boundary verifier', () => {
@@ -137,5 +138,37 @@ describe('live beta boundary verifier', () => {
     expect(() =>
       assertExpectedDecision({ allowed: false, label: 'deny', status: 400 }),
     ).toThrow('expected a denied 401/403 response')
+  })
+
+  it('disables and revokes a fixture through the administrator endpoint', async () => {
+    const fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      text: () => Promise.resolve('{}'),
+    })
+    vi.stubGlobal('fetch', fetch)
+    vi.spyOn(Date, 'now').mockReturnValue(1_798_000_000_000)
+
+    await setFixtureAccountDisabled({
+      accessToken: 'operator-token',
+      disabled: true,
+      projectId: 'development-project',
+      uid: 'fictional-fixture',
+    })
+
+    expect(fetch).toHaveBeenCalledOnce()
+    const [url, request] = fetch.mock.calls[0]
+    expect(String(url)).toBe(
+      'https://identitytoolkit.googleapis.com/v1/projects/development-project/accounts:update',
+    )
+    expect(JSON.parse(request.body)).toEqual({
+      disableUser: true,
+      localId: 'fictional-fixture',
+      validSince: '1798000000',
+    })
+    expect(request.headers.Authorization).toBe('Bearer operator-token')
+
+    vi.restoreAllMocks()
+    vi.unstubAllGlobals()
   })
 })
