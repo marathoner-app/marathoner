@@ -405,6 +405,45 @@ describe("TrainingDataProvider", () => {
     expect(sources).toHaveLength(1);
   });
 
+  it("keeps controls enabled when late pending metadata repeats an acknowledged run", async () => {
+    const shoe = await repositories.shoes.create({ name: "Daily Trainer" });
+    await repositories.runs.create({
+      shoeId: shoe.id,
+      startedAt: createUtcDateTime("2026-08-03T14:00:00Z"),
+      timeZone,
+      distance: milesToMeters(3),
+      duration: createDurationSeconds(1_800),
+    });
+    const user = userEvent.setup();
+    renderProvider();
+    const source = await waitForSource();
+    await publishRepositories(source);
+
+    await user.click(screen.getByRole("button", { name: "Edit run" }));
+    expect(await screen.findByText("Total: 4")).toBeInTheDocument();
+    expect(screen.getByText("Status: current")).toBeInTheDocument();
+
+    const acknowledged = await snapshotFromRepositories(userId, repositories);
+    act(() =>
+      source.emit([
+        {
+          type: "source_snapshot",
+          source: "runs",
+          value: acknowledged.runs,
+          ownerId: userId,
+          sessionGeneration: source.sessionGeneration,
+          origin: "cache",
+          hasPendingWrites: true,
+          observedAt: createUtcDateTime("2026-08-03T12:01:00Z"),
+        },
+      ]),
+    );
+
+    expect(screen.getByText("Status: current")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Edit run" })).toBeEnabled();
+    expect(screen.getByText("Total: 4")).toBeInTheDocument();
+  });
+
   it("converges completion, analytics, and shoe mileage from listener snapshots", async () => {
     const plan = await repositories.plans.create({
       name: "First Marathon Journey",
