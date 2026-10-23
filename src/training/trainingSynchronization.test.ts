@@ -272,6 +272,38 @@ describe('training synchronization kernel', () => {
     expect(confirmed.state.snapshot.runs).toEqual([run])
   })
 
+  it('ignores late pending metadata for an already confirmed source revision', () => {
+    const confirmed = reduceTrainingSynchronization(currentKernel(), {
+      ...sessionEvent({}),
+      type: 'source_snapshot',
+      source: 'runs',
+      value: [run],
+      origin: 'server',
+      hasPendingWrites: false,
+      observedAt: createUtcDateTime('2026-10-08T12:02:00Z'),
+    })
+
+    expect(confirmed.state.status).toBe('current')
+
+    const latePendingMetadata = reduceTrainingSynchronization(confirmed, {
+      ...sessionEvent({}),
+      type: 'source_snapshot',
+      source: 'runs',
+      value: [run],
+      origin: 'cache',
+      hasPendingWrites: true,
+      observedAt: createUtcDateTime('2026-10-08T12:03:00Z'),
+    })
+
+    expect(latePendingMetadata.state.status).toBe('current')
+    if (latePendingMetadata.state.status !== 'current') return
+    expect(latePendingMetadata.state.snapshot.runs).toEqual([run])
+    expect(latePendingMetadata.state.freshness.hasPendingWrites).toBe(false)
+    expect(latePendingMetadata.state.serverConfirmedAt).toBe(
+      createUtcDateTime('2026-10-08T12:02:00Z'),
+    )
+  })
+
   it('requires fresh server evidence from every source after reconnecting', () => {
     const disconnected = reduceTrainingSynchronization(currentKernel(), {
       ...sessionEvent({}),

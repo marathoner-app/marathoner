@@ -476,17 +476,88 @@ function sourceSnapshot(
     observedAt: event.observedAt,
   })
 
+  const sameEntityRevision = (
+    left: { readonly id: string; readonly updatedAt: UtcDateTime },
+    right: { readonly id: string; readonly updatedAt: UtcDateTime },
+  ) => left.id === right.id && left.updatedAt === right.updatedAt
+
+  const sameEntityRevisions = <
+    Entity extends { readonly id: string; readonly updatedAt: UtcDateTime },
+  >(
+    left: readonly Entity[],
+    right: readonly Entity[],
+  ) =>
+    left.length === right.length &&
+    left.every((entity, index) => sameEntityRevision(entity, right[index]))
+
+  const preserveConfirmedRevision = <Value>(
+    current: TrainingSourceSlot<Value>,
+    value: Value,
+    isSameRevision: (left: Value, right: Value) => boolean,
+  ) =>
+    // Firestore can deliver a metadata-only pending callback after the write
+    // promise has already confirmed this exact entity revision. Do not let
+    // that late callback silently disable an otherwise current UI.
+    event.hasPendingWrites &&
+    current.confirmedInConnection &&
+    isSameRevision(current.value, value)
+      ? current
+      : slot(value)
+
   switch (event.source) {
-    case 'profile':
-      return { ...kernel.sources, profile: slot(event.value) }
+    case 'profile': {
+      const sameProfileRevision = (
+        left: UserProfile | null,
+        right: UserProfile | null,
+      ) =>
+        left === null || right === null
+          ? left === right
+          : sameEntityRevision(left, right)
+      return {
+        ...kernel.sources,
+        profile: preserveConfirmedRevision(
+          kernel.sources.profile,
+          event.value,
+          sameProfileRevision,
+        ),
+      }
+    }
     case 'plans':
-      return { ...kernel.sources, plans: slot(event.value) }
+      return {
+        ...kernel.sources,
+        plans: preserveConfirmedRevision(
+          kernel.sources.plans,
+          event.value,
+          sameEntityRevisions,
+        ),
+      }
     case 'workouts':
-      return { ...kernel.sources, workouts: slot(event.value) }
+      return {
+        ...kernel.sources,
+        workouts: preserveConfirmedRevision(
+          kernel.sources.workouts,
+          event.value,
+          sameEntityRevisions,
+        ),
+      }
     case 'runs':
-      return { ...kernel.sources, runs: slot(event.value) }
+      return {
+        ...kernel.sources,
+        runs: preserveConfirmedRevision(
+          kernel.sources.runs,
+          event.value,
+          sameEntityRevisions,
+        ),
+      }
     case 'shoes':
-      return { ...kernel.sources, shoes: slot(event.value) }
+      return {
+        ...kernel.sources,
+        shoes: preserveConfirmedRevision(
+          kernel.sources.shoes,
+          event.value,
+          sameEntityRevisions,
+        ),
+      }
   }
 }
 
