@@ -12,6 +12,7 @@
 - **Product strategy:** [Product-first free-beta decision](product-first-beta-decision.md)
 - **Optional commercial research:** [Dormant commercial proof sprint](commercial-proof-sprint.md)
 - **Methodology review:** [Qualified review protocol](methodology/README.md)
+  and [initiation decision](methodology/founding-beta-review-decision.md)
 
 ## Outcome
 

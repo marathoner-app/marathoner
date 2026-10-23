@@ -80,6 +80,9 @@ product, investor, architecture, delivery, and operations review. The
 [qualified methodology review](docs/methodology/README.md) defines who may
 approve the founding-beta training and safety behavior, the versioned review
 inventory, and the evidence required before prescriptive use. The
+[founding-beta methodology-review decision](docs/methodology/founding-beta-review-decision.md)
+records that independent endurance-methodology review is required while
+preserving a separate approval gate before any candidate outreach. The
 [founding-beta endurance-rules draft](docs/methodology/artifacts/beta-rules/0.1.0-draft/README.md)
 is the exact unapproved packet awaiting independent endurance-methodology
 review; it is not used by the application. The

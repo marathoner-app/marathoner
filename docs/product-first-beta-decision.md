@@ -6,6 +6,8 @@
 - **Owner:** Kevin Tulloch
 - **Tracking issue:** [#223](https://github.com/marathoner-app/marathoner/issues/223)
 - **Founding-beta contract:** [#117](https://github.com/marathoner-app/marathoner/issues/117)
+- **Methodology decision:**
+  [Independent review required](methodology/founding-beta-review-decision.md)
 
 ## Decision
 
@@ -29,7 +31,9 @@ to retire first.
 - a complete supported journey from account access and intake through plan
   approval, daily use, run logging, bounded adaptation, and account deletion;
 - dated qualified review of the supported training methodology and safety
-  content, or the documented non-prescriptive fallback;
+  content, as required by the October 23 methodology decision, or an explicit
+  later decision reducing the release to the documented non-prescriptive
+  fallback;
 - authorization, privacy, consent, deletion, recovery, data-integrity, and
   incident controls appropriate to the small cohort;
 - reliable responsive-web and physical-iPhone behavior, including session,
