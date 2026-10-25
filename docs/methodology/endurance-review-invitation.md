@@ -1,7 +1,7 @@
 # Endurance-methodology review invitation
 
-- **Status:** Draft template; sending is blocked until the combined endurance
-  review workbook includes the completed adaptation scope from #105
+- **Status:** Draft template; sending remains blocked until the combined review
+  package is pinned and #231 records exact outreach approval
 - **Owner:** Kevin Tulloch
 - **Review role:** Endurance-methodology reviewer (`EMR`)
 - **Owning issue:** [#231](https://github.com/marathoner-app/marathoner/issues/231)
@@ -12,10 +12,10 @@ to navigate source code or technical integrity records.
 
 Do not send this invitation yet. Marathoner intends to commission one coherent
 endurance review covering both the initial plan and missed-workout adaptation.
-Issue [#105](https://github.com/marathoner-app/marathoner/issues/105) must first
-produce exact, testable rules and representative examples for reschedule, hold,
-repeat, no-change, feasibility, and refusal decisions. The fee, time allowance,
-and target date must then be reconsidered for that combined scope.
+Issue [#435](https://github.com/marathoner-app/marathoner/issues/435) prepares
+the exact draft rules, representative examples, and combined workbook. After
+that work is merged, the internal review package must be pinned and the fee,
+time allowance, and target date must be agreed for the combined scope.
 
 The candidate name, proposed completion date, fee, and time allowance require
 specific owner approval before sending. The initial invitation does not

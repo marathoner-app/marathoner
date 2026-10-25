@@ -36,27 +36,33 @@ async function readReviewerDocument(name) {
 }
 
 describe('endurance-methodology review outreach packet', () => {
-  it('pins one exact draft bundle and immutable repository commit', async () => {
+  it('keeps the combined draft blocked until a final repository pin exists', async () => {
     const manifest = await readPacketManifest();
     const document = await readPacketDocument();
 
     expect(manifest).toEqual(
       expect.objectContaining({
-        schemaVersion: 'endurance-review-outreach-packet@1',
-        status: 'prepared-not-sent',
+        schemaVersion: 'endurance-review-outreach-packet@2',
+        status: 'draft-awaiting-pin',
         reviewRole: 'EMR',
         protocolVersion: 'methodology-review@0.1.0',
-        pinnedRepositoryCommit:
-          '1ef241ac5b6bdbe52d819e7107b25d9ba9347b23',
-        bundle: {
-          name: 'beta-rules',
-          version: 'beta-rules@0.1.0-draft',
-          state: 'draft-not-approved-not-runtime-eligible',
-        },
+        pinnedRepositoryCommit: null,
+        bundles: [
+          {
+            name: 'beta-rules',
+            version: 'beta-rules@0.1.0-draft',
+            state: 'draft-not-approved-not-runtime-eligible',
+          },
+          {
+            name: 'beta-adaptation',
+            version: 'beta-adaptation@0.1.0-draft',
+            state: 'draft-not-approved-not-runtime-eligible',
+          },
+        ],
       }),
     );
-    expect(manifest.pinnedRepositoryCommit).toMatch(/^[a-f0-9]{40}$/);
-    expect(document).toContain(manifest.pinnedRepositoryCommit);
+    expect(document).toContain('Repository commit: not assigned');
+    expect(document).toContain('outreach remains blocked');
     expect(document).toContain('Not approved. Not training advice.');
   });
 
@@ -72,7 +78,7 @@ describe('endurance-methodology review outreach packet', () => {
     }
   });
 
-  it('submits exactly the seven authored endurance inventory rows', async () => {
+  it('drafts all eleven endurance rows without claiming review submission', async () => {
     const manifest = await readPacketManifest();
     const document = await readPacketDocument();
     const expectedInventoryIds = [
@@ -83,6 +89,10 @@ describe('endurance-methodology review outreach packet', () => {
       'PROG-001',
       'UNSUP-001',
       'UNSUP-002',
+      'ADAPT-001',
+      'ADAPT-002',
+      'ADAPT-003',
+      'ADAPT-004',
     ];
 
     expect(manifest.inventoryIds).toEqual(expectedInventoryIds);
@@ -91,7 +101,7 @@ describe('endurance-methodology review outreach packet', () => {
     }
     expect(document).not.toContain('| `SAFE-001` | `[Blank]`');
     expect(document).not.toContain('| `GUIDE-001` | `[Blank]`');
-    expect(document).not.toContain('| `ADAPT-001` | `[Blank]`');
+    expect(manifest.status).toBe('draft-awaiting-pin');
   });
 
   it('gives every reviewer fixed decision choices and evidence requirements', async () => {
@@ -166,7 +176,7 @@ describe('endurance-methodology review outreach packet', () => {
     }
   });
 
-  it('blocks outreach until missed-workout adaptation is reviewable in the same engagement', async () => {
+  it('keeps outreach blocked while exposing one complete combined workbook', async () => {
     const document = await readPacketDocument();
     const invitation = await readReviewerDocument(
       'endurance-review-invitation.md',
@@ -176,13 +186,14 @@ describe('endurance-methodology review outreach packet', () => {
     );
 
     expect(document).toContain('**Outreach is blocked.**');
-    expect(document).toContain('#105 defines and tests');
+    expect(document).toContain('#435 merges the proposed reschedule');
     expect(invitation).toContain('Do not send this invitation yet.');
     expect(workbook).toContain('not ready for reviewer delivery');
-    expect(workbook).toContain('## Required adaptation section before delivery');
+    expect(workbook).toContain('## Proposed adaptation rules');
     expect(workbook).toContain(
-      'the precise conditions for reschedule, hold, repeat, no change, or refusal',
+      'One hard run never rewrites the plan',
     );
+    expect(workbook).toContain('Repeating an interrupted week');
   });
 
   it('keeps the reviewer workbook aligned with the exact proposed schedule', async () => {

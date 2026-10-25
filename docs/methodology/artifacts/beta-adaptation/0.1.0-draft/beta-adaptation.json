@@ -1,0 +1,386 @@
+{
+  "schemaVersion": "beta-adaptation-review-packet@1",
+  "artifactVersion": "beta-adaptation@0.1.0-draft",
+  "status": "draft_not_approved",
+  "runtimeUseAllowed": false,
+  "owner": "Kevin Tulloch",
+  "requiredReviewerRole": "EMR",
+  "basePlanArtifactVersion": "beta-rules@0.1.0-draft",
+  "inventoryIds": ["ADAPT-001", "ADAPT-002", "ADAPT-003", "ADAPT-004"],
+  "scope": {
+    "supportedPlanStatus": "active",
+    "supportedCoreWeeks": {"minimum": 1, "maximum": 17},
+    "supportedActions": ["reschedule", "hold_progression", "repeat_period", "no_change"],
+    "evaluationTiming": "Evaluate only after an associated planned run is completed or intentionally marked skipped. Do not infer a decision continuously in the background.",
+    "raceDateMayChange": false,
+    "laterWeeksMayShift": false,
+    "autonomousPlanMutationAllowed": false,
+    "prohibited": [
+      "increase weekly distance",
+      "increase any workout distance",
+      "add intensity",
+      "add a fifth run",
+      "change the race date or completion-only goal",
+      "predict or optimize finish time",
+      "diagnose pain, injury, illness, or recovery state",
+      "invent an action outside this artifact"
+    ],
+    "safetyGate": {
+      "requiredState": "none_reported",
+      "otherStates": "refuse_and_delegate_to_beta_safety",
+      "owningBundle": "beta-safety"
+    }
+  },
+  "inputContract": {
+    "requiredFacts": [
+      "basePlanArtifactVersion",
+      "adaptationArtifactVersion",
+      "activePlanStatus",
+      "activePlanRevision",
+      "evaluatedPlanRevision",
+      "safetyGateState",
+      "inputCompletenessConfirmed",
+      "triggerKind",
+      "currentCoreWeek",
+      "currentWeekKind",
+      "nextWeekKind",
+      "nextWeekIntroducesProgression",
+      "daysUntilRace",
+      "currentWeek.plannedRunCount",
+      "currentWeek.completedRunCount",
+      "currentWeek.skippedRunCount",
+      "currentWeek.pendingRunCount",
+      "daysSinceLastCompletedPlannedRun",
+      "recentEfforts",
+      "rescheduleCandidate"
+    ],
+    "triggerKinds": ["planned_run_completed", "planned_run_skipped"],
+    "completedRunAssociation": "Every effort observation must belong to one completed run associated with the same active plan and one planned run. Unplanned or cross-plan runs do not count toward an adaptation pattern.",
+    "recentEffortWindow": {
+      "maximumCalendarDays": 14,
+      "maximumAssociatedCompletedRuns": 4,
+      "requiredRecordedEffortsForPattern": 4,
+      "hardValues": ["harder_than_expected", "much_harder_than_expected"],
+      "calculation": "Take the four most recent associated completed planned runs whose start dates fall in the 14 complete calendar days ending on the evaluation date. Preserve chronological order and do not substitute older ratings for a missing rating inside those four runs.",
+      "singleSignalRule": "Zero or one hard value cannot produce a material adaptation."
+    },
+    "weekEvidence": {
+      "plannedRunCount": 4,
+      "completedSkippedAndPendingMustEqualPlanned": true,
+      "pendingDefinition": "A planned run in the evaluated plan week whose scheduled date has not yet passed and which has not been completed or intentionally marked skipped.",
+      "repeatRequiresPendingRunCount": 0,
+      "otherDisposition": "refuse_incomplete_evidence"
+    },
+    "rescheduleCandidate": {
+      "requiredForReschedule": true,
+      "allowedPurposes": ["easy", "recovery"],
+      "maximumDelayCalendarDays": 2,
+      "mustRemainInSamePlanWeek": true,
+      "runnerMustConfirmAvailability": true,
+      "targetDateMustBeEmpty": true,
+      "maximumConsecutiveRunDatesAfterMove": 2,
+      "minimumDaysUntilRace": 21,
+      "distanceAndPurposeMustRemainIdentical": true
+    }
+  },
+  "thresholds": {
+    "minimumHardEffortsForHold": 2,
+    "requiredRecordedEffortsForHold": 4,
+    "effortLookbackDays": 14,
+    "missedRunsForRepeat": 2,
+    "maximumMissedRunsForAutomaticDecision": 2,
+    "longDisruptionDays": 7,
+    "minimumDaysUntilRaceForRepeat": 42,
+    "minimumDaysUntilRaceForHold": 35,
+    "minimumDaysUntilRaceForReschedule": 21,
+    "maximumRescheduleDelayDays": 2,
+    "maximumConsecutiveRunDatesAfterReschedule": 2,
+    "repeatEligibleCurrentWeekKinds": ["load"],
+    "repeatEligibleNextWeekKinds": ["load"],
+    "holdEligibleNextWeekKinds": ["load", "peak"],
+    "protectedRecoveryWeekKinds": ["cutback", "taper", "race"]
+  },
+  "decisionOrder": [
+    "refuse_unsupported_ruleset",
+    "refuse_safety_gate",
+    "refuse_stale_plan",
+    "refuse_incomplete_evidence",
+    "refuse_long_disruption",
+    "refuse_excessive_disruption",
+    "refuse_late_disruption",
+    "refuse_conflicting_signals",
+    "repeat_period",
+    "hold_progression",
+    "reschedule",
+    "no_change_recovery_already_scheduled",
+    "no_change_insufficient_pattern",
+    "no_change_single_hard_effort",
+    "no_change_wait_for_week_completion",
+    "no_change_do_not_stack",
+    "no_change_on_track"
+  ],
+  "outcomes": [
+    {
+      "decision": "refuse_unsupported_ruleset",
+      "kind": "refused",
+      "action": null,
+      "reasonCode": "ADAPT-REFUSE-UNSUPPORTED-RULESET",
+      "explanationKey": "adaptation.refuse.unsupported_ruleset",
+      "inventoryId": "ADAPT-004",
+      "when": "The base-plan or adaptation artifact version differs from the exact approved versions supplied to the evaluator.",
+      "runnerApprovalRequired": false,
+      "planMutation": null
+    },
+    {
+      "decision": "refuse_safety_gate",
+      "kind": "refused",
+      "action": null,
+      "reasonCode": "ADAPT-REFUSE-SAFETY-GATE",
+      "explanationKey": "adaptation.refuse.safety_gate",
+      "inventoryId": "ADAPT-004",
+      "when": "The upstream safety gate is anything other than none_reported.",
+      "runnerApprovalRequired": false,
+      "planMutation": null
+    },
+    {
+      "decision": "refuse_stale_plan",
+      "kind": "refused",
+      "action": null,
+      "reasonCode": "ADAPT-REFUSE-STALE-PLAN",
+      "explanationKey": "adaptation.refuse.stale_plan",
+      "inventoryId": "ADAPT-004",
+      "when": "The evaluated plan revision differs from the active plan revision.",
+      "runnerApprovalRequired": false,
+      "planMutation": null
+    },
+    {
+      "decision": "refuse_incomplete_evidence",
+      "kind": "refused",
+      "action": null,
+      "reasonCode": "ADAPT-REFUSE-INCOMPLETE-EVIDENCE",
+      "explanationKey": "adaptation.refuse.incomplete_evidence",
+      "inventoryId": "ADAPT-004",
+      "when": "Required facts, ownership, association, week totals, or supported plan state cannot be confirmed.",
+      "runnerApprovalRequired": false,
+      "planMutation": null
+    },
+    {
+      "decision": "refuse_long_disruption",
+      "kind": "refused",
+      "action": null,
+      "reasonCode": "ADAPT-REFUSE-LONG-DISRUPTION",
+      "explanationKey": "adaptation.refuse.long_disruption",
+      "inventoryId": "ADAPT-004",
+      "when": "Seven or more complete days have passed since the last completed planned run.",
+      "runnerApprovalRequired": false,
+      "planMutation": null
+    },
+    {
+      "decision": "refuse_excessive_disruption",
+      "kind": "refused",
+      "action": null,
+      "reasonCode": "ADAPT-REFUSE-EXCESSIVE-DISRUPTION",
+      "explanationKey": "adaptation.refuse.excessive_disruption",
+      "inventoryId": "ADAPT-004",
+      "when": "Three or four of the four planned runs in the completed plan week were skipped.",
+      "runnerApprovalRequired": false,
+      "planMutation": null
+    },
+    {
+      "decision": "refuse_late_disruption",
+      "kind": "refused",
+      "action": null,
+      "reasonCode": "ADAPT-REFUSE-LATE-DISRUPTION",
+      "explanationKey": "adaptation.refuse.late_disruption",
+      "inventoryId": "ADAPT-004",
+      "when": "Two planned runs were skipped and fewer than 42 days remain before the race.",
+      "runnerApprovalRequired": false,
+      "planMutation": null
+    },
+    {
+      "decision": "refuse_conflicting_signals",
+      "kind": "refused",
+      "action": null,
+      "reasonCode": "ADAPT-REFUSE-CONFLICTING-SIGNALS",
+      "explanationKey": "adaptation.refuse.conflicting_signals",
+      "inventoryId": "ADAPT-004",
+      "when": "At least one planned run was skipped while at least two of the four recent associated effort ratings were hard.",
+      "runnerApprovalRequired": false,
+      "planMutation": null
+    },
+    {
+      "decision": "repeat_period",
+      "kind": "recommendation",
+      "action": "repeat_period",
+      "reasonCode": "ADAPT-REPEAT-MISSED-WEEK",
+      "explanationKey": "adaptation.repeat.missed_week",
+      "inventoryId": "ADAPT-003",
+      "when": "Exactly two of four planned runs were skipped, no run in the evaluated week remains pending, current and next weeks are ordinary load weeks, at least 42 days remain before the race, and no earlier refusal applies.",
+      "runnerApprovalRequired": true,
+      "planMutation": "Replace the next week's four workout targets with the current week's four targets on the next week's existing dates. Do not shift later weeks or the race date and do not increase any target."
+    },
+    {
+      "decision": "hold_progression",
+      "kind": "recommendation",
+      "action": "hold_progression",
+      "reasonCode": "ADAPT-HOLD-REPEATED-HARD-EFFORT",
+      "explanationKey": "adaptation.hold.repeated_hard_effort",
+      "inventoryId": "ADAPT-002",
+      "when": "All four recent associated runs have effort ratings, at least two are hard, the next week would progress, the next week is load or peak, at least 35 days remain before the race, and no run in the evaluated week was skipped.",
+      "runnerApprovalRequired": true,
+      "planMutation": "Keep the next week's dates and purposes, but cap each target at the same-position target from the latest fully completed week. Do not shift later weeks or the race date and do not increase any target."
+    },
+    {
+      "decision": "reschedule",
+      "kind": "recommendation",
+      "action": "reschedule",
+      "reasonCode": "ADAPT-RESCHEDULE-SINGLE-MISS",
+      "explanationKey": "adaptation.reschedule.single_miss",
+      "inventoryId": "ADAPT-001",
+      "when": "Exactly one easy or recovery run was skipped and one candidate date satisfies every reschedule constraint, at least 21 days remain before the race, and no earlier refusal applies.",
+      "runnerApprovalRequired": true,
+      "planMutation": "Move only the skipped workout to the confirmed empty date. Preserve its purpose and target exactly; leave every other workout and the race date unchanged."
+    },
+    {
+      "decision": "no_change_recovery_already_scheduled",
+      "kind": "no_change",
+      "action": "no_change",
+      "reasonCode": "ADAPT-NO-CHANGE-RECOVERY-ALREADY-SCHEDULED",
+      "explanationKey": "adaptation.no_change.recovery_already_scheduled",
+      "inventoryId": "ADAPT-004",
+      "when": "A repeated-hard or missed-workout signal exists, but the next week is a cutback, taper, or race week that already reduces or protects load.",
+      "runnerApprovalRequired": false,
+      "planMutation": null
+    },
+    {
+      "decision": "no_change_insufficient_pattern",
+      "kind": "no_change",
+      "action": "no_change",
+      "reasonCode": "ADAPT-NO-CHANGE-INSUFFICIENT-PATTERN",
+      "explanationKey": "adaptation.no_change.insufficient_pattern",
+      "inventoryId": "ADAPT-004",
+      "when": "Fewer than four recent associated completed runs have recorded effort and no planned run was skipped.",
+      "runnerApprovalRequired": false,
+      "planMutation": null
+    },
+    {
+      "decision": "no_change_single_hard_effort",
+      "kind": "no_change",
+      "action": "no_change",
+      "reasonCode": "ADAPT-NO-CHANGE-SINGLE-HARD-EFFORT",
+      "explanationKey": "adaptation.no_change.single_hard_effort",
+      "inventoryId": "ADAPT-004",
+      "when": "Exactly one of the four recent associated effort ratings is hard and no planned run was skipped.",
+      "runnerApprovalRequired": false,
+      "planMutation": null
+    },
+    {
+      "decision": "no_change_wait_for_week_completion",
+      "kind": "no_change",
+      "action": "no_change",
+      "reasonCode": "ADAPT-NO-CHANGE-WAIT-FOR-WEEK-COMPLETION",
+      "explanationKey": "adaptation.no_change.wait_for_week_completion",
+      "inventoryId": "ADAPT-004",
+      "when": "Exactly two planned runs were skipped, at least one run in the evaluated week remains pending, and no earlier refusal applies.",
+      "runnerApprovalRequired": false,
+      "planMutation": null
+    },
+    {
+      "decision": "no_change_do_not_stack",
+      "kind": "no_change",
+      "action": "no_change",
+      "reasonCode": "ADAPT-NO-CHANGE-DO-NOT-STACK",
+      "explanationKey": "adaptation.no_change.do_not_stack",
+      "inventoryId": "ADAPT-004",
+      "when": "A missed workout does not qualify for repeat or for one safe reschedule candidate.",
+      "runnerApprovalRequired": false,
+      "planMutation": null
+    },
+    {
+      "decision": "no_change_on_track",
+      "kind": "no_change",
+      "action": "no_change",
+      "reasonCode": "ADAPT-NO-CHANGE-ON-TRACK",
+      "explanationKey": "adaptation.no_change.on_track",
+      "inventoryId": "ADAPT-004",
+      "when": "No earlier rule applies.",
+      "runnerApprovalRequired": false,
+      "planMutation": null
+    }
+  ],
+  "decisionRecord": {
+    "requiredEvidence": [
+      "basePlanArtifactVersion",
+      "adaptationArtifactVersion",
+      "activePlanRevision",
+      "evaluatedPlanRevision",
+      "triggerKind",
+      "normalizedInputSnapshot",
+      "decision",
+      "reasonCode",
+      "explanationKey",
+      "proposedMutation",
+      "runnerDecision",
+      "recordedAt",
+      "resultingPlanRevision"
+    ],
+    "runnerDecisionValues": ["pending", "accepted", "declined"],
+    "declineBehavior": "Record the decline against the recommendation and leave the active plan revision unchanged.",
+    "approvalBehavior": "Apply the adjustment event and resulting plan revision atomically through the material-command boundary."
+  },
+  "sources": [
+    {
+      "id": "SRC-SAW-2016",
+      "type": "peer_reviewed_systematic_review",
+      "url": "https://pubmed.ncbi.nlm.nih.gov/26423706/",
+      "observed": "Subjective self-report measures were often more sensitive and consistent than commonly used objective measures for reflecting acute and chronic training load responses.",
+      "use": "Supports collecting perceived response as one useful signal. It does not validate Marathoner's five labels, four-run window, two-hard threshold, or any automatic action."
+    },
+    {
+      "id": "SRC-SOLIGARD-2016",
+      "type": "expert_consensus_statement",
+      "url": "https://bjsm.bmj.com/content/50/17/1030",
+      "observed": "The IOC consensus recommends frequent monitoring of relevant internal and external load and states that no single marker consistently predicts maladaptation or injury.",
+      "use": "Supports combining plan completion with repeated perceived-effort observations and refusing to act on one difficult run. It does not validate the exact decision thresholds."
+    },
+    {
+      "id": "SRC-SMYTH-2023-DISRUPTIONS",
+      "type": "peer_reviewed_observational_study",
+      "url": "https://pubmed.ncbi.nlm.nih.gov/36704260/",
+      "observed": "In a large recreational-marathon dataset, complete training cessations of at least seven days were associated with slower marathon performance than shorter disruptions, with later disruptions carrying greater cost.",
+      "use": "Supports treating seven-day and late disruptions as materially different from one missed workout. It does not prescribe repeat, hold, or refusal behavior."
+    },
+    {
+      "id": "SRC-COYNE-2022",
+      "type": "peer_reviewed_methodology_review",
+      "url": "https://pubmed.ncbi.nlm.nih.gov/35426569/",
+      "observed": "The appropriate acute and chronic windows, smoothing methods, and interpretation of subjective training load remain contested and context-dependent.",
+      "use": "Requires Marathoner to label the 14-day window and thresholds as conservative product judgments for review rather than research-proven cutoffs."
+    },
+    {
+      "id": "SRC-TORESDAHL-2023",
+      "type": "peer_reviewed_prospective_cohort",
+      "url": "https://pubmed.ncbi.nlm.nih.gov/36113976/",
+      "observed": "More days at an acute-to-chronic distance ratio of at least 1.5 were associated with injury among New York City Marathon entrants.",
+      "use": "Supports prohibiting catch-up mileage and automatic load increases after disruption. It does not validate acute-to-chronic ratio use as an individual decision rule."
+    }
+  ],
+  "productJudgmentsRequiringReview": [
+    "four associated effort ratings inside 14 days",
+    "two hard ratings as the minimum repeated signal",
+    "seven complete days as the automatic-adaptation refusal boundary",
+    "exactly two missed runs as the repeat candidate",
+    "42, 35, and 21-day race-proximity boundaries",
+    "two-day reschedule limit",
+    "no more than two consecutive run dates",
+    "the exact hold and repeat plan mutations",
+    "the refusal precedence and every no-change disposition"
+  ],
+  "reviewState": {
+    "submitted": false,
+    "reviewer": null,
+    "decision": "pending",
+    "approvalRecord": null,
+    "approvedArtifactVersion": null
+  }
+}

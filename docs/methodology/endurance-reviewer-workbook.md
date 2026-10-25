@@ -1,9 +1,9 @@
 # Marathoner first-marathon methodology review
 
-> **Internal draft — not ready for reviewer delivery.** The initial-plan
-> sections are complete, but the missed-workout adaptation section is blocked
-> until Marathoner has exact, testable rules and representative examples. The
-> eventual reviewer receives one coherent workbook covering both surfaces.
+> **Internal draft - not ready for reviewer delivery.** The proposed initial
+> plan and adaptation sections are now complete, but neither is approved.
+> Marathoner must still pin the combined review package and explicitly approve
+> the candidate, timing, scope, and compensation before sending this workbook.
 
 ## Thank you for considering this review
 
@@ -38,25 +38,146 @@ unusual-symptom decisions, individualized nutrition, hydration prescriptions,
 supplements, pregnancy, youth runners, pace targets, or finish-time promises.
 Those subjects are either excluded or require separate qualified review.
 
-## Required adaptation section before delivery
+## Proposed adaptation rules
 
-This workbook must not be sent until Marathoner adds the exact missed-workout
-and completed-training rules to be reviewed. That section must define:
+This section proposes how Marathoner should respond to completed and missed
+training after a plan is active. These are deliberately narrow product rules
+for your review. The cited research supports monitoring both completed work
+and perceived response, but it does not prove that the exact windows or
+thresholds below are safe or optimal.
 
-- the minimum completed-run and perceived-effort inputs;
-- the recent-workout pattern required before recommending a change;
-- why one difficult workout cannot trigger a material rewrite;
-- the precise conditions for reschedule, hold, repeat, no change, or refusal;
-- how race feasibility is reassessed after missed training;
-- which changes require the runner's explicit approval;
-- how a runner can decline without changing the active plan;
-- how pain or unusual symptoms are delegated to the separate safety process;
-  and
-- supported, boundary, ambiguous, and rejected examples for every decision.
+### Information used
 
-Once those rules and examples are authored, this placeholder is replaced by a
-reviewable adaptation section and the complete workbook is checked against the
-underlying rule definitions before outreach is authorized.
+Marathoner would evaluate only after a planned run is completed or deliberately
+marked skipped. It would use:
+
+- the exact active plan and its latest revision;
+- whether each of the four planned runs in the evaluated week was completed,
+  skipped, or remains scheduled and pending;
+- the four most recent planned-and-completed runs during the previous 14 days,
+  including perceived effort when it was recorded;
+- how many complete days have passed since the last completed planned run;
+- the current and next plan-week types;
+- how many days remain before the race; and
+- whether a separately reviewed safety check reports no pain or unusual
+  symptom concern.
+
+Unplanned runs, runs attached to a different plan, and older effort answers
+would not be substituted into the pattern. If ownership, associations, week
+totals, or the active plan revision cannot be confirmed, the application would
+decline to adapt rather than guess.
+
+### Decision order
+
+The application would evaluate the following outcomes in order. The first
+matching outcome wins, so a simpler rule cannot hide a more important refusal.
+
+| Priority | Proposed result | Exact boundary |
+| ---: | --- | --- |
+| 1 | Decline to adapt | The rule or plan version is unsupported, the plan changed during evaluation, required evidence is incomplete, or the safety check is not clear. |
+| 2 | Decline to adapt | No planned run was completed for seven or more complete days, or three or four runs in one four-run week were missed. |
+| 3 | Decline to adapt | Two runs were missed with fewer than 42 days before the race, or missed training overlaps with at least two recent hard-effort answers. |
+| 4 | Repeat the interrupted week | Exactly two runs were missed in a now-complete ordinary load week, the next week is also an ordinary load week, and at least 42 days remain before the race. |
+| 5 | Hold the next progression | All four recent runs have effort answers, at least two felt harder or much harder than expected, the next week would increase training, and at least 35 days remain before the race. |
+| 6 | Reschedule one run | Exactly one easy or recovery run was missed and every spacing and availability condition below is met. |
+| 7 | Make no change | A cutback, taper, or race week already protects load; one run alone felt hard; fewer than four effort answers exist; two misses occurred while the week is still in progress; a missed run cannot be moved safely; or training appears on track. |
+
+### One hard run never rewrites the plan
+
+One run marked harder or much harder than expected would always produce no
+material plan change. A hold proposal requires all four of the most recent
+planned-and-completed runs within 14 days to have an effort answer and at least
+two of those four answers to be harder or much harder than expected. If fewer
+than four answers exist, Marathoner would say there is not yet a sufficient
+pattern and would leave the plan alone.
+
+A hold would be considered only when the next week would otherwise progress
+and is an ordinary load or peak week at least 35 days before the race. The
+proposal would keep the next week's dates and purposes but cap each target at
+the corresponding target from the latest fully completed week. It could never
+increase a target, shift later weeks, or change the race date.
+
+### Rescheduling one missed run
+
+Only one missed easy or recovery run could be proposed for rescheduling. Every
+condition below must be true:
+
+- the new date is no more than two calendar days after the original date;
+- it remains inside the same plan week;
+- the runner confirms that the new date is available;
+- the date has no other workout;
+- the move creates no more than two consecutive run dates;
+- at least 21 days remain before the race; and
+- the distance and purpose remain exactly the same.
+
+A missed long run or race would never be automatically made up. If no safe
+date exists, Marathoner would leave the remaining schedule alone rather than
+stacking distance into later days.
+
+### Repeating an interrupted week
+
+If exactly two of four runs were missed in a now-complete ordinary load week,
+the next week is also an ordinary load week, at least 42 days remain before the
+race, and no conflicting hard-effort pattern exists, Marathoner would propose
+replacing the next week's four targets with the interrupted week's four
+targets. While any run in the evaluated week remains pending, it would make no
+change and wait. The repeated targets would use the next week's existing
+dates. Later weeks and the race date would not shift, and no target could
+increase.
+
+Three or four missed runs, seven days without a completed planned run, two
+missed runs inside six weeks of the race, or combined missed-workout and
+repeated-hard signals would be too complex for automatic adaptation. The
+application would decline to adapt and direct the runner to the separately
+defined support path.
+
+### Runner control
+
+Reschedule, hold, and repeat proposals would never alter the plan by
+themselves. The runner must see the observation, meaning, proposed change, and
+effect before accepting. Declining records the choice and leaves the active
+plan unchanged. Accepting must store the decision and new plan revision
+together so another device cannot apply an older recommendation.
+
+### Representative examples
+
+| Situation | Proposed result |
+| --- | --- |
+| One of four recent runs felt much harder than expected | No change; one response is not a pattern. |
+| Two of four recent runs felt harder than expected and next week increases load | Offer to hold next week's progression, provided at least 35 days remain. |
+| Two recent runs felt hard but next week is already a cutback | No change; use the scheduled cutback. |
+| One easy run was missed and an empty confirmed date one day later keeps run streaks to two days | Offer to move that unchanged run. |
+| One long run was missed | Do not make it up automatically. |
+| Exactly two runs were missed in an early ordinary load week | Offer to use that week's targets again on next week's dates. |
+| Two runs were missed but another run in the week remains scheduled | Make no change yet; wait until the week is complete. |
+| Two runs were missed with 41 days before the race | Decline automatic adaptation. |
+| Three runs were missed, or no planned run was completed for seven days | Decline automatic adaptation. |
+| Missed training and two hard-effort answers appear together | Decline automatic adaptation because the signals conflict. |
+| A pain or unusual-symptom concern is present | Stop this evaluation and use the separate safety process. |
+
+### Your assessment
+
+1. Are four effort answers within 14 days and two hard answers an appropriate
+   minimum repeated signal?
+2. Is always making no material change after one hard run appropriate?
+3. Are the rescheduling constraints sufficiently conservative, and should any
+   workout besides easy or recovery ever be moved?
+4. Is repeating exactly one interrupted week appropriate after exactly two
+   misses, without shifting later weeks or the race?
+5. Are 42 days for repeat, 35 days for hold, and 21 days for reschedule
+   defensible boundaries? What should replace them if not?
+6. Should a seven-day disruption, three missed runs, late disruption, or
+   overlapping signals always require human review?
+7. Are any important completed-training, missed-workout, race-feasibility, or
+   refusal cases absent?
+8. Are the proposed plan mutations clear enough to avoid catch-up mileage or
+   an accidental increase in load?
+
+Decision: `[Accept / Needs changes / Do not use / Outside my expertise]`
+
+Comments, limitations, and required changes:
+
+`[Reviewer response]`
 
 ## Intended runner
 
@@ -236,6 +357,10 @@ numbers are universally safe or optimal.
 - [Nielsen et al. on distance progression in novice runners](https://pubmed.ncbi.nlm.nih.gov/25155475/)
 - [Buist et al. on a graded training program and the 10-percent rule](https://pubmed.ncbi.nlm.nih.gov/17940147/)
 - [Smyth and Lawlor on marathon tapering](https://pmc.ncbi.nlm.nih.gov/articles/PMC8506252/)
+- [Saw et al. on subjective training-response monitoring](https://pubmed.ncbi.nlm.nih.gov/26423706/)
+- [IOC consensus on monitoring internal and external training load](https://bjsm.bmj.com/content/50/17/1030)
+- [Smyth et al. on marathon training disruptions](https://pubmed.ncbi.nlm.nih.gov/36704260/)
+- [Coyne et al. on the limits of subjective training-load models](https://pubmed.ncbi.nlm.nih.gov/35426569/)
 
 ## Reviewer information and overall conclusion
 
