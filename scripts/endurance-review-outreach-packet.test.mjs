@@ -31,6 +31,10 @@ async function readPacketDocument() {
   );
 }
 
+async function readReviewerDocument(name) {
+  return readFile(path.join(packetDirectory, name), 'utf8');
+}
+
 describe('endurance-methodology review outreach packet', () => {
   it('pins one exact draft bundle and immutable repository commit', async () => {
     const manifest = await readPacketManifest();
@@ -108,7 +112,7 @@ describe('endurance-methodology review outreach packet', () => {
     ]);
     expect(document).toContain('The reviewer must answer every question');
     expect(document).toContain('dated, attributable confirmation');
-    expect(document).toContain('did not depend on the outcome');
+    expect(document).toContain('compensation was for my time');
     expect(document).toContain('## Blank approval record');
     expect(document).toContain('methodology-approval-record@2026-10-08');
     expect(document).toContain('Do not pre-fill a decision');
@@ -129,5 +133,74 @@ describe('endurance-methodology review outreach packet', () => {
     expect(document).toContain('| Engaged | 0 |');
     expect(document).toContain('| Decision evidence | 0 |');
     expect(document).toContain('No methodology is approved');
+  });
+
+  it('keeps technical integrity evidence out of the reviewer-facing experience', async () => {
+    const document = await readPacketDocument();
+    const invitation = await readReviewerDocument(
+      'endurance-review-invitation.md',
+    );
+    const workbook = await readReviewerDocument(
+      'endurance-reviewer-workbook.md',
+    );
+    const technicalTerms = [
+      'SHA-256',
+      'repository commit',
+      'pinned commit',
+      'inventory ID',
+    ];
+
+    expect(document).toContain('## Review delivery model');
+    expect(document).toContain('The candidate need not interact with the repository');
+    expect(invitation).toContain(
+      'Would you be interested in taking a look at a short overview',
+    );
+    expect(invitation).toContain('https://marathonerapp.com');
+    expect(workbook).toContain('## Intended runner');
+    expect(workbook).toContain('## Proposed weekly plan');
+    expect(workbook).toContain('## Reviewer information and overall conclusion');
+
+    for (const term of technicalTerms) {
+      expect(invitation).not.toContain(term);
+      expect(workbook).not.toContain(term);
+    }
+  });
+
+  it('keeps the reviewer workbook aligned with the exact proposed schedule', async () => {
+    const workbook = await readReviewerDocument(
+      'endurance-reviewer-workbook.md',
+    );
+    const rules = JSON.parse(
+      await read(
+        'docs/methodology/artifacts/beta-rules/0.1.0-draft/beta-rules.json',
+      ),
+    );
+    const phaseLabel = (week) => {
+      if (week.kind === 'cutback') return 'Cutback';
+      if (week.kind === 'peak') return 'Peak';
+      if (week.kind === 'taper') return 'Taper';
+      if (week.kind === 'race') return 'Race';
+      return week.phase === 'base_building' ? 'Base' : 'Build';
+    };
+
+    for (const week of rules.planFamily.coreWeeks) {
+      const distances = week.distancesMetersByPosition.map(
+        (distance) => distance / 1000,
+      );
+      const finalDistance = week.kind === 'race'
+        ? `${distances[3]} race`
+        : distances[3];
+      const total = week.kind === 'race'
+        ? `${distances.slice(0, 3).reduce((sum, value) => sum + value, 0)} plus race`
+        : distances.reduce((sum, value) => sum + value, 0);
+      const row = `| ${week.week} | ${phaseLabel(week)} | ${distances[0]} | ${distances[1]} | ${distances[2]} | ${finalDistance} | ${total} |`;
+
+      expect(workbook).toContain(row);
+    }
+
+    expect(workbook).toContain('At least eight consecutive weeks');
+    expect(workbook).toContain('Average 40–45 km');
+    expect(workbook).toContain('14–20 km');
+    expect(workbook).toContain('An exact race date 18–22 weeks');
   });
 });

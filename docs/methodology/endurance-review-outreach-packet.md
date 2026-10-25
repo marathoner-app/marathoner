@@ -1,4 +1,4 @@
-# Founding-beta endurance-methodology review outreach packet
+# Founding-beta endurance-methodology review control manifest
 
 - **Status:** Prepared, not sent; no reviewer is contacted, scheduled, engaged,
   or represented as having approved Marathoner
@@ -9,17 +9,37 @@
   [#119](https://github.com/marathoner-app/marathoner/issues/119)
 - **Machine-readable manifest:**
   [`endurance-review-outreach-packet.json`](endurance-review-outreach-packet.json)
+- **Reviewer invitation:**
+  [`endurance-review-invitation.md`](endurance-review-invitation.md)
+- **Reviewer workbook:**
+  [`endurance-reviewer-workbook.md`](endurance-reviewer-workbook.md)
 
 > **Not approved. Not training advice. Not permitted in runtime code.** This
-> packet asks an independent reviewer to evaluate an exact draft. Preparing,
-> sending, accepting, or reviewing it is not approval evidence.
+> internal manifest pins the exact draft under review. Do not use this document
+> as the candidate's initial introduction to Marathoner. Preparing, sending,
+> accepting, or reviewing material is not approval evidence.
 
-## One packet for every candidate
+## Review delivery model
 
-Every candidate receives this same public packet, pinned commit, artifact set,
-scope, questions, decision choices, evidence requirements, compensation rule,
-and blank response record. Candidate-specific contact details, correspondence,
-contracts, and screening notes stay in controlled private storage.
+The reviewer experience and Marathoner's internal evidence trail are separate:
+
+1. The candidate first receives the short, professional
+   [invitation](endurance-review-invitation.md). It contains no source-code,
+   commit, or checksum language.
+2. An interested candidate receives the same human-readable
+   [reviewer workbook](endurance-reviewer-workbook.md) in a convenient document
+   format. The workbook explains the proposed runner, plan, limits, questions,
+   and response fields without requiring GitHub knowledge.
+3. Marathoner privately retains the candidate-specific correspondence and uses
+   this control manifest to prove which underlying artifacts the workbook
+   represented. The product owner translates the returned plain-language
+   decisions into the repository approval record and obtains the reviewer's
+   explicit confirmation that the record is accurate.
+
+Every candidate receives materially identical methodology, questions, decision
+choices, evidence requirements, and compensation independence. Candidate
+contact details, correspondence, contracts, and screening notes stay in
+controlled private storage.
 
 Changing a threshold, schedule, fixture, reason code, question, or reviewed
 file requires a new packet manifest, new hashes, and a new review round. A
@@ -206,18 +226,22 @@ a dated source that can be linked from the repository approval record.
 
 ## Blank approval record
 
-Every candidate receives the same canonical blank
+Marathoner maintains the canonical blank
 [`approval-record-template.md`](approval-record-template.md), pinned above as
 `methodology-approval-record@2026-10-08` with SHA-256
 `8ecc59f8f881ef6fc0bc7d29a693ae00860bd60927b85021d7c23ae28a1fa3b6`.
-It contains no maintainer-entered decision and is not approval evidence. After
-an exact non-draft candidate exists, reviewer-authored or explicitly confirmed
-evidence is transferred into a dated copy without changing its meaning.
+It is internal traceability structure, is not sent as the reviewer workbook,
+and contains no maintainer-entered decision. After an exact non-draft candidate
+exists, reviewer-authored or explicitly confirmed evidence is transferred into
+a dated copy without changing its meaning.
 
-## Blank reviewer response and approval input
+## Internal blank reviewer response and approval input
 
-This blank record is supplied unchanged to every candidate. Do not pre-fill a decision
-on the reviewer's behalf.
+This record is Marathoner's traceability representation of the response fields
+in the human-readable workbook. Do not ask the candidate to navigate this
+manifest. Do not pre-fill a decision on the reviewer's behalf. After the review,
+the candidate must explicitly confirm that the mapped record accurately
+represents their written decisions.
 
 ### Reviewer and scope
 
@@ -259,56 +283,34 @@ Overall decision: `[Blank: one allowed overall option]`
 
 ### Attestation
 
-The reviewer must author or explicitly confirm this exact statement:
+The reviewer must author or explicitly confirm this plain-language statement.
+Marathoner's product owner records the technical version and integrity evidence
+separately:
 
-> I reviewed the exact commit, artifacts, versions, hashes, inventory rows, and
-> founding-beta scope listed in this response for the endurance-methodology
-> reviewer role. My decisions, rationale, limitations, conflicts, and
-> conditions are represented accurately. I was free to approve, condition,
-> reject, or decline every item, and any compensation was for review time and
-> did not depend on the outcome. I understand that this draft response is not
-> runtime authorization and does not approve any use outside the stated scope.
+> I independently reviewed the intended runner, race-timing rules, proposed
+> plan, progression limits, and unsupported cases described in the workbook
+> provided to me. My decisions, reasoning, limitations, conflicts, and required
+> changes are represented accurately. I was free to accept, revise, reject, or
+> decline any part of the review, and any compensation was for my time rather
+> than a particular outcome. I understand that my review applies only to the
+> proposal described in that workbook and does not endorse Marathoner or uses
+> outside that scope.
 
 Reviewer confirmation date: `[Blank: YYYY-MM-DD]`
 
 Attributable confirmation source: `[Blank]`
 
-## Standard outreach message for #231
+## Standard outreach for #231
 
-Only the candidate name, greeting, proposed dates, and non-contingent fee may
-vary. The packet and requested evidence do not.
+Use the [reviewer invitation](endurance-review-invitation.md) for first contact.
+Only the candidate-specific fields approved in #231 may vary. Do not send this
+control manifest or ask the candidate to interpret repository commits,
+artifact identifiers, inventory codes, or checksums.
 
-**Subject:** Independent review request: pinned first-marathon methodology draft
-
-> Hello `[Candidate name]`,
->
-> I am building Marathoner, an early-stage training application. I am seeking
-> an independent endurance-methodology reviewer for one narrow adult
-> first-marathon draft. This is a technical and professional review, not an
-> endorsement request. You would be free to approve for finalization,
-> condition, reject, or decline any item.
->
-> The identical packet sent to every candidate is `[stable packet link]`. It
-> pins the repository commit, artifact versions, SHA-256 hashes, supported and
-> excluded scope, questions, decision choices, and blank response record. The
-> draft is not approved, is not in runtime code, and cannot ship because of
-> this outreach.
->
-> Before scheduling, would you be willing to confirm whether your current
-> qualifications and recent first-marathon coaching experience cover this
-> scope, disclose any relevant conflicts, and say whether you could return the
-> row-level written evidence requested in the packet by `[proposed date]`?
->
-> `[If paid: The proposed fee is $___ / ___ hours. It pays for review time and
-> is due regardless of whether your decision is favorable, conditional, or a
-> rejection.]`
->
-> No private athlete data is included. Please do not begin work until we agree
-> in writing on scope, timing, evidence, compensation, and permitted public
-> qualification/decision evidence.
->
-> Thank you,
-> Kevin Tulloch
+If the candidate expresses interest, provide the
+[reviewer workbook](endurance-reviewer-workbook.md) in an accessible document
+format. Work begins only after both parties agree in writing on the scope,
+schedule, deliverable, compensation, conflicts, and permitted public evidence.
 
 ## Screening and engagement status
 
@@ -337,8 +339,11 @@ verification, or willing to perform the review.
 ## What happens next
 
 Issue #231 owns outreach and may record a candidate as accepted only after the
-candidate explicitly agrees in writing to the scope, packet, evidence,
+candidate explicitly agrees in writing to the workbook scope and deliverable,
 independence/conflict terms, schedule, and any non-contingent compensation.
+The candidate need not interact with the repository. Marathoner's product owner
+owns the internal mapping from the workbook response to the exact pinned
+artifacts and must obtain the candidate's dated confirmation of that mapping.
 
 After a draft is acceptable in substance:
 
