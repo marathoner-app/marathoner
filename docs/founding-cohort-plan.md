@@ -10,6 +10,8 @@
 - **Delivery plan:** [Marathoner zero-to-beta plan](zero-to-beta-plan.md)
 - **Capacity forecast:** [Owner-session and gate forecast](capacity-forecast.md)
 - **Product strategy:** [Product-first free-beta decision](product-first-beta-decision.md)
+- **Methodology decision:**
+  [Independent review required](methodology/founding-beta-review-decision.md)
 - **Optional commercial discovery:** [Dormant commercial proof sprint](commercial-proof-sprint.md)
 
 ## Purpose
