@@ -25,10 +25,10 @@ decision.
 | `FEAS-001` | Minimum and maximum supported race horizon and deterministic infeasible-race rejection | Kevin Tulloch | `beta-rules@0.1.0-draft` | `EMR` | [#189](https://github.com/marathoner-app/marathoner/issues/189), [#70](https://github.com/marathoner-app/marathoner/issues/70) | Draft |
 | `PLAN-001` | Supported first-marathon plan family, phases, duration, workout types, weekly structure, and taper | Kevin Tulloch | `beta-rules@0.1.0-draft` | `EMR` | [#189](https://github.com/marathoner-app/marathoner/issues/189), [#70](https://github.com/marathoner-app/marathoner/issues/70) | Draft |
 | `PROG-001` | Starting-load selection, mileage and long-run progression ceilings, cutbacks, recovery placement, and intensity limits | Kevin Tulloch | `beta-rules@0.1.0-draft` | `EMR` | [#189](https://github.com/marathoner-app/marathoner/issues/189), [#70](https://github.com/marathoner-app/marathoner/issues/70) | Draft |
-| `ADAPT-001` | Conditions and limits for rescheduling an approved workout | Kevin Tulloch | `beta-rules@0.1.0-draft` | `EMR` | [#105](https://github.com/marathoner-app/marathoner/issues/105) | Missing |
-| `ADAPT-002` | Conditions and limits for holding progression | Kevin Tulloch | `beta-rules@0.1.0-draft` | `EMR` | [#105](https://github.com/marathoner-app/marathoner/issues/105) | Missing |
-| `ADAPT-003` | Conditions and limits for repeating an approved period | Kevin Tulloch | `beta-rules@0.1.0-draft` | `EMR` | [#105](https://github.com/marathoner-app/marathoner/issues/105) | Missing |
-| `ADAPT-004` | Conditions for a no-change result and for refusing any other adaptation | Kevin Tulloch | `beta-rules@0.1.0-draft` | `EMR` | [#105](https://github.com/marathoner-app/marathoner/issues/105) | Missing |
+| `ADAPT-001` | Conditions and limits for rescheduling an approved workout | Kevin Tulloch | `beta-adaptation@0.1.0-draft` | `EMR` | [#435](https://github.com/marathoner-app/marathoner/issues/435), [#132](https://github.com/marathoner-app/marathoner/issues/132) | Draft |
+| `ADAPT-002` | Conditions and limits for holding progression | Kevin Tulloch | `beta-adaptation@0.1.0-draft` | `EMR` | [#435](https://github.com/marathoner-app/marathoner/issues/435), [#132](https://github.com/marathoner-app/marathoner/issues/132) | Draft |
+| `ADAPT-003` | Conditions and limits for repeating an approved period | Kevin Tulloch | `beta-adaptation@0.1.0-draft` | `EMR` | [#435](https://github.com/marathoner-app/marathoner/issues/435), [#132](https://github.com/marathoner-app/marathoner/issues/132) | Draft |
+| `ADAPT-004` | Conditions for a no-change result and for refusing any other adaptation | Kevin Tulloch | `beta-adaptation@0.1.0-draft` | `EMR` | [#435](https://github.com/marathoner-app/marathoner/issues/435), [#132](https://github.com/marathoner-app/marathoner/issues/132) | Draft |
 
 ## Safety and unsupported cases
 

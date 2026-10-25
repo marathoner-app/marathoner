@@ -1,15 +1,22 @@
 {
-  "schemaVersion": "endurance-review-outreach-packet@1",
-  "status": "prepared-not-sent",
-  "preparedOn": "2026-10-08",
+  "schemaVersion": "endurance-review-outreach-packet@2",
+  "status": "draft-awaiting-pin",
+  "preparedOn": "2026-10-25",
   "reviewRole": "EMR",
   "protocolVersion": "methodology-review@0.1.0",
-  "pinnedRepositoryCommit": "1ef241ac5b6bdbe52d819e7107b25d9ba9347b23",
-  "bundle": {
-    "name": "beta-rules",
-    "version": "beta-rules@0.1.0-draft",
-    "state": "draft-not-approved-not-runtime-eligible"
-  },
+  "pinnedRepositoryCommit": null,
+  "bundles": [
+    {
+      "name": "beta-rules",
+      "version": "beta-rules@0.1.0-draft",
+      "state": "draft-not-approved-not-runtime-eligible"
+    },
+    {
+      "name": "beta-adaptation",
+      "version": "beta-adaptation@0.1.0-draft",
+      "state": "draft-not-approved-not-runtime-eligible"
+    }
+  ],
   "artifacts": [
     {
       "path": "docs/methodology/README.md",
@@ -18,8 +25,8 @@
     },
     {
       "path": "docs/methodology/beta-review-inventory.md",
-      "version": "founding-beta-inventory@2026-10-08",
-      "sha256": "332c3e7fd03ec47abf2f6ba07cf408d4a26268aaced6cd384659cefe45d05bfa"
+      "version": "founding-beta-inventory@2026-10-25",
+      "sha256": "90859bcae851e445368c887d1a3f94d473bd43e682adfd8cf859c073872e4621"
     },
     {
       "path": "docs/methodology/approval-record-template.md",
@@ -45,6 +52,31 @@
       "path": "docs/methodology/artifacts/beta-rules/0.1.0-draft/SHA256SUMS",
       "version": "beta-rules@0.1.0-draft-manifest",
       "sha256": "26c48038d075febe24045f5fea39ad4816c7f97fa33132284c82d9ae5a040b69"
+    },
+    {
+      "path": "docs/methodology/artifacts/beta-adaptation/0.1.0-draft/README.md",
+      "version": "beta-adaptation@0.1.0-draft",
+      "sha256": "489ea6d0d301c5d60c5349321bf324b6ef2b02de9f2254e3b1f2594d0e4352ce"
+    },
+    {
+      "path": "docs/methodology/artifacts/beta-adaptation/0.1.0-draft/beta-adaptation.json",
+      "version": "beta-adaptation@0.1.0-draft",
+      "sha256": "49f8cc09ba85b737633a788e12699bd788aeb9323e28ceb919c196a9a3ac7869"
+    },
+    {
+      "path": "docs/methodology/artifacts/beta-adaptation/0.1.0-draft/fixtures.json",
+      "version": "beta-adaptation@0.1.0-draft",
+      "sha256": "23874a488b243be719c3f56430696f4b6a55c9267cfc072d5490da06e5848335"
+    },
+    {
+      "path": "docs/methodology/artifacts/beta-adaptation/0.1.0-draft/SHA256SUMS",
+      "version": "beta-adaptation@0.1.0-draft-manifest",
+      "sha256": "eafa215d6be71e129ff4fe36ec9f4582e6bfe5bf7d58dc9506aa4bd8a0274191"
+    },
+    {
+      "path": "docs/methodology/endurance-reviewer-workbook.md",
+      "version": "endurance-reviewer-workbook@2026-10-25-draft",
+      "sha256": "f6ed5b89bfcc92eb0b928d49c1480b044a610bacef375c6d47c58b169a203a3c"
     }
   ],
   "inventoryIds": [
@@ -54,7 +86,11 @@
     "PLAN-001",
     "PROG-001",
     "UNSUP-001",
-    "UNSUP-002"
+    "UNSUP-002",
+    "ADAPT-001",
+    "ADAPT-002",
+    "ADAPT-003",
+    "ADAPT-004"
   ],
   "rowDecisionOptions": [
     "Approve for non-draft finalization",

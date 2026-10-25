@@ -1,8 +1,8 @@
 # Founding-beta endurance-methodology review control manifest
 
-- **Status:** Combined scope incomplete and not sent; no reviewer is contacted,
-  scheduled, engaged, or represented as having approved Marathoner
-- **Prepared:** 2026-10-08
+- **Status:** Combined scope drafted but not repinned or sent; no reviewer is
+  contacted, scheduled, engaged, or represented as having approved Marathoner
+- **Prepared:** 2026-10-25
 - **Review role:** Endurance-methodology reviewer (`EMR`)
 - **Parent issues:** [#229](https://github.com/marathoner-app/marathoner/issues/229),
   [#191](https://github.com/marathoner-app/marathoner/issues/191), and
@@ -15,14 +15,15 @@
   [`endurance-reviewer-workbook.md`](endurance-reviewer-workbook.md)
 
 > **Not approved. Not training advice. Not permitted in runtime code.** This
-> internal manifest pins the exact draft under review. Do not use this document
+> internal manifest identifies the exact proposed draft. Do not use this document
 > as the candidate's initial introduction to Marathoner. Preparing, sending,
 > accepting, or reviewing material is not approval evidence.
 >
 > **Outreach is blocked.** The current pinned target covers initial plan
-> generation but not the required missed-workout adaptation rules. Marathoner
-> will seek one combined endurance review after #105 provides exact rules and
-> examples and the complete workbook is repinned.
+> generation only and is obsolete for the intended combined engagement. Issue
+> #435 authors the missed-workout adaptation draft and complete workbook. A
+> later #231 step must pin both bundles together and record exact outreach
+> approval before any candidate is contacted.
 
 ## Review delivery model
 
@@ -48,8 +49,8 @@ controlled private storage.
 
 No invitation may be sent until all of the following are true:
 
-- #105 defines and tests the proposed reschedule, hold, repeat, no-change,
-  feasibility, and refusal behaviors;
+- #435 merges the proposed reschedule, hold, repeat, no-change, feasibility,
+  and refusal rules and representative fixtures;
 - the reviewer workbook includes those exact rules and representative examples;
 - this control manifest pins the combined base-plan and adaptation scope; and
 - #231 records owner approval of the exact candidate, message, timing, and
@@ -59,33 +60,23 @@ Changing a threshold, schedule, fixture, reason code, question, or reviewed
 file requires a new packet manifest, new hashes, and a new review round. A
 review decision does not transfer to another commit or artifact version.
 
-## Pinned review target
+## Draft combined review target awaiting final pin
 
-- Repository commit:
-  [`1ef241ac5b6bdbe52d819e7107b25d9ba9347b23`](https://github.com/marathoner-app/marathoner/tree/1ef241ac5b6bdbe52d819e7107b25d9ba9347b23)
+- Repository commit: not assigned; outreach remains blocked
 - Review protocol: `methodology-review@0.1.0`
-- Rule bundle: `beta-rules@0.1.0-draft`
+- Base-plan bundle: `beta-rules@0.1.0-draft`
+- Adaptation bundle: `beta-adaptation@0.1.0-draft`
 - Bundle state: draft, unapproved, and runtime-ineligible
-- Submitted inventory IDs: `ELIG-001`, `ELIG-002`, `FEAS-001`, `PLAN-001`,
-  `PROG-001`, `UNSUP-001`, and `UNSUP-002`
+- Proposed inventory IDs: `ELIG-001`, `ELIG-002`, `FEAS-001`, `PLAN-001`,
+  `PROG-001`, `UNSUP-001`, `UNSUP-002`, `ADAPT-001`, `ADAPT-002`,
+  `ADAPT-003`, and `ADAPT-004`
 
-The exact files and SHA-256 values are:
+The machine-readable manifest records every proposed file and SHA-256 value.
+Automated tests recalculate every listed hash so later edits fail closed. Issue
+#231 must assign one final repository commit and deliberately change the
+manifest from `draft-awaiting-pin` before this material can be sent.
 
-| File | Version | SHA-256 |
-| --- | --- | --- |
-| `docs/methodology/README.md` | `methodology-review@0.1.0` | `2e644e24f009bdb4f5573ea3fdc7ee9172b5de1b54f95dfcdddd10eabaffd1b4` |
-| `docs/methodology/beta-review-inventory.md` | `founding-beta-inventory@2026-10-08` | `332c3e7fd03ec47abf2f6ba07cf408d4a26268aaced6cd384659cefe45d05bfa` |
-| `docs/methodology/approval-record-template.md` | `methodology-approval-record@2026-10-08` | `8ecc59f8f881ef6fc0bc7d29a693ae00860bd60927b85021d7c23ae28a1fa3b6` |
-| `docs/methodology/artifacts/beta-rules/0.1.0-draft/README.md` | `beta-rules@0.1.0-draft` | `477fd2474d3a6eab06b4a75f32119d1027ab43715b571bb726abe8396f26bb5f` |
-| `docs/methodology/artifacts/beta-rules/0.1.0-draft/beta-rules.json` | `beta-rules@0.1.0-draft` | `dd5f7a00a9bcfae7c833a6ebd869e43c96dee91c2884603286bf3f14512b2657` |
-| `docs/methodology/artifacts/beta-rules/0.1.0-draft/fixtures.json` | `beta-rules@0.1.0-draft` | `c54c5ca4a06fdcf8f675da93c368186645c39005739815bcaf9dffb116a64f49` |
-| `docs/methodology/artifacts/beta-rules/0.1.0-draft/SHA256SUMS` | `beta-rules@0.1.0-draft-manifest` | `26c48038d075febe24045f5fea39ad4816c7f97fa33132284c82d9ae5a040b69` |
-
-The machine-readable manifest is the source of truth for these values.
-Automated tests recalculate every listed file hash so later edits fail closed
-until the packet is deliberately repinned.
-
-## Submitted scope
+## Proposed review scope
 
 The draft concerns one narrow founding-beta segment:
 
@@ -97,7 +88,7 @@ The draft concerns one narrow founding-beta segment:
 - receiving one deterministic four-run-per-week plan family with no pace or
   finish-time target.
 
-The submitted rule bundle covers:
+The proposed combined rule bundles cover:
 
 - cohort eligibility and complete-input thresholds;
 - supported race feasibility and explicit infeasible-date rejection;
@@ -105,7 +96,11 @@ The submitted rule bundle covers:
   week, and post-race rest assignments;
 - weekly and long-run progression limits; and
 - deterministic unsupported results for out-of-scope, incomplete, conflicting,
-  or infeasible inputs represented in the packet.
+  or infeasible inputs represented in the packet;
+- repeated perceived-effort and missed-workout evidence windows;
+- exact reschedule, hold, repeat, no-change, and adaptation-refusal decisions;
+- conservative race-proximity and training-disruption boundaries; and
+- runner approval or decline before a proposed plan change.
 
 ## Explicit exclusions
 
@@ -117,12 +112,13 @@ This review does not authorize:
   symptom decisions;
 - fueling, hydration, supplements, individualized nutrition, sleep, shoes, or
   general recovery guidance;
-- reschedule, hold, repeat, no-change, or any other ongoing adaptation;
 - pace targets, finish-time promises, autonomous increases in load or
-  intensity, or recommendations outside an approved deterministic rule;
+  intensity, catch-up mileage, or recommendations outside the exact proposed
+  adaptation actions;
 - implementation, deployment, beta invitations, or removal of any privacy,
   security, safety, integrity, operational, or TestFlight gate; or
-- any artifact other than the exact pinned files and submitted inventory IDs.
+- any artifact other than the files and inventory IDs proposed for the eventual
+  pinned packet.
 
 Clinical safety remains owned by the separate `CSR` review and #134. Nutrition
 and hydration remain owned by the separate `SNR` review and #135. The draft
@@ -148,7 +144,7 @@ record all of the following:
 6. freedom to approve, condition, reject, or decline any row without effect on
    compensation.
 
-The product owner authored the submitted draft and cannot approve it. A
+The product owner authored the proposed draft and cannot approve it. A
 material reviewer conflict requires reassignment or a second independent
 reviewer for the affected scope.
 
@@ -181,16 +177,30 @@ The reviewer must answer every question or mark it outside their competence.
    without creating an unsupported recovery prescription?
 6. Do the deterministic unsupported cases omit any unsafe, ambiguous, or
    insufficiently evidenced input? List every additional refusal condition.
-7. Does every submitted reason code accurately trace to the stated inventory
+7. Does every proposed reason code accurately trace to the stated inventory
    item and product behavior?
 8. Must consistent-running history be added to normalized runtime input before
    eligibility can be decided, and is self-reported history sufficient for the
    founding beta or must a recorded history window be required?
 9. Are the sources used appropriately—as context for independent judgment
    rather than proof that Marathoner's exact thresholds are universally safe?
-10. For each submitted inventory row, what is the decision, concise rationale,
+10. Are four recorded efforts inside 14 days and at least two hard responses a
+    sound minimum repeated signal, while one hard response always leaves the
+    plan unchanged?
+11. Are the exact reschedule constraints conservative enough, including the
+    two-day limit, same-week move, confirmed availability, spacing, supported
+    purposes, and prohibition on making up a long run?
+12. Is repeating an interrupted week after exactly two misses appropriate
+    without shifting later weeks or the race date?
+13. Are the 42-day repeat, 35-day hold, 21-day reschedule, and seven-day
+    disruption boundaries appropriate for this participant and plan family?
+14. Should three missed runs, late disruption, or overlapping missed-workout
+    and repeated-hard signals always refuse automatic adaptation?
+15. Does any adaptation action, no-change result, precedence rule, fixture, or
+    required human-review case need to be added, removed, or revised?
+16. For each proposed inventory row, what is the decision, concise rationale,
     limitation, required correction, and additional evidence, if any?
-11. What overall decision applies to this exact draft, and what must happen
+17. What overall decision applies to this exact draft, and what must happen
     before a non-draft candidate can be explicitly confirmed?
 
 ## Decision options
@@ -227,7 +237,7 @@ The returned evidence must include:
 - relevant first-marathon/adult recreational coaching experience;
 - conflicts and whether compensation was offered, explicitly stating that it
   was not contingent on outcome;
-- one decision and rationale for every submitted inventory ID;
+- one decision and rationale for every proposed inventory ID;
 - answers to all required questions, additional unsupported cases, and any
   limits on the reviewer's competence;
 - an overall decision; and
@@ -241,7 +251,8 @@ a dated source that can be linked from the repository approval record.
 ## Blank approval record
 
 Marathoner maintains the canonical blank
-[`approval-record-template.md`](approval-record-template.md), pinned above as
+[`approval-record-template.md`](approval-record-template.md), included in the
+draft manifest as
 `methodology-approval-record@2026-10-08` with SHA-256
 `8ecc59f8f881ef6fc0bc7d29a693ae00860bd60927b85021d7c23ae28a1fa3b6`.
 It is internal traceability structure, is not sent as the reviewer workbook,
@@ -270,8 +281,8 @@ represents their written decisions.
 | Conflicts | `[Blank: disclosure or None]` |
 | Compensation | `[Blank: unpaid / paid for time, never contingent on outcome]` |
 | Review completed | `[Blank: YYYY-MM-DD]` |
-| Repository commit | `1ef241ac5b6bdbe52d819e7107b25d9ba9347b23` |
-| Bundle | `beta-rules@0.1.0-draft` |
+| Repository commit | `[Blank: assigned by #231 before sending]` |
+| Bundles | `beta-rules@0.1.0-draft`; `beta-adaptation@0.1.0-draft` |
 
 ### Inventory decisions
 
@@ -284,10 +295,14 @@ represents their written decisions.
 | `PROG-001` | `[Blank]` | `[Blank]` | `[Blank]` |
 | `UNSUP-001` | `[Blank]` | `[Blank]` | `[Blank]` |
 | `UNSUP-002` | `[Blank]` | `[Blank]` | `[Blank]` |
+| `ADAPT-001` | `[Blank]` | `[Blank]` | `[Blank]` |
+| `ADAPT-002` | `[Blank]` | `[Blank]` | `[Blank]` |
+| `ADAPT-003` | `[Blank]` | `[Blank]` | `[Blank]` |
+| `ADAPT-004` | `[Blank]` | `[Blank]` | `[Blank]` |
 
 ### Required answers and additional unsupported cases
 
-Reviewer answers to questions 1–11: `[Blank]`
+Reviewer answers to questions 1–17: `[Blank]`
 
 Additional unsupported or ambiguous cases: `[Blank or None]`
 
@@ -302,13 +317,13 @@ Marathoner's product owner records the technical version and integrity evidence
 separately:
 
 > I independently reviewed the intended runner, race-timing rules, proposed
-> plan, progression limits, and unsupported cases described in the workbook
-> provided to me. My decisions, reasoning, limitations, conflicts, and required
-> changes are represented accurately. I was free to accept, revise, reject, or
-> decline any part of the review, and any compensation was for my time rather
-> than a particular outcome. I understand that my review applies only to the
-> proposal described in that workbook and does not endorse Marathoner or uses
-> outside that scope.
+> plan, progression limits, adaptation rules, and unsupported cases described
+> in the workbook provided to me. My decisions, reasoning, limitations,
+> conflicts, and required changes are represented accurately. I was free to
+> accept, revise, reject, or decline any part of the review, and any
+> compensation was for my time rather than a particular outcome. I understand
+> that my review applies only to the proposal described in that workbook and
+> does not endorse Marathoner or uses outside that scope.
 
 Reviewer confirmation date: `[Blank: YYYY-MM-DD]`
 
@@ -321,9 +336,10 @@ Only the candidate-specific fields approved in #231 may vary. Do not send this
 control manifest or ask the candidate to interpret repository commits,
 artifact identifiers, inventory codes, or checksums.
 
-The invitation is a draft and must not be sent while #105 or the combined
-workbook gate above remains incomplete. The earlier five-hour fee assumption
-does not carry forward automatically to the larger scope.
+The invitation is a draft and must not be sent until #435 is merged, this
+combined package is pinned, and #231 records the exact candidate-specific
+authorization. The earlier five-hour fee assumption does not carry forward
+automatically to the larger scope.
 
 If the candidate expresses interest, provide the
 [reviewer workbook](endurance-reviewer-workbook.md) in an accessible document
@@ -356,9 +372,9 @@ verification, or willing to perform the review.
 
 ## What happens next
 
-Issue #105 first owns the deterministic adaptation rules, reasoned examples,
-and tests needed for review. When those are ready, Marathoner combines them
-with this base-plan material and verifies one complete reviewer workbook.
+Issue #435 owns the deterministic adaptation draft, reasoned examples, and
+tests needed for review. Merging it means the combined workbook is authored,
+not that the rules are approved or implemented.
 
 Issue #231 then owns outreach and may record a candidate as accepted only after
 the candidate explicitly agrees in writing to the combined workbook scope and
