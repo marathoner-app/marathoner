@@ -1,7 +1,7 @@
 # Founding-beta endurance-methodology review control manifest
 
-- **Status:** Prepared, not sent; no reviewer is contacted, scheduled, engaged,
-  or represented as having approved Marathoner
+- **Status:** Combined scope incomplete and not sent; no reviewer is contacted,
+  scheduled, engaged, or represented as having approved Marathoner
 - **Prepared:** 2026-10-08
 - **Review role:** Endurance-methodology reviewer (`EMR`)
 - **Parent issues:** [#229](https://github.com/marathoner-app/marathoner/issues/229),
@@ -18,6 +18,11 @@
 > internal manifest pins the exact draft under review. Do not use this document
 > as the candidate's initial introduction to Marathoner. Preparing, sending,
 > accepting, or reviewing material is not approval evidence.
+>
+> **Outreach is blocked.** The current pinned target covers initial plan
+> generation but not the required missed-workout adaptation rules. Marathoner
+> will seek one combined endurance review after #105 provides exact rules and
+> examples and the complete workbook is repinned.
 
 ## Review delivery model
 
@@ -40,6 +45,15 @@ Every candidate receives materially identical methodology, questions, decision
 choices, evidence requirements, and compensation independence. Candidate
 contact details, correspondence, contracts, and screening notes stay in
 controlled private storage.
+
+No invitation may be sent until all of the following are true:
+
+- #105 defines and tests the proposed reschedule, hold, repeat, no-change,
+  feasibility, and refusal behaviors;
+- the reviewer workbook includes those exact rules and representative examples;
+- this control manifest pins the combined base-plan and adaptation scope; and
+- #231 records owner approval of the exact candidate, message, timing, and
+  compensation posture for the larger engagement.
 
 Changing a threshold, schedule, fixture, reason code, question, or reviewed
 file requires a new packet manifest, new hashes, and a new review round. A
@@ -307,6 +321,10 @@ Only the candidate-specific fields approved in #231 may vary. Do not send this
 control manifest or ask the candidate to interpret repository commits,
 artifact identifiers, inventory codes, or checksums.
 
+The invitation is a draft and must not be sent while #105 or the combined
+workbook gate above remains incomplete. The earlier five-hour fee assumption
+does not carry forward automatically to the larger scope.
+
 If the candidate expresses interest, provide the
 [reviewer workbook](endurance-reviewer-workbook.md) in an accessible document
 format. Work begins only after both parties agree in writing on the scope,
@@ -338,9 +356,14 @@ verification, or willing to perform the review.
 
 ## What happens next
 
-Issue #231 owns outreach and may record a candidate as accepted only after the
-candidate explicitly agrees in writing to the workbook scope and deliverable,
-independence/conflict terms, schedule, and any non-contingent compensation.
+Issue #105 first owns the deterministic adaptation rules, reasoned examples,
+and tests needed for review. When those are ready, Marathoner combines them
+with this base-plan material and verifies one complete reviewer workbook.
+
+Issue #231 then owns outreach and may record a candidate as accepted only after
+the candidate explicitly agrees in writing to the combined workbook scope and
+deliverable, independence/conflict terms, schedule, and any non-contingent
+compensation.
 The candidate need not interact with the repository. Marathoner's product owner
 owns the internal mapping from the workbook response to the exact pinned
 artifacts and must obtain the candidate's dated confirmation of that mapping.

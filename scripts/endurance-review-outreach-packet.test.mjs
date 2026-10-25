@@ -166,6 +166,25 @@ describe('endurance-methodology review outreach packet', () => {
     }
   });
 
+  it('blocks outreach until missed-workout adaptation is reviewable in the same engagement', async () => {
+    const document = await readPacketDocument();
+    const invitation = await readReviewerDocument(
+      'endurance-review-invitation.md',
+    );
+    const workbook = await readReviewerDocument(
+      'endurance-reviewer-workbook.md',
+    );
+
+    expect(document).toContain('**Outreach is blocked.**');
+    expect(document).toContain('#105 defines and tests');
+    expect(invitation).toContain('Do not send this invitation yet.');
+    expect(workbook).toContain('not ready for reviewer delivery');
+    expect(workbook).toContain('## Required adaptation section before delivery');
+    expect(workbook).toContain(
+      'the precise conditions for reschedule, hold, repeat, no change, or refusal',
+    );
+  });
+
   it('keeps the reviewer workbook aligned with the exact proposed schedule', async () => {
     const workbook = await readReviewerDocument(
       'endurance-reviewer-workbook.md',

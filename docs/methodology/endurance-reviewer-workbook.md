@@ -1,5 +1,10 @@
 # Marathoner first-marathon methodology review
 
+> **Internal draft — not ready for reviewer delivery.** The initial-plan
+> sections are complete, but the missed-workout adaptation section is blocked
+> until Marathoner has exact, testable rules and representative examples. The
+> eventual reviewer receives one coherent workbook covering both surfaces.
+
 ## Thank you for considering this review
 
 Marathoner is an early-stage training application intended to help a narrowly
@@ -23,6 +28,8 @@ review covers:
 - whether the race is far enough away;
 - weekly distance, long-run progression, cutbacks, and tapering;
 - the four-run weekly structure and recovery placement;
+- deterministic reschedule, hold, repeat, no-change, and refusal decisions
+  after completed or missed training;
 - the cases the application should decline to support; and
 - any missing or ambiguous cases that should block plan generation.
 
@@ -30,6 +37,26 @@ The review does not cover diagnosis, treatment, injury rehabilitation, pain or
 unusual-symptom decisions, individualized nutrition, hydration prescriptions,
 supplements, pregnancy, youth runners, pace targets, or finish-time promises.
 Those subjects are either excluded or require separate qualified review.
+
+## Required adaptation section before delivery
+
+This workbook must not be sent until Marathoner adds the exact missed-workout
+and completed-training rules to be reviewed. That section must define:
+
+- the minimum completed-run and perceived-effort inputs;
+- the recent-workout pattern required before recommending a change;
+- why one difficult workout cannot trigger a material rewrite;
+- the precise conditions for reschedule, hold, repeat, no change, or refusal;
+- how race feasibility is reassessed after missed training;
+- which changes require the runner's explicit approval;
+- how a runner can decline without changing the active plan;
+- how pain or unusual symptoms are delegated to the separate safety process;
+  and
+- supported, boundary, ambiguous, and rejected examples for every decision.
+
+Once those rules and examples are authored, this placeholder is replaced by a
+reviewable adaptation section and the complete workbook is checked against the
+underlying rule definitions before outreach is authorized.
 
 ## Intended runner
 
@@ -235,12 +262,13 @@ required correction, and any additional evidence you would want to see:
 Please confirm the following in your own words or by agreeing to it in writing:
 
 > I independently reviewed the intended runner, race-timing rules, proposed
-> plan, progression limits, and unsupported cases described in this workbook.
-> My decisions, reasoning, limitations, conflicts, and required changes are
-> represented accurately. I was free to accept, revise, reject, or decline any
-> part of the review, and any compensation was for my time rather than a
-> particular outcome. I understand that my review applies only to the proposal
-> described here and does not endorse Marathoner or uses outside this scope.
+> plan, progression limits, missed-workout adaptation rules, and unsupported
+> cases described in this workbook. My decisions, reasoning, limitations,
+> conflicts, and required changes are represented accurately. I was free to
+> accept, revise, reject, or decline any part of the review, and any
+> compensation was for my time rather than a particular outcome. I understand
+> that my review applies only to the proposal described here and does not
+> endorse Marathoner or uses outside this scope.
 
 Confirmation date: `[Date]`
 
