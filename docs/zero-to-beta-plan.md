@@ -1,7 +1,7 @@
 # Marathoner zero-to-beta plan
 
 - **Status:** Active delivery plan
-- **Last updated:** October 23, 2026
+- **Last updated:** October 26, 2026
 - **Product owner and current implementer:** Kevin Tulloch
 - **Decision checkpoint:** January 15, 2027; it is the optimistic invitation floor, precedes the likely forecast, and is not a delivery promise
 - **Master tracker:** [GitHub issue #104](https://github.com/marathoner-app/marathoner/issues/104)
@@ -10,6 +10,8 @@
 - **Capacity forecast:** [Owner-session and gate forecast](capacity-forecast.md)
 - **Legal entity and Apple enrollment:** [Decision and execution path](operations/legal-entity-and-apple-enrollment.md)
 - **Product strategy:** [Product-first free-beta decision](product-first-beta-decision.md)
+- **Resource sequencing:**
+  [Internal-first spending decision](internal-first-resource-sequencing.md)
 - **Optional commercial research:** [Dormant commercial proof sprint](commercial-proof-sprint.md)
 - **Methodology review:** [Qualified review protocol](methodology/README.md)
   and [initiation decision](methodology/founding-beta-review-decision.md)
@@ -42,6 +44,19 @@ formal interviews, hosted reservations, and a paid concierge experiment from
 the beta critical path. That choice accepts unresolved commercial uncertainty
 so owner attention can go to the functional product. Product payments and live
 unreviewed recommendations remain outside the beta boundary.
+
+The October 26
+[resource-sequencing decision](internal-first-resource-sequencing.md) makes
+internal completeness the default predecessor to material external spending.
+Implementation, fixtures, automated tests, emulators, owner accounts, and
+available physical-device development should advance before professional
+review, entity and Apple organization costs, or other significant commitments
+are activated. Each external gate still applies before the behavior or release
+it governs reaches participants.
+
+This sequencing accepts that a deliberately deferred external wait may later
+move the invitation date. It does not permit a forecast date to override an
+unmet gate.
 
 ## Founding-beta contract
 

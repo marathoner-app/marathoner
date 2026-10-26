@@ -8,6 +8,7 @@
 - **Recalibration issue:** [#208](https://github.com/marathoner-app/marathoner/issues/208)
 - **Strategy realignment:** [#223](https://github.com/marathoner-app/marathoner/issues/223)
 - **Entity-path update:** October 21, 2026; [#280](https://github.com/marathoner-app/marathoner/issues/280)
+- **Resource-sequencing update:** October 26, 2026; [#439](https://github.com/marathoner-app/marathoner/issues/439)
 - **Master tracker:** [#104](https://github.com/marathoner-app/marathoner/issues/104)
 - **Scope:** Marathoner beta critical path; Creator Radar is excluded
 
@@ -47,6 +48,15 @@ the optional 41 / 63 / 95-unit
 path. Formal interviews, refundable reservations, and paid concierge evidence
 remain unresolved commercial questions, but they no longer control product
 implementation or founding-beta invitations.
+
+The October 26
+[resource-sequencing decision](internal-first-resource-sequencing.md) keeps
+material external spending dormant until applicable implementation and
+internal-validation predecessors are complete and the dependency is becoming a
+real blocker. This reduces premature and repeat spending. It also means the
+forecast dates depend on activating external waits early enough once those
+criteria are met; deliberate deferral may move the invitation date rather than
+waive a gate.
 
 With those controls, the corrected scope forecasts:
 
@@ -319,13 +329,15 @@ cannot begin before invitations.
 ## External elapsed time
 
 External waits do not consume owner sessions, but they can control a gate date.
-They must be started as early as their input package allows.
+Start them when the required input is stable, practical internal predecessors
+are complete, and the wait is approaching the critical path. Preparation alone
+does not justify material spending.
 
 | External dependency | Planning range | How it is modeled | Stop condition |
 | --- | --- | --- | --- |
-| Qualified reviewer availability | 2–6 calendar weeks to identify and schedule | Start #191 immediately; overlap the wait with non-prescriptive implementation and trust work | If no qualified reviewer is committed when #70 is ready, choose the non-prescriptive fallback or move the date |
+| Qualified reviewer availability | 2–6 calendar weeks to identify and schedule | Keep the combined packet ready; activate #191 when the prescriptive journey is stable and internally testable and the wait is within the next four to six weeks of blocking external beta | If review remains unavailable when internal predecessors are complete, choose the non-prescriptive fallback or move the date |
 | Rules and content review | 1–3 calendar weeks per complete review packet | Owner preparation is in #119, #134, and #135 estimates; reviewer elapsed time is separate | Unapproved high-risk rules or content cannot ship |
-| California entity formation, D-U-N-S synchronization, Apple organization enrollment, signing, and App Store Connect setup | 1–3 calendar weeks after accepted formation as a planning allowance | Execute [#281](https://github.com/marathoner-app/marathoner/issues/281) as early as practical; overlap the external wait with product work rather than waiting for Wave 04 | The Personal Team cannot supply the intended seller identity or App Attest profile; unresolved enrollment blocks #205 beta proof and external distribution |
+| California entity formation, D-U-N-S synchronization, Apple organization enrollment, signing, and App Store Connect setup | 1–3 calendar weeks after accepted formation as a planning allowance | Preserve the prepared [#281](https://github.com/marathoner-app/marathoner/issues/281) path and continue Personal Team development; activate the paid path when organization identity, App Attest, or external distribution is within the next four to six weeks of becoming the blocker | The Personal Team cannot supply the intended seller identity or App Attest profile; unresolved enrollment blocks #205 beta proof and external distribution |
 | First external TestFlight review | 1 week likely; 2 weeks conservative including correction allowance | Prioritize #122 early enough to overlap review with the remaining iOS work | No external invitation without an approved build |
 | Non-owner device rehearsal | 1–3 calendar weeks to schedule | Book after the first installable candidate exists; owner execution effort is in #122 and #140 | A failed critical journey creates a blocking issue |
 
@@ -335,8 +347,9 @@ California nor Apple publishes a completion guarantee for the full formation
 and organization-enrollment path, so the one-to-three-week range is a forecast
 allowance after accepted formation, not a service-level claim. Start the
 [entity and enrollment path](operations/legal-entity-and-apple-enrollment.md)
-early; it does not block ordinary web work, but it controls App Attest and
-external distribution.
+when its activation test passes; it does not block ordinary web or Personal
+Team development, but it eventually controls App Attest and external
+distribution.
 
 Apple documents that the first build submitted for external testing receives a
 full TestFlight App Review and that later builds may not require one. Apple does

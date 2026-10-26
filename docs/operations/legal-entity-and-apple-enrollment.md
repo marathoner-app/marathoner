@@ -1,7 +1,9 @@
 # Legal entity and Apple organization enrollment
 
-- **Status:** Approved direction; execution tracked separately
+- **Status:** Approved direction; paid execution deferred under the internal-first policy
 - **Decision date:** October 21, 2026
+- **Sequencing update:** October 26, 2026;
+  [internal-first resource sequencing](../internal-first-resource-sequencing.md)
 - **Planning issue:** [#280](https://github.com/marathoner-app/marathoner/issues/280)
 - **Execution issue:** [#281](https://github.com/marathoner-app/marathoner/issues/281)
 - **App Attest rollout:** [#281](https://github.com/marathoner-app/marathoner/issues/281)
@@ -34,6 +36,12 @@ investors or counsel recommend a corporation.
 `Marathoner Technologies LLC` is preferred over `Marathoner App LLC` because it
 can own more than one product and does not require an entity-name change if the
 consumer brand changes. It still makes the relationship to Marathoner clear.
+
+The direction is settled, but formation is not required merely because the
+path is prepared. Continue ordinary web and Personal Team development first.
+Activate the filing and organization-enrollment sequence when seller identity,
+App Attest, or external distribution is within the next four to six weeks of
+becoming the real blocker and the owner approves the exact current cost.
 
 ## Preliminary name and trademark screen
 
@@ -130,7 +138,8 @@ a new D-U-N-S record can take up to five business days and then up to two more
 business days to become available to Apple. Organization verification and any
 follow-up add an unguaranteed wait. Keep **one to three calendar weeks after
 accepted formation** as the planning allowance, not as a service promise, and
-start #281 before the iOS feature work reaches its distribution gate.
+activate #281 early enough to absorb that wait once the internal-first spending
+test passes.
 
 The LLC and organization enrollment do not block ordinary web development or
 all owner-only local iPhone work. They do block the intended organization

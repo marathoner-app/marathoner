@@ -59,6 +59,10 @@ The current investment and release posture is:
   Commercial proof remains an unresolved investment risk but no longer
   precedes bounded product delivery or invitations. Product payments remain
   deferred, and qualified review still governs live methodology.
+- Complete and internally validate every practical predecessor before material
+  external spending. Prepared professional-review, entity, and platform paths
+  activate when their external wait is approaching the real critical path;
+  their release gates remain unchanged.
 
 ## Ratified founding-beta contract
 
@@ -111,7 +115,7 @@ Critical items can have prerequisites in earlier high-priority work.
 
 | ID | Priority | Type | Required outcome | Existing home | Gate | Status |
 | --- | --- | --- | --- | --- | --- | --- |
-| CR-01 | Critical | Safety | Name the qualified reviewer role and obtain dated approval for the supported rules, eligibility, escalation boundaries, and guidance. | #70, #107, #119, #148 | Invitations | Independent endurance review required October 23; candidate-specific outreach authorization, reviewers, and approval pending |
+| CR-01 | Critical | Safety | Name the qualified reviewer role and obtain dated approval for the supported rules, eligibility, escalation boundaries, and guidance. | #70, #107, #119, #148 | Invitations | Independent endurance review required before prescriptive external use; combined packet ready, outreach intentionally deferred until internal-first activation criteria pass |
 | CR-02 | Critical | Product | Ratify one narrow beta segment, participant count, adaptation boundary, client capability matrix, and explicit exclusions. | #117, #104 | Wave 00 | Complete |
 | CR-03 | Critical | Investment | Record problem evidence, alternatives, differentiation, participant commitments, and willingness-to-pay signals. | #110, #126, #211–#218, #223 | Optional post-beta commercial decision | Risk explicitly accepted October 8; participant evidence not collected |
 | CR-04 | High | Governance | Repair contradictory platform, parent, milestone, design, audit, and current-state sources. | #118, #104 | Wave 00 | Complete |
@@ -205,8 +209,9 @@ unrelated implementation issues.
 - #105 through #110 have executable child issues.
 - Pull-request checks run before merge.
 - A capacity-based forecast is recorded.
-- The methodology reviewer and review scope are identified, or the product is
-  explicitly reduced to the non-prescriptive fallback.
+- The methodology reviewer role, prepared review scope, and internal-first
+  activation criteria are identified, or the product is explicitly reduced to
+  the non-prescriptive fallback.
 - The public signup posture has an explicit, implemented decision.
 
 ## Wave 01 gate: prove the client foundation

@@ -1,7 +1,7 @@
 # Operating partner start-here guide
 
 - **Status:** Active orientation guide
-- **Last reviewed:** October 23, 2026
+- **Last reviewed:** October 26, 2026
 - **Audience:** Marathoner's operating partner and other first-time strategic
   reviewers
 - **Tracking issue:**
@@ -52,7 +52,11 @@ conflict.
    [product-first free-beta decision](product-first-beta-decision.md). The
    working product and its responsibility gates are the critical path. Field
    discovery may inform the product now, but formal pricing, reservation, and
-   paid-concierge evidence are not release gates.
+   paid-concierge evidence are not release gates. The
+   [internal-first resource-sequencing decision](internal-first-resource-sequencing.md)
+   also defers material external spending until practical implementation and
+   internal-validation predecessors are complete and the dependency is
+   becoming a real blocker.
 
 4. **Learn the exact beta promise.** Read the
    [zero-to-beta plan](zero-to-beta-plan.md), especially the supported
@@ -116,7 +120,7 @@ conflict.
 
 ## Current snapshot
 
-As of October 23, 2026:
+As of October 26, 2026:
 
 - Marathoner is a deployed, responsive pre-beta web application with a
   production-shaped Capacitor iOS shell. It is not open for public signup or
@@ -140,6 +144,9 @@ As of October 23, 2026:
   ([#205](https://github.com/marathoner-app/marathoner/issues/205)), and an
   external-testable iOS build
   ([#122](https://github.com/marathoner-app/marathoner/issues/122)).
+  Prepared methodology and entity paths remain inactive until the internal-
+  first activation criteria pass; deferral changes timing, not those release
+  requirements.
 
 ## Operating role
 

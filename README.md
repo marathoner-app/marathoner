@@ -70,6 +70,9 @@ The frozen
 [commercial interview protocol and evidence rubric](docs/operations/commercial-interview-protocol.md)
 defines how those concepts are screened, facilitated, classified, and reduced
 to privacy-safe directional evidence before any real response is collected.
+The [internal-first resource-sequencing decision](docs/internal-first-resource-sequencing.md)
+keeps implementation and owner-controlled validation moving before material
+external spending, while preserving every gate required before outside use.
 [GitHub issue #104](https://github.com/marathoner-app/marathoner/issues/104)
 is its live execution tracker, and
 [issue #117](https://github.com/marathoner-app/marathoner/issues/117) records
@@ -81,8 +84,10 @@ product, investor, architecture, delivery, and operations review. The
 approve the founding-beta training and safety behavior, the versioned review
 inventory, and the evidence required before prescriptive use. The
 [founding-beta methodology-review decision](docs/methodology/founding-beta-review-decision.md)
-records that independent endurance-methodology review is required while
-preserving a separate approval gate before any candidate outreach. The
+records that independent endurance-methodology review is required before
+prescriptive participant use. Its prepared outreach remains deferred until the
+internally testable product is close enough for review to become a real release
+blocker. The
 [founding-beta endurance-rules draft](docs/methodology/artifacts/beta-rules/0.1.0-draft/README.md)
 is the exact unapproved packet awaiting independent endurance-methodology
 review; it is not used by the application. The
