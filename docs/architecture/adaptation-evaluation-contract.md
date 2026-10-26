@@ -90,3 +90,32 @@ exact non-draft artifact. A later focused change must then:
    without allowing autonomous plan mutation.
 
 Until those gates pass, this module is implementation evidence only.
+
+## Isolated plan projection
+
+[`adaptationPlanProjection.ts`](../../src/domain/training/adaptationPlanProjection.ts)
+defines the next internal boundary after evaluation. It accepts a normalized
+plan prescription, the active and evaluated revisions, and one server-owned
+bounded adjustment. It can project only repeat, hold, or reschedule changes,
+advances the revision exactly once, and records stable before-and-after workout
+snapshots.
+
+The projection is deliberately structural. It models scheduled dates, phases,
+purposes, and distance-or-duration targets, but not workout completion status,
+participant identity, persistence metadata, or Firestore paths. The draft
+packet does not define the operational status transition for a rescheduled
+skipped workout, so this implementation does not invent one. A later reviewed
+atomic workflow must resolve that state transition explicitly.
+
+The projector rejects stale revisions, incomplete positional weeks,
+incompatible target kinds, target increases, duplicate workout identities or
+dates, occupied reschedule dates, moves outside the supplied plan week, and
+material recommendations that would make no change. Because it receives no
+artifact path or version, it neither imports the pinned draft nor represents
+methodology approval.
+
+This boundary remains disconnected from the evaluator, recommendation
+evidence, material-command handler, plan persistence, signed-in UI, and
+activation controls. After #119 approves an exact non-draft artifact, the
+projection and its fixtures must be reconciled to that artifact before any
+participant-facing acceptance transaction may use it.
