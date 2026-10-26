@@ -1,6 +1,6 @@
 # Founding-beta endurance-methodology review control manifest
 
-- **Status:** Combined scope pinned but not sent; no reviewer is
+- **Status:** Combined scope pinned and intentionally deferred; no reviewer is
   contacted, scheduled, engaged, or represented as having approved Marathoner
 - **Prepared:** 2026-10-25
 - **Review role:** Endurance-methodology reviewer (`EMR`)
@@ -20,9 +20,12 @@
 > accepting, or reviewing material is not approval evidence.
 >
 > **Outreach is blocked.** The combined initial-plan and missed-workout
-> adaptation package is now pinned. The remaining #231 gate is explicit owner
-> approval of the exact candidate, message, timing, and compensation posture
-> before any contact occurs.
+> adaptation package is now pinned. Under the
+> [internal-first resource-sequencing decision](../internal-first-resource-sequencing.md),
+> it stays ready but inactive until the relevant behavior is stable and
+> internally testable and review is approaching the critical path. The
+> remaining #231 gate is explicit owner approval of the exact candidate,
+> message, timing, and compensation posture before any contact occurs.
 
 ## Review delivery model
 

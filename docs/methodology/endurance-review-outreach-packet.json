@@ -1,6 +1,6 @@
 {
   "schemaVersion": "endurance-review-outreach-packet@2",
-  "status": "prepared-not-sent",
+  "status": "prepared-deferred-not-sent",
   "preparedOn": "2026-10-25",
   "reviewRole": "EMR",
   "protocolVersion": "methodology-review@0.1.0",

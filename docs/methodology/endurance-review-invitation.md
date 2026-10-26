@@ -1,7 +1,8 @@
 # Endurance-methodology review invitation
 
-- **Status:** Draft template backed by a pinned combined package; sending
-  remains blocked until #231 records exact outreach approval
+- **Status:** Prepared and intentionally deferred; sending remains blocked
+  until the internal-first activation test passes and #231 records exact
+  outreach approval
 - **Owner:** Kevin Tulloch
 - **Review role:** Endurance-methodology reviewer (`EMR`)
 - **Owning issue:** [#231](https://github.com/marathoner-app/marathoner/issues/231)
@@ -15,6 +16,11 @@ endurance review covering both the initial plan and missed-workout adaptation.
 The exact draft rules, representative examples, and combined workbook are now
 pinned. The fee, time allowance, target date, and candidate must still be
 explicitly approved for that combined scope.
+
+The October 26
+[resource-sequencing decision](../internal-first-resource-sequencing.md) keeps
+this template ready but inactive while the relevant product journey is built
+and internally validated. Preparation is not a reason to incur the cost early.
 
 The candidate name, proposed completion date, fee, and time allowance require
 specific owner approval before sending. The initial invitation does not

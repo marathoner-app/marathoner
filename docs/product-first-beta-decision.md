@@ -3,11 +3,14 @@
 - **Status:** Active product strategy
 - **Effective:** October 8, 2026
 - **Operating-role update:** October 23, 2026
+- **Resource-sequencing update:** October 26, 2026
 - **Owner:** Kevin Tulloch
 - **Tracking issue:** [#223](https://github.com/marathoner-app/marathoner/issues/223)
 - **Founding-beta contract:** [#117](https://github.com/marathoner-app/marathoner/issues/117)
 - **Methodology decision:**
   [Independent review required](methodology/founding-beta-review-decision.md)
+- **Resource sequencing:**
+  [Build and validate internally before material external spend](internal-first-resource-sequencing.md)
 
 ## Decision
 
@@ -25,6 +28,19 @@ working application.
 
 This is not evidence that demand exists. It is a choice about which uncertainty
 to retire first.
+
+## Resource sequencing
+
+The same product-first principle applies to material external spending. Build,
+exercise, and stabilize every practical predecessor with existing resources
+before paying for a dependency that does not yet unlock forward progress. The
+[internal-first resource-sequencing decision](internal-first-resource-sequencing.md)
+defines the activation test for professional review, entity and Apple
+enrollment costs, commercial research, and new paid infrastructure.
+
+Deferring a cost does not remove its release gate. It places the cost near the
+point where its deliverable or external wait becomes the real blocker and
+reduces the chance of paying twice after avoidable product changes.
 
 ## Required before the free beta
 

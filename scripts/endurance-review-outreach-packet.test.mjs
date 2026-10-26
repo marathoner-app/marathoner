@@ -43,7 +43,7 @@ describe('endurance-methodology review outreach packet', () => {
     expect(manifest).toEqual(
       expect.objectContaining({
         schemaVersion: 'endurance-review-outreach-packet@2',
-        status: 'prepared-not-sent',
+        status: 'prepared-deferred-not-sent',
         reviewRole: 'EMR',
         protocolVersion: 'methodology-review@0.1.0',
         pinnedRepositoryCommit:
@@ -103,7 +103,7 @@ describe('endurance-methodology review outreach packet', () => {
     }
     expect(document).not.toContain('| `SAFE-001` | `[Blank]`');
     expect(document).not.toContain('| `GUIDE-001` | `[Blank]`');
-    expect(manifest.status).toBe('prepared-not-sent');
+    expect(manifest.status).toBe('prepared-deferred-not-sent');
   });
 
   it('gives every reviewer fixed decision choices and evidence requirements', async () => {
