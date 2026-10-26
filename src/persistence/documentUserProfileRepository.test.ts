@@ -25,6 +25,7 @@ const input: SaveUserProfileInput = {
   preferredDistanceUnit: "mile",
   timeZone: createIanaTimeZone("America/Los_Angeles"),
   experienceLevel: "consistent",
+  consistentRunningWeeks: 12,
   targetRace: {
     kind: "date",
     date: createDateOnly("2027-05-02"),
@@ -74,6 +75,7 @@ describe("user profile repository", () => {
       preferredDistanceUnit: "mile",
       timeZone: "America/Los_Angeles",
       experienceLevel: "consistent",
+      consistentRunningWeeks: 12,
       targetRace: { kind: "date", date: "2027-05-02" },
       currentWeeklyDistanceMeters: 32_187,
       currentRunningFrequencyDaysPerWeek: 4,
@@ -129,6 +131,32 @@ describe("user profile repository", () => {
       }),
     ).rejects.toMatchObject({ code: "invalid_data" });
     expect(store.read(profilePath)).toBeUndefined();
+  });
+
+  it("rejects an invalid consistent-running duration without writing it", async () => {
+    await expect(
+      repositories.profile.save({
+        ...input,
+        consistentRunningWeeks: 1.5,
+      }),
+    ).rejects.toMatchObject({ code: "invalid_data" });
+    expect(store.read(profilePath)).toBeUndefined();
+  });
+
+  it("loads a legacy profile that predates the optional duration field", async () => {
+    await repositories.profile.save(input);
+    const storedProfile = store.read(profilePath);
+    if (storedProfile === undefined) throw new Error("Expected stored profile.");
+    const legacyProfile = { ...storedProfile };
+    delete legacyProfile.consistentRunningWeeks;
+    store.overwrite(profilePath, legacyProfile);
+
+    await expect(repositories.profile.load()).resolves.toEqual(
+      expect.objectContaining({
+        experienceLevel: "consistent",
+        consistentRunningWeeks: undefined,
+      }),
+    );
   });
 
   it.each([

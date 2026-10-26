@@ -82,6 +82,7 @@ async function saveProfile(database: Firestore, userId: UserId, name: string) {
     preferredDistanceUnit: 'mile',
     timeZone,
     experienceLevel: 'consistent',
+    consistentRunningWeeks: 12,
     currentRunningFrequencyDaysPerWeek: 4,
     completionGoal: 'complete_first_marathon',
   })

@@ -423,7 +423,11 @@ function hasExactRunnerContextKeys(value: unknown): boolean {
         'completionGoal',
         'safetySignal',
       ],
-      ['recentPerformance', 'scheduleConstraints'],
+      [
+        'consistentRunningWeeks',
+        'recentPerformance',
+        'scheduleConstraints',
+      ],
     ) ||
     !hasExactTargetRaceKeys(value.targetRace) ||
     !Array.isArray(value.availableTrainingDays)

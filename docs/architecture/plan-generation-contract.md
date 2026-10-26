@@ -30,8 +30,8 @@ The input contains only facts with a defined generation purpose:
 
 - the input schema and requested ruleset versions;
 - the desired plan start date;
-- recent-running consistency, whole-meter weekly volume, frequency, and
-  longest recent run;
+- recent-running pattern and, for a consistent runner, its whole-week duration;
+- whole-meter weekly volume, frequency, and longest recent run;
 - an exact race date or target window;
 - an optional representative effort in canonical date, meter, and second
   units;

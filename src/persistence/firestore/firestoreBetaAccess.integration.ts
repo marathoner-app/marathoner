@@ -45,6 +45,7 @@ function profileDocument(userId = firstUserId) {
     preferredDistanceUnit: "mile",
     timeZone: "America/Los_Angeles",
     experienceLevel: "consistent",
+    consistentRunningWeeks: 12,
     targetRace: { kind: "date", date: "2027-05-02" },
     currentWeeklyDistanceMeters: 24_000,
     currentRunningFrequencyDaysPerWeek: 4,

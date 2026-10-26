@@ -69,6 +69,7 @@ describe("plan-generation contract", () => {
           startDate: "2030-01-20",
           endDate: "2030-01-10",
         },
+        consistentRunningWeeks: 7.5,
         currentRunningFrequencyDaysPerWeek: 8,
         availableTrainingDays: ["tuesday", "tuesday"],
         preferredLongRunDay: "sunday",
@@ -84,6 +85,10 @@ describe("plan-generation contract", () => {
         expect.objectContaining({
           code: "out_of_order",
           field: "runner.targetRace.endDate",
+        }),
+        expect.objectContaining({
+          code: "invalid_value",
+          field: "runner.consistentRunningWeeks",
         }),
         expect.objectContaining({
           code: "invalid_value",

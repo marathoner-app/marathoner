@@ -43,6 +43,7 @@ const validationFieldByDraftField: Partial<
 > = {
   displayName: "displayName",
   experienceLevel: "experienceLevel",
+  consistentRunningWeeks: "consistentRunningWeeks",
   raceTimingMode: "targetRace",
   raceDate: "targetRace",
   raceWindowStartDate: "targetRace",
@@ -327,6 +328,41 @@ export default function RunnerOnboarding({
                 <p id="runner-experience-error" className="onboarding-field-error">
                   {errors.experienceLevel}
                 </p>
+              )}
+              {draft.experienceLevel === "consistent" && (
+                <label
+                  className="onboarding-inline-field"
+                  htmlFor="runner-consistent-weeks"
+                >
+                  How many consecutive weeks have you been running consistently?
+                  <span id="runner-consistent-weeks-help">
+                    Count the weeks in your current routine. This records your
+                    starting point; it does not decide eligibility on this screen.
+                  </span>
+                  <input
+                    id="runner-consistent-weeks"
+                    type="number"
+                    min="0"
+                    step="1"
+                    inputMode="numeric"
+                    value={draft.consistentRunningWeeks}
+                    aria-describedby={`runner-consistent-weeks-help${errors.consistentRunningWeeks ? " runner-consistent-weeks-error" : ""}`}
+                    aria-invalid={
+                      errors.consistentRunningWeeks ? "true" : undefined
+                    }
+                    onChange={(event) =>
+                      update("consistentRunningWeeks", event.target.value)
+                    }
+                  />
+                  {errors.consistentRunningWeeks && (
+                    <span
+                      id="runner-consistent-weeks-error"
+                      className="onboarding-field-error"
+                    >
+                      {errors.consistentRunningWeeks}
+                    </span>
+                  )}
+                </label>
               )}
             </fieldset>
 

@@ -31,6 +31,9 @@ service cloud.firestore {
             'returning',
             'consistent'
           ])
+        && (!data.keys().hasAny(['consistentRunningWeeks'])
+          || (data.consistentRunningWeeks is int
+            && data.consistentRunningWeeks >= 0))
         && (!data.keys().hasAny(['currentWeeklyDistanceMeters'])
           || (data.currentWeeklyDistanceMeters is int
             && data.currentWeeklyDistanceMeters >= 0))
@@ -120,6 +123,7 @@ service cloud.firestore {
           'preferredDistanceUnit',
           'timeZone',
           'experienceLevel',
+          'consistentRunningWeeks',
           'targetRace',
           'currentWeeklyDistanceMeters',
           'currentRunningFrequencyDaysPerWeek',

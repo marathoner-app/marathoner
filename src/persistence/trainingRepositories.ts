@@ -32,6 +32,7 @@ export interface SaveUserProfileInput {
   readonly preferredDistanceUnit: DistanceUnit;
   readonly timeZone: IanaTimeZone;
   readonly experienceLevel?: RunningExperienceLevel;
+  readonly consistentRunningWeeks?: number;
   readonly targetRace?: TargetRaceTiming;
   readonly currentWeeklyDistance?: DistanceMeters;
   readonly currentRunningFrequencyDaysPerWeek?: number;

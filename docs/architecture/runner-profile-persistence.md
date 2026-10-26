@@ -30,6 +30,7 @@ Optional onboarding fields:
 | --- | --- |
 | `displayName` | nonblank string, at most 120 characters |
 | `experienceLevel` | `not_running`, `inconsistent`, `returning`, or `consistent` |
+| `consistentRunningWeeks` | non-negative whole weeks; collected only for the `consistent` path |
 | `targetRace` | `{ kind: "date", date }` or `{ kind: "window", startDate, endDate }` |
 | `currentWeeklyDistanceMeters` | non-negative whole meters |
 | `currentRunningFrequencyDaysPerWeek` | whole number from 0 through 7 |
@@ -40,10 +41,11 @@ Optional onboarding fields:
 | `scheduleConstraints` | nonblank string, at most 500 characters |
 | `completionGoal` | `complete_first_marathon` |
 
-`experienceLevel` describes recent running consistency; it is not an
-unreviewed beginner/intermediate/advanced score and cannot select training
-rules by itself. Numeric eligibility and progression thresholds remain owned by
-#70 and the qualified review in #119.
+`experienceLevel` describes the current pattern and `consistentRunningWeeks`
+records its duration without interpreting it. Neither is an unreviewed
+beginner/intermediate/advanced score or an eligibility decision. Numeric
+eligibility and progression thresholds remain owned by #70 and the qualified
+review in #119.
 
 ## Repository and application boundary
 
@@ -59,6 +61,9 @@ Firestore or construct user paths. The runner-onboarding experience consumes
 that boundary directly; it does not maintain a second profile model.
 
 Onboarding opens automatically when the authenticated profile is incomplete.
+An existing `consistent` profile that predates `consistentRunningWeeks` is
+treated as incomplete and returns to setup for that answer; the application
+does not invent a migration value.
 The runner may save a coherent partial draft, continue into the existing
 prototype, and resume later. Completing setup requires the target timing,
 recent running context, weekly volume, longest recent run, available days,

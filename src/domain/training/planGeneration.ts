@@ -35,6 +35,7 @@ export type PlanGenerationSafetySignal =
 
 export interface PlanGenerationRunnerContextV1 {
   readonly experienceLevel: RunningExperienceLevel;
+  readonly consistentRunningWeeks?: number;
   readonly targetRace: TargetRaceTiming;
   readonly currentWeeklyDistance: DistanceMeters;
   readonly currentRunningFrequencyDaysPerWeek: number;
@@ -448,6 +449,29 @@ export function validatePlanGenerationInput(
         "invalid_value",
         "runner.experienceLevel",
         "Choose a supported recent-running description.",
+      ),
+    );
+  }
+  if (
+    runner.consistentRunningWeeks !== undefined &&
+    !isNonNegativeWholeNumber(runner.consistentRunningWeeks)
+  ) {
+    issues.push(
+      issue(
+        "invalid_value",
+        "runner.consistentRunningWeeks",
+        "Consistent running duration must be a non-negative whole number of weeks.",
+      ),
+    );
+  } else if (
+    runner.experienceLevel === "consistent" &&
+    runner.consistentRunningWeeks === undefined
+  ) {
+    issues.push(
+      issue(
+        "required",
+        "runner.consistentRunningWeeks",
+        "Record how many consecutive weeks the runner has been running consistently.",
       ),
     );
   }

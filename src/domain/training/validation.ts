@@ -73,6 +73,17 @@ export function validateUserProfile(profile: UserProfile): ValidationIssue[] {
     });
   }
 
+  if (
+    profile.consistentRunningWeeks !== undefined &&
+    (!Number.isSafeInteger(profile.consistentRunningWeeks) ||
+      profile.consistentRunningWeeks < 0)
+  ) {
+    issues.push({
+      field: "consistentRunningWeeks",
+      message: "Consistent running duration must be a non-negative whole number of weeks.",
+    });
+  }
+
   if (profile.recentPerformance !== undefined) {
     if (profile.recentPerformance.distance <= 0) {
       issues.push({
