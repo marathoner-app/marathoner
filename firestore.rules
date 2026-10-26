@@ -14,6 +14,10 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
+    match /operatorControls/{controlId} {
+      allow read, write: if false;
+    }
+
     function isValidOwnedWrite(userId) {
       return request.resource.data.schemaVersion == 1
         && request.resource.data.userId == userId;
@@ -177,6 +181,11 @@ service cloud.firestore {
     }
 
     match /users/{userId}/planState/{stateId} {
+      allow read: if isSignedInAs(userId);
+      allow write: if false;
+    }
+
+    match /users/{userId}/recommendationEvidence/{recommendationId} {
       allow read: if isSignedInAs(userId);
       allow write: if false;
     }
