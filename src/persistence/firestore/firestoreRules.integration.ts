@@ -65,6 +65,22 @@ function profileDocument(userId = firstUserId) {
   };
 }
 
+function shoeDocument(
+  userId = firstUserId,
+  overrides: Record<string, unknown> = {},
+) {
+  return {
+    schemaVersion: 1,
+    userId,
+    name: "Daily trainer",
+    startingDistanceMeters: 0,
+    status: "active",
+    createdAt: new Date("2026-10-05T12:00:00.000Z"),
+    updatedAt: new Date("2026-10-05T12:00:00.000Z"),
+    ...overrides,
+  };
+}
+
 beforeAll(async () => {
   testEnvironment = await initializeTestEnvironment({
     projectId,
@@ -298,9 +314,12 @@ describe("Firestore training-data ownership rules", () => {
     await assertFails(deleteDoc(doc(ownerDatabase, controlPath)));
   });
 
-  it.each(["runs/run-1", "shoes/shoe-1"])(
+  it.each([
+    ["runs/run-1", { schemaVersion: 1, userId: firstUserId }],
+    ["shoes/shoe-1", shoeDocument()],
+  ])(
     "applies the same ownership boundary to %s",
-    async (relativePath) => {
+    async (relativePath, data) => {
       const ownerDatabase = testEnvironment
         .authenticatedContext(firstUserId)
         .firestore();
@@ -308,15 +327,127 @@ describe("Firestore training-data ownership rules", () => {
         .authenticatedContext(secondUserId)
         .firestore();
       const path = `users/${firstUserId}/${relativePath}`;
-      const data = {
-        schemaVersion: 1,
-        userId: firstUserId,
-      };
-
       await assertSucceeds(setDoc(doc(ownerDatabase, path), data));
       await assertFails(getDoc(doc(otherDatabase, path)));
     },
   );
+
+  it("accepts exact shoe creation and makes retirement terminal", async () => {
+    const database = testEnvironment
+      .authenticatedContext(firstUserId)
+      .firestore();
+    const reference = doc(database, `users/${firstUserId}/shoes/shoe-1`);
+
+    await assertSucceeds(setDoc(reference, shoeDocument()));
+    await assertSucceeds(
+      setDoc(
+        reference,
+        shoeDocument(firstUserId, {
+          name: "Daily trainer renamed",
+          updatedAt: new Date("2026-10-05T13:00:00.000Z"),
+        }),
+      ),
+    );
+    await assertSucceeds(
+      setDoc(
+        reference,
+        shoeDocument(firstUserId, {
+          name: "Daily trainer renamed",
+          status: "retired",
+          retiredOn: "2026-10-06",
+          updatedAt: new Date("2026-10-06T12:00:00.000Z"),
+        }),
+      ),
+    );
+    await assertFails(
+      setDoc(
+        reference,
+        shoeDocument(firstUserId, {
+          updatedAt: new Date("2026-10-06T13:00:00.000Z"),
+        }),
+      ),
+    );
+    await assertFails(
+      setDoc(
+        reference,
+        shoeDocument(firstUserId, {
+          status: "retired",
+          retiredOn: "2026-10-07",
+          updatedAt: new Date("2026-10-07T12:00:00.000Z"),
+        }),
+      ),
+    );
+    await assertFails(deleteDoc(reference));
+  });
+
+  it.each([
+    ["an unknown field", { unexpectedField: true }],
+    ["a blank name", { name: "" }],
+    ["an oversized name", { name: "s".repeat(121) }],
+    ["negative starting distance", { startingDistanceMeters: -1 }],
+    ["fractional starting distance", { startingDistanceMeters: 1.5 }],
+    ["retired status without a date", { status: "retired" }],
+    ["active status with a retirement date", { retiredOn: "2026-10-06" }],
+  ])("rejects a shoe with %s", async (_, overrides) => {
+    const database = testEnvironment
+      .authenticatedContext(firstUserId)
+      .firestore();
+    const reference = doc(database, `users/${firstUserId}/shoes/shoe-1`);
+
+    await assertFails(setDoc(reference, shoeDocument(firstUserId, overrides)));
+  });
+
+  it("preserves immutable shoe fields and monotonic update time", async () => {
+    const database = testEnvironment
+      .authenticatedContext(firstUserId)
+      .firestore();
+    const reference = doc(database, `users/${firstUserId}/shoes/shoe-1`);
+
+    await assertSucceeds(setDoc(reference, shoeDocument()));
+    await assertFails(
+      setDoc(
+        reference,
+        shoeDocument(secondUserId, {
+          updatedAt: new Date("2026-10-05T13:00:00.000Z"),
+        }),
+      ),
+    );
+    await assertFails(
+      setDoc(
+        reference,
+        shoeDocument(firstUserId, {
+          schemaVersion: 2,
+          updatedAt: new Date("2026-10-05T13:00:00.000Z"),
+        }),
+      ),
+    );
+    await assertFails(
+      setDoc(
+        reference,
+        shoeDocument(firstUserId, {
+          startingDistanceMeters: 1609,
+          updatedAt: new Date("2026-10-05T13:00:00.000Z"),
+        }),
+      ),
+    );
+    await assertFails(
+      setDoc(
+        reference,
+        shoeDocument(firstUserId, {
+          createdAt: new Date("2026-10-05T11:00:00.000Z"),
+          updatedAt: new Date("2026-10-05T13:00:00.000Z"),
+        }),
+      ),
+    );
+    await assertFails(
+      setDoc(
+        reference,
+        shoeDocument(firstUserId, {
+          updatedAt: new Date("2026-10-05T11:00:00.000Z"),
+        }),
+      ),
+    );
+  });
 });
 
 describe("Firestore retired mobile-spike boundary", () => {

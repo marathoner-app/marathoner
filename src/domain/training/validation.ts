@@ -1,6 +1,7 @@
 import type { TrainingPlan, PlannedWorkout, CompletedRun, Shoe, UserProfile } from "./types.js";
 
 export const COMPLETED_RUN_NOTES_MAX_LENGTH = 500;
+export const SHOE_NAME_MAX_LENGTH = 120;
 
 export interface ValidationIssue {
   readonly field: string;
@@ -231,6 +232,13 @@ export function validateShoe(shoe: Shoe): ValidationIssue[] {
     ...validateText(shoe.name, "name", true),
     ...validateTimestamps(shoe),
   ];
+
+  if (shoe.name.length > SHOE_NAME_MAX_LENGTH) {
+    issues.push({
+      field: "name",
+      message: `Shoe name cannot exceed ${SHOE_NAME_MAX_LENGTH} characters.`,
+    });
+  }
 
   if (shoe.status === "retired" && shoe.retiredOn === undefined) {
     issues.push({ field: "retiredOn", message: "A retired shoe needs a retirement date." });
