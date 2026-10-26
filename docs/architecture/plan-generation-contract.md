@@ -96,6 +96,38 @@ artifact version because they validate structure, not approval status. A
 participant-facing generator must separately reject draft, unknown, retired,
 conditional, or rejected artifacts as required by the methodology protocol.
 
+## Internal support evaluation
+
+[`planSupportEvaluation.ts`](../../src/domain/training/planSupportEvaluation.ts)
+adds a narrower, domain-only decision before schedule generation. It accepts a
+structurally valid `PlanGenerationInputV1`, explicit confirmation that the
+authenticated caller already verified cohort membership, and an injected
+versioned rules definition. It returns:
+
+- `supported`, with the evaluated ruleset version and no plan;
+- `unsupported`, with every applicable reason code in the ruleset's declared
+  order and no plan; or
+- `invalid_input`, with field-addressed validation issues.
+
+The evaluator derives race horizon and whole-week alignment from the plan-start
+and exact race dates. It also derives the required weekday pattern from the
+runner's preferred long-run day and available days. Callers cannot bypass those
+checks with precomputed eligibility booleans.
+
+The evaluator requires the upstream safety state named by the supplied rules.
+For the current internal fixture exercise that state is `none_reported`; any
+other state returns `invalid_input` for the reviewed safety boundary rather
+than inventing a diagnosis, participant disposition, or unsupported reason
+code. Issue #134 still owns those decisions.
+
+Runtime code neither imports nor names the pinned draft artifact. The focused
+tests inject the exact pinned proposal and run every frozen boundary fixture,
+which lets the team verify deterministic implementation while the artifact
+remains unapproved and prohibited from participant use. A future trusted
+caller must separately load an approved artifact, verify its approval and
+scope, perform the cohort and safety gates, and only then invoke this pure
+evaluator.
+
 ## Structural validation
 
 The validators check:
@@ -112,10 +144,12 @@ The validators check:
 10. input/result agreement for ruleset, start date, completion goal, and target
     race date or window.
 
-These are representation and consistency rules only. They do not decide
-eligibility, minimum mileage, race-horizon feasibility, phase duration,
-progression, cutbacks, taper, intensity, or safety disposition. Those decisions
-remain blocked on qualified review through issues #119, #70, and #134.
+These are representation and consistency rules only. The separate internal
+support evaluator can exercise injected eligibility and race-feasibility
+boundaries, but it does not decide phase duration, progression, cutbacks,
+taper, intensity, or safety disposition. Participant use of every methodology
+decision remains blocked on the applicable qualified-review gates through
+issues #119, #70, and #134.
 
 ## Fixtures
 
@@ -136,10 +170,18 @@ conflicting availability, invalid workout identifiers, zero targets, schedule
 gaps, phase disagreement, duplicate workouts, missing explanations, and
 provenance mismatch.
 
+The support-evaluator tests additionally load the exact pinned draft packet,
+translate its fixture inputs into real date and availability values, verify
+every frozen supported and unsupported case, and cover upper boundaries that
+the packet's minimum fixture set does not repeat. This is implementation
+evidence only; it is not approval evidence and it does not enable runtime use
+of the draft.
+
 ## Downstream gates
 
-- **#70:** implement deterministic behavior only from approved rules and make
-  every produced result pass these validators.
+- **#70:** finish deterministic schedule generation behind the same injected
+  rules boundary, make every produced result pass these validators, and keep
+  participant use blocked until the exact artifact is approved.
 - **#71:** render a proposal and map reason codes to approved explanations
   without treating it as active.
 - **#72:** atomically persist an approved proposal with command, generator,
