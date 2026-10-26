@@ -1,4 +1,5 @@
 export * from "./adaptationEvaluation";
+export * from "./adaptationPlanProjection";
 export * from "./calculations";
 export * from "./dates";
 export * from "./deterministicPlanGenerator";
