@@ -8,6 +8,7 @@ import {
   calculateTotalDistance,
   calculateWeeklyDistanceTrend,
   COMPLETED_RUN_NOTES_MAX_LENGTH,
+  SHOE_NAME_MAX_LENGTH,
   createCompletedRunId,
   createDateOnly,
   createDistanceMeters,
@@ -327,6 +328,25 @@ describe("training domain validation", () => {
     expect(validateShoe(invalidShoe)).toContainEqual({
       field: "retiredOn",
       message: "A retired shoe needs a retirement date.",
+    });
+  });
+
+  it("bounds shoe names", () => {
+    expect(
+      validateShoe({
+        ...shoe,
+        name: "s".repeat(SHOE_NAME_MAX_LENGTH),
+      }),
+    ).toEqual([]);
+
+    expect(
+      validateShoe({
+        ...shoe,
+        name: "s".repeat(SHOE_NAME_MAX_LENGTH + 1),
+      }),
+    ).toContainEqual({
+      field: "name",
+      message: `Shoe name cannot exceed ${SHOE_NAME_MAX_LENGTH} characters.`,
     });
   });
 });

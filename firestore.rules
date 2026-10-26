@@ -152,6 +152,65 @@ service cloud.firestore {
         && hasValidRecentPerformance(data);
     }
 
+    function isValidShoeWrite(userId) {
+      let data = request.resource.data;
+      return isValidOwnedWrite(userId)
+        && data.keys().hasAll([
+          'schemaVersion',
+          'userId',
+          'name',
+          'startingDistanceMeters',
+          'status',
+          'createdAt',
+          'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'schemaVersion',
+          'userId',
+          'name',
+          'startingDistanceMeters',
+          'status',
+          'retiredOn',
+          'createdAt',
+          'updatedAt'
+        ])
+        && data.name is string
+        && data.name.size() > 0
+        && data.name.size() <= 120
+        && data.startingDistanceMeters is int
+        && data.startingDistanceMeters >= 0
+        && data.status in ['active', 'retired']
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp
+        && data.updatedAt >= data.createdAt
+        && ((data.status == 'active'
+              && !data.keys().hasAny(['retiredOn']))
+          || (data.status == 'retired'
+              && data.retiredOn is string
+              && data.retiredOn.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')));
+    }
+
+    function isValidShoeCreate(userId) {
+      return isValidShoeWrite(userId)
+        && request.resource.data.status == 'active'
+        && request.resource.data.createdAt == request.resource.data.updatedAt;
+    }
+
+    function isValidShoeUpdate(userId) {
+      let next = request.resource.data;
+      let prior = resource.data;
+      return isValidShoeWrite(userId)
+        && next.schemaVersion == prior.schemaVersion
+        && next.userId == prior.userId
+        && next.startingDistanceMeters == prior.startingDistanceMeters
+        && next.createdAt == prior.createdAt
+        && next.updatedAt >= prior.updatedAt
+        && (prior.status == 'active'
+          || (prior.status == 'retired'
+            && next.status == 'retired'
+            && next.retiredOn == prior.retiredOn));
+    }
+
     match /users/{userId} {
       allow get: if isSignedInAs(userId);
       allow create: if isSignedInAs(userId)
@@ -197,9 +256,12 @@ service cloud.firestore {
     }
 
     match /users/{userId}/shoes/{shoeId} {
-      allow read, delete: if isSignedInAs(userId);
-      allow create, update: if isSignedInAs(userId)
-        && isValidOwnedWrite(userId);
+      allow read: if isSignedInAs(userId);
+      allow create: if isSignedInAs(userId)
+        && isValidShoeCreate(userId);
+      allow update: if isSignedInAs(userId)
+        && isValidShoeUpdate(userId);
+      allow delete: if false;
     }
   }
 }

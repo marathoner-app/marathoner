@@ -58,6 +58,22 @@ function profileDocument(userId = firstUserId) {
   };
 }
 
+function shoeDocument(
+  userId = firstUserId,
+  overrides: Record<string, unknown> = {},
+) {
+  return {
+    schemaVersion: 1,
+    userId,
+    name: "Daily trainer",
+    startingDistanceMeters: 0,
+    status: "active",
+    createdAt: new Date("2026-10-05T12:00:00.000Z"),
+    updatedAt: new Date("2026-10-05T12:00:00.000Z"),
+    ...overrides,
+  };
+}
+
 function authenticatedContext(
   userId: string,
   emailVerified = true,
@@ -132,7 +148,7 @@ describe("founding-beta membership rules", () => {
       },
     ],
     ["runs/run-1", { schemaVersion: 1, userId: firstUserId }],
-    ["shoes/shoe-1", { schemaVersion: 1, userId: firstUserId }],
+    ["shoes/shoe-1", shoeDocument()],
   ])(
     "allows an approved verified owner to write and read %s",
     async (relativePath, data) => {
@@ -152,6 +168,45 @@ describe("founding-beta membership rules", () => {
 
     await assertFails(setDoc(reference, planDocument()));
     await assertFails(getDoc(reference));
+  });
+
+  it("enforces the exact one-way shoe lifecycle for an approved member", async () => {
+    await seedMembership(firstUserId);
+    const database = authenticatedContext(firstUserId).firestore();
+    const reference = doc(database, `users/${firstUserId}/shoes/shoe-1`);
+
+    await assertSucceeds(setDoc(reference, shoeDocument()));
+    await assertFails(
+      setDoc(reference, shoeDocument(firstUserId, { unexpectedField: true })),
+    );
+    await assertFails(
+      setDoc(
+        reference,
+        shoeDocument(firstUserId, {
+          startingDistanceMeters: -1,
+          updatedAt: new Date("2026-10-05T13:00:00.000Z"),
+        }),
+      ),
+    );
+    await assertSucceeds(
+      setDoc(
+        reference,
+        shoeDocument(firstUserId, {
+          status: "retired",
+          retiredOn: "2026-10-06",
+          updatedAt: new Date("2026-10-06T12:00:00.000Z"),
+        }),
+      ),
+    );
+    await assertFails(
+      setDoc(
+        reference,
+        shoeDocument(firstUserId, {
+          updatedAt: new Date("2026-10-06T13:00:00.000Z"),
+        }),
+      ),
+    );
+    await assertFails(deleteDoc(reference));
   });
 
   it("denies an approved account whose email is not verified", async () => {
