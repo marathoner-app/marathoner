@@ -810,6 +810,14 @@ describe('material-command contract', () => {
         message: 'This generated plan is not approved.',
       }),
     ).toBe(true)
+    expect(
+      isMaterialCommandResult({
+        status: 'authorization_error',
+        commandId: approvalCommandId,
+        code: 'plan-activation-not-available',
+        message: 'Plan activation is unavailable.',
+      }),
+    ).toBe(true)
   })
 
   it('rejects malformed command IDs and unknown command fields', () => {

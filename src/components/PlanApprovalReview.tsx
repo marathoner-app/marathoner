@@ -92,6 +92,8 @@ function outcomePresentation(result: NonApprovedResult): OutcomePresentation {
         message:
           result.code === "plan-artifact-not-approved"
             ? "This plan was not created from an approved Marathoner methodology, so it cannot be activated."
+            : result.code === "plan-activation-not-available"
+              ? "Marathoner has temporarily paused plan activation. Your current training data was not changed."
             : result.code === "approved-beta-membership-required"
               ? "This account is not currently approved to activate a beta training plan."
               : "Marathoner could not verify this app session. Reopen the supported app before trying again.",

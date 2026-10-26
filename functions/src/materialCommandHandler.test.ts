@@ -170,6 +170,12 @@ function approvedPolicyRecord(): PlanApprovalArtifactPolicyRecord {
   }
 }
 
+function allowingActivationGate() {
+  return {
+    evaluate: vi.fn(async () => ({ allowed: true, reason: 'allowed' } as const)),
+  }
+}
+
 function dependencies(
   store = new InMemoryMaterialCommandStore(),
   planApproval?: PlanApprovalHandlerDependencies,
@@ -350,7 +356,9 @@ describe('material-command handler', () => {
 
   it('passes an exact synthetic approval to persistence with authenticated ownership', async () => {
     const planStore = new InMemoryPlanApprovalStore()
+    const activationGate = allowingActivationGate()
     const boundary = dependencies(new InMemoryMaterialCommandStore(), {
+      activationGate,
       policyRecords: [approvedPolicyRecord()],
       store: planStore,
       supportedScopeId,
@@ -367,6 +375,80 @@ describe('material-command handler', () => {
       envelope: planApprovalCommand,
       ownerId,
     })
+    expect(activationGate.evaluate).toHaveBeenCalledWith({
+      capability: 'generation',
+      artifactVersion: planApprovalCommand.command.input.rulesetVersion,
+      appProtocolVersion: planApprovalCommand.appProtocolVersion,
+      commandProtocolVersion: planApprovalCommand.envelopeVersion,
+    })
+  })
+
+  it('fails closed before persistence when dynamic generation activation is denied', async () => {
+    const planStore = new InMemoryPlanApprovalStore()
+    const activationGate = {
+      evaluate: vi.fn(async () => ({
+        allowed: false,
+        reason: 'capability_disabled',
+      } as const)),
+    }
+    const boundary = dependencies(new InMemoryMaterialCommandStore(), {
+      activationGate,
+      policyRecords: [approvedPolicyRecord()],
+      store: planStore,
+      supportedScopeId,
+    })
+
+    await expect(
+      executeMaterialCommand(
+        { authenticatedUserId: ownerId, data: planApprovalCommand },
+        boundary,
+      ),
+    ).resolves.toEqual({
+      status: 'authorization_error',
+      commandId: planApprovalCommandId,
+      code: 'plan-activation-not-available',
+      message:
+        'Plan activation is currently unavailable. No training plan was changed.',
+    })
+    expect(planStore.commit).not.toHaveBeenCalled()
+    expect(boundary.log).toHaveBeenCalledWith({
+      event: 'material-command-result',
+      commandType: 'plan.approve-generated',
+      status: 'authorization_error',
+    })
+    expect(JSON.stringify(boundary.log.mock.calls)).not.toContain(
+      'capability_disabled',
+    )
+  })
+
+  it('fails closed before persistence when the activation gate cannot decide', async () => {
+    const planStore = new InMemoryPlanApprovalStore()
+    const boundary = dependencies(new InMemoryMaterialCommandStore(), {
+      activationGate: {
+        evaluate: vi.fn(async () => {
+          throw new Error('private control read failure')
+        }),
+      },
+      policyRecords: [approvedPolicyRecord()],
+      store: planStore,
+      supportedScopeId,
+    })
+
+    await expect(
+      executeMaterialCommand(
+        { authenticatedUserId: ownerId, data: planApprovalCommand },
+        boundary,
+      ),
+    ).resolves.toEqual(
+      expect.objectContaining({
+        status: 'authorization_error',
+        code: 'plan-activation-not-available',
+      }),
+    )
+    expect(planStore.commit).not.toHaveBeenCalled()
+    expect(JSON.stringify(boundary.log.mock.calls)).not.toContain(
+      'private control read failure',
+    )
   })
 
   it.each<PlanApprovalArtifactReviewState>([
@@ -379,6 +461,7 @@ describe('material-command handler', () => {
   ])('returns a typed rejection before storage for a %s tuple', async (reviewState) => {
     const planStore = new InMemoryPlanApprovalStore()
     const boundary = dependencies(new InMemoryMaterialCommandStore(), {
+      activationGate: allowingActivationGate(),
       policyRecords: [{ ...approvedPolicyRecord(), reviewState }],
       store: planStore,
       supportedScopeId,
@@ -401,6 +484,7 @@ describe('material-command handler', () => {
   it('rejects a mismatched policy before the plan store and redacts policy data from logs', async () => {
     const planStore = new InMemoryPlanApprovalStore()
     const boundary = dependencies(new InMemoryMaterialCommandStore(), {
+      activationGate: allowingActivationGate(),
       policyRecords: [
         {
           ...approvedPolicyRecord(),

@@ -276,6 +276,7 @@ export interface MaterialCommandAuthorizationResult
     | 'app-check-token-replayed'
     | 'approved-beta-membership-required'
     | 'plan-artifact-not-approved'
+    | 'plan-activation-not-available'
     | 'training-resource-access-denied'
 }
 
@@ -1307,6 +1308,7 @@ export function isMaterialCommandResult(
         'app-check-token-replayed',
         'approved-beta-membership-required',
         'plan-artifact-not-approved',
+        'plan-activation-not-available',
         'training-resource-access-denied',
       ].includes(value.code)
     case 'unsupported_version':

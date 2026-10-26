@@ -252,6 +252,16 @@ describe("PlanApprovalReview", () => {
       } satisfies PlanApprovalClientResult,
       "not created from an approved Marathoner methodology",
     ],
+    [
+      "paused activation",
+      {
+        status: "authorization_error",
+        commandId,
+        code: "plan-activation-not-available",
+        message: "Plan activation is unavailable.",
+      } satisfies PlanApprovalClientResult,
+      "temporarily paused plan activation",
+    ],
   ])("shows a calm, distinct %s state", async (_, result, message) => {
     const user = userEvent.setup();
     render(<PlanApprovalReview {...baseProps(client(result))} />);

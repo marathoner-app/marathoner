@@ -24,6 +24,7 @@ import {
   PRODUCTION_PLAN_APPROVAL_ARTIFACT_POLICY,
   type PlanApprovalArtifactPolicyRecord,
 } from './planApprovalArtifactPolicy.js'
+import type { OperatorActivationGate } from './operatorActivationGate.js'
 
 export type MaterialCommandLogEntry = Readonly<{
   event: 'material-command-result' | 'material-command-resolution'
@@ -95,6 +96,7 @@ export interface PlanApprovalStore {
 }
 
 export interface PlanApprovalHandlerDependencies {
+  activationGate: Pick<OperatorActivationGate, 'evaluate'>
   policyRecords: readonly PlanApprovalArtifactPolicyRecord[]
   store: PlanApprovalStore
   supportedScopeId: string | null
@@ -132,6 +134,18 @@ function artifactNotApprovedResult(commandId: string): MaterialCommandResult {
     commandId,
     code: 'plan-artifact-not-approved',
     message: 'This generated plan is not approved for the active participant scope.',
+  }
+}
+
+function planActivationNotAvailableResult(
+  commandId: string,
+): MaterialCommandResult {
+  return {
+    status: 'authorization_error',
+    commandId,
+    code: 'plan-activation-not-available',
+    message:
+      'Plan activation is currently unavailable. No training plan was changed.',
   }
 }
 
@@ -247,6 +261,38 @@ export async function executeMaterialCommand(
     })
     if (!policyDecision.allowed || !planApproval) {
       const result = artifactNotApprovedResult(parsed.envelope.commandId)
+      logResult(
+        dependencies,
+        'material-command-result',
+        result,
+        parsed.envelope.command.type,
+      )
+      return result
+    }
+
+    try {
+      const activationDecision = await planApproval.activationGate.evaluate({
+        capability: 'generation',
+        artifactVersion: parsed.envelope.command.input.rulesetVersion,
+        appProtocolVersion: parsed.envelope.appProtocolVersion,
+        commandProtocolVersion: parsed.envelope.envelopeVersion,
+      })
+      if (!activationDecision.allowed) {
+        const result = planActivationNotAvailableResult(
+          parsed.envelope.commandId,
+        )
+        logResult(
+          dependencies,
+          'material-command-result',
+          result,
+          parsed.envelope.command.type,
+        )
+        return result
+      }
+    } catch {
+      const result = planActivationNotAvailableResult(
+        parsed.envelope.commandId,
+      )
       logResult(
         dependencies,
         'material-command-result',
