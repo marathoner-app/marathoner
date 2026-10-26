@@ -1,10 +1,10 @@
 {
   "schemaVersion": "endurance-review-outreach-packet@2",
-  "status": "draft-awaiting-pin",
+  "status": "prepared-not-sent",
   "preparedOn": "2026-10-25",
   "reviewRole": "EMR",
   "protocolVersion": "methodology-review@0.1.0",
-  "pinnedRepositoryCommit": null,
+  "pinnedRepositoryCommit": "682db3271006ea884f6b5bdd707cf5d050d8cf91",
   "bundles": [
     {
       "name": "beta-rules",
