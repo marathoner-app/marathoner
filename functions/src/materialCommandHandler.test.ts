@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from 'vitest'
 import {
   createPlanApprovalCommand,
   createProofMaterialCommand,
+  createRecommendationDecisionCommand,
   createRunCompletionCommand,
   createRunDeletionCommand,
   materialCommandSignature,
@@ -12,6 +13,7 @@ import {
   type RunCompletionReceiptResult,
   type RunDeletionReceiptResult,
 } from '../../src/domain/materialCommands/contract.js'
+import { createRecommendationId } from '../../src/domain/recommendations/recommendationEvidence.js'
 import { createIanaTimeZone, createUtcDateTime } from '../../src/domain/training/dates.js'
 import { createCompletedRunId } from '../../src/domain/training/identifiers.js'
 import {
@@ -40,6 +42,14 @@ const ownerId = 'runner-one'
 const commandId = 'proof-command-0001'
 const planApprovalCommandId = 'approve-plan-command-0001'
 const privateRunNote = 'private runner note for redaction proof'
+const recommendationDecisionCommand = createRecommendationDecisionCommand(
+  'decide-recommendation-command-0001',
+  {
+    recommendationId: createRecommendationId('recommendation-0001'),
+    decision: 'accepted',
+    expectedEvaluatedPlanRevision: 4,
+  },
+)
 const supportedScopeId = 'synthetic-consistent-runner@1'
 const generatedFixture = planGenerationContractFixtures.find(
   (fixture) => fixture.id === 'generated-exact-date-distance-target',
@@ -531,6 +541,45 @@ describe('material-command handler', () => {
       commandType: 'run.complete',
       status: 'authorization_error',
     })
+  })
+
+  it('recognizes recommendation decisions but keeps them fail-closed before persistence', async () => {
+    const boundary = dependencies()
+
+    await expect(
+      executeMaterialCommand(
+        {
+          appCheckVerified: true,
+          authenticatedUserId: ownerId,
+          data: recommendationDecisionCommand,
+        },
+        boundary,
+      ),
+    ).resolves.toEqual({
+      status: 'authorization_error',
+      commandId: recommendationDecisionCommand.commandId,
+      code: 'recommendation-decisions-not-enabled',
+      message:
+        'Recommendation decisions are not enabled in this environment. No training plan was changed.',
+    })
+    expect(boundary.store.proofCount).toBe(0)
+    expect(boundary.log).toHaveBeenCalledWith({
+      event: 'material-command-result',
+      commandType: 'recommendation.decide',
+      status: 'authorization_error',
+    })
+    const serializedLogs = JSON.stringify(boundary.log.mock.calls)
+    expect(serializedLogs).not.toContain(ownerId)
+    expect(serializedLogs).not.toContain(
+      recommendationDecisionCommand.commandId,
+    )
+    expect(serializedLogs).not.toContain(
+      recommendationDecisionCommand.command.recommendationId,
+    )
+    expect(serializedLogs).not.toContain(
+      recommendationDecisionCommand.command.decision,
+    )
+    expect(serializedLogs).not.toContain('evaluatedPlanRevision')
   })
 
   it('passes run completion to persistence with authenticated ownership and redacted logs', async () => {

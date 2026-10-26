@@ -25,6 +25,10 @@ import type {
   DurationSeconds,
 } from '../training/units.js'
 import { COMPLETED_RUN_NOTES_MAX_LENGTH } from '../training/validation.js'
+import {
+  createRecommendationId,
+  type RecommendationId,
+} from '../recommendations/recommendationEvidence.js'
 
 export const MATERIAL_COMMAND_ENVELOPE_VERSION = 1 as const
 export const MATERIAL_COMMAND_APP_PROTOCOL_VERSION = 1 as const
@@ -39,6 +43,16 @@ export const RUN_COMPLETION_COMMAND_SCHEMA_VERSION = 1 as const
 export const RUN_COMPLETION_COMMAND_TYPE = 'run.complete' as const
 export const RUN_DELETION_COMMAND_SCHEMA_VERSION = 1 as const
 export const RUN_DELETION_COMMAND_TYPE = 'run.delete' as const
+export const RECOMMENDATION_DECISION_COMMAND_SCHEMA_VERSION = 1 as const
+export const RECOMMENDATION_DECISION_COMMAND_TYPE =
+  'recommendation.decide' as const
+export const RECOMMENDATION_COMMAND_DECISIONS = [
+  'accepted',
+  'declined',
+] as const
+
+export type RecommendationCommandDecision =
+  (typeof RECOMMENDATION_COMMAND_DECISIONS)[number]
 
 export const RUN_PERCEIVED_EFFORTS = [
   'much_easier_than_expected',
@@ -122,12 +136,24 @@ export interface RunDeletionCommandEnvelope
   }
 }
 
+export interface RecommendationDecisionCommandEnvelope
+  extends MaterialCommandEnvelopeBase {
+  command: {
+    type: typeof RECOMMENDATION_DECISION_COMMAND_TYPE
+    schemaVersion: typeof RECOMMENDATION_DECISION_COMMAND_SCHEMA_VERSION
+    recommendationId: RecommendationId
+    decision: RecommendationCommandDecision
+    expectedEvaluatedPlanRevision: number
+  }
+}
+
 export type MaterialCommandEnvelope =
   | ProofMaterialCommandEnvelope
   | AccountDeletionRequestEnvelope
   | PlanApprovalCommandEnvelope
   | RunCompletionCommandEnvelope
   | RunDeletionCommandEnvelope
+  | RecommendationDecisionCommandEnvelope
 
 export function isProofMaterialCommandEnvelope(
   envelope: MaterialCommandEnvelope,
@@ -157,6 +183,12 @@ export function isRunDeletionCommandEnvelope(
   envelope: MaterialCommandEnvelope,
 ): envelope is RunDeletionCommandEnvelope {
   return envelope.command.type === RUN_DELETION_COMMAND_TYPE
+}
+
+export function isRecommendationDecisionCommandEnvelope(
+  envelope: MaterialCommandEnvelope,
+): envelope is RecommendationDecisionCommandEnvelope {
+  return envelope.command.type === RECOMMENDATION_DECISION_COMMAND_TYPE
 }
 
 interface MaterialCommandFailure {
@@ -213,6 +245,20 @@ export interface RunDeletionReceiptResult {
   reopenedPlannedWorkout: PlannedWorkoutCommandReceiptV1 | null
 }
 
+/**
+ * A future atomic decision transaction returns this exact receipt. Accepted
+ * decisions must identify the newer plan revision created by that transaction.
+ */
+export interface RecommendationDecisionReceiptResult {
+  status: 'recommendation_decided'
+  commandId: string
+  recommendationId: RecommendationId
+  decision: RecommendationCommandDecision
+  evaluatedPlanRevision: number
+  resultingPlanRevision: number | null
+  decidedAt: UtcDateTime
+}
+
 export interface PlanApprovalStaleRevisionResult
   extends MaterialCommandFailure {
   status: 'stale_revision'
@@ -253,6 +299,7 @@ export interface MaterialCommandValidationResult
     | 'invalid-plan-proposal'
     | 'invalid-run-completion'
     | 'invalid-run-deletion'
+    | 'invalid-recommendation-decision'
     | 'planned-workout-not-completable'
     | 'shoe-not-available'
     | 'ownership-field-prohibited'
@@ -277,6 +324,7 @@ export interface MaterialCommandAuthorizationResult
     | 'approved-beta-membership-required'
     | 'plan-artifact-not-approved'
     | 'plan-activation-not-available'
+    | 'recommendation-decisions-not-enabled'
     | 'training-resource-access-denied'
 }
 
@@ -326,6 +374,7 @@ export type MaterialCommandResult =
   | PlanApprovalReceiptResult
   | RunCompletionReceiptResult
   | RunDeletionReceiptResult
+  | RecommendationDecisionReceiptResult
   | PlanApprovalStaleRevisionResult
   | RunCommandStaleRevisionResult
   | MaterialCommandValidationResult
@@ -565,6 +614,15 @@ function hasExactGeneratedPlanKeys(value: unknown): boolean {
 
 function isPositiveSafeInteger(value: unknown): value is number {
   return Number.isSafeInteger(value) && Number(value) > 0
+}
+
+function parseRecommendationId(value: unknown): RecommendationId | null {
+  if (typeof value !== 'string') return null
+  try {
+    return createRecommendationId(value)
+  } catch {
+    return null
+  }
 }
 
 function isPlannedWorkoutCommandReference(
@@ -1046,6 +1104,73 @@ export function parseMaterialCommand(value: unknown): ParsedMaterialCommand {
     }
   }
 
+  if (command.type === RECOMMENDATION_DECISION_COMMAND_TYPE) {
+    if (
+      !hasExactKeys(command, [
+        'type',
+        'schemaVersion',
+        'recommendationId',
+        'decision',
+        'expectedEvaluatedPlanRevision',
+      ])
+    ) {
+      return {
+        ok: false,
+        result: validationResult(
+          commandId,
+          'invalid-recommendation-decision',
+          'The recommendation decision input is invalid.',
+        ),
+      }
+    }
+    if (
+      command.schemaVersion !==
+      RECOMMENDATION_DECISION_COMMAND_SCHEMA_VERSION
+    ) {
+      return {
+        ok: false,
+        result: unsupportedVersionResult(
+          commandId,
+          'unsupported-command-schema-version',
+          RECOMMENDATION_DECISION_COMMAND_SCHEMA_VERSION,
+        ),
+      }
+    }
+    const recommendationId = parseRecommendationId(command.recommendationId)
+    if (
+      recommendationId === null ||
+      !RECOMMENDATION_COMMAND_DECISIONS.includes(
+        command.decision as RecommendationCommandDecision,
+      ) ||
+      !isPositiveSafeInteger(command.expectedEvaluatedPlanRevision)
+    ) {
+      return {
+        ok: false,
+        result: validationResult(
+          commandId,
+          'invalid-recommendation-decision',
+          'The recommendation decision input is invalid.',
+        ),
+      }
+    }
+    return {
+      ok: true,
+      envelope: {
+        envelopeVersion: MATERIAL_COMMAND_ENVELOPE_VERSION,
+        appProtocolVersion: MATERIAL_COMMAND_APP_PROTOCOL_VERSION,
+        commandId,
+        command: {
+          type: RECOMMENDATION_DECISION_COMMAND_TYPE,
+          schemaVersion: RECOMMENDATION_DECISION_COMMAND_SCHEMA_VERSION,
+          recommendationId,
+          decision: command.decision as RecommendationCommandDecision,
+          expectedEvaluatedPlanRevision:
+            command.expectedEvaluatedPlanRevision,
+        },
+      },
+    }
+  }
+
   return {
     ok: false,
     result: validationResult(
@@ -1088,6 +1213,16 @@ export function materialCommandSignature(
         expectedCompletedRunUpdatedAt:
           envelope.command.expectedCompletedRunUpdatedAt,
         plannedWorkout: envelope.command.plannedWorkout,
+      }),
+    )
+  }
+  if (isRecommendationDecisionCommandEnvelope(envelope)) {
+    signature.push(
+      canonicalJson({
+        recommendationId: envelope.command.recommendationId,
+        decision: envelope.command.decision,
+        expectedEvaluatedPlanRevision:
+          envelope.command.expectedEvaluatedPlanRevision,
       }),
     )
   }
@@ -1148,6 +1283,38 @@ export function isRunDeletionReceiptResult(
     (value.reopenedPlannedWorkout === null ||
       isPlannedWorkoutCommandReceipt(value.reopenedPlannedWorkout))
   )
+}
+
+export function isRecommendationDecisionReceiptResult(
+  value: unknown,
+): value is RecommendationDecisionReceiptResult {
+  if (
+    !isRecord(value) ||
+    !hasExactKeys(value, [
+      'status',
+      'commandId',
+      'recommendationId',
+      'decision',
+      'evaluatedPlanRevision',
+      'resultingPlanRevision',
+      'decidedAt',
+    ]) ||
+    value.status !== 'recommendation_decided' ||
+    typeof value.commandId !== 'string' ||
+    !commandIdPattern.test(value.commandId) ||
+    parseRecommendationId(value.recommendationId) === null ||
+    !RECOMMENDATION_COMMAND_DECISIONS.includes(
+      value.decision as RecommendationCommandDecision,
+    ) ||
+    !isPositiveSafeInteger(value.evaluatedPlanRevision) ||
+    !isUtcDateTime(value.decidedAt)
+  ) {
+    return false
+  }
+  return value.decision === 'accepted'
+    ? isPositiveSafeInteger(value.resultingPlanRevision) &&
+        value.resultingPlanRevision > value.evaluatedPlanRevision
+    : value.resultingPlanRevision === null
 }
 
 export function isRunCompletionDuplicateResult(
@@ -1279,6 +1446,10 @@ export function isMaterialCommandResult(
     return isRunDeletionReceiptResult(value)
   }
 
+  if (value.status === 'recommendation_decided') {
+    return isRecommendationDecisionReceiptResult(value)
+  }
+
   if (typeof value.message !== 'string' || typeof value.code !== 'string') {
     return false
   }
@@ -1291,6 +1462,7 @@ export function isMaterialCommandResult(
         value.code === 'invalid-plan-proposal' ||
         value.code === 'invalid-run-completion' ||
         value.code === 'invalid-run-deletion' ||
+        value.code === 'invalid-recommendation-decision' ||
         value.code === 'planned-workout-not-completable' ||
         value.code === 'shoe-not-available' ||
         value.code === 'ownership-field-prohibited' ||
@@ -1309,6 +1481,7 @@ export function isMaterialCommandResult(
         'approved-beta-membership-required',
         'plan-artifact-not-approved',
         'plan-activation-not-available',
+        'recommendation-decisions-not-enabled',
         'training-resource-access-denied',
       ].includes(value.code)
     case 'unsupported_version':
@@ -1460,6 +1633,36 @@ export function createRunDeletionCommand(
   if (!parsed.ok) throw new Error(parsed.result.message)
   if (!isRunDeletionCommandEnvelope(parsed.envelope)) {
     throw new Error('The run-deletion command parsed as the wrong command type.')
+  }
+  return parsed.envelope
+}
+
+export function createRecommendationDecisionCommand(
+  commandId: string,
+  options: {
+    recommendationId: RecommendationId
+    decision: RecommendationCommandDecision
+    expectedEvaluatedPlanRevision: number
+  },
+): RecommendationDecisionCommandEnvelope {
+  const parsed = parseMaterialCommand({
+    envelopeVersion: MATERIAL_COMMAND_ENVELOPE_VERSION,
+    appProtocolVersion: MATERIAL_COMMAND_APP_PROTOCOL_VERSION,
+    commandId,
+    command: {
+      type: RECOMMENDATION_DECISION_COMMAND_TYPE,
+      schemaVersion: RECOMMENDATION_DECISION_COMMAND_SCHEMA_VERSION,
+      recommendationId: options.recommendationId,
+      decision: options.decision,
+      expectedEvaluatedPlanRevision:
+        options.expectedEvaluatedPlanRevision,
+    },
+  })
+  if (!parsed.ok) throw new Error(parsed.result.message)
+  if (!isRecommendationDecisionCommandEnvelope(parsed.envelope)) {
+    throw new Error(
+      'The recommendation decision parsed as the wrong command type.',
+    )
   }
   return parsed.envelope
 }

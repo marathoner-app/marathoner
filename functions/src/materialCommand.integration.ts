@@ -23,6 +23,7 @@ import {
   createAccountDeletionRequest,
   createPlanApprovalCommand,
   createProofMaterialCommand,
+  createRecommendationDecisionCommand,
   createRunCompletionCommand,
   createRunDeletionCommand,
   isMaterialCommandResult,
@@ -31,6 +32,7 @@ import {
   type RunCompletionReceiptResult,
   type RunDeletionReceiptResult,
 } from '../../src/domain/materialCommands/contract.js'
+import { createRecommendationId } from '../../src/domain/recommendations/recommendationEvidence.js'
 import {
   createIanaTimeZone,
   createUtcDateTime,
@@ -529,6 +531,48 @@ describe('material-command emulator boundary', () => {
     )
     await expect(
       database.doc(`materialCommandProofs/${ownerId}`).get(),
+    ).resolves.toEqual(expect.objectContaining({ exists: false }))
+  })
+
+  it('recognizes recommendation decisions but makes no evidence, plan, or receipt write', async () => {
+    await signInOwner()
+    const recommendationId = createRecommendationId(
+      'recommendation-command-emulator-0001',
+    )
+    const command = createRecommendationDecisionCommand(
+      'decide-recommendation-command-emulator-0001',
+      {
+        recommendationId,
+        decision: 'accepted',
+        expectedEvaluatedPlanRevision: 4,
+      },
+    )
+
+    const response = await submit(command)
+
+    expect(response.data).toEqual({
+      status: 'authorization_error',
+      commandId: command.commandId,
+      code: 'recommendation-decisions-not-enabled',
+      message:
+        'Recommendation decisions are not enabled in this environment. No training plan was changed.',
+    })
+    await expect(
+      database
+        .doc(
+          `users/${ownerId}/recommendationEvidence/${recommendationId}`,
+        )
+        .get(),
+    ).resolves.toEqual(expect.objectContaining({ exists: false }))
+    await expect(
+      database.collection(`users/${ownerId}/plans`).get(),
+    ).resolves.toEqual(expect.objectContaining({ empty: true }))
+    await expect(
+      database
+        .doc(
+          `materialCommandReceipts/${ownerId}/commands/${command.commandId}`,
+        )
+        .get(),
     ).resolves.toEqual(expect.objectContaining({ exists: false }))
   })
 

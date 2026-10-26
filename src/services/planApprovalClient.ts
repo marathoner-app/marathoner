@@ -6,6 +6,7 @@ import {
   type MaterialCommandCommittedResult,
   type MaterialCommandOutcomeUnknownResult,
   type MaterialCommandResult,
+  type RecommendationDecisionReceiptResult,
   type RunCompletionReceiptResult,
   type RunCompletionDuplicateResult,
   type RunCommandStaleRevisionResult,
@@ -32,6 +33,7 @@ type UnrelatedMaterialCommandSuccess =
   | AccountDeletionRequestAcceptedResult
   | RunCompletionReceiptResult
   | RunDeletionReceiptResult
+  | RecommendationDecisionReceiptResult
   | RunCompletionDuplicateResult
   | RunCommandStaleRevisionResult
 
@@ -62,6 +64,7 @@ function mapPlanApprovalResult(
   if (
     result.status === 'committed' ||
     result.status === 'accepted' ||
+    result.status === 'recommendation_decided' ||
     result.status === 'run_completed' ||
     result.status === 'run_deleted' ||
     isRunCompletionDuplicateResult(result) ||
