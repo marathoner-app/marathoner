@@ -1,6 +1,7 @@
 import {
   isProofMaterialCommandEnvelope,
   isPlanApprovalCommandEnvelope,
+  isRecommendationDecisionCommandEnvelope,
   isRunCompletionCommandEnvelope,
   isRunDeletionCommandEnvelope,
   isMaterialCommandResult,
@@ -32,6 +33,7 @@ export type MaterialCommandLogEntry = Readonly<{
     | 'proof.material-command'
     | 'account.request-deletion'
     | 'plan.approve-generated'
+    | 'recommendation.decide'
     | 'run.complete'
     | 'run.delete'
     | 'unknown'
@@ -155,6 +157,18 @@ function runCommandNotEnabledResult(commandId: string): MaterialCommandResult {
     commandId,
     code: 'approved-beta-membership-required',
     message: 'Completed-run commands are not enabled in this environment.',
+  }
+}
+
+function recommendationDecisionNotEnabledResult(
+  commandId: string,
+): MaterialCommandResult {
+  return {
+    status: 'authorization_error',
+    commandId,
+    code: 'recommendation-decisions-not-enabled',
+    message:
+      'Recommendation decisions are not enabled in this environment. No training plan was changed.',
   }
 }
 
@@ -437,6 +451,18 @@ export async function executeMaterialCommand(
       )
       return result
     }
+  }
+  if (isRecommendationDecisionCommandEnvelope(parsed.envelope)) {
+    const result = recommendationDecisionNotEnabledResult(
+      parsed.envelope.commandId,
+    )
+    logResult(
+      dependencies,
+      'material-command-result',
+      result,
+      parsed.envelope.command.type,
+    )
+    return result
   }
   if (!isProofMaterialCommandEnvelope(parsed.envelope)) {
     const result: MaterialCommandResult = {

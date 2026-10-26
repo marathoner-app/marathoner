@@ -109,6 +109,28 @@ authoritative dynamic-control boundary for server-owned plan writes. A future
 recommendation approval command must use the same gate before evidence or plan
 mutation; the current slice does not create that command.
 
+## Prepared decision command boundary
+
+`recommendation.decide` version 1 defines the only participant-supplied facts a
+future decision transaction may accept: the recommendation identifier, an
+accepted or declined decision, and the exact evaluated plan revision the runner
+saw. Ownership comes from the authenticated session. Decision time, evaluation
+evidence, resulting plan revision, and every plan mutation remain server-owned.
+
+The corresponding receipt contract makes the atomicity requirement explicit.
+A declined decision has no resulting revision. An accepted decision is valid
+only when it identifies a plan revision strictly newer than the evaluated one.
+This prevents an evidence record from claiming acceptance when no plan change
+was committed.
+
+The callable currently recognizes and validates this command but returns
+`recommendation-decisions-not-enabled` before any read or write. It does not
+store a receipt, modify a plan, or change recommendation evidence. A later
+implementation must commit accepted evidence, the newer plan revision, and the
+receipt in one transaction; it must commit declined evidence and its receipt
+together. Until that transaction, activation policy, and participant-facing UI
+are complete, the command remains fail-closed.
+
 ## Immutability and ownership
 
 Recommendation evidence becomes server-owned once persisted. Clients may submit

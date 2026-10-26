@@ -6,14 +6,17 @@ import {
   MATERIAL_COMMAND_ENVELOPE_VERSION,
   MATERIAL_COMMAND_PROOF_SCHEMA_VERSION,
   PLAN_APPROVAL_COMMAND_SCHEMA_VERSION,
+  RECOMMENDATION_DECISION_COMMAND_SCHEMA_VERSION,
   RUN_COMPLETION_COMMAND_SCHEMA_VERSION,
   RUN_DELETION_COMMAND_SCHEMA_VERSION,
   createAccountDeletionRequest,
   createPlanApprovalCommand,
   createProofMaterialCommand,
+  createRecommendationDecisionCommand,
   createRunCompletionCommand,
   createRunDeletionCommand,
   isMaterialCommandResult,
+  isRecommendationDecisionReceiptResult,
   isRunCommandStaleRevisionResult,
   isRunCompletionDuplicateResult,
   isRunCompletionReceiptResult,
@@ -23,6 +26,7 @@ import {
   type CompletedRunCommandInputV1,
   type PlannedWorkoutCommandReferenceV1,
 } from './contract'
+import { createRecommendationId } from '../recommendations/recommendationEvidence'
 import {
   PLAN_GENERATION_RESULT_SCHEMA_VERSION,
   createCompletedRunId,
@@ -43,6 +47,8 @@ const commandId = 'proof-command-0001'
 const approvalCommandId = 'approve-plan-command-0001'
 const completionCommandId = 'complete-run-command-0001'
 const deletionCommandId = 'delete-run-command-0001'
+const recommendationDecisionCommandId = 'decide-recommendation-command-0001'
+const recommendationId = createRecommendationId('recommendation-0001')
 
 const plannedWorkout: PlannedWorkoutCommandReferenceV1 = {
   planId: createTrainingPlanId('plan-0001'),
@@ -106,6 +112,106 @@ describe('material-command contract', () => {
     expect(materialCommandSignature(command)).toBe(
       '1:1:account.request-deletion:1',
     )
+  })
+
+  it.each(['accepted', 'declined'] as const)(
+    'creates and parses an exact %s recommendation decision without caller-owned evidence fields',
+    (decision) => {
+      const command = createRecommendationDecisionCommand(
+        recommendationDecisionCommandId,
+        {
+          recommendationId,
+          decision,
+          expectedEvaluatedPlanRevision: 4,
+        },
+      )
+
+      expect(parseMaterialCommand(command)).toEqual({
+        ok: true,
+        envelope: command,
+      })
+      expect(command.command).toEqual({
+        type: 'recommendation.decide',
+        schemaVersion: RECOMMENDATION_DECISION_COMMAND_SCHEMA_VERSION,
+        recommendationId,
+        decision,
+        expectedEvaluatedPlanRevision: 4,
+      })
+      expect(JSON.stringify(command)).not.toContain('decidedAt')
+      expect(JSON.stringify(command)).not.toContain('resultingPlanRevision')
+      expect(JSON.stringify(command)).not.toContain('evaluationResult')
+    },
+  )
+
+  it('uses a stable, decision-sensitive recommendation command signature', () => {
+    const accepted = createRecommendationDecisionCommand(
+      recommendationDecisionCommandId,
+      {
+        recommendationId,
+        decision: 'accepted',
+        expectedEvaluatedPlanRevision: 4,
+      },
+    )
+    const reordered = parseMaterialCommand({
+      commandId: 'decide-recommendation-command-0002',
+      envelopeVersion: MATERIAL_COMMAND_ENVELOPE_VERSION,
+      command: {
+        expectedEvaluatedPlanRevision: 4,
+        decision: 'accepted',
+        recommendationId,
+        schemaVersion: RECOMMENDATION_DECISION_COMMAND_SCHEMA_VERSION,
+        type: 'recommendation.decide',
+      },
+      appProtocolVersion: MATERIAL_COMMAND_APP_PROTOCOL_VERSION,
+    })
+    const declined = createRecommendationDecisionCommand(
+      'decide-recommendation-command-0003',
+      {
+        recommendationId,
+        decision: 'declined',
+        expectedEvaluatedPlanRevision: 4,
+      },
+    )
+
+    expect(reordered.ok).toBe(true)
+    if (!reordered.ok) throw new Error('Expected a parsed decision command.')
+    expect(materialCommandSignature(reordered.envelope)).toBe(
+      materialCommandSignature(accepted),
+    )
+    expect(materialCommandSignature(declined)).not.toBe(
+      materialCommandSignature(accepted),
+    )
+  })
+
+  it.each([
+    ['pending decision', { decision: 'pending' }],
+    ['malformed recommendation ID', { recommendationId: 'short' }],
+    ['zero evaluated revision', { expectedEvaluatedPlanRevision: 0 }],
+    ['server decision time', { decidedAt: '2026-10-26T12:00:00.000Z' }],
+    ['server resulting revision', { resultingPlanRevision: 5 }],
+    ['server evidence', { evaluationResult: { action: 'reschedule' } }],
+  ])('rejects a recommendation decision with %s', (_, change) => {
+    const command = createRecommendationDecisionCommand(
+      recommendationDecisionCommandId,
+      {
+        recommendationId,
+        decision: 'accepted',
+        expectedEvaluatedPlanRevision: 4,
+      },
+    )
+
+    expect(
+      parseMaterialCommand({
+        ...command,
+        command: { ...command.command, ...change },
+      }),
+    ).toEqual({
+      ok: false,
+      result: expect.objectContaining({
+        status: 'validation_error',
+        code: 'invalid-recommendation-decision',
+      }),
+    })
   })
 
   it('creates and parses a completed-run command without caller ownership', () => {
@@ -621,6 +727,23 @@ describe('material-command contract', () => {
       },
       'unsupported-command-schema-version',
     ],
+    [
+      'recommendation-decision command schema',
+      {
+        command: {
+          ...createRecommendationDecisionCommand(
+            recommendationDecisionCommandId,
+            {
+              recommendationId,
+              decision: 'accepted',
+              expectedEvaluatedPlanRevision: 4,
+            },
+          ).command,
+          schemaVersion: RECOMMENDATION_DECISION_COMMAND_SCHEMA_VERSION + 1,
+        },
+      },
+      'unsupported-command-schema-version',
+    ],
   ])('returns a typed result for an unsupported %s', (_, change, code) => {
     const command = { ...createProofMaterialCommand(commandId), ...change }
 
@@ -704,6 +827,43 @@ describe('material-command contract', () => {
           updatedAt: 'not-a-time',
         },
       }),
+    ).toBe(false)
+  })
+
+  it('recognizes only coherent recommendation decision receipts', () => {
+    const accepted = {
+      status: 'recommendation_decided',
+      commandId: recommendationDecisionCommandId,
+      recommendationId,
+      decision: 'accepted',
+      evaluatedPlanRevision: 4,
+      resultingPlanRevision: 5,
+      decidedAt: '2026-10-26T12:00:00.000Z',
+    }
+    const declined = {
+      ...accepted,
+      decision: 'declined',
+      resultingPlanRevision: null,
+    }
+
+    expect(isRecommendationDecisionReceiptResult(accepted)).toBe(true)
+    expect(isRecommendationDecisionReceiptResult(declined)).toBe(true)
+    expect(isMaterialCommandResult(accepted)).toBe(true)
+    expect(isMaterialCommandResult(declined)).toBe(true)
+    expect(
+      isRecommendationDecisionReceiptResult({
+        ...accepted,
+        resultingPlanRevision: 4,
+      }),
+    ).toBe(false)
+    expect(
+      isRecommendationDecisionReceiptResult({
+        ...declined,
+        resultingPlanRevision: 5,
+      }),
+    ).toBe(false)
+    expect(
+      isRecommendationDecisionReceiptResult({ ...accepted, extra: true }),
     ).toBe(false)
   })
 
