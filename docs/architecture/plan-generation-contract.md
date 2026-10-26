@@ -128,6 +128,32 @@ caller must separately load an approved artifact, verify its approval and
 scope, perform the cohort and safety gates, and only then invoke this pure
 evaluator.
 
+## Internal deterministic generation
+
+[`deterministicPlanGenerator.ts`](../../src/domain/training/deterministicPlanGenerator.ts)
+extends the same injected-rules boundary from a support decision to a complete
+proposal. Supported exact-date input receives:
+
+- the number of injected lead-in weeks implied by the supported race horizon;
+- the injected core week phases, distances, purposes, and reason codes;
+- an exact race-distance workout on the requested race date;
+- the injected post-race rest period with no running prescription;
+- consecutive week and phase coverage; and
+- stable workout identifiers plus input, generator, and ruleset provenance.
+
+The generator does not choose dates, workouts, distances, or progression that
+are absent from the supplied plan-family definition. It also requires the
+exact race weekday to match the preferred long-run day because the injected
+family assigns its final weekly position to both. A mismatch is invalid input;
+the generator neither moves the race nor invents a new unsupported reason.
+
+Invalid and unsupported inputs retain the support evaluator's result. The
+generator has no Firebase, persistence, activation, UI, or authenticated-user
+dependency. Runtime source still does not load or identify the pinned draft.
+Packet-backed tests perform that injection solely to prove the internal
+implementation, compare every generated row with the frozen table, and run
+every result through `validatePlanGenerationContract`.
+
 ## Structural validation
 
 The validators check:
@@ -177,11 +203,16 @@ the packet's minimum fixture set does not repeat. This is implementation
 evidence only; it is not approval evidence and it does not enable runtime use
 of the draft.
 
+The deterministic-generator tests reuse that packet adapter. They verify all
+frozen result summaries, the complete lead-in and core distance table, weekday
+placement, race and recovery behavior, phase coverage, deterministic identity,
+ordered unsupported results, provenance, and contract validity.
+
 ## Downstream gates
 
-- **#70:** finish deterministic schedule generation behind the same injected
-  rules boundary, make every produced result pass these validators, and keep
-  participant use blocked until the exact artifact is approved.
+- **#70:** the internal deterministic core now exists behind injected rules;
+  keep participant use blocked until the exact artifact is approved and a
+  trusted caller verifies and supplies that approved version.
 - **#71:** render a proposal and map reason codes to approved explanations
   without treating it as active.
 - **#72:** atomically persist an approved proposal with command, generator,
