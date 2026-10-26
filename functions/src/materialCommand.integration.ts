@@ -60,6 +60,7 @@ import {
   type MaterialCommandTransport,
 } from '../../src/services/materialCommandClient.js'
 import type { PlanApprovalArtifactPolicyRecord } from './planApprovalArtifactPolicy.js'
+import { OPERATOR_ACTIVATION_CONTROL_PATH } from './firestoreOperatorActivationControlStore.js'
 import { FirestorePlanApprovalStore } from './firestorePlanApprovalStore.js'
 import { FirestoreRunCompletionStore } from './firestoreRunCompletionStore.js'
 import { FirestoreRunDeletionStore } from './firestoreRunDeletionStore.js'
@@ -245,6 +246,39 @@ function approvedPolicyRecord(): PlanApprovalArtifactPolicyRecord {
     resultSchemaVersion: PLAN_GENERATION_RESULT_SCHEMA_VERSION,
     reviewState: 'approved',
   }
+}
+
+function activationControl(options: {
+  approvedArtifactVersions?: readonly string[]
+  generationEnabled?: boolean
+  minimumAppProtocolVersion?: number
+  minimumCommandProtocolVersion?: number
+} = {}) {
+  return {
+    schemaVersion: 'operator-activation-control@1',
+    revision: 1,
+    updatedAt: '2026-10-26T00:00:00.000Z',
+    minimumAppProtocolVersion: options.minimumAppProtocolVersion ?? 1,
+    minimumCommandProtocolVersion:
+      options.minimumCommandProtocolVersion ?? 1,
+    capabilities: {
+      generation: {
+        enabled: options.generationEnabled ?? true,
+        approvedArtifactVersions:
+          options.approvedArtifactVersions ?? [
+            generatedFixture.input.rulesetVersion,
+          ],
+      },
+      guidance: { enabled: false, approvedArtifactVersions: [] },
+      adaptation: { enabled: false, approvedArtifactVersions: [] },
+    },
+  }
+}
+
+async function seedActivationControl(
+  control: ReturnType<typeof activationControl> = activationControl(),
+) {
+  await database.doc(OPERATOR_ACTIVATION_CONTROL_PATH).set(control)
 }
 
 function requirePlanApprovalReceipt(value: unknown): PlanApprovalReceiptResult {
@@ -438,6 +472,7 @@ beforeEach(async () => {
   await Promise.all([
     seedApprovedMembership(ownerId),
     seedApprovedMembership(otherOwnerId),
+    seedActivationControl(),
   ])
   await signOut(auth)
   await signOut(otherAuth)
@@ -653,6 +688,65 @@ describe('material-command emulator boundary', () => {
     await expect(
       database.collection(`users/${ownerId}/plans`).get(),
     ).resolves.toEqual(expect.objectContaining({ size: 1 }))
+  })
+
+  it.each([
+    {
+      name: 'missing',
+      arrange: () => database.doc(OPERATOR_ACTIVATION_CONTROL_PATH).delete(),
+    },
+    {
+      name: 'malformed',
+      arrange: () =>
+        database.doc(OPERATOR_ACTIVATION_CONTROL_PATH).set({
+          ...activationControl(),
+          revision: 0,
+        }),
+    },
+    {
+      name: 'disabled',
+      arrange: () =>
+        seedActivationControl(activationControl({ generationEnabled: false })),
+    },
+    {
+      name: 'stale app protocol',
+      arrange: () =>
+        seedActivationControl(
+          activationControl({ minimumAppProtocolVersion: 2 }),
+        ),
+    },
+    {
+      name: 'stale command protocol',
+      arrange: () =>
+        seedActivationControl(
+          activationControl({ minimumCommandProtocolVersion: 2 }),
+        ),
+    },
+    {
+      name: 'non-allowlisted artifact',
+      arrange: () =>
+        seedActivationControl(
+          activationControl({ approvedArtifactVersions: [] }),
+        ),
+    },
+  ])('rejects plan approval before persistence for a $name control', async ({ arrange }) => {
+    await arrange()
+    await signInOwner()
+    const command = approvalCommand('approve-plan-emulator-disabled', null)
+
+    expect((await submit(command)).data).toEqual({
+      status: 'authorization_error',
+      commandId: command.commandId,
+      code: 'plan-activation-not-available',
+      message:
+        'Plan activation is currently unavailable. No training plan was changed.',
+    })
+    await expect(
+      database.collection(`users/${ownerId}/plans`).get(),
+    ).resolves.toEqual(expect.objectContaining({ empty: true }))
+    await expect(
+      database.doc(`users/${ownerId}/planState/active`).get(),
+    ).resolves.toEqual(expect.objectContaining({ exists: false }))
   })
 
   it('returns conflict for changed content without changing the committed plan', async () => {

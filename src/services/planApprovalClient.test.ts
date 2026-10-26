@@ -161,6 +161,12 @@ describe('plan-approval client', () => {
     {
       status: 'authorization_error',
       commandId,
+      code: 'plan-activation-not-available',
+      message: 'Plan activation is unavailable.',
+    },
+    {
+      status: 'authorization_error',
+      commandId,
       code: 'app-check-required',
       message: 'Open the supported app.',
     },

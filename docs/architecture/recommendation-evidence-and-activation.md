@@ -56,8 +56,9 @@ suffixes.
 
 This pure decision function is deliberately independent of React, Firebase,
 Functions, and browser globals. Issue #451 adds the Firestore storage and
-client-deny rules described below. Later #120 slices still own runtime command
-enforcement and the physical-device disable and recovery rehearsal.
+client-deny rules described below. Issue #453 adds the first runtime enforcement
+point described below. Later #120 slices still own recommendation-decision
+commands and the physical-device disable and recovery rehearsal.
 
 ## Firestore persistence boundary
 
@@ -82,6 +83,32 @@ server boundary may expose only the minimum availability result needed by a
 participant; it must not expose an operator mutation path through the ordinary
 client.
 
+## Server command enforcement
+
+The callable material-command boundary reads the persisted activation record at
+decision time before committing a reviewed generated plan. The server derives
+the activation request rather than accepting activation authority from the
+client:
+
+- capability is `generation`;
+- artifact version is the exact plan-generation ruleset version already matched
+  by the server-owned artifact policy;
+- app protocol version comes from the parsed command envelope; and
+- command protocol version is the parsed material-command envelope version.
+
+The gate collapses missing, malformed, or unreadable control state into one
+fail-closed decision. Disabled generation, stale protocols, draft artifacts,
+and artifacts absent from the exact allowlist also stop the command before the
+plan transaction begins. The participant receives one calm unavailable result;
+logs record only the command type and outcome category, not control contents,
+versions, identifiers, or request payloads.
+
+Firebase Admin SDK writes bypass Firestore Security Rules. Therefore Security
+Rules remain the client-deny boundary, while this callable guard is the
+authoritative dynamic-control boundary for server-owned plan writes. A future
+recommendation approval command must use the same gate before evidence or plan
+mutation; the current slice does not create that command.
+
 ## Immutability and ownership
 
 Recommendation evidence becomes server-owned once persisted. Clients may submit
@@ -94,8 +121,9 @@ record or treat a locally supplied artifact version as approved.
 
 ## Current safety boundary
 
-No production allowlist or runtime adapter is created by #449 or #451. The
-current draft base-plan and adaptation artifacts remain ineligible for
+No production allowlist is created by #449, #451, or #453. The production
+artifact policy remains empty, and a missing activation record fails closed.
+The current draft base-plan and adaptation artifacts remain ineligible for
 participant-facing use. Qualified approval through #119 and an explicit later
 activation change remain required before a stable artifact version can enter
-the operator allowlist.
+both the reviewed policy and the operator allowlist.

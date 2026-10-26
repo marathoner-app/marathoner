@@ -22,6 +22,7 @@ import {
 import { FirebaseAccountAccessManager } from './firebaseAccountAccessManager.js'
 import { FirestoreAccountDeletionRequestStore } from './firestoreAccountDeletionRequestStore.js'
 import { FirestoreMaterialCommandStore } from './firestoreMaterialCommandStore.js'
+import { FirestoreOperatorActivationControlStore } from './firestoreOperatorActivationControlStore.js'
 import { FirestorePlanApprovalStore } from './firestorePlanApprovalStore.js'
 import { FirestoreRunCompletionStore } from './firestoreRunCompletionStore.js'
 import { FirestoreRunDeletionStore } from './firestoreRunDeletionStore.js'
@@ -34,6 +35,7 @@ import {
   PRODUCTION_PLAN_APPROVAL_ARTIFACT_POLICY,
   type PlanApprovalArtifactPolicyRecord,
 } from './planApprovalArtifactPolicy.js'
+import { OperatorActivationGate } from './operatorActivationGate.js'
 
 if (getApps().length === 0) initializeApp()
 
@@ -77,6 +79,9 @@ const useCompletedRunCommands = shouldInstallCompletedRunCommandStores({
 const dependencies = {
   store: new FirestoreMaterialCommandStore(database),
   planApproval: {
+    activationGate: new OperatorActivationGate(
+      new FirestoreOperatorActivationControlStore(database),
+    ),
     policyRecords: useEmulatorPlanApprovalPolicy
       ? emulatorPlanApprovalPolicy
       : PRODUCTION_PLAN_APPROVAL_ARTIFACT_POLICY,
