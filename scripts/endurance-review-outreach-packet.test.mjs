@@ -176,7 +176,7 @@ describe('endurance-methodology review outreach packet', () => {
     }
   });
 
-  it('keeps outreach blocked while exposing one complete combined workbook', async () => {
+  it('keeps a candidate-ready combined workbook behind the outreach gate', async () => {
     const document = await readPacketDocument();
     const invitation = await readReviewerDocument(
       'endurance-review-invitation.md',
@@ -188,7 +188,8 @@ describe('endurance-methodology review outreach packet', () => {
     expect(document).toContain('**Outreach is blocked.**');
     expect(document).toContain('#435 merges the proposed reschedule');
     expect(invitation).toContain('Do not send this invitation yet.');
-    expect(workbook).toContain('not ready for reviewer delivery');
+    expect(workbook).toContain('Draft for independent review');
+    expect(workbook).toContain('not approved for participant use');
     expect(workbook).toContain('## Proposed adaptation rules');
     expect(workbook).toContain(
       'One hard run never rewrites the plan',

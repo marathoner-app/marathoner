@@ -1,9 +1,9 @@
 # Marathoner first-marathon methodology review
 
-> **Internal draft - not ready for reviewer delivery.** The proposed initial
-> plan and adaptation sections are now complete, but neither is approved.
-> Marathoner must still pin the combined review package and explicitly approve
-> the candidate, timing, scope, and compensation before sending this workbook.
+> **Draft for independent review - not approved for participant use.** The
+> proposed initial plan and adaptation sections below form the complete review
+> scope. Receiving this workbook does not imply endorsement or approval, and
+> Marathoner will not use the proposals until the required review is complete.
 
 ## Thank you for considering this review
 
