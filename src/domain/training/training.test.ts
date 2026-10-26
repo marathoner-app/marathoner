@@ -217,6 +217,7 @@ describe("training domain validation", () => {
         startDate: createDateOnly("2027-06-01"),
         endDate: createDateOnly("2027-05-01"),
       },
+      consistentRunningWeeks: 1.5,
       currentRunningFrequencyDaysPerWeek: 8,
       recentPerformance: {
         completedOn: createDateOnly("2026-09-27"),
@@ -235,6 +236,11 @@ describe("training domain validation", () => {
       {
         field: "currentRunningFrequencyDaysPerWeek",
         message: "Current running frequency must be a whole number from 0 through 7.",
+      },
+      {
+        field: "consistentRunningWeeks",
+        message:
+          "Consistent running duration must be a non-negative whole number of weeks.",
       },
       {
         field: "recentPerformance.distance",

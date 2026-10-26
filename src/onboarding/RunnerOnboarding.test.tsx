@@ -19,6 +19,7 @@ const completeProfile: UserProfile = {
   preferredDistanceUnit: "mile",
   timeZone: createIanaTimeZone("America/Los_Angeles"),
   experienceLevel: "consistent",
+  consistentRunningWeeks: 12,
   targetRace: {
     kind: "date",
     date: createDateOnly("2027-05-02"),
@@ -93,6 +94,10 @@ describe("RunnerOnboarding", () => {
     expect(screen.getAllByText("(optional)")).toHaveLength(3);
 
     await user.click(screen.getByLabelText("I run consistently now"));
+    await user.type(
+      screen.getByLabelText(/How many consecutive weeks/i),
+      "12",
+    );
     await user.click(screen.getByLabelText("I have a date"));
     await user.type(screen.getByLabelText("Marathon date"), "2027-05-02");
     await user.type(
@@ -124,6 +129,7 @@ describe("RunnerOnboarding", () => {
       preferredDistanceUnit: "mile",
       timeZone: expect.any(String),
       experienceLevel: "consistent",
+      consistentRunningWeeks: 12,
       targetRace: { kind: "date", date: "2027-05-02" },
       currentWeeklyDistance: milesToMeters(20),
       currentRunningFrequencyDaysPerWeek: 4,
@@ -187,6 +193,7 @@ describe("RunnerOnboarding", () => {
       screen.getByRole("heading", { name: "Review your starting point" }),
     ).toBeInTheDocument();
     expect(screen.getByLabelText(/What should we call you/i)).toHaveValue("Kevin");
+    expect(screen.getByLabelText(/How many consecutive weeks/i)).toHaveValue(12);
     expect(screen.getByLabelText("Sun")).toBeChecked();
 
     const weeklyDistance = screen.getByLabelText(/About how many miles/i);
@@ -203,6 +210,29 @@ describe("RunnerOnboarding", () => {
       }),
     );
     expect(onClose).toHaveBeenCalledOnce();
+  });
+
+  it("prompts a legacy consistent profile for the missing duration instead of inventing it", async () => {
+    const user = userEvent.setup();
+    render(
+      <RunnerOnboarding
+        profile={{ ...completeProfile, consistentRunningWeeks: undefined }}
+        onSave={onSave}
+        onClose={onClose}
+      />,
+    );
+
+    expect(
+      screen.getByRole("heading", { name: "Tell us where you are starting" }),
+    ).toBeInTheDocument();
+    expect(screen.getByLabelText(/How many consecutive weeks/i)).toHaveValue(null);
+
+    await user.click(screen.getByRole("button", { name: "Complete setup" }));
+
+    expect(
+      screen.getByText(/Enter how many consecutive weeks/i),
+    ).toBeInTheDocument();
+    expect(onSave).not.toHaveBeenCalled();
   });
 
   it("keeps optional performance data all-or-nothing and reports save failures", async () => {

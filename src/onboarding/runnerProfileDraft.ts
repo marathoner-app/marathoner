@@ -20,6 +20,7 @@ export interface RunnerProfileDraft {
   readonly displayName: string;
   readonly preferredDistanceUnit: DistanceUnit;
   readonly experienceLevel: "" | RunningExperienceLevel;
+  readonly consistentRunningWeeks: string;
   readonly raceTimingMode: RaceTimingMode;
   readonly raceDate: string;
   readonly raceWindowStartDate: string;
@@ -39,6 +40,7 @@ export interface RunnerProfileDraft {
 export type RunnerProfileDraftField =
   | "displayName"
   | "experienceLevel"
+  | "consistentRunningWeeks"
   | "targetRace"
   | "currentWeeklyDistance"
   | "currentRunningFrequencyDaysPerWeek"
@@ -75,6 +77,7 @@ export function createRunnerProfileDraft(
     displayName: profile?.displayName ?? "",
     preferredDistanceUnit: unit,
     experienceLevel: profile?.experienceLevel ?? "",
+    consistentRunningWeeks: profile?.consistentRunningWeeks?.toString() ?? "",
     raceTimingMode: targetRace?.kind ?? "",
     raceDate: targetRace?.kind === "date" ? targetRace.date : "",
     raceWindowStartDate:
@@ -115,6 +118,11 @@ function isPositiveNumber(value: string): boolean {
   return value.trim() !== "" && Number.isFinite(parsed) && parsed > 0;
 }
 
+function isNonNegativeWholeNumber(value: string): boolean {
+  const parsed = Number(value);
+  return value.trim() !== "" && Number.isSafeInteger(parsed) && parsed >= 0;
+}
+
 function validateDate(value: string): boolean {
   try {
     createDateOnly(value);
@@ -141,6 +149,19 @@ export function validateRunnerProfileDraft(
 
   if (requireComplete && draft.experienceLevel === "") {
     errors.experienceLevel = "Choose the option that best matches your recent running.";
+  }
+
+  if (draft.experienceLevel === "consistent") {
+    if (
+      draft.consistentRunningWeeks !== "" &&
+      !isNonNegativeWholeNumber(draft.consistentRunningWeeks)
+    ) {
+      errors.consistentRunningWeeks =
+        "Enter a whole number of consecutive weeks, including zero.";
+    } else if (requireComplete && draft.consistentRunningWeeks === "") {
+      errors.consistentRunningWeeks =
+        "Enter how many consecutive weeks you have been running consistently.";
+    }
   }
 
   if (draft.raceTimingMode === "date") {
@@ -276,6 +297,10 @@ export function runnerProfileDraftToInput(
     ...(draft.experienceLevel === ""
       ? {}
       : { experienceLevel: draft.experienceLevel }),
+    ...(draft.experienceLevel === "consistent" &&
+    draft.consistentRunningWeeks !== ""
+      ? { consistentRunningWeeks: Number(draft.consistentRunningWeeks) }
+      : {}),
     ...(draft.raceTimingMode === "date"
       ? {
           targetRace: {
@@ -347,6 +372,8 @@ export function isRunnerProfileOnboardingComplete(
 ): boolean {
   return (
     profile?.experienceLevel !== undefined &&
+    (profile.experienceLevel !== "consistent" ||
+      profile.consistentRunningWeeks !== undefined) &&
     profile.targetRace !== undefined &&
     profile.currentWeeklyDistance !== undefined &&
     profile.currentRunningFrequencyDaysPerWeek !== undefined &&

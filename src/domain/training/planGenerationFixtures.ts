@@ -39,6 +39,7 @@ export const planGenerationContractFixtures: readonly PlanGenerationContractFixt
       planStartDate: createDateOnly("2030-01-07"),
       runner: {
         experienceLevel: "consistent",
+        consistentRunningWeeks: 12,
         targetRace: {
           kind: "date",
           date: createDateOnly("2030-01-13"),
@@ -127,6 +128,7 @@ export const planGenerationContractFixtures: readonly PlanGenerationContractFixt
       planStartDate: createDateOnly("2030-02-04"),
       runner: {
         experienceLevel: "consistent",
+        consistentRunningWeeks: 12,
         targetRace: {
           kind: "window",
           startDate: createDateOnly("2030-02-14"),

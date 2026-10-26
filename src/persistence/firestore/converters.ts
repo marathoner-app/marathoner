@@ -301,6 +301,9 @@ export function userProfileToDocument(profile: UserProfile): Record<string, unkn
   if (profile.experienceLevel !== undefined) {
     document.experienceLevel = profile.experienceLevel;
   }
+  if (profile.consistentRunningWeeks !== undefined) {
+    document.consistentRunningWeeks = profile.consistentRunningWeeks;
+  }
   if (profile.targetRace !== undefined) {
     document.targetRace = targetRaceToDocument(profile.targetRace);
   }
@@ -361,6 +364,10 @@ export function userProfileFromDocument(
     data,
     "currentRunningFrequencyDaysPerWeek",
   );
+  const consistentRunningWeeks = readOptionalNumber(
+    data,
+    "consistentRunningWeeks",
+  );
 
   const profile: UserProfile = {
     id: verifyOwner(readString(data, "userId"), expectedUserId),
@@ -378,6 +385,7 @@ export function userProfileFromDocument(
       "experienceLevel",
       RUNNING_EXPERIENCE_LEVELS,
     ) as RunningExperienceLevel | undefined,
+    consistentRunningWeeks,
     targetRace:
       targetRace === undefined ? undefined : targetRaceFromDocument(targetRace),
     currentWeeklyDistance:

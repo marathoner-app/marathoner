@@ -52,6 +52,7 @@ function profileDocument(userId = firstUserId) {
     preferredDistanceUnit: "mile",
     timeZone: "America/Los_Angeles",
     experienceLevel: "consistent",
+    consistentRunningWeeks: 12,
     targetRace: { kind: "date", date: "2027-05-02" },
     currentWeeklyDistanceMeters: 24_000,
     currentRunningFrequencyDaysPerWeek: 4,
@@ -120,6 +121,12 @@ describe("Firestore training-data ownership rules", () => {
       setDoc(reference, {
         ...profileDocument(),
         currentRunningFrequencyDaysPerWeek: 8,
+      }),
+    );
+    await assertFails(
+      setDoc(reference, {
+        ...profileDocument(),
+        consistentRunningWeeks: -1,
       }),
     );
     await assertFails(
@@ -298,6 +305,7 @@ describe("Firestore repository integration", () => {
       preferredDistanceUnit: "mile",
       timeZone: createIanaTimeZone("America/Los_Angeles"),
       experienceLevel: "consistent",
+      consistentRunningWeeks: 12,
       currentWeeklyDistance: createDistanceMeters(24_000),
       currentRunningFrequencyDaysPerWeek: 4,
       longestRecentRunDistance: createDistanceMeters(12_000),

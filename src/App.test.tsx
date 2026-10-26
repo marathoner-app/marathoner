@@ -154,6 +154,7 @@ const completeRunnerProfile: UserProfile = {
   preferredDistanceUnit: 'mile',
   timeZone: createIanaTimeZone('America/Los_Angeles'),
   experienceLevel: 'consistent',
+  consistentRunningWeeks: 12,
   targetRace: { kind: 'date', date: createDateOnly('2027-05-02') },
   currentWeeklyDistance: createDistanceMeters(32_187),
   currentRunningFrequencyDaysPerWeek: 4,
