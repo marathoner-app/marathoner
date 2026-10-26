@@ -87,6 +87,13 @@ async function seedOwnedData(
       `users/${userId}/planState/active`,
       { schemaVersion: 1, userId, activePlanId: 'plan-one' },
     ],
+    [
+      `users/${userId}/recommendationEvidence/recommendation-one`,
+      {
+        schemaVersion: 'recommendation-evidence@1',
+        recommendationId: 'recommendation-one',
+      },
+    ],
     [`users/${userId}/runs/run-one`, { schemaVersion: 1, userId }],
     [`users/${userId}/shoes/shoe-one`, { schemaVersion: 1, userId }],
     [
@@ -191,6 +198,7 @@ async function expectOwnerDeletedAndOtherOwnerUntouched() {
     `users/${ownerId}/plans/plan-one/workouts/workout-one`,
     `users/${ownerId}/plans/plan-one/metadata/generation`,
     `users/${ownerId}/planState/active`,
+    `users/${ownerId}/recommendationEvidence/recommendation-one`,
     `users/${ownerId}/runs/run-one`,
     `users/${ownerId}/shoes/shoe-one`,
     `users/${ownerId}/unexpected/missing-parent/deep/canary`,
@@ -205,6 +213,7 @@ async function expectOwnerDeletedAndOtherOwnerUntouched() {
     `users/${otherOwnerId}/plans/plan-one/workouts/workout-one`,
     `users/${otherOwnerId}/plans/plan-one/metadata/generation`,
     `users/${otherOwnerId}/planState/active`,
+    `users/${otherOwnerId}/recommendationEvidence/recommendation-one`,
     `users/${otherOwnerId}/runs/run-one`,
     `users/${otherOwnerId}/shoes/shoe-one`,
     `users/${otherOwnerId}/unexpected/missing-parent/deep/canary`,

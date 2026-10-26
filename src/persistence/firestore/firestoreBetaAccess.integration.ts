@@ -307,4 +307,53 @@ describe("founding-beta membership rules", () => {
     await assertFails(setDoc(doc(ownerDatabase, receiptPath), {}));
     await assertFails(deleteDoc(doc(ownerDatabase, receiptPath)));
   });
+
+  it("keeps recommendation evidence readable only by its approved owner and immutable to clients", async () => {
+    await seedMembership(firstUserId);
+    await seedMembership(secondUserId);
+    const evidencePath =
+      `users/${firstUserId}/recommendationEvidence/recommendation-0001`;
+    await testEnvironment.withSecurityRulesDisabled(async (context) => {
+      await setDoc(doc(context.firestore(), evidencePath), {
+        schemaVersion: "recommendation-evidence@1",
+        recommendationId: "recommendation-0001",
+      });
+    });
+
+    const ownerDatabase = authenticatedContext(firstUserId).firestore();
+    const otherDatabase = authenticatedContext(secondUserId).firestore();
+    const unverifiedDatabase = authenticatedContext(firstUserId, false).firestore();
+
+    await assertSucceeds(getDoc(doc(ownerDatabase, evidencePath)));
+    await assertFails(getDoc(doc(otherDatabase, evidencePath)));
+    await assertFails(getDoc(doc(unverifiedDatabase, evidencePath)));
+    await assertFails(
+      setDoc(doc(ownerDatabase, evidencePath), { decision: "accepted" }),
+    );
+    await assertFails(
+      updateDoc(doc(ownerDatabase, evidencePath), { decision: "declined" }),
+    );
+    await assertFails(deleteDoc(doc(ownerDatabase, evidencePath)));
+  });
+
+  it("keeps operator activation controls entirely server-owned", async () => {
+    await seedMembership(firstUserId);
+    const controlPath = "operatorControls/recommendationActivation";
+    await testEnvironment.withSecurityRulesDisabled(async (context) => {
+      await setDoc(doc(context.firestore(), controlPath), {
+        schemaVersion: "operator-activation-control@1",
+        revision: 1,
+      });
+    });
+
+    const ownerDatabase = authenticatedContext(firstUserId).firestore();
+    const anonymousDatabase = testEnvironment.unauthenticatedContext().firestore();
+
+    await assertFails(getDoc(doc(ownerDatabase, controlPath)));
+    await assertFails(getDoc(doc(anonymousDatabase, controlPath)));
+    await assertFails(
+      setDoc(doc(ownerDatabase, controlPath), { revision: 2 }),
+    );
+    await assertFails(deleteDoc(doc(ownerDatabase, controlPath)));
+  });
 });

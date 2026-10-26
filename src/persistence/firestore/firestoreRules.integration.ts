@@ -246,6 +246,58 @@ describe("Firestore training-data ownership rules", () => {
     await assertFails(deleteDoc(doc(ownerDatabase, receiptPath)));
   });
 
+  it("keeps recommendation evidence readable only by its owner and immutable to clients", async () => {
+    const evidencePath =
+      `users/${firstUserId}/recommendationEvidence/recommendation-0001`;
+    await testEnvironment.withSecurityRulesDisabled(async (context) => {
+      await setDoc(doc(context.firestore(), evidencePath), {
+        schemaVersion: "recommendation-evidence@1",
+        recommendationId: "recommendation-0001",
+      });
+    });
+
+    const ownerDatabase = testEnvironment
+      .authenticatedContext(firstUserId)
+      .firestore();
+    const otherDatabase = testEnvironment
+      .authenticatedContext(secondUserId)
+      .firestore();
+    const anonymousDatabase = testEnvironment.unauthenticatedContext().firestore();
+
+    await assertSucceeds(getDoc(doc(ownerDatabase, evidencePath)));
+    await assertFails(getDoc(doc(otherDatabase, evidencePath)));
+    await assertFails(getDoc(doc(anonymousDatabase, evidencePath)));
+    await assertFails(
+      setDoc(doc(ownerDatabase, evidencePath), { decision: "accepted" }),
+    );
+    await assertFails(
+      updateDoc(doc(ownerDatabase, evidencePath), { decision: "declined" }),
+    );
+    await assertFails(deleteDoc(doc(ownerDatabase, evidencePath)));
+  });
+
+  it("keeps operator activation controls entirely server-owned", async () => {
+    const controlPath = "operatorControls/recommendationActivation";
+    await testEnvironment.withSecurityRulesDisabled(async (context) => {
+      await setDoc(doc(context.firestore(), controlPath), {
+        schemaVersion: "operator-activation-control@1",
+        revision: 1,
+      });
+    });
+
+    const ownerDatabase = testEnvironment
+      .authenticatedContext(firstUserId)
+      .firestore();
+    const anonymousDatabase = testEnvironment.unauthenticatedContext().firestore();
+
+    await assertFails(getDoc(doc(ownerDatabase, controlPath)));
+    await assertFails(getDoc(doc(anonymousDatabase, controlPath)));
+    await assertFails(
+      setDoc(doc(ownerDatabase, controlPath), { revision: 2 }),
+    );
+    await assertFails(deleteDoc(doc(ownerDatabase, controlPath)));
+  });
+
   it.each(["runs/run-1", "shoes/shoe-1"])(
     "applies the same ownership boundary to %s",
     async (relativePath) => {

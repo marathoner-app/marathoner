@@ -209,6 +209,10 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
+    match /operatorControls/{controlId} {
+      allow read, write: if false;
+    }
+
     match /users/{userId} {
       allow get: if canAccessBetaTrainingData(userId);
       allow create: if canAccessBetaTrainingData(userId)
@@ -238,6 +242,11 @@ service cloud.firestore {
     }
 
     match /users/{userId}/planState/{stateId} {
+      allow read: if canAccessBetaTrainingData(userId);
+      allow write: if false;
+    }
+
+    match /users/{userId}/recommendationEvidence/{recommendationId} {
       allow read: if canAccessBetaTrainingData(userId);
       allow write: if false;
     }

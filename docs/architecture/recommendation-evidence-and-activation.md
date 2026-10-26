@@ -55,9 +55,32 @@ suffixes.
 8. allow the request.
 
 This pure decision function is deliberately independent of React, Firebase,
-Functions, and browser globals. A later #120 slice will own Firestore storage,
-operator-only write rules, server enforcement, and the physical-device disable
-and recovery rehearsal.
+Functions, and browser globals. Issue #451 adds the Firestore storage and
+client-deny rules described below. Later #120 slices still own runtime command
+enforcement and the physical-device disable and recovery rehearsal.
+
+## Firestore persistence boundary
+
+Recommendation evidence is stored at
+`users/{uid}/recommendationEvidence/{recommendationId}`. The Admin SDK store
+accepts only a valid pending record at creation. It can then record one coherent
+accepted or declined decision while preserving the exact evaluated input,
+result, provenance, recommendation timestamp, plan identifier, and evidence
+identifier. Replaying the same record is idempotent; a conflicting rewrite is
+rejected.
+
+The global activation record is stored at
+`operatorControls/recommendationActivation`. Its Admin SDK store accepts
+revision 1 only when the record is absent. Every later replacement must name the
+current revision, advance exactly one revision, and use a strictly newer update
+time. Reads fail closed when either persisted record is missing or malformed.
+
+Development and beta Security Rules let an eligible owner read only their own
+recommendation evidence and deny every participant-client evidence mutation.
+Operator activation controls deny all direct client reads and writes. A later
+server boundary may expose only the minimum availability result needed by a
+participant; it must not expose an operator mutation path through the ordinary
+client.
 
 ## Immutability and ownership
 
@@ -71,7 +94,8 @@ record or treat a locally supplied artifact version as approved.
 
 ## Current safety boundary
 
-No production allowlist or runtime adapter is created by #449. The current draft
-base-plan and adaptation artifacts remain ineligible for participant-facing use.
-Qualified approval through #119 and an explicit later activation change remain
-required before a stable artifact version can enter the operator allowlist.
+No production allowlist or runtime adapter is created by #449 or #451. The
+current draft base-plan and adaptation artifacts remain ineligible for
+participant-facing use. Qualified approval through #119 and an explicit later
+activation change remain required before a stable artifact version can enter
+the operator allowlist.
