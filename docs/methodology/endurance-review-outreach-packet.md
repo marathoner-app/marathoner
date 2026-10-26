@@ -1,6 +1,6 @@
 # Founding-beta endurance-methodology review control manifest
 
-- **Status:** Combined scope drafted but not repinned or sent; no reviewer is
+- **Status:** Combined scope pinned but not sent; no reviewer is
   contacted, scheduled, engaged, or represented as having approved Marathoner
 - **Prepared:** 2026-10-25
 - **Review role:** Endurance-methodology reviewer (`EMR`)
@@ -15,15 +15,14 @@
   [`endurance-reviewer-workbook.md`](endurance-reviewer-workbook.md)
 
 > **Not approved. Not training advice. Not permitted in runtime code.** This
-> internal manifest identifies the exact proposed draft. Do not use this document
+> internal manifest pins the exact proposed draft. Do not use this document
 > as the candidate's initial introduction to Marathoner. Preparing, sending,
 > accepting, or reviewing material is not approval evidence.
 >
-> **Outreach is blocked.** The current pinned target covers initial plan
-> generation only and is obsolete for the intended combined engagement. Issue
-> #435 authors the missed-workout adaptation draft and complete workbook. A
-> later #231 step must pin both bundles together and record exact outreach
-> approval before any candidate is contacted.
+> **Outreach is blocked.** The combined initial-plan and missed-workout
+> adaptation package is now pinned. The remaining #231 gate is explicit owner
+> approval of the exact candidate, message, timing, and compensation posture
+> before any contact occurs.
 
 ## Review delivery model
 
@@ -47,22 +46,26 @@ choices, evidence requirements, and compensation independence. Candidate
 contact details, correspondence, contracts, and screening notes stay in
 controlled private storage.
 
-No invitation may be sent until all of the following are true:
+The first three preparation gates are complete. No invitation may be sent
+until the final gate is also complete:
 
-- #435 merges the proposed reschedule, hold, repeat, no-change, feasibility,
+- [x] #435 merged the proposed reschedule, hold, repeat, no-change, feasibility,
   and refusal rules and representative fixtures;
-- the reviewer workbook includes those exact rules and representative examples;
-- this control manifest pins the combined base-plan and adaptation scope; and
-- #231 records owner approval of the exact candidate, message, timing, and
+- [x] the reviewer workbook includes those exact rules and representative
+  examples;
+- [x] this control manifest pins the combined base-plan and adaptation scope;
+  and
+- [ ] #231 records owner approval of the exact candidate, message, timing, and
   compensation posture for the larger engagement.
 
 Changing a threshold, schedule, fixture, reason code, question, or reviewed
 file requires a new packet manifest, new hashes, and a new review round. A
 review decision does not transfer to another commit or artifact version.
 
-## Draft combined review target awaiting final pin
+## Pinned combined review target
 
-- Repository commit: not assigned; outreach remains blocked
+- Repository commit:
+  [`682db3271006ea884f6b5bdd707cf5d050d8cf91`](https://github.com/marathoner-app/marathoner/tree/682db3271006ea884f6b5bdd707cf5d050d8cf91)
 - Review protocol: `methodology-review@0.1.0`
 - Base-plan bundle: `beta-rules@0.1.0-draft`
 - Adaptation bundle: `beta-adaptation@0.1.0-draft`
@@ -71,10 +74,10 @@ review decision does not transfer to another commit or artifact version.
   `PROG-001`, `UNSUP-001`, `UNSUP-002`, `ADAPT-001`, `ADAPT-002`,
   `ADAPT-003`, and `ADAPT-004`
 
-The machine-readable manifest records every proposed file and SHA-256 value.
-Automated tests recalculate every listed hash so later edits fail closed. Issue
-#231 must assign one final repository commit and deliberately change the
-manifest from `draft-awaiting-pin` before this material can be sent.
+The machine-readable manifest records every proposed file and SHA-256 value at
+the pinned commit. Automated tests recalculate every listed hash so later edits
+fail closed. A threshold, schedule, fixture, question, or reviewed-file change
+requires a deliberately repinned replacement before outreach.
 
 ## Proposed review scope
 
@@ -336,10 +339,9 @@ Only the candidate-specific fields approved in #231 may vary. Do not send this
 control manifest or ask the candidate to interpret repository commits,
 artifact identifiers, inventory codes, or checksums.
 
-The invitation is a draft and must not be sent until #435 is merged, this
-combined package is pinned, and #231 records the exact candidate-specific
-authorization. The earlier five-hour fee assumption does not carry forward
-automatically to the larger scope.
+The invitation is a draft and must not be sent until #231 records the exact
+candidate-specific authorization. The earlier five-hour fee assumption does
+not carry forward automatically to the larger combined scope.
 
 If the candidate expresses interest, provide the
 [reviewer workbook](endurance-reviewer-workbook.md) in an accessible document
@@ -372,9 +374,9 @@ verification, or willing to perform the review.
 
 ## What happens next
 
-Issue #435 owns the deterministic adaptation draft, reasoned examples, and
-tests needed for review. Merging it means the combined workbook is authored,
-not that the rules are approved or implemented.
+Issue #435 produced the deterministic adaptation draft, reasoned examples, and
+tests needed for review. The combined workbook is now authored and pinned, but
+the rules are not approved or implemented.
 
 Issue #231 then owns outreach and may record a candidate as accepted only after
 the candidate explicitly agrees in writing to the combined workbook scope and

@@ -36,17 +36,18 @@ async function readReviewerDocument(name) {
 }
 
 describe('endurance-methodology review outreach packet', () => {
-  it('keeps the combined draft blocked until a final repository pin exists', async () => {
+  it('pins the combined draft while keeping outreach blocked', async () => {
     const manifest = await readPacketManifest();
     const document = await readPacketDocument();
 
     expect(manifest).toEqual(
       expect.objectContaining({
         schemaVersion: 'endurance-review-outreach-packet@2',
-        status: 'draft-awaiting-pin',
+        status: 'prepared-not-sent',
         reviewRole: 'EMR',
         protocolVersion: 'methodology-review@0.1.0',
-        pinnedRepositoryCommit: null,
+        pinnedRepositoryCommit:
+          '682db3271006ea884f6b5bdd707cf5d050d8cf91',
         bundles: [
           {
             name: 'beta-rules',
@@ -61,8 +62,9 @@ describe('endurance-methodology review outreach packet', () => {
         ],
       }),
     );
-    expect(document).toContain('Repository commit: not assigned');
-    expect(document).toContain('outreach remains blocked');
+    expect(manifest.pinnedRepositoryCommit).toMatch(/^[a-f0-9]{40}$/);
+    expect(document).toContain(manifest.pinnedRepositoryCommit);
+    expect(document).toContain('**Outreach is blocked.**');
     expect(document).toContain('Not approved. Not training advice.');
   });
 
@@ -78,7 +80,7 @@ describe('endurance-methodology review outreach packet', () => {
     }
   });
 
-  it('drafts all eleven endurance rows without claiming review submission', async () => {
+  it('pins all eleven endurance rows without claiming review submission', async () => {
     const manifest = await readPacketManifest();
     const document = await readPacketDocument();
     const expectedInventoryIds = [
@@ -101,7 +103,7 @@ describe('endurance-methodology review outreach packet', () => {
     }
     expect(document).not.toContain('| `SAFE-001` | `[Blank]`');
     expect(document).not.toContain('| `GUIDE-001` | `[Blank]`');
-    expect(manifest.status).toBe('draft-awaiting-pin');
+    expect(manifest.status).toBe('prepared-not-sent');
   });
 
   it('gives every reviewer fixed decision choices and evidence requirements', async () => {
@@ -176,7 +178,7 @@ describe('endurance-methodology review outreach packet', () => {
     }
   });
 
-  it('keeps outreach blocked while exposing one complete combined workbook', async () => {
+  it('keeps a candidate-ready combined workbook behind the outreach gate', async () => {
     const document = await readPacketDocument();
     const invitation = await readReviewerDocument(
       'endurance-review-invitation.md',
@@ -186,9 +188,10 @@ describe('endurance-methodology review outreach packet', () => {
     );
 
     expect(document).toContain('**Outreach is blocked.**');
-    expect(document).toContain('#435 merges the proposed reschedule');
+    expect(document).toContain('remaining #231 gate');
     expect(invitation).toContain('Do not send this invitation yet.');
-    expect(workbook).toContain('not ready for reviewer delivery');
+    expect(workbook).toContain('Draft for independent review');
+    expect(workbook).toContain('not approved for participant use');
     expect(workbook).toContain('## Proposed adaptation rules');
     expect(workbook).toContain(
       'One hard run never rewrites the plan',
