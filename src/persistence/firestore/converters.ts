@@ -15,6 +15,7 @@ import {
   validateShoe,
   validateTrainingPlan,
   validateUserProfile,
+  type ActivePlanState,
   type CompletionGoal,
   type CompletedRun,
   type DistanceUnit,
@@ -208,6 +209,24 @@ function verifySchemaVersion(data: Record<string, unknown>): void {
   }
 }
 
+function verifyExactFields(
+  data: Record<string, unknown>,
+  expectedFields: readonly string[],
+  recordName: string,
+): void {
+  const actualFields = Object.keys(data).sort();
+  const sortedExpectedFields = [...expectedFields].sort();
+
+  if (
+    actualFields.length !== sortedExpectedFields.length ||
+    actualFields.some(
+      (field, index) => field !== sortedExpectedFields[index],
+    )
+  ) {
+    invalidData(`${recordName} has unsupported fields.`);
+  }
+}
+
 function verifyOwner(storedUserId: string, expectedUserId: UserId): UserId {
   const userId = createUserId(storedUserId);
 
@@ -216,6 +235,45 @@ function verifyOwner(storedUserId: string, expectedUserId: UserId): UserId {
   }
 
   return userId;
+}
+
+export function activePlanStateFromDocument(
+  data: Record<string, unknown>,
+  expectedUserId: UserId,
+): ActivePlanState {
+  verifyExactFields(
+    data,
+    [
+      "schemaVersion",
+      "trainingSchemaVersion",
+      "userId",
+      "activePlanId",
+      "activePlanRevision",
+      "approvedAt",
+      "updatedAt",
+    ],
+    "Active-plan state",
+  );
+
+  if (data.schemaVersion !== 1) {
+    invalidData(`Unsupported active-plan-state schema version: ${String(data.schemaVersion)}.`);
+  }
+  verifySchemaVersion({ schemaVersion: data.trainingSchemaVersion });
+
+  const activePlanRevision = readNumber(data, "activePlanRevision");
+  if (!Number.isSafeInteger(activePlanRevision) || activePlanRevision < 1) {
+    invalidData("activePlanRevision must be a positive whole number.");
+  }
+
+  return {
+    userId: verifyOwner(readString(data, "userId"), expectedUserId),
+    activePlanId: convertStoredValue("activePlanId", () =>
+      createTrainingPlanId(readString(data, "activePlanId")),
+    ),
+    activePlanRevision,
+    approvedAt: readTimestamp(data, "approvedAt"),
+    updatedAt: readTimestamp(data, "updatedAt"),
+  };
 }
 
 function convertStoredValue<Value>(field: string, convert: () => Value): Value {

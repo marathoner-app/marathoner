@@ -8,6 +8,7 @@ import {
   createTrainingPlanId,
   createUserId,
   createUtcDateTime,
+  type ActivePlanState,
   type CompletedRun,
   type TrainingPlan,
   type UserId,
@@ -45,6 +46,14 @@ const replacementPlan: TrainingPlan = {
   name: 'Replacement owner plan',
 }
 
+const activePlanState: ActivePlanState = {
+  userId: ownerId,
+  activePlanId: plan.id,
+  activePlanRevision: 1,
+  approvedAt: createdAt,
+  updatedAt,
+}
+
 const run: CompletedRun = {
   id: createCompletedRunId('run-1'),
   userId: ownerId,
@@ -58,10 +67,11 @@ const run: CompletedRun = {
 
 const observedAt = {
   profile: createUtcDateTime('2026-10-08T12:00:01Z'),
-  plans: createUtcDateTime('2026-10-08T12:00:02Z'),
-  workouts: createUtcDateTime('2026-10-08T12:00:03Z'),
-  runs: createUtcDateTime('2026-10-08T12:00:04Z'),
-  shoes: createUtcDateTime('2026-10-08T12:00:05Z'),
+  activePlanState: createUtcDateTime('2026-10-08T12:00:02Z'),
+  plans: createUtcDateTime('2026-10-08T12:00:03Z'),
+  workouts: createUtcDateTime('2026-10-08T12:00:04Z'),
+  runs: createUtcDateTime('2026-10-08T12:00:05Z'),
+  shoes: createUtcDateTime('2026-10-08T12:00:06Z'),
 } as const
 
 type ProfileSourceEvent = Extract<
@@ -71,6 +81,10 @@ type ProfileSourceEvent = Extract<
 type PlansSourceEvent = Extract<
   TrainingSourceSnapshotEvent,
   { readonly source: 'plans' }
+>
+type ActivePlanStateSourceEvent = Extract<
+  TrainingSourceSnapshotEvent,
+  { readonly source: 'activePlanState' }
 >
 type WorkoutsSourceEvent = Extract<
   TrainingSourceSnapshotEvent,
@@ -87,6 +101,7 @@ type ShoesSourceEvent = Extract<
 
 type SourceEventTuple = readonly [
   ProfileSourceEvent,
+  ActivePlanStateSourceEvent,
   PlansSourceEvent,
   WorkoutsSourceEvent,
   RunsSourceEvent,
@@ -100,6 +115,7 @@ interface SourceEventsOptions {
   readonly hasPendingWrites?: boolean
   readonly plans?: readonly TrainingPlan[]
   readonly runs?: readonly CompletedRun[]
+  readonly activePlanState?: ActivePlanState | null
 }
 
 function sourceEvents({
@@ -109,6 +125,7 @@ function sourceEvents({
   hasPendingWrites = false,
   plans = [],
   runs = [],
+  activePlanState: state = null,
 }: SourceEventsOptions = {}): SourceEventTuple {
   const session = {
     ownerId: eventOwnerId,
@@ -124,6 +141,14 @@ function sourceEvents({
       source: 'profile',
       value: null,
       observedAt: observedAt.profile,
+    },
+    {
+      ...session,
+      ...metadata,
+      type: 'source_snapshot',
+      source: 'activePlanState',
+      value: state,
+      observedAt: observedAt.activePlanState,
     },
     {
       ...session,
@@ -198,13 +223,14 @@ describe('training synchronization kernel', () => {
       sessionGeneration,
     })
 
-    const complete = reduceTrainingSynchronization(incomplete, events[4])
+    const complete = reduceTrainingSynchronization(incomplete, events[5])
 
     expect(complete.state.status).toBe('current')
     if (complete.state.status !== 'current') return
     expect(complete.state.snapshot).toMatchObject({
       ownerId,
       profile: null,
+      activePlanState: null,
       plans: [],
       workouts: [],
       runs: [],
@@ -237,6 +263,19 @@ describe('training synchronization kernel', () => {
     if (current.state.status !== 'current') return
     expect(current.state.freshness.hasCacheOnlySources).toBe(false)
     expect(current.state.serverConfirmedAt).toBe(observedAt.shoes)
+  })
+
+  it('keeps the authoritative active-plan revision in the synchronized snapshot', () => {
+    const synchronized = applyEvents(
+      createTrainingSynchronizationKernel({ ownerId, sessionGeneration }),
+      sourceEvents({ activePlanState, plans: [plan] }),
+    )
+
+    expect(synchronized.state.status).toBe('current')
+    if (synchronized.state.status !== 'current') return
+    expect(synchronized.state.snapshot.activePlanState).toEqual(
+      activePlanState,
+    )
   })
 
   it('does not replace the last safe snapshot with pending local writes', () => {
@@ -333,7 +372,7 @@ describe('training synchronization kernel', () => {
 
     const refreshed = reduceTrainingSynchronization(
       refreshedExceptShoes,
-      sourceEvents()[4],
+      sourceEvents()[5],
     )
     expect(refreshed.state.status).toBe('current')
   })
@@ -379,14 +418,14 @@ describe('training synchronization kernel', () => {
     expect(saving.state.status).toBe('saving')
 
     const unrelatedUpdate = reduceTrainingSynchronization(saving, {
-      ...sourceEvents()[1],
+      ...sourceEvents()[2],
       value: [plan],
       observedAt: createUtcDateTime('2026-10-08T12:01:00Z'),
     })
     expect(unrelatedUpdate.state.status).toBe('saving')
 
     const converged = reduceTrainingSynchronization(unrelatedUpdate, {
-      ...sourceEvents()[3],
+      ...sourceEvents()[4],
       value: [run],
       observedAt: createUtcDateTime('2026-10-08T12:02:00Z'),
     })
@@ -404,7 +443,7 @@ describe('training synchronization kernel', () => {
     })
 
     const unrelatedUpdate = reduceTrainingSynchronization(saving, {
-      ...sourceEvents()[1],
+      ...sourceEvents()[2],
       value: [plan],
       observedAt: createUtcDateTime('2026-10-08T12:01:00Z'),
     })
@@ -430,7 +469,7 @@ describe('training synchronization kernel', () => {
     expect(incomplete.state.status).toBe('loading')
 
     const complete = reduceTrainingSynchronization(incomplete, {
-      ...sourceEvents()[1],
+      ...sourceEvents()[2],
       value: [plan],
     })
     expect(complete.state.status).toBe('current')
@@ -444,7 +483,7 @@ describe('training synchronization kernel', () => {
     featureReady = false
 
     const incomplete = reduceTrainingSynchronization(initial, {
-      ...sourceEvents()[1],
+      ...sourceEvents()[2],
       value: [plan],
       observedAt: createUtcDateTime('2026-10-08T12:01:00Z'),
     })
@@ -488,7 +527,7 @@ describe('training synchronization kernel', () => {
       ownerId: replacementOwnerId,
       sessionGeneration: sessionGeneration + 1,
     })
-    const endedOwnerCallback = sourceEvents({ plans: [plan] })[1]
+    const endedOwnerCallback = sourceEvents({ activePlanState })[1]
     const ignoredOwner = reduceTrainingSynchronization(
       replacementSession,
       endedOwnerCallback,
@@ -500,7 +539,7 @@ describe('training synchronization kernel', () => {
         eventOwnerId: replacementOwnerId,
         eventSessionGeneration: sessionGeneration,
         plans: [replacementPlan],
-      })[1],
+      })[2],
     }
     const ignoredGeneration = reduceTrainingSynchronization(
       replacementSession,

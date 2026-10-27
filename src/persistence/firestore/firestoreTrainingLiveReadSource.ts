@@ -8,6 +8,7 @@ import {
 } from 'firebase/firestore'
 import {
   createUtcDateTime,
+  type ActivePlanState,
   type CompletedRun,
   type PlannedWorkout,
   type Shoe,
@@ -25,6 +26,7 @@ import type {
   TrainingSnapshotOrigin,
 } from '../../training/trainingSynchronization'
 import {
+  activePlanStateFromDocument,
   completedRunFromDocument,
   plannedWorkoutFromDocument,
   shoeFromDocument,
@@ -32,6 +34,7 @@ import {
   userProfileFromDocument,
 } from './converters'
 import {
+  activePlanStateDocumentPath,
   plansCollectionPath,
   profileDocumentPath,
   runsCollectionPath,
@@ -95,6 +98,7 @@ interface LiveCollectionValues {
 type SnapshotValue =
   | UserProfile
   | null
+  | ActivePlanState
   | readonly TrainingPlan[]
   | readonly PlannedWorkout[]
   | readonly CompletedRun[]
@@ -201,7 +205,13 @@ export function createFirestoreTrainingLiveReadSourceWithBackend({
       }
 
       const sourceError = (
-        source: 'profile' | 'plans' | 'workouts' | 'runs' | 'shoes',
+        source:
+          | 'profile'
+          | 'activePlanState'
+          | 'plans'
+          | 'workouts'
+          | 'runs'
+          | 'shoes',
         error: unknown,
       ): void => {
         emit([
@@ -217,7 +227,13 @@ export function createFirestoreTrainingLiveReadSourceWithBackend({
       }
 
       const sourceSnapshot = (
-        source: 'profile' | 'plans' | 'workouts' | 'runs' | 'shoes',
+        source:
+          | 'profile'
+          | 'activePlanState'
+          | 'plans'
+          | 'workouts'
+          | 'runs'
+          | 'shoes',
         value: SnapshotValue,
         metadata: TrainingListenerMetadata,
       ): TrainingLiveReadEvent =>
@@ -371,6 +387,32 @@ export function createFirestoreTrainingLiveReadSourceWithBackend({
             }
           },
           (error) => sourceError('profile', error),
+        ),
+        backend.subscribeDocument(
+          activePlanStateDocumentPath(ownerId),
+          (snapshot) => {
+            if (!active) return
+
+            try {
+              const activePlanState =
+                snapshot.document === null
+                  ? null
+                  : activePlanStateFromDocument(
+                      snapshot.document.data,
+                      ownerId,
+                    )
+              emit([
+                sourceSnapshot(
+                  'activePlanState',
+                  activePlanState,
+                  snapshot.metadata,
+                ),
+              ])
+            } catch (error) {
+              sourceError('activePlanState', error)
+            }
+          },
+          (error) => sourceError('activePlanState', error),
         ),
         backend.subscribeCollection(
           plansCollectionPath(ownerId),

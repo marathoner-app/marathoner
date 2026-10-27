@@ -1,4 +1,5 @@
 import type {
+  ActivePlanState,
   CompletedRun,
   PlannedWorkout,
   Shoe,
@@ -10,6 +11,7 @@ import type {
 
 export const trainingSnapshotSources = [
   'profile',
+  'activePlanState',
   'plans',
   'workouts',
   'runs',
@@ -22,6 +24,7 @@ export type TrainingSnapshotOrigin = 'cache' | 'server'
 export interface SynchronizedTrainingSnapshot {
   readonly ownerId: UserId
   readonly profile: UserProfile | null
+  readonly activePlanState: ActivePlanState | null
   readonly plans: readonly TrainingPlan[]
   readonly workouts: readonly PlannedWorkout[]
   readonly runs: readonly CompletedRun[]
@@ -116,6 +119,7 @@ interface TrainingSourceSlot<Value> {
 
 interface TrainingSourceSlots {
   readonly profile: TrainingSourceSlot<UserProfile | null>
+  readonly activePlanState: TrainingSourceSlot<ActivePlanState | null>
   readonly plans: TrainingSourceSlot<readonly TrainingPlan[]>
   readonly workouts: TrainingSourceSlot<readonly PlannedWorkout[]>
   readonly runs: TrainingSourceSlot<readonly CompletedRun[]>
@@ -164,6 +168,10 @@ export type TrainingSourceSnapshotEvent =
   | (SourceSnapshotEventBase & {
       readonly source: 'profile'
       readonly value: UserProfile | null
+    })
+  | (SourceSnapshotEventBase & {
+      readonly source: 'activePlanState'
+      readonly value: ActivePlanState | null
     })
   | (SourceSnapshotEventBase & {
       readonly source: 'plans'
@@ -239,6 +247,7 @@ function emptySlot<Value>(value: Value): TrainingSourceSlot<Value> {
 function emptySources(): TrainingSourceSlots {
   return {
     profile: emptySlot<UserProfile | null>(null),
+    activePlanState: emptySlot<ActivePlanState | null>(null),
     plans: emptySlot<readonly TrainingPlan[]>([]),
     workouts: emptySlot<readonly PlannedWorkout[]>([]),
     runs: emptySlot<readonly CompletedRun[]>([]),
@@ -300,6 +309,7 @@ function completeCandidate(
   return {
     ownerId,
     profile: sources.profile.value,
+    activePlanState: sources.activePlanState.value,
     plans: sources.plans.value,
     workouts: sources.workouts.value,
     runs: sources.runs.value,
@@ -522,6 +532,25 @@ function sourceSnapshot(
         ),
       }
     }
+    case 'activePlanState': {
+      const sameActivePlanStateRevision = (
+        left: ActivePlanState | null,
+        right: ActivePlanState | null,
+      ) =>
+        left === null || right === null
+          ? left === right
+          : left.activePlanId === right.activePlanId &&
+            left.activePlanRevision === right.activePlanRevision &&
+            left.updatedAt === right.updatedAt
+      return {
+        ...kernel.sources,
+        activePlanState: preserveConfirmedRevision(
+          kernel.sources.activePlanState,
+          event.value,
+          sameActivePlanStateRevision,
+        ),
+      }
+    }
     case 'plans':
       return {
         ...kernel.sources,
@@ -566,6 +595,10 @@ function invalidateServerConfirmation(
 ): TrainingSourceSlots {
   return {
     profile: { ...sources.profile, confirmedInConnection: false },
+    activePlanState: {
+      ...sources.activePlanState,
+      confirmedInConnection: false,
+    },
     plans: { ...sources.plans, confirmedInConnection: false },
     workouts: { ...sources.workouts, confirmedInConnection: false },
     runs: { ...sources.runs, confirmedInConnection: false },

@@ -80,6 +80,21 @@ iOS, and Functions builds exclude it and scan for leakage. It remains
 disconnected from live runs, recommendations, persistence, guidance, and plan
 mutation.
 
+## Trusted live-evidence prerequisites
+
+The signed-in synchronization snapshot now reads the server-owned active-plan
+state, including its authoritative plan ID and positive revision. That closes
+the revision-read prerequisite without adding a client-writable revision to a
+plan or treating plan status alone as authority.
+
+Live adaptation evaluation is still intentionally disconnected. A later
+normalizer must verify that the active state points to the matching active plan,
+resolve completed-run and planned-workout associations, select the bounded
+history window, derive objective counts and safety completeness, and reject
+ambiguous or incomplete evidence. Week kinds, progression state, reschedule
+candidates, and methodology thresholds must remain explicit trusted inputs;
+they cannot be inferred merely because a revision is now readable.
+
 ## Activation gates
 
 Before participant use, issue #119 must record dated qualified approval for one

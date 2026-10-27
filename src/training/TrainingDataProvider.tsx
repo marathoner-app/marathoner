@@ -742,6 +742,7 @@ export default function TrainingDataProvider({
     status,
     error: errorFor(synchronization.state),
     profile: synchronizedSnapshot?.profile ?? null,
+    activePlanState: synchronizedSnapshot?.activePlanState ?? null,
     plans: synchronizedSnapshot?.plans ?? [],
     workouts: synchronizedSnapshot?.workouts ?? [],
     runs: synchronizedSnapshot?.runs ?? [],

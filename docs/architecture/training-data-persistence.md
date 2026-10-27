@@ -216,6 +216,16 @@ unwritable from clients. The emulator alone enables one synthetic fixture tuple
 to prove this behavior. Production continues to reject every plan proposal
 before the transaction because its artifact registry is empty.
 
+The signed-in live-read source also subscribes to the active-state document and
+includes its nullable value in the synchronized in-memory training snapshot.
+The client converter requires the exact versioned record shape, matching owner,
+valid plan identifier, positive revision, and Firestore approval/update
+timestamps. A missing document means that no server-approved plan is active;
+malformed state fails closed as a recoverable source error. This read boundary
+does not approve a proposal or change a plan. It gives later internal evidence
+normalization a trusted active-plan ID and revision without duplicating revision
+state on each plan document.
+
 ## Completed-run documents
 
 Path: `users/{userId}/runs/{runId}`

@@ -1,5 +1,6 @@
 import { createContext } from "react";
 import type {
+  ActivePlanState,
   CompletedRun,
   CompletedRunId,
   DateOnly,
@@ -24,6 +25,7 @@ export interface TrainingDataContextValue {
   readonly status: TrainingDataStatus;
   readonly error: string | null;
   readonly profile: UserProfile | null;
+  readonly activePlanState: ActivePlanState | null;
   readonly plans: readonly TrainingPlan[];
   readonly workouts: readonly PlannedWorkout[];
   readonly runs: readonly CompletedRun[];
