@@ -7,6 +7,7 @@ const forbiddenBuildText = [
   'Internal draft plan rehearsal',
   'Internal draft adaptation rehearsal',
   'Internal live adaptation history',
+  'Evaluate live draft evidence',
   'Active only in this rehearsal',
   'Session choice recorded:',
   'internal-plan-rehearsal',

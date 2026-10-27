@@ -58,6 +58,7 @@ export default function InternalPlanProposalRehearsalLive({
         workouts={workouts}
         runs={runs}
         timeZone={profile?.timeZone ?? utcTimeZone}
+        draftPacket={adaptationPacket}
       />
       <InternalAdaptationScenarioRehearsal packet={adaptationPacket} />
     </>

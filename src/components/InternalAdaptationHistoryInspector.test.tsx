@@ -18,6 +18,7 @@ import {
 } from "../domain/training";
 import InternalAdaptationHistoryInspector from "./InternalAdaptationHistoryInspector";
 import { evidenceWeekContaining } from "./internalAdaptationHistoryWeek";
+import type { InternalAdaptationScenarioPacket } from "./internalAdaptationScenarioPacket";
 
 const ownerId = createUserId("runner-1");
 const planId = createTrainingPlanId("plan-1");
@@ -25,6 +26,13 @@ const completedWorkoutId = createPlannedWorkoutId("workout-completed");
 const skippedWorkoutId = createPlannedWorkoutId("workout-skipped");
 const timestamp = createUtcDateTime("2026-10-01T12:00:00Z");
 const timeZone = createIanaTimeZone("America/Los_Angeles");
+const draftPacket = {
+  rules: {
+    basePlanArtifactVersion: "test-base-plan-draft",
+    adaptationArtifactVersion: "test-adaptation-draft",
+    allowedReschedulePurposes: [],
+  },
+} as unknown as InternalAdaptationScenarioPacket;
 const plan: TrainingPlan = {
   id: planId,
   userId: ownerId,
@@ -100,6 +108,7 @@ function renderInspector(overrides: {
       workouts={overrides.workouts ?? [completedWorkout, skippedWorkout]}
       runs={overrides.runs ?? [completedRun]}
       timeZone={timeZone}
+      draftPacket={draftPacket}
       initialEvaluationDate={createDateOnly("2026-10-27")}
     />,
   );
@@ -143,7 +152,7 @@ describe("InternalAdaptationHistoryInspector", () => {
     expect(screen.getByText("Planned run skipped")).toBeVisible();
     expect(screen.getByText("Approved adaptation artifact version")).toBeVisible();
     expect(
-      screen.getByText(/history-ready is not evaluation-ready/iu),
+      screen.getByText(/history-ready is not participant-ready/iu),
     ).toBeVisible();
     expect(
       screen.queryByRole("button", { name: /recommend|apply|change plan/iu }),
@@ -161,6 +170,9 @@ describe("InternalAdaptationHistoryInspector", () => {
     expect(screen.getByText(/no partial evidence was produced/iu)).toBeVisible();
     expect(
       screen.queryByRole("heading", { name: "Objective history is coherent" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("heading", { name: "Evaluate live draft evidence" }),
     ).not.toBeInTheDocument();
   });
 

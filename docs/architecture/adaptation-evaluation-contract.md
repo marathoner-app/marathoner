@@ -120,9 +120,9 @@ guidance.
 
 ## Trusted live-evidence prerequisites
 
-Live adaptation evaluation remains intentionally disconnected. A future
-trusted caller must assemble the normalizer's objective evidence with the
-explicit trusted facts above, confirm completeness, and load an approved
+Participant live adaptation evaluation remains intentionally disconnected. A
+future trusted caller must assemble the normalizer's objective evidence with
+the explicit trusted facts above, confirm completeness, and load an approved
 non-draft rule artifact before invoking the evaluator. Revision readability and
 a history-ready result do not independently satisfy those gates.
 
@@ -134,13 +134,22 @@ the inspector then displays either the normalizer's complete objective evidence
 or all stable refusal issues. The recent-run bound is visibly an editable
 inspection input, not an approved threshold.
 
-This live inspector is a sibling of, not an input to, the synthetic draft
-evaluator rehearsal. It never imports packet values, calls the evaluator,
-displays a recommendation, or offers a plan-change action. It also lists every
-trusted caller fact that remains unresolved. Ordinary production, iOS, and
-Functions builds exclude the inspector and its identifying text through the
-existing internal-rehearsal build boundary. This permits internal data-path
-inspection before the professional review and external-use gates are funded.
+The history inspection itself still imports no packet values and invokes no
+evaluator. After a `ready` history result, a separate nested owner-only form can
+deliberately continue into an internal draft evaluation. It pins the exact
+injected draft artifact versions visibly, requires the owner to supply every
+other trusted caller fact, and requires an explicit completeness affirmation
+and evaluation action. The production evaluator then receives only the
+normalized history and those explicit facts.
+
+The live draft result is visibly unapproved. A material result can reach only
+the existing in-memory keep-or-apply rehearsal; it cannot create a
+recommendation record, call a material command, project or persist a plan, or
+activate guidance. Changing history or any supplied fact clears the result and
+session choice. Ordinary production, iOS, and Functions builds exclude the
+inspector, live draft evaluation, and identifying text through the existing
+internal-rehearsal build boundary. This permits owner testing before the
+professional-review and external-use gates are funded without weakening them.
 
 ## Activation gates
 
