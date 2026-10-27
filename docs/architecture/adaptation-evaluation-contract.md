@@ -126,11 +126,21 @@ explicit trusted facts above, confirm completeness, and load an approved
 non-draft rule artifact before invoking the evaluator. Revision readability and
 a history-ready result do not independently satisfy those gates.
 
-The first product integration should remain owner-only and read-only: expose
-the normalized facts and refusal issues for internal daily-use inspection
-without displaying a participant recommendation or offering a plan-change
-action. That rehearsal can validate the data path before the professional
-review and external-use gates are funded.
+The first product integration remains owner-only and read-only. The explicit
+`internal-plan-rehearsal` mode now passes the authenticated owner's synchronized
+active state, plans, workouts, and runs to a live-history inspector. The owner
+chooses an evaluation date, completed-or-skipped trigger, and recent-run bound;
+the inspector then displays either the normalizer's complete objective evidence
+or all stable refusal issues. The recent-run bound is visibly an editable
+inspection input, not an approved threshold.
+
+This live inspector is a sibling of, not an input to, the synthetic draft
+evaluator rehearsal. It never imports packet values, calls the evaluator,
+displays a recommendation, or offers a plan-change action. It also lists every
+trusted caller fact that remains unresolved. Ordinary production, iOS, and
+Functions builds exclude the inspector and its identifying text through the
+existing internal-rehearsal build boundary. This permits internal data-path
+inspection before the professional review and external-use gates are funded.
 
 ## Activation gates
 
