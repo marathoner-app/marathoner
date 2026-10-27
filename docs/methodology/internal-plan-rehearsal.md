@@ -26,7 +26,13 @@ The surface can:
 - map the current saved profile into the plan-generation input contract;
 - run the exact hash-pinned draft packet through the deterministic generator;
 - show incomplete, invalid, unsupported, or generated results; and
-- render a generated proposal as read-only and inactive.
+- review a generated proposal and explicitly activate it only inside the
+  current rehearsal session.
+
+Session activation is an interface rehearsal, not a plan approval. It shows the
+draft plan dates and first scheduled training workout, then disappears when the
+proposal inputs change or the page reloads. It does not call the plan-approval
+command, write a plan or workouts, or change the real Plan and Track screens.
 
 The same mode also shows **Internal draft adaptation rehearsal**. This second
 tool requires the owner to choose one frozen scenario from the pinned adaptation
@@ -42,10 +48,11 @@ association-normalization seam, so presenting live-run results now would require
 inventing facts. The frozen lab makes the implemented decision table testable
 without hiding that missing integration boundary.
 
-Neither tool can approve, activate, or persist a plan or recommendation.
-Ordinary development, production web, iOS development, and iOS beta builds do
-not include these surfaces or either draft packet. The distributable build
-commands scan their output and fail if any appears.
+Neither tool can approve or persist a plan or recommendation, and rehearsal
+activation cannot escape the current page session. Ordinary development,
+production web, iOS development, and iOS beta builds do not include these
+surfaces or either draft packet. The distributable build commands scan their
+output and fail if any appears.
 
 Independent methodology review remains required before the rules or generated
 plans can be used by real-world participants. Reviewer changes can be applied
