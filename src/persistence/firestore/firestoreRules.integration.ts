@@ -31,7 +31,10 @@ const secondUserId = "runner-two";
 
 let testEnvironment: RulesTestEnvironment;
 
-function planDocument(userId = firstUserId) {
+function planDocument(
+  userId = firstUserId,
+  overrides: Record<string, unknown> = {},
+) {
   return {
     schemaVersion: 1,
     userId,
@@ -41,6 +44,7 @@ function planDocument(userId = firstUserId) {
     status: "draft",
     createdAt: new Date("2026-07-30T12:00:00.000Z"),
     updatedAt: new Date("2026-07-30T12:00:00.000Z"),
+    ...overrides,
   };
 }
 
@@ -257,14 +261,87 @@ describe("Firestore training-data ownership rules", () => {
     await assertFails(setDoc(reference, profileDocument(firstUserId, overrides)));
   });
 
-  it("allows a runner to create and read a document in their own path", async () => {
+  it("allows a runner to create, update, read, and delete a valid plan", async () => {
     const database = testEnvironment
       .authenticatedContext(firstUserId)
       .firestore() as unknown as Firestore;
     const reference = doc(database, `users/${firstUserId}/plans/plan-1`);
 
-    await assertSucceeds(setDoc(reference, planDocument()));
+    await assertSucceeds(
+      setDoc(
+        reference,
+        planDocument(firstUserId, {
+          endDate: "2027-01-17",
+          completionGoal: "complete_first_marathon",
+        }),
+      ),
+    );
+    await assertSucceeds(
+      updateDoc(reference, {
+        name: "Updated marathon plan",
+        status: "active",
+        updatedAt: new Date("2026-07-30T13:00:00.000Z"),
+      }),
+    );
     await assertSucceeds(getDoc(reference));
+    await assertSucceeds(deleteDoc(reference));
+  });
+
+  it.each([
+    ["an unknown field", { unexpectedField: true }],
+    ["a non-draft initial status", { status: "active" }],
+    [
+      "different create timestamps",
+      { updatedAt: new Date("2026-07-30T13:00:00.000Z") },
+    ],
+    ["a whitespace-only name", { name: "  \t" }],
+    ["a malformed start date", { startDate: "08/01/2026" }],
+    ["a target before its start", { targetRaceDate: "2026-07-31" }],
+    ["an end before its target", { endDate: "2027-01-09" }],
+    ["an unsupported completion goal", { completionGoal: "run_fast" }],
+    ["an unsupported status", { status: "paused" }],
+  ])("rejects a plan create with %s", async (_, overrides) => {
+    const database = testEnvironment
+      .authenticatedContext(firstUserId)
+      .firestore();
+    const reference = doc(database, `users/${firstUserId}/plans/plan-1`);
+
+    await assertFails(setDoc(reference, planDocument(firstUserId, overrides)));
+  });
+
+  it("rejects incomplete plans and immutable or stale plan updates", async () => {
+    const database = testEnvironment
+      .authenticatedContext(firstUserId)
+      .firestore();
+    const reference = doc(database, `users/${firstUserId}/plans/plan-1`);
+    const missingName: Record<string, unknown> = planDocument();
+    delete missingName.name;
+
+    await assertFails(setDoc(reference, missingName));
+    await assertSucceeds(setDoc(reference, planDocument()));
+    await assertFails(
+      updateDoc(reference, {
+        schemaVersion: 2,
+        updatedAt: new Date("2026-07-30T13:00:00.000Z"),
+      }),
+    );
+    await assertFails(
+      updateDoc(reference, {
+        userId: secondUserId,
+        updatedAt: new Date("2026-07-30T13:00:00.000Z"),
+      }),
+    );
+    await assertFails(
+      updateDoc(reference, {
+        createdAt: new Date("2026-07-30T13:00:00.000Z"),
+        updatedAt: new Date("2026-07-30T14:00:00.000Z"),
+      }),
+    );
+    await assertFails(
+      updateDoc(reference, {
+        updatedAt: new Date("2026-07-30T11:00:00.000Z"),
+      }),
+    );
   });
 
   it("denies anonymous and cross-user access", async () => {

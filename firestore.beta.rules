@@ -238,6 +238,64 @@ service cloud.firestore {
         && next.updatedAt >= prior.updatedAt;
     }
 
+    function isValidPlanWrite(userId) {
+      let data = request.resource.data;
+      return isValidOwnedWrite(userId)
+        && data.keys().hasAll([
+          'schemaVersion',
+          'userId',
+          'name',
+          'startDate',
+          'targetRaceDate',
+          'status',
+          'createdAt',
+          'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'schemaVersion',
+          'userId',
+          'name',
+          'startDate',
+          'targetRaceDate',
+          'endDate',
+          'completionGoal',
+          'status',
+          'createdAt',
+          'updatedAt'
+        ])
+        && data.name is string
+        && data.name.size() > 0
+        && data.name.matches('^[\\s\\S]*\\S[\\s\\S]*$')
+        && isDateOnlyString(data.startDate)
+        && isDateOnlyString(data.targetRaceDate)
+        && data.targetRaceDate >= data.startDate
+        && (!data.keys().hasAny(['endDate'])
+          || (isDateOnlyString(data.endDate)
+            && data.endDate >= data.targetRaceDate))
+        && (!data.keys().hasAny(['completionGoal'])
+          || data.completionGoal == 'complete_first_marathon')
+        && data.status in ['draft', 'active', 'completed', 'archived']
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp
+        && data.updatedAt >= data.createdAt;
+    }
+
+    function isValidPlanCreate(userId) {
+      return isValidPlanWrite(userId)
+        && request.resource.data.status == 'draft'
+        && request.resource.data.createdAt == request.resource.data.updatedAt;
+    }
+
+    function isValidPlanUpdate(userId) {
+      let next = request.resource.data;
+      let prior = resource.data;
+      return isValidPlanWrite(userId)
+        && next.schemaVersion == prior.schemaVersion
+        && next.userId == prior.userId
+        && next.createdAt == prior.createdAt
+        && next.updatedAt >= prior.updatedAt;
+    }
+
     function hasValidRunAssociations(data) {
       let hasPlanId = data.keys().hasAny(['plannedWorkoutPlanId']);
       let hasWorkoutId = data.keys().hasAny(['plannedWorkoutId']);
@@ -407,8 +465,10 @@ service cloud.firestore {
 
     match /users/{userId}/plans/{planId} {
       allow read, delete: if canAccessBetaTrainingData(userId);
-      allow create, update: if canAccessBetaTrainingData(userId)
-        && isValidOwnedWrite(userId);
+      allow create: if canAccessBetaTrainingData(userId)
+        && isValidPlanCreate(userId);
+      allow update: if canAccessBetaTrainingData(userId)
+        && isValidPlanUpdate(userId);
 
       match /workouts/{workoutId} {
         allow read, delete: if canAccessBetaTrainingData(userId);

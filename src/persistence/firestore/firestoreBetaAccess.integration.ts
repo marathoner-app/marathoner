@@ -25,7 +25,10 @@ const fixtureEmailDomain = "example.test";
 
 let testEnvironment: RulesTestEnvironment;
 
-function planDocument(userId = firstUserId) {
+function planDocument(
+  userId = firstUserId,
+  overrides: Record<string, unknown> = {},
+) {
   return {
     schemaVersion: 1,
     userId,
@@ -35,6 +38,7 @@ function planDocument(userId = firstUserId) {
     status: "draft",
     createdAt: new Date("2026-07-30T12:00:00.000Z"),
     updatedAt: new Date("2026-07-30T12:00:00.000Z"),
+    ...overrides,
   };
 }
 
@@ -243,6 +247,60 @@ describe("founding-beta membership rules", () => {
         updatedAt: new Date("2026-10-05T14:00:00.000Z"),
       }),
     );
+  });
+
+  it("enforces the exact training-plan lifecycle for an approved member", async () => {
+    await seedMembership(firstUserId);
+    const database = authenticatedContext(firstUserId).firestore();
+    const reference = doc(database, `users/${firstUserId}/plans/plan-1`);
+    const missingTarget: Record<string, unknown> = planDocument();
+    delete missingTarget.targetRaceDate;
+
+    await assertFails(setDoc(reference, missingTarget));
+    await assertFails(
+      setDoc(
+        reference,
+        planDocument(firstUserId, { unexpectedField: true }),
+      ),
+    );
+    await assertFails(
+      setDoc(reference, planDocument(firstUserId, { status: "active" })),
+    );
+    await assertFails(
+      setDoc(
+        reference,
+        planDocument(firstUserId, { targetRaceDate: "2026-07-31" }),
+      ),
+    );
+
+    await assertSucceeds(
+      setDoc(
+        reference,
+        planDocument(firstUserId, {
+          endDate: "2027-01-17",
+          completionGoal: "complete_first_marathon",
+        }),
+      ),
+    );
+    await assertSucceeds(
+      updateDoc(reference, {
+        status: "active",
+        updatedAt: new Date("2026-07-30T13:00:00.000Z"),
+      }),
+    );
+    await assertFails(
+      updateDoc(reference, {
+        createdAt: new Date("2026-07-30T13:00:00.000Z"),
+        updatedAt: new Date("2026-07-30T14:00:00.000Z"),
+      }),
+    );
+    await assertFails(
+      updateDoc(reference, {
+        updatedAt: new Date("2026-07-30T12:30:00.000Z"),
+      }),
+    );
+    await assertSucceeds(getDoc(reference));
+    await assertSucceeds(deleteDoc(reference));
   });
 
   it.each([
