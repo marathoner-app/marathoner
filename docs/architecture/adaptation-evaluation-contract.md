@@ -189,8 +189,17 @@ material recommendations that would make no change. Because it receives no
 artifact path or version, it neither imports the pinned draft nor represents
 methodology approval.
 
-This boundary remains disconnected from the evaluator, recommendation
-evidence, material-command handler, plan persistence, signed-in UI, and
-activation controls. After #119 approves an exact non-draft artifact, the
-projection and its fixtures must be reconciled to that artifact before any
-participant-facing acceptance transaction may use it.
+The owner-only live rehearsal can connect an explicitly accepted draft
+recommendation to this projector. A fail-closed adapter derives the active-plan
+calendar week and exact reschedule date from the synchronized snapshot, rejects
+missing or ambiguous workout targets, and shows only a session-memory
+before-and-after projection. Choosing to keep the current plan never calls the
+projector. A successful rehearsal projection creates no recommendation record,
+approval receipt, material command, persisted revision, or real plan mutation.
+
+The projector remains disconnected from participant-facing acceptance,
+material-command handling, plan persistence, and activation controls. Ordinary
+production, iOS, beta iOS, and Functions artifacts exclude this owner-only
+connection. After #119 approves an exact non-draft artifact, the projection and
+its fixtures must be reconciled to that artifact before any participant-facing
+acceptance transaction may use it.

@@ -204,3 +204,31 @@
 .internal-live-adaptation-result > h4 {
   margin-top: 0;
 }
+
+.internal-live-adaptation-projection {
+  margin-top: 1rem;
+  padding: 1rem;
+  border: 1px solid #8d6d50;
+  border-radius: 0.65rem;
+  background: #fff;
+}
+
+.internal-live-adaptation-projection > h4 {
+  margin-top: 0;
+}
+
+.internal-live-adaptation-changes {
+  display: grid;
+  padding: 0;
+  list-style: none;
+  gap: 0.65rem;
+}
+
+.internal-live-adaptation-changes li {
+  display: grid;
+  padding: 0.75rem;
+  border: 1px solid #d8c3ac;
+  border-radius: 0.55rem;
+  background: #fff9ef;
+  gap: 0.25rem;
+}

@@ -159,6 +159,10 @@ export default function InternalAdaptationHistoryInspector({
     week,
     workouts,
   ]);
+  const inspectedActivePlan =
+    result?.kind === "ready"
+      ? plans.find(({ id }) => id === result.evidence.activePlanId)
+      : undefined;
 
   const resetInspection = () => setInspectionRequested(false);
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
@@ -359,11 +363,15 @@ export default function InternalAdaptationHistoryInspector({
             History-ready is not participant-ready. Inspecting history did not
             create a recommendation record or change a plan.
           </p>
-          <InternalLiveAdaptationRehearsal
-            key={inspectionSequence}
-            evidence={result.evidence}
-            packet={draftPacket}
-          />
+          {inspectedActivePlan !== undefined && (
+            <InternalLiveAdaptationRehearsal
+              key={inspectionSequence}
+              evidence={result.evidence}
+              packet={draftPacket}
+              activePlan={inspectedActivePlan}
+              workouts={workouts}
+            />
+          )}
         </div>
       )}
     </section>
