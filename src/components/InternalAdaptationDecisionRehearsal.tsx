@@ -9,9 +9,12 @@ interface InternalAdaptationDecisionRehearsalProps {
   readonly result: DecidedAdaptationEvaluationResultV1;
   readonly outcomeDetail: DraftAdaptationOutcomeDetail;
   readonly sourceDescription?: string;
+  readonly onSessionDecisionChange?: (
+    decision: InternalAdaptationSessionDecision | null,
+  ) => void;
 }
 
-type SessionDecision = "keep" | "apply";
+export type InternalAdaptationSessionDecision = "keep" | "apply";
 
 function readableIdentifier(value: string): string {
   const words = value.replace(/[-_]/gu, " ");
@@ -33,7 +36,7 @@ function modelFor(
       outcomeDetail.planMutation ??
       "The draft outcome does not define a plan mutation.",
     impact:
-      "Any choice below is recorded only for this page session. No recommendation command, approval receipt, or plan projection is created.",
+      "Any choice below is recorded only for this page session. No recommendation command, approval receipt, or real plan mutation is created.",
     contentState: "internal_preview",
   };
 }
@@ -42,10 +45,20 @@ export default function InternalAdaptationDecisionRehearsal({
   result,
   outcomeDetail,
   sourceDescription,
+  onSessionDecisionChange,
 }: InternalAdaptationDecisionRehearsalProps) {
-  const [sessionDecision, setSessionDecision] = useState<SessionDecision | null>(
-    null,
-  );
+  const [sessionDecision, setSessionDecision] =
+    useState<InternalAdaptationSessionDecision | null>(null);
+
+  const recordDecision = (decision: InternalAdaptationSessionDecision) => {
+    setSessionDecision(decision);
+    onSessionDecisionChange?.(decision);
+  };
+
+  const reviewAgain = () => {
+    setSessionDecision(null);
+    onSessionDecisionChange?.(null);
+  };
 
   if (sessionDecision !== null) {
     return (
@@ -75,7 +88,7 @@ export default function InternalAdaptationDecisionRehearsal({
             <dd>{readableIdentifier(result.action ?? "none")}</dd>
           </div>
         </dl>
-        <button type="button" onClick={() => setSessionDecision(null)}>
+        <button type="button" onClick={reviewAgain}>
           Review the choice again
         </button>
       </section>
@@ -87,8 +100,8 @@ export default function InternalAdaptationDecisionRehearsal({
       model={modelFor(result, outcomeDetail, sourceDescription)}
       state={{ kind: "ready" }}
       interactionMode="internal_rehearsal"
-      onKeep={() => setSessionDecision("keep")}
-      onApply={() => setSessionDecision("apply")}
+      onKeep={() => recordDecision("keep")}
+      onApply={() => recordDecision("apply")}
       onRetry={() => undefined}
     />
   );

@@ -13,16 +13,66 @@ import { inputForInternalLiveAdaptation } from "../src/components/internalLiveAd
 import {
   ADAPTATION_HISTORY_EVIDENCE_SCHEMA_VERSION,
   createDateOnly,
+  createDistanceMeters,
   createPlannedWorkoutId,
   createTrainingPlanId,
   createUserId,
+  createUtcDateTime,
   type AdaptationHistoryEvidenceV1,
+  type PlannedWorkout,
+  type RunPurpose,
+  type TrainingPlan,
 } from "../src/domain/training";
 
 const packet = createInternalAdaptationScenarioPacket(
   draftRulesText,
   draftFixturesText,
 );
+const timestamp = createUtcDateTime("2026-10-01T12:00:00Z");
+const ownerId = createUserId("owner-1");
+const planId = createTrainingPlanId("plan-1");
+const activePlan: TrainingPlan = {
+  id: planId,
+  userId: ownerId,
+  name: "First marathon",
+  startDate: createDateOnly("2026-10-26"),
+  targetRaceDate: createDateOnly("2027-04-18"),
+  status: "active",
+  createdAt: timestamp,
+  updatedAt: timestamp,
+};
+
+function runWorkout(
+  id: string,
+  date: string,
+  distance: number,
+  purpose: RunPurpose,
+): PlannedWorkout {
+  return {
+    id: createPlannedWorkoutId(id),
+    userId: ownerId,
+    planId,
+    scheduledDate: createDateOnly(date),
+    phase: "marathon_training",
+    status: id === "workout-1" ? "skipped" : "planned",
+    kind: "run",
+    purpose,
+    targetDistance: createDistanceMeters(distance),
+    createdAt: timestamp,
+    updatedAt: timestamp,
+  };
+}
+
+const workouts: readonly PlannedWorkout[] = [
+  runWorkout("workout-1", "2026-10-26", 4_000, "easy"),
+  runWorkout("week-1-recovery", "2026-10-28", 5_000, "recovery"),
+  runWorkout("week-1-tempo", "2026-10-30", 6_000, "tempo"),
+  runWorkout("week-1-long", "2026-11-01", 8_000, "long"),
+  runWorkout("week-2-easy", "2026-11-02", 4_500, "easy"),
+  runWorkout("week-2-recovery", "2026-11-04", 5_500, "recovery"),
+  runWorkout("week-2-tempo", "2026-11-06", 6_500, "tempo"),
+  runWorkout("week-2-long", "2026-11-08", 9_000, "long"),
+];
 
 function fixtureValues(id: string): DraftAdaptationFixtureValues {
   const fixture = packet.cases.find((candidate) => candidate.id === id);
@@ -35,8 +85,8 @@ function evidenceFor(
 ): AdaptationHistoryEvidenceV1 {
   return {
     schemaVersion: ADAPTATION_HISTORY_EVIDENCE_SCHEMA_VERSION,
-    ownerId: createUserId("owner-1"),
-    activePlanId: createTrainingPlanId("plan-1"),
+    ownerId,
+    activePlanId: planId,
     activePlanRevision: values.activePlanRevision,
     evaluatedPlanRevision: values.evaluatedPlanRevision,
     activePlanStatus: "active",
@@ -126,6 +176,8 @@ describe("InternalLiveAdaptationRehearsal", () => {
       <InternalLiveAdaptationRehearsal
         evidence={evidenceFor(values)}
         packet={packet}
+        activePlan={activePlan}
+        workouts={workouts}
       />,
     );
 
@@ -161,6 +213,10 @@ describe("InternalLiveAdaptationRehearsal", () => {
         name: "Session choice recorded: Apply draft change",
       }),
     ).toBeVisible();
+    expect(
+      screen.getByRole("heading", { name: "Draft plan projection" }),
+    ).toBeVisible();
+    expect(screen.getByText("Projected revision")).toBeVisible();
 
     await user.selectOptions(
       screen.getByLabelText("Current week kind"),
@@ -183,6 +239,8 @@ describe("InternalLiveAdaptationRehearsal", () => {
       <InternalLiveAdaptationRehearsal
         evidence={{ ...evidenceFor(values), activePlanRevision: -1 }}
         packet={packet}
+        activePlan={activePlan}
+        workouts={workouts}
       />,
     );
 
@@ -207,6 +265,8 @@ describe("InternalLiveAdaptationRehearsal", () => {
       <InternalLiveAdaptationRehearsal
         evidence={evidenceFor(values)}
         packet={packet}
+        activePlan={activePlan}
+        workouts={workouts}
       />,
     );
 
@@ -220,6 +280,63 @@ describe("InternalLiveAdaptationRehearsal", () => {
     expect(
       screen.queryByRole("button", { name: "Apply in rehearsal" }),
     ).not.toBeInTheDocument();
+  });
+
+  it("keeps the live plan untouched when the owner chooses keep", async () => {
+    const values = fixtureValues("hold-at-two-hard-effort-boundary");
+    const user = userEvent.setup();
+    render(
+      <InternalLiveAdaptationRehearsal
+        evidence={evidenceFor(values)}
+        packet={packet}
+        activePlan={activePlan}
+        workouts={workouts}
+      />,
+    );
+
+    await fillTrustedFacts(user, values);
+    await user.click(
+      screen.getByRole("button", { name: "Evaluate live draft evidence" }),
+    );
+    await user.click(
+      screen.getByRole("button", { name: "Keep in rehearsal" }),
+    );
+
+    expect(
+      screen.getByRole("heading", {
+        name: "Session choice recorded: Keep current plan",
+      }),
+    ).toBeVisible();
+    expect(
+      screen.queryByRole("heading", { name: "Draft plan projection" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("shows the exact session-only reschedule projection", async () => {
+    const values = fixtureValues("reschedule-one-easy-run");
+    const user = userEvent.setup();
+    render(
+      <InternalLiveAdaptationRehearsal
+        evidence={evidenceFor(values)}
+        packet={packet}
+        activePlan={activePlan}
+        workouts={workouts}
+      />,
+    );
+
+    await fillTrustedFacts(user, values);
+    await user.click(
+      screen.getByRole("button", { name: "Evaluate live draft evidence" }),
+    );
+    await user.click(
+      screen.getByRole("button", { name: "Apply in rehearsal" }),
+    );
+
+    expect(
+      screen.getByRole("heading", { name: "Draft plan projection" }),
+    ).toBeVisible();
+    expect(screen.getByText("Before: 2026-10-26, Easy run, 4 km")).toBeVisible();
+    expect(screen.getByText("After: 2026-10-27, Easy run, 4 km")).toBeVisible();
   });
 
   it("assembles only normalized history and explicit trusted facts", () => {

@@ -4,9 +4,12 @@ import {
   type AdaptationEvaluationResultV1,
   type AdaptationHistoryEvidenceV1,
   type AdaptationOutcomeRuleV1,
+  type AdaptationPlanWorkoutV1,
   type AdaptationRescheduleCandidateV1,
   type AdaptationWeekKind,
+  type PlannedWorkout,
   type RunPurpose,
+  type TrainingPlan,
 } from "../domain/training";
 import InternalAdaptationDecisionRehearsal from "./InternalAdaptationDecisionRehearsal";
 import type {
@@ -14,10 +17,16 @@ import type {
   InternalAdaptationScenarioPacket,
 } from "./internalAdaptationScenarioPacket";
 import { inputForInternalLiveAdaptation } from "./internalLiveAdaptationEvaluation";
+import {
+  projectInternalLiveAdaptation,
+  type InternalLiveAdaptationProjectionResult,
+} from "./internalLiveAdaptationProjection";
 
 interface InternalLiveAdaptationRehearsalProps {
   readonly evidence: AdaptationHistoryEvidenceV1;
   readonly packet: InternalAdaptationScenarioPacket;
+  readonly activePlan: TrainingPlan;
+  readonly workouts: readonly PlannedWorkout[];
 }
 
 type BooleanChoice = "" | "yes" | "no";
@@ -53,6 +62,8 @@ function booleanFromChoice(value: Exclude<BooleanChoice, "">): boolean {
 export default function InternalLiveAdaptationRehearsal({
   evidence,
   packet,
+  activePlan,
+  workouts,
 }: InternalLiveAdaptationRehearsalProps) {
   const [currentCoreWeek, setCurrentCoreWeek] = useState("");
   const [currentWeekKind, setCurrentWeekKind] = useState<
@@ -80,9 +91,14 @@ export default function InternalLiveAdaptationRehearsal({
   const [outcome, setOutcome] = useState<LiveEvaluationOutcome>({
     kind: "not_run",
   });
+  const [projectionOutcome, setProjectionOutcome] =
+    useState<InternalLiveAdaptationProjectionResult | null>(null);
   const evaluationSequence = useRef(0);
 
-  const clearOutcome = () => setOutcome({ kind: "not_run" });
+  const clearOutcome = () => {
+    setOutcome({ kind: "not_run" });
+    setProjectionOutcome(null);
+  };
   const candidateIsComplete =
     candidateChoice === "none" ||
     (candidateChoice === "present" &&
@@ -163,6 +179,7 @@ export default function InternalLiveAdaptationRehearsal({
             ({ reasonCode }) => reasonCode === result.reasonCode,
           ) ?? null);
     evaluationSequence.current += 1;
+    setProjectionOutcome(null);
     setOutcome({
       kind: "evaluated",
       result,
@@ -476,12 +493,102 @@ export default function InternalLiveAdaptationRehearsal({
                 result={outcome.result}
                 outcomeDetail={outcome.outcomeDetail}
                 sourceDescription={`The synchronized owner evidence matched ${outcome.result.reasonCode} in the draft evaluator.`}
+                onSessionDecisionChange={(decision) => {
+                  if (decision !== "apply") {
+                    setProjectionOutcome(null);
+                    return;
+                  }
+                  if (!("action" in outcome.result)) {
+                    setProjectionOutcome(null);
+                    return;
+                  }
+                  const action = outcome.result.action;
+                  if (action === null || action === "no_change") {
+                    setProjectionOutcome(null);
+                    return;
+                  }
+                  setProjectionOutcome(
+                    projectInternalLiveAdaptation({
+                      evidence,
+                      activePlan,
+                      workouts,
+                      action,
+                      rescheduleCandidate: candidateForEvaluation(),
+                    }),
+                  );
+                }}
               />
             )}
+
+          {projectionOutcome?.kind === "not_ready" && (
+            <section className="internal-live-adaptation-projection" role="alert">
+              <p className="internal-adaptation-rehearsal-eyebrow">
+                Projection refused
+              </p>
+              <h4>Draft change could not be projected safely</h4>
+              <p>{projectionOutcome.message}</p>
+              <p>
+                Internal code: <code>{projectionOutcome.code}</code>
+              </p>
+            </section>
+          )}
+
+          {projectionOutcome?.kind === "ready" && (
+            <section
+              className="internal-live-adaptation-projection"
+              aria-labelledby="internal-live-adaptation-projection-title"
+            >
+              <p className="internal-adaptation-rehearsal-eyebrow">
+                Unapproved session-only projection
+              </p>
+              <h4 id="internal-live-adaptation-projection-title">
+                Draft plan projection
+              </h4>
+              <dl>
+                <div>
+                  <dt>Evaluated revision</dt>
+                  <dd>{projectionOutcome.projection.evaluatedPlanRevision}</dd>
+                </div>
+                <div>
+                  <dt>Projected revision</dt>
+                  <dd>{projectionOutcome.projection.resultingPlanRevision}</dd>
+                </div>
+                <div>
+                  <dt>Changed workouts</dt>
+                  <dd>{projectionOutcome.projection.changes.length}</dd>
+                </div>
+              </dl>
+              <ol className="internal-live-adaptation-changes">
+                {projectionOutcome.projection.changes.map((change) => (
+                  <li key={change.workoutId}>
+                    <strong>{change.workoutId}</strong>
+                    <span>Before: {describeWorkout(change.before)}</span>
+                    <span>After: {describeWorkout(change.after)}</span>
+                  </li>
+                ))}
+              </ol>
+              <p className="internal-adaptation-history-boundary">
+                This projection exists only in this page session. It was not
+                saved, no command was sent, and the real plan did not change.
+              </p>
+            </section>
+          )}
         </div>
       )}
     </section>
   );
+}
+
+function describeWorkout(workout: AdaptationPlanWorkoutV1): string {
+  const kind =
+    workout.kind === "run"
+      ? readableIdentifier(`${workout.purpose} run`)
+      : "Walk run";
+  const target =
+    workout.target.kind === "distance"
+      ? `${(workout.target.distance / 1_000).toLocaleString(undefined, { maximumFractionDigits: 2 })} km`
+      : `${Math.round(workout.target.duration / 60)} min`;
+  return `${workout.scheduledDate}, ${kind}, ${target}`;
 }
 
 interface BooleanSelectProps {
