@@ -38,10 +38,14 @@ function planDocument(userId = firstUserId) {
   };
 }
 
-function profileDocument(userId = firstUserId) {
+function profileDocument(
+  userId = firstUserId,
+  overrides: Record<string, unknown> = {},
+) {
   return {
     schemaVersion: 1,
     userId,
+    displayName: "Runner One",
     preferredDistanceUnit: "mile",
     timeZone: "America/Los_Angeles",
     experienceLevel: "consistent",
@@ -50,11 +54,18 @@ function profileDocument(userId = firstUserId) {
     currentWeeklyDistanceMeters: 24_000,
     currentRunningFrequencyDaysPerWeek: 4,
     longestRecentRunDistanceMeters: 12_000,
+    recentPerformance: {
+      completedOn: "2026-09-27",
+      distanceMeters: 5_000,
+      durationSeconds: 1_800,
+    },
     availableTrainingDays: ["tuesday", "thursday", "saturday", "sunday"],
     preferredLongRunDay: "sunday",
+    scheduleConstraints: "Weekdays after work.\nWeekend mornings.",
     completionGoal: "complete_first_marathon",
     createdAt: new Date("2026-10-05T12:00:00.000Z"),
     updatedAt: new Date("2026-10-05T12:00:00.000Z"),
+    ...overrides,
   };
 }
 
@@ -135,6 +146,72 @@ describe("founding-beta membership rules", () => {
     );
     await assertFails(getDoc(doc(otherDatabase, `users/${firstUserId}`)));
     await assertFails(deleteDoc(reference));
+  });
+
+  it("enforces exact profile lifecycle and scheduling relationships", async () => {
+    await seedMembership(firstUserId);
+    const database = authenticatedContext(firstUserId).firestore();
+    const reference = doc(database, `users/${firstUserId}`);
+
+    await assertFails(
+      setDoc(
+        reference,
+        profileDocument(firstUserId, {
+          updatedAt: new Date("2026-10-05T13:00:00.000Z"),
+        }),
+      ),
+    );
+    await assertFails(
+      setDoc(reference, profileDocument(firstUserId, { displayName: "   " })),
+    );
+    await assertFails(
+      setDoc(
+        reference,
+        profileDocument(firstUserId, {
+          targetRace: {
+            kind: "window",
+            startDate: "2027-06-01",
+            endDate: "2027-05-01",
+          },
+        }),
+      ),
+    );
+    await assertFails(
+      setDoc(
+        reference,
+        profileDocument(firstUserId, {
+          availableTrainingDays: ["tuesday", "tuesday", "sunday"],
+        }),
+      ),
+    );
+    await assertFails(
+      setDoc(
+        reference,
+        profileDocument(firstUserId, {
+          availableTrainingDays: ["tuesday", "thursday"],
+          preferredLongRunDay: "sunday",
+        }),
+      ),
+    );
+
+    await assertSucceeds(setDoc(reference, profileDocument()));
+    await assertSucceeds(
+      updateDoc(reference, {
+        displayName: "Updated Runner",
+        updatedAt: new Date("2026-10-05T13:00:00.000Z"),
+      }),
+    );
+    await assertFails(
+      updateDoc(reference, {
+        updatedAt: new Date("2026-10-05T12:30:00.000Z"),
+      }),
+    );
+    await assertFails(
+      updateDoc(reference, {
+        createdAt: new Date("2026-10-05T13:00:00.000Z"),
+        updatedAt: new Date("2026-10-05T14:00:00.000Z"),
+      }),
+    );
   });
 
   it.each([
