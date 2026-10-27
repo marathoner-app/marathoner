@@ -481,6 +481,14 @@ function SectionContent({
     training.plans.find((plan) => plan.status === "draft") ??
     training.plans.find((plan) => plan.status !== "archived") ??
     null;
+  const nextPlanWorkout =
+    training.profile === null
+      ? null
+      : selectNextPlannedWorkout(
+          activePlan,
+          training.workouts,
+          training.profile.timeZone,
+        );
   return (
     <motion.div
       className="section-panel-content"
@@ -521,7 +529,12 @@ function SectionContent({
         </div>
       )}
       {hasReadableTraining && section === "plan" && (
-        <Calendar plan={activePlan} workouts={training.workouts} />
+        <Calendar
+          plan={activePlan}
+          workouts={training.workouts}
+          distanceUnit={training.profile?.preferredDistanceUnit ?? "mile"}
+          initialDate={nextPlanWorkout?.scheduledDate}
+        />
       )}
       {hasReadableTraining && section === "track" && (
         <fieldset className="training-read-only" disabled={!training.canWrite}>
