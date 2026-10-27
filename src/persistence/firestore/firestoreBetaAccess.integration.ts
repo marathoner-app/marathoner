@@ -175,6 +175,26 @@ async function seedMembership(
   });
 }
 
+async function seedPlanAndWorkout(
+  userId = firstUserId,
+  planOverrides: Record<string, unknown> = {},
+  workoutOverrides: Record<string, unknown> = {},
+) {
+  await testEnvironment.withSecurityRulesDisabled(async (context) => {
+    await setDoc(
+      doc(context.firestore(), `users/${userId}/plans/plan-1`),
+      planDocument(userId, planOverrides),
+    );
+    await setDoc(
+      doc(
+        context.firestore(),
+        `users/${userId}/plans/plan-1/workouts/workout-1`,
+      ),
+      workoutDocument(userId, workoutOverrides),
+    );
+  });
+}
+
 beforeAll(async () => {
   testEnvironment = await initializeTestEnvironment({
     projectId,
@@ -278,70 +298,36 @@ describe("founding-beta membership rules", () => {
     );
   });
 
-  it("enforces the exact training-plan lifecycle for an approved member", async () => {
+  it("keeps server-committed plans readable by approved owners and immutable to clients", async () => {
     await seedMembership(firstUserId);
-    const database = authenticatedContext(firstUserId).firestore();
-    const reference = doc(database, `users/${firstUserId}/plans/plan-1`);
-    const missingTarget: Record<string, unknown> = planDocument();
-    delete missingTarget.targetRaceDate;
+    await seedMembership(secondUserId);
+    await seedPlanAndWorkout();
+    const ownerDatabase = authenticatedContext(firstUserId).firestore();
+    const otherDatabase = authenticatedContext(secondUserId).firestore();
+    const path = `users/${firstUserId}/plans/plan-1`;
+    const reference = doc(ownerDatabase, path);
 
-    await assertFails(setDoc(reference, missingTarget));
+    await assertSucceeds(getDoc(reference));
+    await assertFails(getDoc(doc(otherDatabase, path)));
     await assertFails(
       setDoc(
-        reference,
-        planDocument(firstUserId, { unexpectedField: true }),
+        doc(ownerDatabase, `users/${firstUserId}/plans/plan-2`),
+        planDocument(),
       ),
     );
     await assertFails(
-      setDoc(reference, planDocument(firstUserId, { status: "active" })),
+      setDoc(reference, { ...planDocument(), name: "Replacement plan" }),
     );
     await assertFails(
-      setDoc(
-        reference,
-        planDocument(firstUserId, { targetRaceDate: "2026-07-31" }),
-      ),
-    );
-    await assertFails(
-      setDoc(reference, planDocument(firstUserId, { name: "p".repeat(121) })),
-    );
-
-    await assertSucceeds(
-      setDoc(
-        reference,
-        planDocument(firstUserId, {
-          name: "p".repeat(120),
-          endDate: "2027-01-17",
-          completionGoal: "complete_first_marathon",
-        }),
-      ),
-    );
-    await assertSucceeds(
       updateDoc(reference, {
-        status: "active",
+        status: "archived",
         updatedAt: new Date("2026-07-30T13:00:00.000Z"),
       }),
     );
-    await assertFails(
-      updateDoc(reference, {
-        createdAt: new Date("2026-07-30T13:00:00.000Z"),
-        updatedAt: new Date("2026-07-30T14:00:00.000Z"),
-      }),
-    );
-    await assertFails(
-      updateDoc(reference, {
-        updatedAt: new Date("2026-07-30T12:30:00.000Z"),
-      }),
-    );
-    await assertSucceeds(getDoc(reference));
-    await assertSucceeds(deleteDoc(reference));
+    await assertFails(deleteDoc(reference));
   });
 
   it.each([
-    ["plans/plan-1", planDocument()],
-    [
-      "plans/plan-1/workouts/workout-1",
-      workoutDocument(),
-    ],
     ["runs/run-1", runDocument()],
     ["shoes/shoe-1", shoeDocument()],
   ])(
@@ -358,6 +344,7 @@ describe("founding-beta membership rules", () => {
   );
 
   it("denies a verified account with no membership", async () => {
+    await seedPlanAndWorkout();
     const database = authenticatedContext(firstUserId).firestore();
     const reference = doc(database, `users/${firstUserId}/plans/plan-1`);
 
@@ -365,54 +352,31 @@ describe("founding-beta membership rules", () => {
     await assertFails(getDoc(reference));
   });
 
-  it("enforces the exact planned-workout lifecycle for an approved member", async () => {
+  it("keeps workout definitions server-owned with one temporary status transition", async () => {
     await seedMembership(firstUserId);
     await seedMembership(secondUserId);
+    await seedPlanAndWorkout();
     const ownerDatabase = authenticatedContext(firstUserId).firestore();
     const otherDatabase = authenticatedContext(secondUserId).firestore();
     const path = `users/${firstUserId}/plans/plan-1/workouts/workout-1`;
     const ownerReference = doc(ownerDatabase, path);
     const otherReference = doc(otherDatabase, path);
-    const missingStatus = workoutDocument();
-    delete missingStatus.status;
-
-    await assertFails(setDoc(ownerReference, missingStatus));
+    await assertSucceeds(getDoc(ownerReference));
     await assertFails(
       setDoc(
-        ownerReference,
-        workoutDocument(firstUserId, { unexpectedField: true }),
+        doc(
+          ownerDatabase,
+          `users/${firstUserId}/plans/plan-1/workouts/workout-2`,
+        ),
+        workoutDocument(),
       ),
     );
     await assertFails(
-      setDoc(
-        ownerReference,
-        workoutDocument(firstUserId, { status: "completed" }),
-      ),
+      setDoc(ownerReference, {
+        ...workoutDocument(),
+        notes: "Replacement workout",
+      }),
     );
-    await assertFails(
-      setDoc(
-        ownerReference,
-        workoutDocument(firstUserId, {
-          kind: "rest",
-        }),
-      ),
-    );
-    await assertFails(
-      setDoc(
-        ownerReference,
-        workoutDocument(firstUserId, {
-          targetDistanceMeters: undefined,
-        }),
-      ),
-    );
-    await assertFails(
-      setDoc(
-        ownerReference,
-        workoutDocument(firstUserId, { notes: "n".repeat(501) }),
-      ),
-    );
-
-    await assertSucceeds(setDoc(ownerReference, workoutDocument()));
     await assertSucceeds(
       updateDoc(ownerReference, {
         status: "completed",
@@ -427,19 +391,20 @@ describe("founding-beta membership rules", () => {
     );
     await assertFails(
       updateDoc(ownerReference, {
-        planId: "another-plan",
+        scheduledDate: "2026-08-03",
         updatedAt: new Date("2026-07-30T15:00:00.000Z"),
       }),
     );
     await assertFails(
       updateDoc(ownerReference, {
-        updatedAt: new Date("2026-07-30T13:30:00.000Z"),
+        status: "skipped",
+        updatedAt: new Date("2026-07-30T15:00:00.000Z"),
       }),
     );
     await assertFails(getDoc(otherReference));
     await assertFails(setDoc(otherReference, workoutDocument()));
     await assertFails(deleteDoc(otherReference));
-    await assertSucceeds(deleteDoc(ownerReference));
+    await assertFails(deleteDoc(ownerReference));
   });
 
   it("enforces the exact one-way shoe lifecycle for an approved member", async () => {
@@ -539,6 +504,7 @@ describe("founding-beta membership rules", () => {
 
   it("denies an approved account whose email is not verified", async () => {
     await seedMembership(firstUserId);
+    await seedPlanAndWorkout();
     const database = authenticatedContext(firstUserId, false).firestore();
     const reference = doc(database, `users/${firstUserId}/plans/plan-1`);
 
@@ -547,6 +513,7 @@ describe("founding-beta membership rules", () => {
   });
 
   it("denies pending and malformed membership records", async () => {
+    await seedPlanAndWorkout();
     const database = authenticatedContext(firstUserId).firestore();
     const reference = doc(database, `users/${firstUserId}/plans/plan-1`);
 
@@ -576,12 +543,13 @@ describe("founding-beta membership rules", () => {
   it("denies anonymous and cross-owner access", async () => {
     await seedMembership(firstUserId);
     await seedMembership(secondUserId);
+    await seedPlanAndWorkout();
     const ownerDatabase = authenticatedContext(firstUserId).firestore();
     const otherDatabase = authenticatedContext(secondUserId).firestore();
     const anonymousDatabase = testEnvironment.unauthenticatedContext().firestore();
     const path = `users/${firstUserId}/plans/plan-1`;
 
-    await assertSucceeds(setDoc(doc(ownerDatabase, path), planDocument()));
+    await assertSucceeds(getDoc(doc(ownerDatabase, path)));
     await assertFails(getDoc(doc(otherDatabase, path)));
     await assertFails(setDoc(doc(otherDatabase, path), planDocument()));
     await assertFails(getDoc(doc(anonymousDatabase, path)));

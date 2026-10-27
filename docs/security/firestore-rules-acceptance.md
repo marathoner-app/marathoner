@@ -1,6 +1,6 @@
 # Firestore rules acceptance record
 
-- **Status:** Evidence assembled; final issue #470 pull-request checks must pass
+- **Status:** Current rules accepted; plan/write migration continuing through #472 and #115
 - **Last audited:** October 26, 2026
 - **Security gate:** [#121](https://github.com/marathoner-app/marathoner/issues/121)
 - **Final evidence issue:** [#470](https://github.com/marathoner-app/marathoner/issues/470)
@@ -16,11 +16,13 @@ schema versions, cross-owner access, invalid types and values, incoherent or
 stale timestamps, and direct participant access to server-owned records.
 
 This is not a claim that every material write already uses the server command
-boundary. Plan and workout persistence remains transitional until issue #72
-closes. Completed-run creation, editing, deletion, and their linked workout
-status changes remain transitional until issue #115 closes. Security Rules
-constrain those direct writes now; the owning migration issue must remove each
-client permission after its command path is active.
+boundary. Plan records and workout definitions are server-owned after #472.
+The single temporary workout permission is an exact `planned` to `completed` or
+`completed` to `planned` status transition with a newer `updatedAt`, which the
+current run-log and run-delete paths still require. Completed-run creation,
+editing, deletion, and that linked workout transition remain transitional until
+issue #115 closes. Security Rules constrain those direct writes now; #115 must
+remove the remaining permissions after its command path is active.
 
 ## Positive scenarios
 
@@ -28,7 +30,8 @@ client permission after its command path is active.
 | --- | --- | --- | --- |
 | Owner reads profile, plans, workouts, runs, and shoes | Authenticated owner passes | Verified owner with an exact approved membership passes | `firestoreRules.integration.ts` owner and repository round-trip cases; `firestoreBetaAccess.integration.ts` approved-owner cases |
 | Profile create/update | Exact version 1 profile lifecycle passes | Same lifecycle plus beta access gate passes | `allows a runner to create, read, and update only their own profile`; `enforces exact profile lifecycle and scheduling relationships` |
-| Current plan/workout repository lifecycle | Exact plan and workout shapes pass | Same shapes plus beta access gate pass | `allows a runner to create, update, read, and delete a valid plan`; accepted rest, run, and walk-run workout fixtures; beta exact lifecycle cases |
+| Committed plan/workout reads | Authenticated owner reads server-seeded records | Verified owner with an exact approved membership reads server-seeded records | `keeps server-committed plans readable by their owner and immutable to clients`; matching development and beta workout cases |
+| Temporary workout completion transition | Only `planned` to `completed` and `completed` to `planned`, with a newer timestamp, pass | Same transition plus beta access gate passes | `temporarily permits only run-linked workout completion and reopening`; beta matching case |
 | Run create/update/delete | Exact completed-run lifecycle passes | Same lifecycle plus beta access gate passes | `accepts the exact completed-run lifecycle for its owner`; beta exact completed-run lifecycle |
 | Shoe create/update/retire | Exact one-way lifecycle passes; delete fails | Same lifecycle plus beta access gate passes | `accepts exact shoe creation and makes retirement terminal`; beta exact one-way shoe lifecycle |
 | Membership self-read | Not used by development rules | Verified owner may get only its own record | `allows a verified account to read only its own membership status` |
@@ -40,10 +43,10 @@ client permission after its command path is active.
 | Cross-owner | Path ownership and stored `userId` must match the authenticated UID; beta also checks membership | Development anonymous/cross-user, plan owner-field, workout owner, run owner, and shoe owner cases; beta anonymous/cross-owner case |
 | Duplicate | Duplicate profile training days fail; repeated command IDs replay one receipt; two completions for one workout cannot both commit | Profile duplicate-day rule fixture; `commits one effect and returns the original receipt for a duplicate ID`; `allows only one of two authenticated clients to complete a planned workout` |
 | Rest day | A rest workout cannot contain run targets or purpose, and completed-run projection rejects a rest-workout association | Workout `run-only fields on a rest workout` rule fixture; `completedRunCommandProjection.test.ts` rest-workout case |
-| Stale revision | Direct document updates require a monotonic `updatedAt`; material commands require the expected aggregate revision | Profile, plan, workout, run, and shoe stale-update rule fixtures; material-command stale plan, completion, and deletion cases |
-| Oversized | Profile text, plan names, workout notes, run notes, shoe names, membership approver IDs, and stored identifiers are bounded | Development rule parameter cases, matching beta lifecycle cases, and domain validation tests |
-| Extra field | Every writable document uses `keys().hasOnly(...)` | Profile, plan, workout, run, and shoe unknown-field fixtures |
-| Unsupported version | Writable documents require schema version 1; beta membership is version 1; command and artifact versions are validated | Schema-version update fixtures for every training document; malformed beta membership fixtures; unsupported app/command version material-command case |
+| Stale revision | Remaining direct document updates require a newer `updatedAt`; material commands require the expected aggregate revision | Profile, workout-status, run, and shoe stale-update rule fixtures; material-command stale plan, completion, and deletion cases |
+| Oversized | Writable profile, run, shoe, membership, and stored identifier values are bounded; plan/workout definitions are rejected at the client boundary and validated by the command/domain contracts | Development rule parameter cases, matching beta lifecycle cases, domain validation tests, and material-command plan fixtures |
+| Extra field | Every remaining writable document uses `keys().hasOnly(...)`; plan and workout-definition client writes fail regardless of shape | Profile, run, and shoe unknown-field fixtures; direct plan/workout denial fixtures |
+| Unsupported version | Remaining writable documents require schema version 1; beta membership is version 1; plan/workout client writes are denied; command and artifact versions are validated | Schema-version update fixtures for remaining writable training documents; malformed beta membership fixtures; unsupported app/command version material-command case |
 | Direct material or control-plane write | Participant clients cannot mutate active-plan state, generation metadata, recommendation evidence, receipts, deletion requests, membership, recommendation activation, feature controls, or minimum-client-version records | Development and beta server-owned record cases, including the three `operatorControls` paths |
 
 Coaching thresholds and scheduling methodology are deliberately not duplicated
@@ -57,8 +60,9 @@ command or repository write reaches Firestore.
 - `documentTrainingRepositories.test.ts` rejects stored plan data with an
   unsupported schema version; converters perform the same check for every
   hydrated training document.
-- `firestoreRules.integration.ts` rejects schema-version changes for profile,
-  plan, workout, run, and shoe records.
+- `firestoreRules.integration.ts` rejects schema-version changes for remaining
+  participant-writable records and denies every client plan/workout-definition
+  mutation regardless of version.
 - `firestoreBetaAccess.integration.ts` rejects unsupported and malformed
   membership records before any participant-data access.
 - `planGeneration.test.ts` checks explicit generator, ruleset, input, result,
@@ -74,8 +78,8 @@ must not relax the existing version check or silently reinterpret version 1.
 | Rules path | Current caller or capability | Product reason while allowed | Removal or retention decision |
 | --- | --- | --- | --- |
 | `users/{userId}` | Runner setup and profile editing call `profile.save` | Save the runner's owned intake and preferences before plan review | Retain as the explicitly allowed non-material profile path; plan approval separately validates its exact versioned input |
-| `users/{userId}/plans/{planId}` | Repository supports create, update/archive, and guarded delete; no current UI component calls these methods directly | Preserve the current plan persistence contract until approved-plan activation is fully available | #72 must remove direct client plan mutation permission when its command migration closes |
-| `users/{userId}/plans/{planId}/workouts/{workoutId}` | Repository supports create/update/guarded delete; the live app updates status when a run is logged or deleted | Build the current plan record and keep a linked workout's completion state aligned with its run | #72 owns plan/workout creation and deletion migration; #115 owns run-linked workout status migration |
+| `users/{userId}/plans/{planId}` | No participant write permission | Plan activation and replacement are committed atomically by the authenticated server command | Retain read-only participant access; #72 owns the command path |
+| `users/{userId}/plans/{planId}/workouts/{workoutId}` | The live app temporarily updates only `status` and `updatedAt` when a linked run is logged or deleted | Keep a linked workout's completion state aligned with its run until the atomic run command migration lands | Creation, deletion, replacement, and workout-definition edits are denied after #472; #115 removes the final status transition |
 | `users/{userId}/runs/{runId}` | Track creates, edits, and deletes runs | Let a runner record and correct owned training history | #115 owns atomic completion/deletion and must also account for run editing before direct run writes are denied |
 | `users/{userId}/shoes/{shoeId}` | Track creates, updates, and retires shoes | Maintain optional owned gear metadata and derived mileage; deletion is already denied | Retain the exact one-way lifecycle unless a later issue demonstrates a server-command requirement |
 
@@ -106,11 +110,11 @@ repository round trip. The separate `Material command emulators` job retains
 the duplicate, stale-revision, cross-owner, partial-failure, and two-client
 transaction evidence.
 
-The pre-final baseline is the passing
-[#469 workflow run](https://github.com/marathoner-app/marathoner/actions/runs/40426793265).
-Issue #129 must link the final #470 pull-request workflow after all required
-checks pass. Until that link is present, this record is evidence assembled, not
-an invitation-gate pass.
+The accepted baseline is the passing
+[#471 workflow run](https://github.com/marathoner-app/marathoner/actions/runs/40427922844),
+which issue #129 links as its Firestore-rule evidence. Later migrations must
+replace that link with their passing workflow before claiming the corresponding
+write boundary is complete.
 
 Neither workflow deploys Firebase rules or authorizes beta invitations. Live
 deployment remains an explicit reviewed operation with project-alias guards.

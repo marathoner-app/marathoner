@@ -15,10 +15,11 @@ import {
 } from "firebase/firestore";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import {
-  createDateOnly,
   createDistanceMeters,
   createDurationSeconds,
   createIanaTimeZone,
+  createPlannedWorkoutId,
+  createTrainingPlanId,
   createUserId,
   createUtcDateTime,
 } from "../../domain/training";
@@ -153,6 +154,26 @@ function runDocument(
   }
 
   return document;
+}
+
+async function seedPlanAndWorkout(
+  userId = firstUserId,
+  planOverrides: Record<string, unknown> = {},
+  workoutOverrides: Record<string, unknown> = {},
+) {
+  await testEnvironment.withSecurityRulesDisabled(async (context) => {
+    await setDoc(
+      doc(context.firestore(), `users/${userId}/plans/plan-1`),
+      planDocument(userId, planOverrides),
+    );
+    await setDoc(
+      doc(
+        context.firestore(),
+        `users/${userId}/plans/plan-1/workouts/workout-1`,
+      ),
+      workoutDocument(userId, workoutOverrides),
+    );
+  });
 }
 
 beforeAll(async () => {
@@ -290,92 +311,8 @@ describe("Firestore training-data ownership rules", () => {
     await assertFails(setDoc(reference, profileDocument(firstUserId, overrides)));
   });
 
-  it("allows a runner to create, update, read, and delete a valid plan", async () => {
-    const database = testEnvironment
-      .authenticatedContext(firstUserId)
-      .firestore() as unknown as Firestore;
-    const reference = doc(database, `users/${firstUserId}/plans/plan-1`);
-
-    await assertSucceeds(
-      setDoc(
-        reference,
-        planDocument(firstUserId, {
-          name: "p".repeat(120),
-          endDate: "2027-01-17",
-          completionGoal: "complete_first_marathon",
-        }),
-      ),
-    );
-    await assertSucceeds(
-      updateDoc(reference, {
-        name: "Updated marathon plan",
-        status: "active",
-        updatedAt: new Date("2026-07-30T13:00:00.000Z"),
-      }),
-    );
-    await assertSucceeds(getDoc(reference));
-    await assertSucceeds(deleteDoc(reference));
-  });
-
-  it.each([
-    ["an unknown field", { unexpectedField: true }],
-    ["a non-draft initial status", { status: "active" }],
-    [
-      "different create timestamps",
-      { updatedAt: new Date("2026-07-30T13:00:00.000Z") },
-    ],
-    ["a whitespace-only name", { name: "  \t" }],
-    ["an oversized name", { name: "p".repeat(121) }],
-    ["a malformed start date", { startDate: "08/01/2026" }],
-    ["a target before its start", { targetRaceDate: "2026-07-31" }],
-    ["an end before its target", { endDate: "2027-01-09" }],
-    ["an unsupported completion goal", { completionGoal: "run_fast" }],
-    ["an unsupported status", { status: "paused" }],
-  ])("rejects a plan create with %s", async (_, overrides) => {
-    const database = testEnvironment
-      .authenticatedContext(firstUserId)
-      .firestore();
-    const reference = doc(database, `users/${firstUserId}/plans/plan-1`);
-
-    await assertFails(setDoc(reference, planDocument(firstUserId, overrides)));
-  });
-
-  it("rejects incomplete plans and immutable or stale plan updates", async () => {
-    const database = testEnvironment
-      .authenticatedContext(firstUserId)
-      .firestore();
-    const reference = doc(database, `users/${firstUserId}/plans/plan-1`);
-    const missingName: Record<string, unknown> = planDocument();
-    delete missingName.name;
-
-    await assertFails(setDoc(reference, missingName));
-    await assertSucceeds(setDoc(reference, planDocument()));
-    await assertFails(
-      updateDoc(reference, {
-        schemaVersion: 2,
-        updatedAt: new Date("2026-07-30T13:00:00.000Z"),
-      }),
-    );
-    await assertFails(
-      updateDoc(reference, {
-        userId: secondUserId,
-        updatedAt: new Date("2026-07-30T13:00:00.000Z"),
-      }),
-    );
-    await assertFails(
-      updateDoc(reference, {
-        createdAt: new Date("2026-07-30T13:00:00.000Z"),
-        updatedAt: new Date("2026-07-30T14:00:00.000Z"),
-      }),
-    );
-    await assertFails(
-      updateDoc(reference, {
-        updatedAt: new Date("2026-07-30T11:00:00.000Z"),
-      }),
-    );
-  });
-
-  it("denies anonymous and cross-user access", async () => {
+  it("keeps server-committed plans readable by their owner and immutable to clients", async () => {
+    await seedPlanAndWorkout();
     const ownerDatabase = testEnvironment
       .authenticatedContext(firstUserId)
       .firestore();
@@ -385,55 +322,70 @@ describe("Firestore training-data ownership rules", () => {
     const anonymousDatabase = testEnvironment.unauthenticatedContext().firestore();
     const path = `users/${firstUserId}/plans/plan-1`;
 
-    await assertSucceeds(setDoc(doc(ownerDatabase, path), planDocument()));
+    await assertSucceeds(getDoc(doc(ownerDatabase, path)));
     await assertFails(getDoc(doc(otherDatabase, path)));
-    await assertFails(setDoc(doc(otherDatabase, path), planDocument()));
     await assertFails(getDoc(doc(anonymousDatabase, path)));
-  });
-
-  it("rejects writes whose owner field disagrees with the user path", async () => {
-    const database = testEnvironment
-      .authenticatedContext(firstUserId)
-      .firestore();
-
     await assertFails(
       setDoc(
-        doc(database, `users/${firstUserId}/plans/plan-1`),
-        planDocument(secondUserId),
+        doc(ownerDatabase, `users/${firstUserId}/plans/plan-2`),
+        planDocument(),
       ),
     );
+    await assertFails(
+      setDoc(doc(ownerDatabase, path), {
+        ...planDocument(),
+        name: "Replacement plan",
+      }),
+    );
+    await assertFails(
+      updateDoc(doc(ownerDatabase, path), {
+        status: "archived",
+        updatedAt: new Date("2026-07-30T13:00:00.000Z"),
+      }),
+    );
+    await assertFails(deleteDoc(doc(ownerDatabase, path)));
+    await assertFails(setDoc(doc(otherDatabase, path), planDocument()));
   });
 
-  it.each([
-    ["rest", {
-      kind: "rest",
-      purpose: undefined,
-      targetDistanceMeters: undefined,
-    }],
-    ["run", { targetDurationSeconds: 1_800 }],
-    ["walk-run", {
-      kind: "walk_run",
-      purpose: undefined,
-      targetDistanceMeters: undefined,
-      targetDurationSeconds: 1_800,
-    }],
-  ])("allows an owner to create, read, and delete a valid %s workout", async (_, overrides) => {
-    const database = testEnvironment
+  it("keeps server-committed workout definitions readable and immutable", async () => {
+    await seedPlanAndWorkout();
+    const ownerDatabase = testEnvironment
       .authenticatedContext(firstUserId)
       .firestore();
-    const reference = doc(
-      database,
-      `users/${firstUserId}/plans/plan-1/workouts/workout-1`,
-    );
+    const otherDatabase = testEnvironment
+      .authenticatedContext(secondUserId)
+      .firestore();
+    const path = `users/${firstUserId}/plans/plan-1/workouts/workout-1`;
+    const reference = doc(ownerDatabase, path);
 
-    await assertSucceeds(
-      setDoc(reference, workoutDocument(firstUserId, overrides)),
-    );
     await assertSucceeds(getDoc(reference));
-    await assertSucceeds(deleteDoc(reference));
+    await assertFails(getDoc(doc(otherDatabase, path)));
+    await assertFails(
+      setDoc(
+        doc(
+          ownerDatabase,
+          `users/${firstUserId}/plans/plan-1/workouts/workout-2`,
+        ),
+        workoutDocument(),
+      ),
+    );
+    await assertFails(
+      setDoc(reference, {
+        ...workoutDocument(),
+        notes: "Replacement workout",
+      }),
+    );
+    await assertFails(
+      updateDoc(reference, {
+        scheduledDate: "2026-08-03",
+        updatedAt: new Date("2026-07-30T13:00:00.000Z"),
+      }),
+    );
+    await assertFails(deleteDoc(reference));
   });
 
-  it("supports the workout status changes used by run logging and deletion", async () => {
+  it("temporarily permits only run-linked workout completion and reopening", async () => {
+    await seedPlanAndWorkout();
     const database = testEnvironment
       .authenticatedContext(firstUserId)
       .firestore();
@@ -442,7 +394,6 @@ describe("Firestore training-data ownership rules", () => {
       `users/${firstUserId}/plans/plan-1/workouts/workout-1`,
     );
 
-    await assertSucceeds(setDoc(reference, workoutDocument()));
     await assertSucceeds(
       updateDoc(reference, {
         status: "completed",
@@ -455,121 +406,24 @@ describe("Firestore training-data ownership rules", () => {
         updatedAt: new Date("2026-07-30T14:00:00.000Z"),
       }),
     );
-    await assertSucceeds(
+    await assertFails(
       updateDoc(reference, {
         status: "skipped",
         updatedAt: new Date("2026-07-30T15:00:00.000Z"),
       }),
     );
-  });
-
-  it.each([
-    ["a mismatched parent plan", { planId: "another-plan" }],
-    ["an unknown field", { unexpectedField: true }],
-    ["a non-planned initial status", { status: "completed" }],
-    [
-      "different create timestamps",
-      { updatedAt: new Date("2026-07-30T13:00:00.000Z") },
-    ],
-    ["a malformed scheduled date", { scheduledDate: "08/02/2026" }],
-    ["an unsupported phase", { phase: "taper" }],
-    ["an unsupported purpose", { purpose: "sprint" }],
-    ["blank notes", { notes: "  \t" }],
-    ["oversized notes", { notes: "n".repeat(501) }],
-    ["a zero distance target", { targetDistanceMeters: 0 }],
-    ["a fractional distance target", { targetDistanceMeters: 1.5 }],
-    [
-      "no run target",
-      { targetDistanceMeters: undefined, targetDurationSeconds: undefined },
-    ],
-    [
-      "run-only fields on a rest workout",
-      { kind: "rest" },
-    ],
-    [
-      "a run purpose on a walk-run workout",
-      { kind: "walk_run" },
-    ],
-  ])("rejects a workout create with %s", async (_, overrides) => {
-    const database = testEnvironment
-      .authenticatedContext(firstUserId)
-      .firestore();
-    const reference = doc(
-      database,
-      `users/${firstUserId}/plans/plan-1/workouts/workout-1`,
-    );
-
-    await assertFails(
-      setDoc(reference, workoutDocument(firstUserId, overrides)),
-    );
-  });
-
-  it("rejects incomplete workouts and immutable or stale workout updates", async () => {
-    const database = testEnvironment
-      .authenticatedContext(firstUserId)
-      .firestore();
-    const reference = doc(
-      database,
-      `users/${firstUserId}/plans/plan-1/workouts/workout-1`,
-    );
-    const missingPhase = workoutDocument();
-    delete missingPhase.phase;
-
-    await assertFails(setDoc(reference, missingPhase));
-    await assertSucceeds(setDoc(reference, workoutDocument()));
     await assertFails(
       updateDoc(reference, {
-        schemaVersion: 2,
-        updatedAt: new Date("2026-07-30T13:00:00.000Z"),
+        notes: "Participant-authored workout change",
+        updatedAt: new Date("2026-07-30T15:00:00.000Z"),
       }),
     );
     await assertFails(
       updateDoc(reference, {
-        userId: secondUserId,
-        updatedAt: new Date("2026-07-30T13:00:00.000Z"),
+        status: "completed",
+        updatedAt: new Date("2026-07-30T13:30:00.000Z"),
       }),
     );
-    await assertFails(
-      setDoc(
-        reference,
-        workoutDocument(firstUserId, {
-          kind: "rest",
-          purpose: undefined,
-          targetDistanceMeters: undefined,
-          updatedAt: new Date("2026-07-30T13:00:00.000Z"),
-        }),
-      ),
-    );
-    await assertFails(
-      updateDoc(reference, {
-        createdAt: new Date("2026-07-30T13:00:00.000Z"),
-        updatedAt: new Date("2026-07-30T14:00:00.000Z"),
-      }),
-    );
-    await assertFails(
-      updateDoc(reference, {
-        updatedAt: new Date("2026-07-30T11:00:00.000Z"),
-      }),
-    );
-  });
-
-  it("denies cross-owner workout reads and writes", async () => {
-    const ownerDatabase = testEnvironment
-      .authenticatedContext(firstUserId)
-      .firestore();
-    const otherDatabase = testEnvironment
-      .authenticatedContext(secondUserId)
-      .firestore();
-    const path = `users/${firstUserId}/plans/plan-1/workouts/workout-1`;
-
-    await assertSucceeds(
-      setDoc(doc(ownerDatabase, path), workoutDocument()),
-    );
-    await assertFails(getDoc(doc(otherDatabase, path)));
-    await assertFails(
-      setDoc(doc(otherDatabase, path), workoutDocument()),
-    );
-    await assertFails(deleteDoc(doc(otherDatabase, path)));
   });
 
   it("keeps active state, provenance, and command receipts server-owned", async () => {
@@ -931,7 +785,8 @@ describe("Firestore retired mobile-spike boundary", () => {
 });
 
 describe("Firestore repository integration", () => {
-  it("persists and reloads an owned profile, plan, workout, shoe, and run", async () => {
+  it("persists client-owned data and reloads server-owned plan data", async () => {
+    await seedPlanAndWorkout();
     const database = testEnvironment
       .authenticatedContext(firstUserId)
       .firestore() as unknown as Firestore;
@@ -954,23 +809,17 @@ describe("Firestore repository integration", () => {
       preferredLongRunDay: "sunday",
       completionGoal: "complete_first_marathon",
     });
-    const plan = await repositories.plans.create({
-      name: "First marathon",
-      startDate: createDateOnly("2026-08-01"),
-      targetRaceDate: createDateOnly("2027-01-10"),
-    });
-    const workout = await repositories.workouts.create({
-      kind: "run",
-      planId: plan.id,
-      scheduledDate: createDateOnly("2026-08-02"),
-      phase: "base_building",
-      purpose: "easy",
-      targetDistance: createDistanceMeters(4_800),
-    });
+    const planId = createTrainingPlanId("plan-1");
+    const workoutId = createPlannedWorkoutId("workout-1");
+    const plan = await repositories.plans.get(planId);
+    const workout = await repositories.workouts.get(planId, workoutId);
+    if (plan === null || workout === null) {
+      throw new Error("Expected the server-seeded plan and workout.");
+    }
     const shoe = await repositories.shoes.create({ name: "Daily trainer" });
     const run = await repositories.runs.create({
-      plannedWorkoutPlanId: plan.id,
-      plannedWorkoutId: workout.id,
+      plannedWorkoutPlanId: planId,
+      plannedWorkoutId: workoutId,
       shoeId: shoe.id,
       startedAt: createUtcDateTime("2026-08-02T14:00:00.000Z"),
       timeZone: createIanaTimeZone("America/Los_Angeles"),
@@ -980,8 +829,8 @@ describe("Firestore repository integration", () => {
     });
 
     await expect(repositories.profile.load()).resolves.toEqual(profile);
-    await expect(repositories.plans.get(plan.id)).resolves.toEqual(plan);
-    await expect(repositories.workouts.get(plan.id, workout.id)).resolves.toEqual(
+    await expect(repositories.plans.get(planId)).resolves.toEqual(plan);
+    await expect(repositories.workouts.get(planId, workoutId)).resolves.toEqual(
       workout,
     );
     await expect(repositories.shoes.get(shoe.id)).resolves.toEqual(shoe);
