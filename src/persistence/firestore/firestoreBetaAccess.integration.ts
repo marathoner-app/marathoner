@@ -301,11 +301,15 @@ describe("founding-beta membership rules", () => {
         planDocument(firstUserId, { targetRaceDate: "2026-07-31" }),
       ),
     );
+    await assertFails(
+      setDoc(reference, planDocument(firstUserId, { name: "p".repeat(121) })),
+    );
 
     await assertSucceeds(
       setDoc(
         reference,
         planDocument(firstUserId, {
+          name: "p".repeat(120),
           endDate: "2027-01-17",
           completionGoal: "complete_first_marathon",
         }),
@@ -715,12 +719,23 @@ describe("founding-beta membership rules", () => {
     await assertFails(deleteDoc(doc(ownerDatabase, evidencePath)));
   });
 
-  it("keeps operator activation controls entirely server-owned", async () => {
+  it.each([
+    [
+      "recommendation activation",
+      "operatorControls/recommendationActivation",
+      "operator-activation-control@1",
+    ],
+    ["feature controls", "operatorControls/featureControls", "feature-controls@1"],
+    [
+      "minimum client version",
+      "operatorControls/minimumClientVersion",
+      "minimum-client-version@1",
+    ],
+  ])("keeps %s entirely server-owned", async (_, controlPath, schemaVersion) => {
     await seedMembership(firstUserId);
-    const controlPath = "operatorControls/recommendationActivation";
     await testEnvironment.withSecurityRulesDisabled(async (context) => {
       await setDoc(doc(context.firestore(), controlPath), {
-        schemaVersion: "operator-activation-control@1",
+        schemaVersion,
         revision: 1,
       });
     });

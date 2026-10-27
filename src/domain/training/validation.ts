@@ -3,6 +3,7 @@ import type { TrainingPlan, PlannedWorkout, CompletedRun, Shoe, UserProfile } fr
 export const COMPLETED_RUN_NOTES_MAX_LENGTH = 500;
 export const PLANNED_WORKOUT_NOTES_MAX_LENGTH = 500;
 export const SHOE_NAME_MAX_LENGTH = 120;
+export const TRAINING_PLAN_NAME_MAX_LENGTH = 120;
 export const USER_PROFILE_DISPLAY_NAME_MAX_LENGTH = 120;
 export const USER_PROFILE_SCHEDULE_CONSTRAINTS_MAX_LENGTH = 500;
 
@@ -137,6 +138,13 @@ export function validateTrainingPlan(plan: TrainingPlan): ValidationIssue[] {
     ...validateText(plan.name, "name", true),
     ...validateTimestamps(plan),
   ];
+
+  if (plan.name.length > TRAINING_PLAN_NAME_MAX_LENGTH) {
+    issues.push({
+      field: "name",
+      message: `Plan name cannot exceed ${TRAINING_PLAN_NAME_MAX_LENGTH} characters.`,
+    });
+  }
 
   if (plan.targetRaceDate < plan.startDate) {
     issues.push({ field: "targetRaceDate", message: "Target race date cannot precede plan start date." });

@@ -8,16 +8,19 @@ depends on the Firebase SDK, and Firestore provides the document ownership and
 typed document model this stage of the product needs.
 
 Firestore may retain a last-known in-memory view, but offline material writes are
-not part of the founding-beta promise. The current web repository sends writes
-directly through the Firebase client and has not yet implemented the explicit
-network gate, revision precondition, or cross-record transaction required by the
-ratified contract. The accepted target and its migration gates are documented in
+not part of the founding-beta promise. The web application now uses owner-scoped
+live listeners, memory-only caching, and a current-session gate before exposing
+write controls. Profile, shoe, run, and run-linked workout changes still write
+through the Firebase client, and the repository retains transitional plan and
+workout mutation capabilities. Those paths do not yet provide the revision
+precondition and cross-record transaction required by the ratified command
+contract. The accepted target and its migration gates are documented in
 [`training-data-synchronization.md`](training-data-synchronization.md); issues
-#72, #115, and #159 own the remaining workflow slices. Issue #158 established
-the local authenticated command foundation without migrating these direct
-writes or deploying a live endpoint. Until that work closes, this document
-describes the current storage implementation rather than claiming the beta
-integrity boundary is complete. The boundary is documented in
+#72 and #115 own the remaining command migrations. Issue #158 established the
+authenticated command foundation without making those migrations complete.
+Until that work closes, this document describes the current storage
+implementation rather than claiming the beta integrity boundary is complete.
+The command boundary is documented in
 [`material-command-boundary.md`](material-command-boundary.md).
 
 Components do not import Firestore. They consume typed repository interfaces
@@ -122,7 +125,7 @@ Path: `users/{userId}/plans/{planId}`
 | --- | --- |
 | `schemaVersion` | `1` |
 | `userId` | string |
-| `name` | string |
+| `name` | nonblank string, at most 120 characters |
 | `startDate` | date-only string |
 | `targetRaceDate` | date-only string |
 | `endDate` | optional date-only string; required for generated plans and may extend through recovery |
@@ -308,11 +311,19 @@ the future UI stable error categories it can turn into calm, recoverable states.
 
 ## Security and integration
 
-`firestore.rules` denies access by default. Profile and training-document access requires
-an authenticated user whose ID matches the `userId` segment in the document
-path. Creates and updates also require schema version 1 and a matching stored
-`userId`; profile updates preserve the creation timestamp, and workout writes
-require a `planId` matching their parent plan path.
+`firestore.rules` denies access by default. Profile and training-document access
+requires an authenticated user whose ID matches the `userId` segment in the
+document path. Every writable document has an exact allowed-field set, schema
+version 1, matching stored ownership, bounded text and numeric fields, coherent
+creation timestamps, and monotonic update timestamps. Plans and workouts also
+enforce their exact lifecycle shapes and parent identifiers. Shoes use a
+one-way active-to-retired lifecycle and cannot be deleted by a client.
+
+Active-plan state, generation metadata, recommendation evidence, material-
+command receipts, account-deletion requests, beta memberships, and operator
+controls remain server-owned. The current write inventory, named negative-case
+matrix, compatibility fixtures, and CI evidence are maintained in the
+[`Firestore rules acceptance record`](../security/firestore-rules-acceptance.md).
 
 Run the ownership and repository integration suite against the local Firestore
 emulator with:
@@ -321,17 +332,18 @@ emulator with:
 npm run test:firestore
 ```
 
-The suite proves profile create/read/update ownership, anonymous and cross-user
-denial, immutable profile creation timestamps, malformed-profile rejection,
-owner and plan-field validation, and an end-to-end repository round trip for a
-related plan, workout, shoe, and run. The Firebase emulator requires a local
+The suite proves the accepted lifecycle and named negative cases for profile,
+plan, workout, run, and shoe documents, server-owned control paths, beta access,
+and an end-to-end repository round trip. The Firebase emulator requires a local
 Java runtime.
 
-The separate, not-yet-deployed `firestore.beta.rules` candidate additionally
-requires verified email and an administrator-created approved membership for
-participant-data access. Its negative fixtures run in the same emulator check
-under a distinct logical project ID. The decision and activation gate are
-documented in
+The separate `firestore.beta.rules` candidate additionally requires verified
+email and an administrator-created approved membership for participant-data
+access. An earlier membership boundary was deployed and live-verified; later
+exact-shape hardening in the tracked candidate is not claimed as deployed until
+a new reviewed deployment records that evidence. Its negative fixtures run in
+the same emulator check under a distinct logical project ID. The decision and
+activation gate are documented in
 [`../security/firebase-beta-membership.md`](../security/firebase-beta-membership.md).
 
 The tested rules and index configuration were deployed to the Marathoner

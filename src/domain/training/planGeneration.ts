@@ -10,6 +10,7 @@ import type {
   Weekday,
 } from "./types.js";
 import type { DistanceMeters, DurationSeconds } from "./units.js";
+import { TRAINING_PLAN_NAME_MAX_LENGTH } from "./validation.js";
 
 export const PLAN_GENERATION_INPUT_SCHEMA_VERSION =
   "plan-generation-input@1" as const;
@@ -736,9 +737,17 @@ export function validateGeneratedPlan(
       ),
     );
   }
-  if (typeof plan.name !== "string" || plan.name.trim() === "" || plan.name.length > 120) {
+  if (
+    typeof plan.name !== "string" ||
+    plan.name.trim() === "" ||
+    plan.name.length > TRAINING_PLAN_NAME_MAX_LENGTH
+  ) {
     issues.push(
-      issue("invalid_value", "name", "Plan name must be nonblank and no longer than 120 characters."),
+      issue(
+        "invalid_value",
+        "name",
+        `Plan name must be nonblank and no longer than ${TRAINING_PLAN_NAME_MAX_LENGTH} characters.`,
+      ),
     );
   }
   for (const [field, value] of [

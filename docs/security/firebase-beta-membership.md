@@ -98,11 +98,15 @@ revocation alone does not perform those actions.
 
 The beta suite covers approved verified access plus anonymous, unverified,
 absent, pending, deletion-pending, malformed, cross-owner, and client
-membership-mutation denial. It also proves that protected deletion requests
-cannot be read or written through a participant client. It deliberately
-preserves the current training-write schema checks. Broader field bounds,
-immutable metadata, revision checks, and server-only material writes remain in
-#121 after their command migrations.
+membership-mutation denial. It also runs the exact profile, plan, workout, run,
+and shoe lifecycle fixtures behind that access gate and proves that protected
+deletion requests and operator controls cannot be read or written through a
+participant client. The complete negative-case and remaining-write inventory is
+the [Firestore rules acceptance record](firestore-rules-acceptance.md).
+
+The tracked beta candidate now contains the #121 exact-shape hardening. That
+does not mean all material writes are server commands: #72 and #115 still own
+the migration and later removal of their direct client permissions.
 
 ## Live verification evidence
 
