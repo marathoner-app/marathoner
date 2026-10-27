@@ -8,6 +8,7 @@ import type { DraftAdaptationOutcomeDetail } from "./internalAdaptationScenarioP
 interface InternalAdaptationDecisionRehearsalProps {
   readonly result: DecidedAdaptationEvaluationResultV1;
   readonly outcomeDetail: DraftAdaptationOutcomeDetail;
+  readonly sourceDescription?: string;
 }
 
 type SessionDecision = "keep" | "apply";
@@ -20,11 +21,14 @@ function readableIdentifier(value: string): string {
 function modelFor(
   result: DecidedAdaptationEvaluationResultV1,
   outcomeDetail: DraftAdaptationOutcomeDetail,
+  sourceDescription?: string,
 ): RecommendationDecisionReviewModel {
   return {
     title: `Internal ${readableIdentifier(result.action ?? "recommendation")}`,
     observation: outcomeDetail.when,
-    meaning: `The frozen scenario matched ${result.reasonCode} in the draft evaluator.`,
+    meaning:
+      sourceDescription ??
+      `The frozen scenario matched ${result.reasonCode} in the draft evaluator.`,
     recommendation:
       outcomeDetail.planMutation ??
       "The draft outcome does not define a plan mutation.",
@@ -37,6 +41,7 @@ function modelFor(
 export default function InternalAdaptationDecisionRehearsal({
   result,
   outcomeDetail,
+  sourceDescription,
 }: InternalAdaptationDecisionRehearsalProps) {
   const [sessionDecision, setSessionDecision] = useState<SessionDecision | null>(
     null,
@@ -79,7 +84,7 @@ export default function InternalAdaptationDecisionRehearsal({
 
   return (
     <RecommendationDecisionReview
-      model={modelFor(result, outcomeDetail)}
+      model={modelFor(result, outcomeDetail, sourceDescription)}
       state={{ kind: "ready" }}
       interactionMode="internal_rehearsal"
       onKeep={() => setSessionDecision("keep")}

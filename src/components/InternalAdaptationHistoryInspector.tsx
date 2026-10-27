@@ -17,6 +17,8 @@ import {
   evidenceWeekContaining,
   type EvidenceWeek,
 } from "./internalAdaptationHistoryWeek";
+import InternalLiveAdaptationRehearsal from "./InternalLiveAdaptationRehearsal";
+import type { InternalAdaptationScenarioPacket } from "./internalAdaptationScenarioPacket";
 
 interface InternalAdaptationHistoryInspectorProps {
   readonly ownerId: UserId;
@@ -25,6 +27,7 @@ interface InternalAdaptationHistoryInspectorProps {
   readonly workouts: readonly PlannedWorkout[];
   readonly runs: readonly CompletedRun[];
   readonly timeZone: IanaTimeZone;
+  readonly draftPacket: InternalAdaptationScenarioPacket;
   readonly initialEvaluationDate?: DateOnly;
 }
 
@@ -95,6 +98,7 @@ export default function InternalAdaptationHistoryInspector({
   workouts,
   runs,
   timeZone,
+  draftPacket,
   initialEvaluationDate,
 }: InternalAdaptationHistoryInspectorProps) {
   const [evaluationDate, setEvaluationDate] = useState<string>(
@@ -103,6 +107,7 @@ export default function InternalAdaptationHistoryInspector({
   const [triggerWorkoutKey, setTriggerWorkoutKey] = useState("");
   const [recentRunWindowSize, setRecentRunWindowSize] = useState(4);
   const [inspectionRequested, setInspectionRequested] = useState(false);
+  const [inspectionSequence, setInspectionSequence] = useState(0);
   const normalizedEvaluationDate = isDateOnly(evaluationDate)
     ? createDateOnly(evaluationDate)
     : null;
@@ -159,6 +164,7 @@ export default function InternalAdaptationHistoryInspector({
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setInspectionRequested(true);
+    setInspectionSequence((value) => value + 1);
   };
 
   return (
@@ -350,9 +356,14 @@ export default function InternalAdaptationHistoryInspector({
             </ul>
           </div>
           <p className="internal-adaptation-history-boundary">
-            History-ready is not evaluation-ready. No recommendation record or
-            plan change was created.
+            History-ready is not participant-ready. Inspecting history did not
+            create a recommendation record or change a plan.
           </p>
+          <InternalLiveAdaptationRehearsal
+            key={inspectionSequence}
+            evidence={result.evidence}
+            packet={draftPacket}
+          />
         </div>
       )}
     </section>
