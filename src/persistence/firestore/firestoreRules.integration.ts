@@ -48,6 +48,35 @@ function planDocument(
   };
 }
 
+function workoutDocument(
+  userId = firstUserId,
+  overrides: Record<string, unknown> = {},
+): Record<string, unknown> {
+  const document: Record<string, unknown> = {
+    schemaVersion: 1,
+    userId,
+    planId: "plan-1",
+    scheduledDate: "2026-08-02",
+    phase: "base_building",
+    status: "planned",
+    kind: "run",
+    notes: "Easy aerobic run.",
+    purpose: "easy",
+    targetDistanceMeters: 5_000,
+    createdAt: new Date("2026-07-30T12:00:00.000Z"),
+    updatedAt: new Date("2026-07-30T12:00:00.000Z"),
+    ...overrides,
+  };
+
+  for (const [key, value] of Object.entries(document)) {
+    if (value === undefined) {
+      delete document[key];
+    }
+  }
+
+  return document;
+}
+
 function profileDocument(
   userId = firstUserId,
   overrides: Record<string, unknown> = {},
@@ -373,31 +402,172 @@ describe("Firestore training-data ownership rules", () => {
     );
   });
 
-  it("rejects workouts whose plan field disagrees with the parent path", async () => {
+  it.each([
+    ["rest", {
+      kind: "rest",
+      purpose: undefined,
+      targetDistanceMeters: undefined,
+    }],
+    ["run", { targetDurationSeconds: 1_800 }],
+    ["walk-run", {
+      kind: "walk_run",
+      purpose: undefined,
+      targetDistanceMeters: undefined,
+      targetDurationSeconds: 1_800,
+    }],
+  ])("allows an owner to create, read, and delete a valid %s workout", async (_, overrides) => {
     const database = testEnvironment
       .authenticatedContext(firstUserId)
       .firestore();
-    const workout = {
-      schemaVersion: 1,
-      userId: firstUserId,
-      planId: "another-plan",
-      scheduledDate: "2026-08-01",
-      phase: "base_building",
-      status: "planned",
-      kind: "rest",
-      createdAt: new Date("2026-07-30T12:00:00.000Z"),
-      updatedAt: new Date("2026-07-30T12:00:00.000Z"),
-    };
+    const reference = doc(
+      database,
+      `users/${firstUserId}/plans/plan-1/workouts/workout-1`,
+    );
+
+    await assertSucceeds(
+      setDoc(reference, workoutDocument(firstUserId, overrides)),
+    );
+    await assertSucceeds(getDoc(reference));
+    await assertSucceeds(deleteDoc(reference));
+  });
+
+  it("supports the workout status changes used by run logging and deletion", async () => {
+    const database = testEnvironment
+      .authenticatedContext(firstUserId)
+      .firestore();
+    const reference = doc(
+      database,
+      `users/${firstUserId}/plans/plan-1/workouts/workout-1`,
+    );
+
+    await assertSucceeds(setDoc(reference, workoutDocument()));
+    await assertSucceeds(
+      updateDoc(reference, {
+        status: "completed",
+        updatedAt: new Date("2026-07-30T13:00:00.000Z"),
+      }),
+    );
+    await assertSucceeds(
+      updateDoc(reference, {
+        status: "planned",
+        updatedAt: new Date("2026-07-30T14:00:00.000Z"),
+      }),
+    );
+    await assertSucceeds(
+      updateDoc(reference, {
+        status: "skipped",
+        updatedAt: new Date("2026-07-30T15:00:00.000Z"),
+      }),
+    );
+  });
+
+  it.each([
+    ["a mismatched parent plan", { planId: "another-plan" }],
+    ["an unknown field", { unexpectedField: true }],
+    ["a non-planned initial status", { status: "completed" }],
+    [
+      "different create timestamps",
+      { updatedAt: new Date("2026-07-30T13:00:00.000Z") },
+    ],
+    ["a malformed scheduled date", { scheduledDate: "08/02/2026" }],
+    ["an unsupported phase", { phase: "taper" }],
+    ["an unsupported purpose", { purpose: "sprint" }],
+    ["blank notes", { notes: "  \t" }],
+    ["oversized notes", { notes: "n".repeat(501) }],
+    ["a zero distance target", { targetDistanceMeters: 0 }],
+    ["a fractional distance target", { targetDistanceMeters: 1.5 }],
+    [
+      "no run target",
+      { targetDistanceMeters: undefined, targetDurationSeconds: undefined },
+    ],
+    [
+      "run-only fields on a rest workout",
+      { kind: "rest" },
+    ],
+    [
+      "a run purpose on a walk-run workout",
+      { kind: "walk_run" },
+    ],
+  ])("rejects a workout create with %s", async (_, overrides) => {
+    const database = testEnvironment
+      .authenticatedContext(firstUserId)
+      .firestore();
+    const reference = doc(
+      database,
+      `users/${firstUserId}/plans/plan-1/workouts/workout-1`,
+    );
 
     await assertFails(
+      setDoc(reference, workoutDocument(firstUserId, overrides)),
+    );
+  });
+
+  it("rejects incomplete workouts and immutable or stale workout updates", async () => {
+    const database = testEnvironment
+      .authenticatedContext(firstUserId)
+      .firestore();
+    const reference = doc(
+      database,
+      `users/${firstUserId}/plans/plan-1/workouts/workout-1`,
+    );
+    const missingPhase = workoutDocument();
+    delete missingPhase.phase;
+
+    await assertFails(setDoc(reference, missingPhase));
+    await assertSucceeds(setDoc(reference, workoutDocument()));
+    await assertFails(
+      updateDoc(reference, {
+        schemaVersion: 2,
+        updatedAt: new Date("2026-07-30T13:00:00.000Z"),
+      }),
+    );
+    await assertFails(
+      updateDoc(reference, {
+        userId: secondUserId,
+        updatedAt: new Date("2026-07-30T13:00:00.000Z"),
+      }),
+    );
+    await assertFails(
       setDoc(
-        doc(
-          database,
-          `users/${firstUserId}/plans/plan-1/workouts/workout-1`,
-        ),
-        workout,
+        reference,
+        workoutDocument(firstUserId, {
+          kind: "rest",
+          purpose: undefined,
+          targetDistanceMeters: undefined,
+          updatedAt: new Date("2026-07-30T13:00:00.000Z"),
+        }),
       ),
     );
+    await assertFails(
+      updateDoc(reference, {
+        createdAt: new Date("2026-07-30T13:00:00.000Z"),
+        updatedAt: new Date("2026-07-30T14:00:00.000Z"),
+      }),
+    );
+    await assertFails(
+      updateDoc(reference, {
+        updatedAt: new Date("2026-07-30T11:00:00.000Z"),
+      }),
+    );
+  });
+
+  it("denies cross-owner workout reads and writes", async () => {
+    const ownerDatabase = testEnvironment
+      .authenticatedContext(firstUserId)
+      .firestore();
+    const otherDatabase = testEnvironment
+      .authenticatedContext(secondUserId)
+      .firestore();
+    const path = `users/${firstUserId}/plans/plan-1/workouts/workout-1`;
+
+    await assertSucceeds(
+      setDoc(doc(ownerDatabase, path), workoutDocument()),
+    );
+    await assertFails(getDoc(doc(otherDatabase, path)));
+    await assertFails(
+      setDoc(doc(otherDatabase, path), workoutDocument()),
+    );
+    await assertFails(deleteDoc(doc(otherDatabase, path)));
   });
 
   it("keeps active state, provenance, and command receipts server-owned", async () => {

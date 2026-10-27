@@ -42,6 +42,35 @@ function planDocument(
   };
 }
 
+function workoutDocument(
+  userId = firstUserId,
+  overrides: Record<string, unknown> = {},
+): Record<string, unknown> {
+  const document: Record<string, unknown> = {
+    schemaVersion: 1,
+    userId,
+    planId: "plan-1",
+    scheduledDate: "2026-08-02",
+    phase: "base_building",
+    status: "planned",
+    kind: "run",
+    notes: "Easy aerobic run.",
+    purpose: "easy",
+    targetDistanceMeters: 5_000,
+    createdAt: new Date("2026-07-30T12:00:00.000Z"),
+    updatedAt: new Date("2026-07-30T12:00:00.000Z"),
+    ...overrides,
+  };
+
+  for (const [key, value] of Object.entries(document)) {
+    if (value === undefined) {
+      delete document[key];
+    }
+  }
+
+  return document;
+}
+
 function profileDocument(
   userId = firstUserId,
   overrides: Record<string, unknown> = {},
@@ -307,11 +336,7 @@ describe("founding-beta membership rules", () => {
     ["plans/plan-1", planDocument()],
     [
       "plans/plan-1/workouts/workout-1",
-      {
-        schemaVersion: 1,
-        userId: firstUserId,
-        planId: "plan-1",
-      },
+      workoutDocument(),
     ],
     ["runs/run-1", runDocument()],
     ["shoes/shoe-1", shoeDocument()],
@@ -334,6 +359,83 @@ describe("founding-beta membership rules", () => {
 
     await assertFails(setDoc(reference, planDocument()));
     await assertFails(getDoc(reference));
+  });
+
+  it("enforces the exact planned-workout lifecycle for an approved member", async () => {
+    await seedMembership(firstUserId);
+    await seedMembership(secondUserId);
+    const ownerDatabase = authenticatedContext(firstUserId).firestore();
+    const otherDatabase = authenticatedContext(secondUserId).firestore();
+    const path = `users/${firstUserId}/plans/plan-1/workouts/workout-1`;
+    const ownerReference = doc(ownerDatabase, path);
+    const otherReference = doc(otherDatabase, path);
+    const missingStatus = workoutDocument();
+    delete missingStatus.status;
+
+    await assertFails(setDoc(ownerReference, missingStatus));
+    await assertFails(
+      setDoc(
+        ownerReference,
+        workoutDocument(firstUserId, { unexpectedField: true }),
+      ),
+    );
+    await assertFails(
+      setDoc(
+        ownerReference,
+        workoutDocument(firstUserId, { status: "completed" }),
+      ),
+    );
+    await assertFails(
+      setDoc(
+        ownerReference,
+        workoutDocument(firstUserId, {
+          kind: "rest",
+        }),
+      ),
+    );
+    await assertFails(
+      setDoc(
+        ownerReference,
+        workoutDocument(firstUserId, {
+          targetDistanceMeters: undefined,
+        }),
+      ),
+    );
+    await assertFails(
+      setDoc(
+        ownerReference,
+        workoutDocument(firstUserId, { notes: "n".repeat(501) }),
+      ),
+    );
+
+    await assertSucceeds(setDoc(ownerReference, workoutDocument()));
+    await assertSucceeds(
+      updateDoc(ownerReference, {
+        status: "completed",
+        updatedAt: new Date("2026-07-30T13:00:00.000Z"),
+      }),
+    );
+    await assertSucceeds(
+      updateDoc(ownerReference, {
+        status: "planned",
+        updatedAt: new Date("2026-07-30T14:00:00.000Z"),
+      }),
+    );
+    await assertFails(
+      updateDoc(ownerReference, {
+        planId: "another-plan",
+        updatedAt: new Date("2026-07-30T15:00:00.000Z"),
+      }),
+    );
+    await assertFails(
+      updateDoc(ownerReference, {
+        updatedAt: new Date("2026-07-30T13:30:00.000Z"),
+      }),
+    );
+    await assertFails(getDoc(otherReference));
+    await assertFails(setDoc(otherReference, workoutDocument()));
+    await assertFails(deleteDoc(otherReference));
+    await assertSucceeds(deleteDoc(ownerReference));
   });
 
   it("enforces the exact one-way shoe lifecycle for an approved member", async () => {

@@ -8,6 +8,7 @@ import {
   calculateTotalDistance,
   calculateWeeklyDistanceTrend,
   COMPLETED_RUN_NOTES_MAX_LENGTH,
+  PLANNED_WORKOUT_NOTES_MAX_LENGTH,
   SHOE_NAME_MAX_LENGTH,
   USER_PROFILE_DISPLAY_NAME_MAX_LENGTH,
   USER_PROFILE_SCHEDULE_CONSTRAINTS_MAX_LENGTH,
@@ -304,6 +305,18 @@ describe("training domain validation", () => {
     expect(validatePlannedWorkout(invalidWorkout)).toContainEqual({
       field: "targetDistance",
       message: "A run or walk-run workout needs a positive target distance or duration.",
+    });
+  });
+
+  it("bounds optional workout notes", () => {
+    expect(
+      validatePlannedWorkout({
+        ...workout,
+        notes: "n".repeat(PLANNED_WORKOUT_NOTES_MAX_LENGTH + 1),
+      }),
+    ).toContainEqual({
+      field: "notes",
+      message: `Workout notes cannot exceed ${PLANNED_WORKOUT_NOTES_MAX_LENGTH} characters.`,
     });
   });
 
