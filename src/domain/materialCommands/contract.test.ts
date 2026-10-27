@@ -9,18 +9,21 @@ import {
   RECOMMENDATION_DECISION_COMMAND_SCHEMA_VERSION,
   RUN_COMPLETION_COMMAND_SCHEMA_VERSION,
   RUN_DELETION_COMMAND_SCHEMA_VERSION,
+  RUN_UPDATE_COMMAND_SCHEMA_VERSION,
   createAccountDeletionRequest,
   createPlanApprovalCommand,
   createProofMaterialCommand,
   createRecommendationDecisionCommand,
   createRunCompletionCommand,
   createRunDeletionCommand,
+  createRunUpdateCommand,
   isMaterialCommandResult,
   isRecommendationDecisionReceiptResult,
   isRunCommandStaleRevisionResult,
   isRunCompletionDuplicateResult,
   isRunCompletionReceiptResult,
   isRunDeletionReceiptResult,
+  isRunUpdateReceiptResult,
   materialCommandSignature,
   parseMaterialCommand,
   type CompletedRunCommandInputV1,
@@ -46,9 +49,12 @@ import {
 const commandId = 'proof-command-0001'
 const approvalCommandId = 'approve-plan-command-0001'
 const completionCommandId = 'complete-run-command-0001'
+const updateCommandId = 'update-run-command-0001'
 const deletionCommandId = 'delete-run-command-0001'
 const recommendationDecisionCommandId = 'decide-recommendation-command-0001'
 const recommendationId = createRecommendationId('recommendation-0001')
+const completedRunId = createCompletedRunId('run-0001')
+const completedRunUpdatedAt = createUtcDateTime('2026-10-08T14:00:00Z')
 
 const plannedWorkout: PlannedWorkoutCommandReferenceV1 = {
   planId: createTrainingPlanId('plan-0001'),
@@ -273,6 +279,28 @@ describe('material-command contract', () => {
     })
   })
 
+  it('creates and parses a complete run update without caller ownership', () => {
+    const command = createRunUpdateCommand(updateCommandId, {
+      completedRunId,
+      expectedCompletedRunUpdatedAt: completedRunUpdatedAt,
+      input: completedRunInput,
+    })
+
+    expect(parseMaterialCommand(command)).toEqual({
+      ok: true,
+      envelope: command,
+    })
+    expect(command.command).toEqual({
+      type: 'run.update',
+      schemaVersion: RUN_UPDATE_COMMAND_SCHEMA_VERSION,
+      completedRunId,
+      expectedCompletedRunUpdatedAt: completedRunUpdatedAt,
+      input: completedRunInput,
+    })
+    expect(JSON.stringify(command)).not.toContain('userId')
+    expect(JSON.stringify(command)).not.toContain('path')
+  })
+
   it('uses stable, payload-sensitive run-command signatures', () => {
     const completion = createRunCompletionCommand(
       completionCommandId,
@@ -301,6 +329,37 @@ describe('material-command contract', () => {
       'complete-run-command-0003',
       { ...completedRunInput, duration: createDurationSeconds(1_651) },
     )
+    const update = createRunUpdateCommand(updateCommandId, {
+      completedRunId,
+      expectedCompletedRunUpdatedAt: completedRunUpdatedAt,
+      input: completedRunInput,
+    })
+    const repeatedUpdate = createRunUpdateCommand(
+      'update-run-command-0004',
+      {
+        completedRunId,
+        expectedCompletedRunUpdatedAt: completedRunUpdatedAt,
+        input: completedRunInput,
+      },
+    )
+    const changedUpdate = createRunUpdateCommand('update-run-command-0002', {
+      completedRunId,
+      expectedCompletedRunUpdatedAt: completedRunUpdatedAt,
+      input: {
+        ...completedRunInput,
+        notes: 'A materially different note.',
+      },
+    })
+    const newerRevisionUpdate = createRunUpdateCommand(
+      'update-run-command-0003',
+      {
+        completedRunId,
+        expectedCompletedRunUpdatedAt: createUtcDateTime(
+          '2026-10-08T14:00:01Z',
+        ),
+        input: completedRunInput,
+      },
+    )
     const deletion = createRunDeletionCommand(deletionCommandId, {
       completedRunId: createCompletedRunId('run-0001'),
       expectedCompletedRunUpdatedAt: createUtcDateTime(
@@ -324,6 +383,15 @@ describe('material-command contract', () => {
     )
     expect(materialCommandSignature(changed)).not.toBe(
       materialCommandSignature(completion),
+    )
+    expect(materialCommandSignature(changedUpdate)).not.toBe(
+      materialCommandSignature(update),
+    )
+    expect(materialCommandSignature(repeatedUpdate)).toBe(
+      materialCommandSignature(update),
+    )
+    expect(materialCommandSignature(newerRevisionUpdate)).not.toBe(
+      materialCommandSignature(update),
     )
     expect(materialCommandSignature(changedDeletion)).not.toBe(
       materialCommandSignature(deletion),
@@ -522,6 +590,61 @@ describe('material-command contract', () => {
         result: expect.objectContaining({
           status: 'validation_error',
           code: 'invalid-run-completion',
+        }),
+      })
+    }
+  })
+
+  it('rejects malformed completed-run update fields and desired state', () => {
+    const command = createRunUpdateCommand(updateCommandId, {
+      completedRunId,
+      expectedCompletedRunUpdatedAt: completedRunUpdatedAt,
+      input: completedRunInput,
+    })
+
+    for (const changedCommand of [
+      { ...command.command, completedRunId: 'users/other/run-0001' },
+      { ...command.command, expectedCompletedRunUpdatedAt: 'yesterday' },
+      { ...command.command, input: { ...completedRunInput, distance: 0 } },
+      {
+        ...command.command,
+        input: {
+          ...completedRunInput,
+          plannedWorkout: {
+            planId: plannedWorkout.planId,
+            workoutId: plannedWorkout.workoutId,
+          },
+        },
+      },
+      { ...command.command, extra: true },
+    ]) {
+      expect(
+        parseMaterialCommand({ ...command, command: changedCommand }),
+      ).toEqual({
+        ok: false,
+        result: expect.objectContaining({
+          status: 'validation_error',
+          code: 'invalid-run-update',
+        }),
+      })
+    }
+
+    for (const field of ['userId', 'path'] as const) {
+      const parsed = parseMaterialCommand({
+        ...command,
+        command: {
+          ...command.command,
+          input: { ...command.command.input, [field]: 'caller-selected' },
+        },
+      })
+      expect(parsed).toEqual({
+        ok: false,
+        result: expect.objectContaining({
+          status: 'validation_error',
+          code:
+            field === 'userId'
+              ? 'ownership-field-prohibited'
+              : 'target-field-prohibited',
         }),
       })
     }
@@ -728,6 +851,20 @@ describe('material-command contract', () => {
       'unsupported-command-schema-version',
     ],
     [
+      'run-update command schema',
+      {
+        command: {
+          ...createRunUpdateCommand(updateCommandId, {
+            completedRunId,
+            expectedCompletedRunUpdatedAt: completedRunUpdatedAt,
+            input: completedRunInput,
+          }).command,
+          schemaVersion: RUN_UPDATE_COMMAND_SCHEMA_VERSION + 1,
+        },
+      },
+      'unsupported-command-schema-version',
+    ],
+    [
       'recommendation-decision command schema',
       {
         command: {
@@ -788,7 +925,7 @@ describe('material-command contract', () => {
     )
   })
 
-  it('recognizes only exact replayable run completion and deletion receipts', () => {
+  it('recognizes only exact replayable run completion, update, and deletion receipts', () => {
     const completedPlannedWorkout = {
       planId: 'plan-0001',
       workoutId: 'workout-0001',
@@ -811,13 +948,46 @@ describe('material-command contract', () => {
         updatedAt: '2026-10-08T15:00:00.000Z',
       },
     }
+    const updateReceipt = {
+      status: 'run_updated',
+      commandId: updateCommandId,
+      completedRunId: 'run-0001',
+      completedRunUpdatedAt: '2026-10-08T14:30:00.000Z',
+      reopenedPlannedWorkout: completedPlannedWorkout,
+      completedPlannedWorkout: {
+        planId: 'plan-0001',
+        workoutId: 'workout-0002',
+        updatedAt: '2026-10-08T14:30:00.000Z',
+      },
+    }
 
     expect(isRunCompletionReceiptResult(completionReceipt)).toBe(true)
+    expect(isRunUpdateReceiptResult(updateReceipt)).toBe(true)
+    expect(
+      isRunUpdateReceiptResult({
+        ...updateReceipt,
+        reopenedPlannedWorkout: null,
+        completedPlannedWorkout: null,
+      }),
+    ).toBe(true)
     expect(isRunDeletionReceiptResult(deletionReceipt)).toBe(true)
     expect(isMaterialCommandResult(completionReceipt)).toBe(true)
+    expect(isMaterialCommandResult(updateReceipt)).toBe(true)
     expect(isMaterialCommandResult(deletionReceipt)).toBe(true)
     expect(
       isRunCompletionReceiptResult({ ...completionReceipt, extra: true }),
+    ).toBe(false)
+    expect(
+      isRunUpdateReceiptResult({
+        ...updateReceipt,
+        completedRunUpdatedAt: 'not-a-time',
+      }),
+    ).toBe(false)
+    expect(
+      isRunUpdateReceiptResult({
+        ...updateReceipt,
+        completedPlannedWorkout: updateReceipt.reopenedPlannedWorkout,
+      }),
     ).toBe(false)
     expect(
       isRunDeletionReceiptResult({
@@ -919,6 +1089,7 @@ describe('material-command contract', () => {
 
   it.each([
     ['validation_error', 'invalid-run-completion'],
+    ['validation_error', 'invalid-run-update'],
     ['authentication_error', 'authentication-required'],
     ['authorization_error', 'training-resource-access-denied'],
     ['retryable_error', 'temporarily-unavailable'],

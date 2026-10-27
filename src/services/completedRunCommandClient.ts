@@ -95,6 +95,7 @@ function mapSharedFailure(
     case 'accepted':
     case 'plan_approved':
     case 'run_completed':
+    case 'run_updated':
     case 'run_deleted':
     case 'recommendation_decided':
       return unknownOutcome(commandId)
