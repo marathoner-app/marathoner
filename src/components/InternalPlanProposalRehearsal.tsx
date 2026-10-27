@@ -10,6 +10,11 @@ import {
 } from "../domain/training";
 import ProposedPlanSummary from "./ProposedPlanSummary";
 import type { InternalPlanProposalRehearsalRuleSet } from "./internalPlanProposalRehearsalRules";
+import {
+  createInternalPlanStartDateCandidates,
+  formatInternalPlanStartDate,
+  type InternalPlanStartDateCandidateResult,
+} from "./internalPlanStartDateCandidates";
 import "./InternalPlanProposalRehearsal.css";
 
 interface InternalPlanProposalRehearsalProps {
@@ -41,6 +46,22 @@ function readableIdentifier(value: string): string {
   return `${words[0]?.toUpperCase() ?? ""}${words.slice(1)}`;
 }
 
+function unavailableCandidateMessage(
+  result: Extract<
+    InternalPlanStartDateCandidateResult,
+    { readonly kind: "unavailable" }
+  >,
+): string {
+  switch (result.reason) {
+    case "profile_incomplete":
+      return "Save an exact race date and preferred long-run day to see derived start-date choices.";
+    case "race_window":
+      return "This draft can derive start dates only from an exact race date, not a race window.";
+    case "race_weekday_mismatch":
+      return "The saved race date does not fall on the preferred long-run day, so this draft has no aligned start-date choices.";
+  }
+}
+
 export default function InternalPlanProposalRehearsal({
   profile,
   ruleSet,
@@ -51,6 +72,15 @@ export default function InternalPlanProposalRehearsal({
   const [outcome, setOutcome] = useState<RehearsalOutcome>({
     kind: "not_run",
   });
+  const candidateResult = createInternalPlanStartDateCandidates(
+    profile,
+    ruleSet.rules,
+  );
+
+  const updatePlanStartDate = (value: string) => {
+    setPlanStartDate(value);
+    setOutcome({ kind: "not_run" });
+  };
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -124,18 +154,49 @@ export default function InternalPlanProposalRehearsal({
           type="date"
           required
           value={planStartDate}
-          onChange={(event) => setPlanStartDate(event.target.value)}
+          onChange={(event) => updatePlanStartDate(event.target.value)}
         />
         <p className="internal-plan-rehearsal-help">
           Choose the day after the preferred long-run day, 18 to 22 whole weeks
           before an exact race date.
         </p>
 
+        {candidateResult.kind === "available" ? (
+          <fieldset className="internal-plan-start-candidates">
+            <legend>Draft-aligned choices</legend>
+            <p>
+              Derived from the saved race date and this draft's supported
+              horizon. Nothing is selected automatically.
+            </p>
+            <div>
+              {candidateResult.candidates.map((candidate) => (
+                <button
+                  key={candidate.date}
+                  type="button"
+                  aria-pressed={planStartDate === candidate.date}
+                  onClick={() => updatePlanStartDate(candidate.date)}
+                >
+                  <span>{formatInternalPlanStartDate(candidate.date)}</span>
+                  <small>{candidate.wholeWeeksToRace} weeks to race</small>
+                </button>
+              ))}
+            </div>
+          </fieldset>
+        ) : (
+          <p className="internal-plan-rehearsal-help" role="status">
+            {unavailableCandidateMessage(candidateResult)} You can still enter a
+            date manually to rehearse the unsupported result.
+          </p>
+        )}
+
         <label className="internal-plan-rehearsal-confirmation">
           <input
             type="checkbox"
             checked={cohortConfirmed}
-            onChange={(event) => setCohortConfirmed(event.target.checked)}
+            onChange={(event) => {
+              setCohortConfirmed(event.target.checked);
+              setOutcome({ kind: "not_run" });
+            }}
           />
           For this rehearsal, I have confirmed the saved profile represents the
           intended founding cohort.
@@ -144,7 +205,10 @@ export default function InternalPlanProposalRehearsal({
           <input
             type="checkbox"
             checked={noSymptomsReported}
-            onChange={(event) => setNoSymptomsReported(event.target.checked)}
+            onChange={(event) => {
+              setNoSymptomsReported(event.target.checked);
+              setOutcome({ kind: "not_run" });
+            }}
           />
           For this rehearsal, no pain or unusual symptoms have been reported.
         </label>

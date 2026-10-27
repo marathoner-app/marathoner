@@ -52,6 +52,44 @@ async function submitRehearsal(options?: {
 }
 
 describe("InternalPlanProposalRehearsal", () => {
+  it("offers draft-aligned dates without selecting or generating one", async () => {
+    const user = userEvent.setup();
+    render(
+      <InternalPlanProposalRehearsal profile={profile} ruleSet={ruleSet} />,
+    );
+
+    const input = screen.getByLabelText("Plan start date");
+    expect(input).toHaveValue("");
+    expect(
+      screen.queryByRole("heading", { name: "Founding beta completion plan" }),
+    ).not.toBeInTheDocument();
+
+    await user.click(
+      screen.getByRole("button", {
+        name: "December 10, 2029 22 weeks to race",
+      }),
+    );
+
+    expect(input).toHaveValue("2029-12-10");
+    expect(
+      screen.queryByRole("heading", { name: "Founding beta completion plan" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("explains when the saved race weekday cannot produce candidates", () => {
+    render(
+      <InternalPlanProposalRehearsal
+        profile={{ ...profile, preferredLongRunDay: "saturday" }}
+        ruleSet={ruleSet}
+      />,
+    );
+
+    expect(
+      screen.getByText(/does not fall on the preferred long-run day/iu),
+    ).toBeInTheDocument();
+    expect(screen.getByLabelText("Plan start date")).toBeEnabled();
+  });
+
   it("renders the real generated proposal without activation actions", async () => {
     render(
       <InternalPlanProposalRehearsal profile={profile} ruleSet={ruleSet} />,
