@@ -296,6 +296,126 @@ service cloud.firestore {
         && next.updatedAt >= prior.updatedAt;
     }
 
+    function hasValidWorkoutTargets(data) {
+      let hasDistance = data.keys().hasAny(['targetDistanceMeters']);
+      let hasDuration = data.keys().hasAny(['targetDurationSeconds']);
+      return (hasDistance || hasDuration)
+        && (!hasDistance
+          || (data.targetDistanceMeters is int
+            && data.targetDistanceMeters > 0))
+        && (!hasDuration
+          || (data.targetDurationSeconds is int
+            && data.targetDurationSeconds > 0));
+    }
+
+    function hasValidWorkoutKindFields(data) {
+      return (data.kind == 'rest'
+          && data.keys().hasOnly([
+            'schemaVersion',
+            'userId',
+            'planId',
+            'scheduledDate',
+            'phase',
+            'status',
+            'kind',
+            'notes',
+            'createdAt',
+            'updatedAt'
+          ]))
+        || (data.kind == 'run'
+          && data.keys().hasAll(['purpose'])
+          && data.keys().hasOnly([
+            'schemaVersion',
+            'userId',
+            'planId',
+            'scheduledDate',
+            'phase',
+            'status',
+            'kind',
+            'notes',
+            'purpose',
+            'targetDistanceMeters',
+            'targetDurationSeconds',
+            'createdAt',
+            'updatedAt'
+          ])
+          && data.purpose in [
+            'easy',
+            'recovery',
+            'long',
+            'tempo',
+            'intervals',
+            'race'
+          ]
+          && hasValidWorkoutTargets(data))
+        || (data.kind == 'walk_run'
+          && data.keys().hasOnly([
+            'schemaVersion',
+            'userId',
+            'planId',
+            'scheduledDate',
+            'phase',
+            'status',
+            'kind',
+            'notes',
+            'targetDistanceMeters',
+            'targetDurationSeconds',
+            'createdAt',
+            'updatedAt'
+          ])
+          && hasValidWorkoutTargets(data));
+    }
+
+    function isValidWorkoutWrite(userId, planId) {
+      let data = request.resource.data;
+      return isValidOwnedWrite(userId)
+        && data.planId == planId
+        && data.keys().hasAll([
+          'schemaVersion',
+          'userId',
+          'planId',
+          'scheduledDate',
+          'phase',
+          'status',
+          'kind',
+          'createdAt',
+          'updatedAt'
+        ])
+        && isDateOnlyString(data.scheduledDate)
+        && data.phase in [
+          'learn_to_run',
+          'base_building',
+          'marathon_training',
+          'race_preparation',
+          'recovery'
+        ]
+        && data.status in ['planned', 'completed', 'skipped']
+        && (!data.keys().hasAny(['notes'])
+          || isNonblankBoundedString(data.notes, 500))
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp
+        && data.updatedAt >= data.createdAt
+        && hasValidWorkoutKindFields(data);
+    }
+
+    function isValidWorkoutCreate(userId, planId) {
+      return isValidWorkoutWrite(userId, planId)
+        && request.resource.data.status == 'planned'
+        && request.resource.data.createdAt == request.resource.data.updatedAt;
+    }
+
+    function isValidWorkoutUpdate(userId, planId) {
+      let next = request.resource.data;
+      let prior = resource.data;
+      return isValidWorkoutWrite(userId, planId)
+        && next.schemaVersion == prior.schemaVersion
+        && next.userId == prior.userId
+        && next.planId == prior.planId
+        && next.kind == prior.kind
+        && next.createdAt == prior.createdAt
+        && next.updatedAt >= prior.updatedAt;
+    }
+
     function hasValidRunAssociations(data) {
       let hasPlanId = data.keys().hasAny(['plannedWorkoutPlanId']);
       let hasWorkoutId = data.keys().hasAny(['plannedWorkoutId']);
@@ -472,9 +592,10 @@ service cloud.firestore {
 
       match /workouts/{workoutId} {
         allow read, delete: if canAccessBetaTrainingData(userId);
-        allow create, update: if canAccessBetaTrainingData(userId)
-          && isValidOwnedWrite(userId)
-          && request.resource.data.planId == planId;
+        allow create: if canAccessBetaTrainingData(userId)
+          && isValidWorkoutCreate(userId, planId);
+        allow update: if canAccessBetaTrainingData(userId)
+          && isValidWorkoutUpdate(userId, planId);
       }
 
       match /metadata/{metadataId} {

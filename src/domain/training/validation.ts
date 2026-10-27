@@ -1,6 +1,7 @@
 import type { TrainingPlan, PlannedWorkout, CompletedRun, Shoe, UserProfile } from "./types.js";
 
 export const COMPLETED_RUN_NOTES_MAX_LENGTH = 500;
+export const PLANNED_WORKOUT_NOTES_MAX_LENGTH = 500;
 export const SHOE_NAME_MAX_LENGTH = 120;
 export const USER_PROFILE_DISPLAY_NAME_MAX_LENGTH = 120;
 export const USER_PROFILE_SCHEDULE_CONSTRAINTS_MAX_LENGTH = 500;
@@ -153,6 +154,16 @@ export function validatePlannedWorkout(workout: PlannedWorkout): ValidationIssue
     ...validateText(workout.notes, "notes", false),
     ...validateTimestamps(workout),
   ];
+
+  if (
+    workout.notes !== undefined &&
+    workout.notes.length > PLANNED_WORKOUT_NOTES_MAX_LENGTH
+  ) {
+    issues.push({
+      field: "notes",
+      message: `Workout notes cannot exceed ${PLANNED_WORKOUT_NOTES_MAX_LENGTH} characters.`,
+    });
+  }
 
   if (workout.kind !== "rest") {
     const hasPositiveDistance = workout.targetDistance !== undefined && workout.targetDistance > 0;
