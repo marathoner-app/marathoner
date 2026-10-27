@@ -8,7 +8,7 @@ import {
   type PlanGenerationValidationIssue,
   type UserProfile,
 } from "../domain/training";
-import ProposedPlanSummary from "./ProposedPlanSummary";
+import InternalPlanActivationRehearsal from "./InternalPlanActivationRehearsal";
 import type { InternalPlanProposalRehearsalRuleSet } from "./internalPlanProposalRehearsalRules";
 import {
   createInternalPlanStartDateCandidates,
@@ -277,13 +277,10 @@ export default function InternalPlanProposalRehearsal({
 
       {outcome.kind === "generation_result" &&
         outcome.result.kind === "generated" && (
-          <div className="internal-plan-rehearsal-proposal">
-            <p className="internal-plan-rehearsal-warning" role="status">
-              Internal draft only. This proposal is read-only and remains
-              inactive.
-            </p>
-            <ProposedPlanSummary result={outcome.result} />
-          </div>
+          <InternalPlanActivationRehearsal
+            result={outcome.result}
+            onReviewInputs={() => setOutcome({ kind: "not_run" })}
+          />
         )}
     </section>
   );

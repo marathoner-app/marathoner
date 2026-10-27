@@ -90,7 +90,7 @@ describe("InternalPlanProposalRehearsal", () => {
     expect(screen.getByLabelText("Plan start date")).toBeEnabled();
   });
 
-  it("renders the real generated proposal without activation actions", async () => {
+  it("renders the real generated proposal with explicit session-only review", async () => {
     render(
       <InternalPlanProposalRehearsal profile={profile} ruleSet={ruleSet} />,
     );
@@ -103,12 +103,55 @@ describe("InternalPlanProposalRehearsal", () => {
     expect(
       screen.getByRole("heading", { name: "Founding beta completion plan" }),
     ).toBeInTheDocument();
-    expect(screen.getByText(/read-only and remains inactive/u)).toBeInTheDocument();
     expect(
-      screen.queryByRole("button", { name: "Review inputs" }),
+      screen.getByText(/activate this plan only inside the current rehearsal/u),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Review inputs" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Continue review" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("heading", { name: "Active only in this rehearsal" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("clears session activation when a proposal input changes", async () => {
+    const user = userEvent.setup();
+    render(
+      <InternalPlanProposalRehearsal profile={profile} ruleSet={ruleSet} />,
+    );
+
+    await user.type(screen.getByLabelText("Plan start date"), "2030-01-07");
+    await user.click(
+      screen.getByLabelText(/confirmed the saved profile represents/u),
+    );
+    const safetyConfirmation = screen.getByLabelText(
+      /no pain or unusual symptoms/u,
+    );
+    await user.click(safetyConfirmation);
+    await user.click(
+      screen.getByRole("button", { name: "Generate read-only proposal" }),
+    );
+    await user.click(screen.getByRole("button", { name: "Continue review" }));
+    await user.click(
+      screen.getByRole("button", {
+        name: "Activate only in this rehearsal",
+      }),
+    );
+
+    expect(
+      screen.getByRole("heading", { name: "Active only in this rehearsal" }),
+    ).toBeInTheDocument();
+
+    await user.click(safetyConfirmation);
+
+    expect(
+      screen.queryByRole("heading", { name: "Active only in this rehearsal" }),
     ).not.toBeInTheDocument();
     expect(
-      screen.queryByRole("button", { name: "Continue review" }),
+      screen.queryByRole("heading", { name: "Founding beta completion plan" }),
     ).not.toBeInTheDocument();
   });
 

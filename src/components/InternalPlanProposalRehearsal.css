@@ -114,8 +114,7 @@
   margin-top: 0.5rem;
 }
 
-.internal-plan-rehearsal-result,
-.internal-plan-rehearsal-warning {
+.internal-plan-rehearsal-result {
   margin-top: 1.5rem;
   padding: 1rem;
   border-radius: 0.75rem;
@@ -126,15 +125,6 @@
   margin-top: 0;
 }
 
-.internal-plan-rehearsal-result > :last-child,
-.internal-plan-rehearsal-warning {
+.internal-plan-rehearsal-result > :last-child {
   margin-bottom: 0;
-}
-
-.internal-plan-rehearsal-proposal {
-  margin-top: 1.5rem;
-}
-
-.internal-plan-rehearsal-proposal .proposed-plan {
-  margin-top: 1rem;
 }

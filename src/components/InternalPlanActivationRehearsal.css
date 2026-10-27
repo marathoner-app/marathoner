@@ -1,0 +1,99 @@
+.internal-plan-activation-rehearsal {
+  width: min(100%, 56rem);
+  margin: 1.5rem auto 0;
+}
+
+.internal-plan-activation-boundary {
+  padding: 0.85rem 1rem;
+  border: 1px solid #9a7000;
+  border-radius: 0.75rem;
+  background: #fff7dc;
+  color: #4d3800;
+  font-weight: 650;
+}
+
+.internal-plan-activation-confirmation,
+.internal-plan-activation-active {
+  padding: 1.25rem;
+  border: 2px solid #24364b;
+  border-radius: 1rem;
+  background: #ffffff;
+  color: #17202a;
+}
+
+.internal-plan-activation-active {
+  border-color: #2d6447;
+  background: #f4fbf7;
+}
+
+.internal-plan-activation-eyebrow {
+  margin: 0 0 0.35rem;
+  color: #45556a;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.internal-plan-activation-rehearsal h3,
+.internal-plan-activation-rehearsal h4 {
+  margin-top: 0;
+}
+
+.internal-plan-activation-rehearsal dl {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin: 1.25rem 0;
+}
+
+.internal-plan-activation-rehearsal dl div {
+  min-width: 0;
+  padding: 0.75rem;
+  border: 1px solid #d7dde4;
+  border-radius: 0.5rem;
+  background: #ffffff;
+}
+
+.internal-plan-activation-rehearsal dt {
+  font-size: 0.85rem;
+  font-weight: 800;
+}
+
+.internal-plan-activation-rehearsal dd {
+  margin: 0.2rem 0 0;
+  overflow-wrap: anywhere;
+}
+
+.internal-plan-activation-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 1.25rem;
+}
+
+.internal-plan-activation-actions button {
+  min-height: 2.75rem;
+  padding: 0.65rem 1rem;
+}
+
+.internal-plan-activation-actions .secondary {
+  border: 1px solid #17202a;
+  background: #ffffff;
+  color: #17202a;
+}
+
+@media (max-width: 600px) {
+  .internal-plan-activation-rehearsal dl {
+    grid-template-columns: 1fr;
+  }
+
+  .internal-plan-activation-actions {
+    flex-direction: column-reverse;
+  }
+
+  .internal-plan-activation-actions button {
+    width: 100%;
+  }
+}

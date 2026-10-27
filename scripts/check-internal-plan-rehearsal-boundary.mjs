@@ -6,6 +6,7 @@ const forbiddenBuildText = [
   'beta-adaptation@0.1.0-draft',
   'Internal draft plan rehearsal',
   'Internal draft adaptation rehearsal',
+  'Active only in this rehearsal',
   'internal-plan-rehearsal',
 ]
 const textExtensions = new Set(['.css', '.html', '.js', '.json', '.map', '.txt'])
