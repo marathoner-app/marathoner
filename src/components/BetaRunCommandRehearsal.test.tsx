@@ -7,6 +7,7 @@ import type {
   MaterialCommandRetryableResult,
   RunCompletionReceiptResult,
   RunDeletionReceiptResult,
+  RunUpdateReceiptResult,
 } from '../domain/materialCommands/contract'
 import { createUtcDateTime } from '../domain/training/dates'
 import { createCompletedRunId } from '../domain/training/identifiers'
@@ -28,6 +29,14 @@ const deletionReceipt: RunDeletionReceiptResult = {
   deletedAt: createUtcDateTime('2026-10-22T20:01:00.000Z'),
   reopenedPlannedWorkout: null,
 }
+const updateReceipt: RunUpdateReceiptResult = {
+  status: 'run_updated',
+  commandId: 'beta-rehearsal-update-receipt-0001',
+  completedRunId,
+  completedRunUpdatedAt: createUtcDateTime('2026-10-22T20:02:00.000Z'),
+  reopenedPlannedWorkout: null,
+  completedPlannedWorkout: null,
+}
 
 function client(options?: {
   completion?: Awaited<
@@ -42,12 +51,18 @@ function client(options?: {
     submitDeletion: vi
       .fn<CompletedRunCommandClient['submitDeletion']>()
       .mockResolvedValue(options?.deletion ?? deletionReceipt),
+    submitUpdate: vi
+      .fn<CompletedRunCommandClient['submitUpdate']>()
+      .mockResolvedValue(updateReceipt),
     resolveCompletion: vi
       .fn<CompletedRunCommandClient['resolveCompletion']>()
       .mockResolvedValue(options?.completion ?? completionReceipt),
     resolveDeletion: vi
       .fn<CompletedRunCommandClient['resolveDeletion']>()
       .mockResolvedValue(options?.deletion ?? deletionReceipt),
+    resolveUpdate: vi
+      .fn<CompletedRunCommandClient['resolveUpdate']>()
+      .mockResolvedValue(updateReceipt),
   } satisfies CompletedRunCommandClient
 }
 

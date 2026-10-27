@@ -3,9 +3,11 @@ import { describe, expect, it, vi } from 'vitest'
 import {
   RUN_COMPLETION_COMMAND_TYPE,
   RUN_DELETION_COMMAND_TYPE,
+  RUN_UPDATE_COMMAND_TYPE,
   type MaterialCommandResult,
   type RunCompletionReceiptResult,
   type RunDeletionReceiptResult,
+  type RunUpdateReceiptResult,
 } from '../domain/materialCommands/contract'
 import {
   createIanaTimeZone,
@@ -24,11 +26,13 @@ import {
   createCompletedRunCommandClient,
   type RunCompletionSubmission,
   type RunDeletionSubmission,
+  type RunUpdateSubmission,
 } from './completedRunCommandClient'
 import type { MaterialCommandTransport } from './materialCommandClient'
 
 const completionCommandId = 'complete-run-client-0001'
 const deletionCommandId = 'delete-run-client-0001'
+const updateCommandId = 'update-run-client-0001'
 const completedRunId = createCompletedRunId('completed-run-client-0001')
 const planId = createTrainingPlanId('plan-client-0001')
 const workoutId = createPlannedWorkoutId('workout-client-0001')
@@ -64,6 +68,26 @@ const deletionSubmission: RunDeletionSubmission = {
   },
 }
 
+const updateSubmission: RunUpdateSubmission = {
+  commandId: updateCommandId,
+  completedRunId,
+  expectedCompletedRunUpdatedAt: completedRunUpdatedAt,
+  input: {
+    plannedWorkout: {
+      planId,
+      workoutId,
+      expectedUpdatedAt: workoutUpdatedAt,
+    },
+    startedAt: createUtcDateTime('2026-10-08T12:20:00.000Z'),
+    timeZone: createIanaTimeZone('America/Los_Angeles'),
+    distance: createDistanceMeters(5_200),
+    duration: createDurationSeconds(1_850),
+    perceivedEffort: 'harder_than_expected',
+    unusualPain: true,
+    notes: 'Calf tightened near the end.',
+  },
+}
+
 const completionReceipt: RunCompletionReceiptResult = {
   status: 'run_completed',
   commandId: completionCommandId,
@@ -85,6 +109,19 @@ const deletionReceipt: RunDeletionReceiptResult = {
     planId,
     workoutId,
     updatedAt: createUtcDateTime('2026-10-08T14:00:00.000Z'),
+  },
+}
+
+const updateReceipt: RunUpdateReceiptResult = {
+  status: 'run_updated',
+  commandId: updateCommandId,
+  completedRunId,
+  completedRunUpdatedAt: createUtcDateTime('2026-10-08T13:05:00.000Z'),
+  reopenedPlannedWorkout: null,
+  completedPlannedWorkout: {
+    planId,
+    workoutId,
+    updatedAt: createUtcDateTime('2026-10-08T13:05:00.000Z'),
   },
 }
 
@@ -149,6 +186,87 @@ describe('completed-run command client', () => {
       },
     })
   })
+
+  it('builds update envelopes and preserves the command across safe retries', async () => {
+    const boundary = transport(updateReceipt)
+    const client = createCompletedRunCommandClient({
+      isOnline: () => true,
+      transport: boundary,
+    })
+
+    await expect(client.submitUpdate(updateSubmission)).resolves.toEqual(
+      updateReceipt,
+    )
+    await expect(client.submitUpdate(updateSubmission)).resolves.toEqual(
+      updateReceipt,
+    )
+
+    expect(boundary.submit).toHaveBeenCalledTimes(2)
+    expect(boundary.submit).toHaveBeenNthCalledWith(1, {
+      envelopeVersion: 1,
+      appProtocolVersion: 1,
+      commandId: updateCommandId,
+      command: {
+        type: RUN_UPDATE_COMMAND_TYPE,
+        schemaVersion: 1,
+        completedRunId,
+        expectedCompletedRunUpdatedAt: completedRunUpdatedAt,
+        input: updateSubmission.input,
+      },
+    })
+    expect(vi.mocked(boundary.submit).mock.calls[1]?.[0]).toEqual(
+      vi.mocked(boundary.submit).mock.calls[0]?.[0],
+    )
+  })
+
+  it.each([
+    {
+      name: 'an unplanned target',
+      plannedWorkout: null,
+    },
+    {
+      name: 'the current planned-workout target',
+      plannedWorkout: updateSubmission.input.plannedWorkout,
+    },
+    {
+      name: 'a different planned-workout target',
+      plannedWorkout: {
+        planId: createTrainingPlanId('plan-client-0002'),
+        workoutId: createPlannedWorkoutId('workout-client-0002'),
+        expectedUpdatedAt: createUtcDateTime('2026-10-09T12:00:00.000Z'),
+      },
+    },
+  ])(
+    'preserves the full replacement input for $name',
+    async ({ plannedWorkout }) => {
+      const submission = {
+        ...updateSubmission,
+        commandId: `update-run-client-${
+          plannedWorkout === null ? 'unplanned' : plannedWorkout.workoutId
+        }`,
+        input: {
+          ...updateSubmission.input,
+          plannedWorkout,
+        },
+      } satisfies RunUpdateSubmission
+      const receipt = {
+        ...updateReceipt,
+        commandId: submission.commandId,
+      } satisfies RunUpdateReceiptResult
+      const boundary = transport(receipt)
+      const client = createCompletedRunCommandClient({
+        isOnline: () => true,
+        transport: boundary,
+      })
+
+      await expect(client.submitUpdate(submission)).resolves.toEqual(receipt)
+      expect(boundary.submit).toHaveBeenCalledWith(
+        expect.objectContaining({
+          command: expect.objectContaining({ input: submission.input }),
+        }),
+      )
+    },
+  )
 
   it('builds unplanned completion and deletion envelopes with null associations', async () => {
     const unplannedCompletion = {
@@ -232,8 +350,10 @@ describe('completed-run command client', () => {
     for (const result of [
       await client.submitCompletion(completionSubmission),
       await client.submitDeletion(deletionSubmission),
+      await client.submitUpdate(updateSubmission),
       await client.resolveCompletion(completionCommandId),
       await client.resolveDeletion(deletionCommandId),
+      await client.resolveUpdate(updateCommandId),
     ]) {
       expect(result).toEqual(
         expect.objectContaining({
@@ -297,6 +417,30 @@ describe('completed-run command client', () => {
       deletionReceipt,
     )
     expect(boundary.resolve).toHaveBeenCalledWith(deletionCommandId)
+  })
+
+  it('recovers an ambiguous update by resolving the same command ID', async () => {
+    const boundary = transport(updateReceipt)
+    vi.mocked(boundary.submit).mockRejectedValueOnce({
+      code: 'functions/deadline-exceeded',
+    })
+    const client = createCompletedRunCommandClient({
+      isOnline: () => true,
+      transport: boundary,
+    })
+
+    await expect(client.submitUpdate(updateSubmission)).resolves.toEqual(
+      expect.objectContaining({
+        status: 'outcome_unknown',
+        commandId: updateCommandId,
+        code: 'resolve-by-command-id',
+      }),
+    )
+    await expect(client.resolveUpdate(updateCommandId)).resolves.toEqual(
+      updateReceipt,
+    )
+    expect(boundary.submit).toHaveBeenCalledTimes(1)
+    expect(boundary.resolve).toHaveBeenCalledWith(updateCommandId)
   })
 
   it.each<MaterialCommandResult>([
@@ -410,6 +554,44 @@ describe('completed-run command client', () => {
     )
   })
 
+  it.each<MaterialCommandResult>([
+    {
+      status: 'conflict',
+      commandId: updateCommandId,
+      code: 'planned-workout-already-completed',
+      message: 'This workout already has a completed run.',
+      planId,
+      plannedWorkoutId: workoutId,
+      completedRunId,
+    },
+    {
+      status: 'stale_revision',
+      commandId: updateCommandId,
+      code: 'completed-run-version-changed',
+      message: 'The completed run changed.',
+      completedRunId,
+      expectedUpdatedAt: completedRunUpdatedAt,
+      actualUpdatedAt: createUtcDateTime('2026-10-08T13:01:00.000Z'),
+    },
+    {
+      status: 'stale_revision',
+      commandId: updateCommandId,
+      code: 'planned-workout-version-changed',
+      message: 'The planned workout changed.',
+      planId,
+      plannedWorkoutId: workoutId,
+      expectedUpdatedAt: workoutUpdatedAt,
+      actualUpdatedAt: null,
+    },
+  ])('preserves the typed update $code outcome', async (result) => {
+    const client = createCompletedRunCommandClient({
+      isOnline: () => true,
+      transport: transport(result),
+    })
+
+    await expect(client.submitUpdate(updateSubmission)).resolves.toEqual(result)
+  })
+
   it('treats malformed, unrelated, and wrong-receipt responses as unknown', async () => {
     const malformedClient = createCompletedRunCommandClient({
       isOnline: () => true,
@@ -462,6 +644,19 @@ describe('completed-run command client', () => {
     })
     await expect(
       wrongDeletionReceiptClient.submitDeletion(deletionSubmission),
+    ).resolves.toEqual(
+      expect.objectContaining({ status: 'outcome_unknown' }),
+    )
+
+    const wrongUpdateReceiptClient = createCompletedRunCommandClient({
+      isOnline: () => true,
+      transport: transport({
+        ...completionReceipt,
+        commandId: updateCommandId,
+      }),
+    })
+    await expect(
+      wrongUpdateReceiptClient.submitUpdate(updateSubmission),
     ).resolves.toEqual(
       expect.objectContaining({ status: 'outcome_unknown' }),
     )
@@ -544,6 +739,19 @@ describe('completed-run command client', () => {
     })
     await expect(
       deletionResolutionClient.resolveDeletion(deletionCommandId),
+    ).resolves.toEqual(
+      expect.objectContaining({ status: 'outcome_unknown' }),
+    )
+
+    const updateResolutionClient = createCompletedRunCommandClient({
+      isOnline: () => true,
+      transport: transport({
+        ...deletionReceipt,
+        commandId: updateCommandId,
+      }),
+    })
+    await expect(
+      updateResolutionClient.resolveUpdate(updateCommandId),
     ).resolves.toEqual(
       expect.objectContaining({ status: 'outcome_unknown' }),
     )
