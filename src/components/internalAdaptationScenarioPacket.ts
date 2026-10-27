@@ -17,13 +17,15 @@ import {
   type TrainingPlanStatus,
 } from "../domain/training";
 
-interface DraftOutcome {
+export interface DraftAdaptationOutcomeDetail {
   readonly decision: AdaptationDecision;
   readonly kind: AdaptationResultKind;
   readonly action: AdaptationAction | null;
   readonly reasonCode: string;
   readonly explanationKey: string;
   readonly runnerApprovalRequired: boolean;
+  readonly when: string;
+  readonly planMutation: string | null;
 }
 
 interface DraftRulesPacket {
@@ -65,7 +67,7 @@ interface DraftRulesPacket {
     readonly holdEligibleNextWeekKinds: readonly AdaptationWeekKind[];
     readonly protectedRecoveryWeekKinds: readonly AdaptationWeekKind[];
   };
-  readonly outcomes: readonly DraftOutcome[];
+  readonly outcomes: readonly DraftAdaptationOutcomeDetail[];
 }
 
 interface DraftRescheduleCandidate {
@@ -129,6 +131,7 @@ export interface InternalAdaptationScenarioPacket {
   readonly artifactVersion: string;
   readonly evaluatorVersion: ReturnType<typeof createAdaptationArtifactVersion>;
   readonly rules: AdaptationEvaluationRulesV1;
+  readonly outcomeDetails: readonly DraftAdaptationOutcomeDetail[];
   readonly defaults: DraftAdaptationFixtureValues;
   readonly cases: readonly DraftAdaptationFixture[];
 }
@@ -236,6 +239,7 @@ export function createInternalAdaptationScenarioPacket(
         runnerApprovalRequired: outcome.runnerApprovalRequired,
       })),
     },
+    outcomeDetails: packet.outcomes,
     defaults: fixtures.defaults,
     cases: fixtures.cases,
   };

@@ -82,6 +82,30 @@ describe("RecommendationDecisionReview", () => {
     expect(screen.queryByRole("note")).not.toBeInTheDocument();
   });
 
+  it("enables unmistakably session-only choices only in internal rehearsal mode", async () => {
+    const user = userEvent.setup();
+    const viewProps = props({ interactionMode: "internal_rehearsal" });
+    render(<RecommendationDecisionReview {...viewProps} />);
+
+    expect(screen.getByRole("note")).toHaveTextContent(
+      "session-only and cannot change a real plan",
+    );
+    const keepButton = screen.getByRole("button", {
+      name: "Keep in rehearsal",
+    });
+    const applyButton = screen.getByRole("button", {
+      name: "Apply in rehearsal",
+    });
+    expect(keepButton).toBeEnabled();
+    expect(applyButton).toBeEnabled();
+
+    await user.click(keepButton);
+    await user.click(applyButton);
+
+    expect(viewProps.onKeep).toHaveBeenCalledOnce();
+    expect(viewProps.onApply).toHaveBeenCalledOnce();
+  });
+
   it("offers explicit keep and apply choices through supplied callbacks", async () => {
     const user = userEvent.setup();
     const viewProps = props({
@@ -162,6 +186,13 @@ describe("RecommendationDecisionReview", () => {
 
   it("has no beta-blocking accessibility violations in critical states", async () => {
     const view = render(<RecommendationDecisionReview {...props()} />);
+    expect(await findBetaBlockingAccessibilityViolations()).toEqual([]);
+
+    view.rerender(
+      <RecommendationDecisionReview
+        {...props({ interactionMode: "internal_rehearsal" })}
+      />,
+    );
     expect(await findBetaBlockingAccessibilityViolations()).toEqual([]);
 
     view.rerender(

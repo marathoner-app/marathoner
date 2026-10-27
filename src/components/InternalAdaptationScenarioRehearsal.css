@@ -120,3 +120,50 @@
   margin-bottom: 0;
   font-weight: 650;
 }
+
+.internal-adaptation-session-decision {
+  margin-top: 1.5rem;
+  padding: 1rem;
+  border: 2px solid #4c4567;
+  border-radius: 0.85rem;
+  background: #f7f4ff;
+}
+
+.internal-adaptation-session-decision h3 {
+  margin-top: 0;
+}
+
+.internal-adaptation-session-decision dl {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin: 1rem 0;
+}
+
+.internal-adaptation-session-decision dl div {
+  min-width: 0;
+  padding: 0.75rem;
+  border: 1px solid #c8c1dc;
+  border-radius: 0.5rem;
+  background: #ffffff;
+}
+
+.internal-adaptation-session-decision dt {
+  font-size: 0.85rem;
+  font-weight: 800;
+}
+
+.internal-adaptation-session-decision dd {
+  margin: 0.2rem 0 0;
+  overflow-wrap: anywhere;
+}
+
+.internal-adaptation-session-decision button {
+  min-height: 2.75rem;
+}
+
+@media (max-width: 600px) {
+  .internal-adaptation-session-decision dl {
+    grid-template-columns: 1fr;
+  }
+}

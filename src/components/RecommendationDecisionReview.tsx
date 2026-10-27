@@ -32,6 +32,7 @@ export interface RecommendationDecisionReviewProps {
   readonly onKeep: () => void;
   readonly onApply: () => void;
   readonly onRetry: () => void;
+  readonly interactionMode?: "participant" | "internal_rehearsal";
 }
 
 export default function RecommendationDecisionReview({
@@ -40,13 +41,16 @@ export default function RecommendationDecisionReview({
   onKeep,
   onApply,
   onRetry,
+  interactionMode = "participant",
 }: RecommendationDecisionReviewProps) {
   const idPrefix = useId();
   const outcomeRef = useRef<HTMLDivElement>(null);
   const pending = state.kind === "pending";
   const internalPreview = model.contentState === "internal_preview";
+  const internalRehearsal =
+    internalPreview && interactionMode === "internal_rehearsal";
   const decisionsAvailable = state.kind === "ready" || pending;
-  const decisionsDisabled = pending || internalPreview;
+  const decisionsDisabled = pending || (internalPreview && !internalRehearsal);
 
   useEffect(() => {
     if (state.kind === "error" || state.kind === "unavailable") {
@@ -67,8 +71,9 @@ export default function RecommendationDecisionReview({
         <div className="recommendation-review-preview" role="note">
           <strong>Internal preview</strong>
           <span>
-            This synthetic recommendation is not approved training guidance and
-            cannot change a plan.
+            {internalRehearsal
+              ? "This synthetic recommendation is not approved training guidance. Choices below are session-only and cannot change a real plan."
+              : "This synthetic recommendation is not approved training guidance and cannot change a plan."}
           </span>
         </div>
       )}
@@ -95,8 +100,9 @@ export default function RecommendationDecisionReview({
       <div className="recommendation-review-choice">
         <h3>Your choice</h3>
         <p>
-          Your current plan stays unchanged unless you choose to apply this
-          recommendation and Marathoner confirms the change.
+          {internalRehearsal
+            ? "This rehearsal records only your in-memory choice. It cannot submit or confirm a plan change."
+            : "Your current plan stays unchanged unless you choose to apply this recommendation and Marathoner confirms the change."}
         </p>
       </div>
 
@@ -133,14 +139,18 @@ export default function RecommendationDecisionReview({
             onClick={onKeep}
             disabled={decisionsDisabled}
           >
-            {state.kind === "pending" && state.decision === "keep"
-              ? "Keeping current plan…"
-              : "Keep current plan"}
+            {internalRehearsal
+              ? "Keep in rehearsal"
+              : state.kind === "pending" && state.decision === "keep"
+                ? "Keeping current plan…"
+                : "Keep current plan"}
           </button>
           <button type="button" onClick={onApply} disabled={decisionsDisabled}>
-            {state.kind === "pending" && state.decision === "apply"
-              ? "Applying change…"
-              : "Apply this change"}
+            {internalRehearsal
+              ? "Apply in rehearsal"
+              : state.kind === "pending" && state.decision === "apply"
+                ? "Applying change…"
+                : "Apply this change"}
           </button>
         </div>
       )}
