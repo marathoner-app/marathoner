@@ -68,7 +68,7 @@ const completedRunCommandsEnabled = defineBoolean(
   {
     default: false,
     description:
-      'Installs completed-run command stores only in the reviewed beta project.',
+      'Installs completed-run command stores only in a reviewed Firebase project.',
   },
 )
 const useCompletedRunCommands = shouldInstallCompletedRunCommandStores({

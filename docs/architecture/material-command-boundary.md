@@ -111,11 +111,13 @@ receipt together.
 
 The Functions entry point installs the completed-run stores when
 `FUNCTIONS_EMULATOR=true`, preserving the isolated emulator path. Outside an
-emulator it requires both the exact `marathonerapp-beta` project and the
+emulator it requires both an exact reviewed project (`marathonerapp-beta` or
+the owner-only `marathoner-d9bf9` development project) and the
 disabled-by-default Boolean parameter
-`MARATHONER_COMPLETED_RUN_COMMANDS_ENABLED=true`. Development, unknown,
-missing-project, and disabled configurations omit the stores and return a
-typed authorization failure before persistence.
+`MARATHONER_COMPLETED_RUN_COMMANDS_ENABLED=true`. Unknown, missing-project, and
+disabled configurations omit the stores and return a typed authorization
+failure before persistence. Each live project has a separate predeploy guard,
+intent phrase, ignored parameter file, and rollback runbook.
 
 The callable remains in project-level App Check observation mode under #205,
 but the handler requires a verified `request.app` for `run.complete` and

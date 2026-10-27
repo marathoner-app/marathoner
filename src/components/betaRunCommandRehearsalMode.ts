@@ -1,3 +1,3 @@
 export function isBetaRunCommandRehearsalMode(mode: string): boolean {
-  return mode === 'ios-beta'
+  return mode === 'ios-development' || mode === 'ios-beta'
 }

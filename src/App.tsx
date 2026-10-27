@@ -440,7 +440,7 @@ function AuthenticatedExperience({
             <Suspense
               fallback={
                 <div className="training-home-status" role="status">
-                  <p>Loading the beta command rehearsal...</p>
+                  <p>Loading the owner command rehearsal...</p>
                 </div>
               }
             >

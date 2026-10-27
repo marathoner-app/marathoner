@@ -78,7 +78,7 @@ describe('BetaRunCommandRehearsal', () => {
     )
 
     await user.click(
-      screen.getByRole('button', { name: 'Run reversible beta check' }),
+      screen.getByRole('button', { name: 'Run reversible command check' }),
     )
 
     expect(
@@ -153,7 +153,7 @@ describe('BetaRunCommandRehearsal', () => {
       />,
     )
     await user.click(
-      screen.getByRole('button', { name: 'Run reversible beta check' }),
+      screen.getByRole('button', { name: 'Run reversible command check' }),
     )
 
     expect(await screen.findByRole('alert')).toHaveTextContent(
@@ -185,7 +185,7 @@ describe('BetaRunCommandRehearsal', () => {
     )
 
     await user.click(
-      screen.getByRole('button', { name: 'Run reversible beta check' }),
+      screen.getByRole('button', { name: 'Run reversible command check' }),
     )
     await screen.findByText(/waiting for the signed-in run listener/i)
     view.rerender(
