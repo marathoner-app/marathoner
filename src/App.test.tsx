@@ -1,6 +1,7 @@
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { findBetaBlockingAccessibilityViolations } from './test/accessibility'
 import { useEffect, type HTMLAttributes, type ReactNode } from 'react'
 import App from './App'
 import AuthProvider, { authSessionTimeoutMs } from './auth/AuthProvider'
@@ -643,6 +644,28 @@ describe('App authentication state', () => {
 })
 
 describe('App training sections', () => {
+  it('has no beta-blocking accessibility violations across the signed-in shell', async () => {
+    const user = userEvent.setup()
+    renderSignedInApp()
+
+    expect(await findBetaBlockingAccessibilityViolations()).toEqual([])
+
+    for (const [sectionName, sectionHeading] of sectionTransitions) {
+      await user.click(screen.getByRole('button', { name: sectionName }))
+
+      expect(
+        screen.getByRole('region', { name: sectionHeading })
+      ).toBeInTheDocument()
+      expect(await findBetaBlockingAccessibilityViolations()).toEqual([])
+
+      await user.click(
+        screen.getByRole('button', {
+          name: `Close ${sectionHeading} panel`
+        })
+      )
+    }
+  })
+
   it('opens incomplete runner setup on entry and lets the runner resume later', async () => {
     const user = userEvent.setup()
     trainingMock.profile = null

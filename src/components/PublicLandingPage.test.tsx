@@ -8,6 +8,7 @@ import {
 } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
+import { findBetaBlockingAccessibilityViolations } from "../test/accessibility";
 import PublicLandingPage from "./PublicLandingPage";
 
 vi.mock("../services/authService", () => ({
@@ -23,6 +24,20 @@ const renderPublicLandingPage = () =>
   );
 
 describe("PublicLandingPage", () => {
+  it("has no beta-blocking accessibility violations on the public page or login dialog", async () => {
+    const user = userEvent.setup();
+    renderPublicLandingPage();
+
+    expect(await findBetaBlockingAccessibilityViolations()).toEqual([]);
+
+    await user.click(screen.getByRole("button", { name: /^Log in$/ }));
+
+    expect(
+      screen.getByRole("dialog", { name: "Existing account login" }),
+    ).toBeInTheDocument();
+    expect(await findBetaBlockingAccessibilityViolations()).toEqual([]);
+  });
+
   it("announces a session recovery notice without opening the login dialog", () => {
     render(
       <PublicLandingPage
