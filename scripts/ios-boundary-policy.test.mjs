@@ -206,7 +206,12 @@ describe('iOS boundary policy', () => {
         'startup-error.html',
         Buffer.from('Marathoner could not start. Reload Marathoner'),
       ],
-      ['assets/app.js', Buffer.from('project="marathoner-d9bf9"')],
+      [
+        'assets/app.js',
+        Buffer.from(
+          'project="marathoner-d9bf9" Live run-command rehearsal',
+        ),
+      ],
     ])
 
     expect(
@@ -295,7 +300,7 @@ describe('iOS boundary policy', () => {
     ).toContain('iOS bundle contains marathoner-d9bf9')
   })
 
-  it('requires the rehearsal only in the beta iOS bundle', () => {
+  it('requires the rehearsal in both owner iOS bundles', () => {
     const files = new Map([
       [
         'index.html',
@@ -343,7 +348,18 @@ describe('iOS boundary policy', () => {
         copiedFiles: new Map(files),
         capacitorRuntimeConfig: runtimeConfig,
       }),
-    ).toContain('non-beta iOS bundle contains the live run-command rehearsal')
+    ).toEqual([])
+
+    files.set('assets/app.js', Buffer.from('project="marathoner-d9bf9"'))
+    expect(
+      findCopiedBundleViolations({
+        builtFiles: files,
+        copiedFiles: new Map(files),
+        capacitorRuntimeConfig: runtimeConfig,
+      }),
+    ).toContain(
+      'development iOS bundle is missing the live run-command rehearsal',
+    )
   })
 
   it('rejects beta configuration and a changed copied asset', () => {

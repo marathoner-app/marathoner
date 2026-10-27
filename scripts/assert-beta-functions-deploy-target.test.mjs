@@ -185,7 +185,7 @@ describe('Firebase Functions deployment configuration', () => {
         codebase: 'material-commands',
         runtime: 'nodejs22',
         predeploy: [
-          'node scripts/assert-beta-functions-deploy-target.mjs development',
+          'node scripts/assert-development-functions-deploy-target.mjs development',
           'npm run build:functions',
         ],
       },

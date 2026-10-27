@@ -16,20 +16,27 @@ approved and verified the bounded beta billing configuration on October 8,
 2026. This runbook does not itself authorize a deployment or deploy, delete,
 or invoke a Function. Keep those distinctions visible in every review.
 
+The separately guarded owner-only development path is documented in
+[Owner-development Functions activation and rollback](development-functions-deployment.md).
+It does not weaken this external-beta boundary or substitute debug attestation
+for the later App Attest evidence.
+
 ## Hard repository boundary
 
-Only `firebase.beta.json` carries an eligible Functions configuration. Its
-predeploy command requires all three of these facts at the same time:
+Only `firebase.beta.json` carries an eligible **beta** Functions
+configuration. Its predeploy command requires all three of these facts at the
+same time:
 
 1. the configuration declares the `beta` environment;
 2. Firebase CLI resolves the exact project `marathonerapp-beta`; and
 3. the operator supplies the non-secret intent phrase
    `DEPLOY-BETA-FUNCTIONS-AFTER-ISSUES-143-AND-204`.
 
-The default `firebase.json` invokes the same guard as `development`, so it
-remains deployment-blocked even if the beta project and intent phrase are
-supplied. Missing and unknown project IDs also fail before the Functions build.
-The Firestore development and beta guards are unchanged.
+The default `firebase.json` invokes a distinct development guard. It can target
+only `marathoner-d9bf9` with its own explicit owner-intent phrase and cannot use
+the beta project or beta phrase. Missing and unknown project IDs also fail
+before the Functions build. The Firestore development and beta guards are
+unchanged.
 
 The intent phrase is an acknowledgement, not a credential or an authorization
 by itself. Never put a Firebase token, service-account key, billing identifier,
@@ -38,8 +45,8 @@ or participant record in the command, repository, issue, or deployment log.
 
 ## Completed-run activation parameter
 
-The runtime omits completed-run stores by default. It installs them outside the
-emulator only when both of these conditions are true:
+The runtime omits completed-run stores by default. For this beta path it
+installs them outside the emulator only when both of these conditions are true:
 
 1. the built-in Google Cloud project parameter is exactly
    `marathonerapp-beta`; and
@@ -59,7 +66,8 @@ Edit the copied file so its one activation value is `true`. Do not add tokens,
 credentials, participant identifiers, or unrelated configuration. Confirm
 `git status --short` does not list the ignored file. If the file is missing,
 false, malformed, or loaded for another project, completed-run commands remain
-disabled. Never set the parameter in the development project.
+disabled. The development project uses its own ignored parameter file and
+guarded runbook; never copy the beta file across environments.
 
 Project-level App Check enforcement remains off during #205's observation
 window. The callable nevertheless requires a verified App Check context for
@@ -249,8 +257,8 @@ Authentication users, or application records.
 ## Completed-run smoke and negative proof
 
 Before allowing the Track-provider migration to merge, use the reviewed beta
-`ios-beta` Release build and one fictional approved account. Use its
-beta-only **Live run-command rehearsal** panel to:
+`ios-beta` Release build and one fictional approved account. Use that build's
+owner-only **Live run-command rehearsal** panel to:
 
 1. submit one unplanned `run.complete` command and retain only its redacted
    result status;

@@ -201,7 +201,7 @@ export function BetaRunCommandRehearsal({
       className="beta-run-command-rehearsal"
       aria-labelledby="beta-run-command-rehearsal-title"
     >
-      <p className="beta-run-command-eyebrow">Owner-only beta check</p>
+      <p className="beta-run-command-eyebrow">Owner-only live check</p>
       <h2 id="beta-run-command-rehearsal-title">Live run-command rehearsal</h2>
       <p>
         Creates a fixed fictional 5 km run, waits for the signed-in listener,
@@ -211,7 +211,7 @@ export function BetaRunCommandRehearsal({
 
       {stage === 'idle' && (
         <button type="button" onClick={() => void runRehearsal()}>
-          Run reversible beta check
+          Run reversible command check
         </button>
       )}
 
@@ -235,7 +235,7 @@ export function BetaRunCommandRehearsal({
             </>
           ) : (
             <button type="button" onClick={() => void runRehearsal()}>
-              Retry beta check
+              Retry command check
             </button>
           )}
         </div>
@@ -247,7 +247,7 @@ export function BetaRunCommandRehearsal({
         </button>
       )}
 
-      {pending && <span className="sr-only">Beta rehearsal in progress.</span>}
+      {pending && <span className="sr-only">Command rehearsal in progress.</span>}
     </section>
   )
 }
