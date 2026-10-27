@@ -75,9 +75,12 @@ emulator tests, but it is not the production application path yet:
 - Repositories read before writing but do not send a revision precondition, so a
   stale client can overwrite a newer value.
 - `firestoreTrainingLiveReadSource` provides owner-scoped `onSnapshot`
-  adapters for profile, plans, relevant workouts, runs, and shoes. It translates
-  Firestore freshness metadata into portable synchronization events, assembles
-  plan/workout changes as coherent batches, and owns teardown of every listener.
+  adapters for profile, the server-owned active-plan state, plans, relevant
+  workouts, runs, and shoes. It translates Firestore freshness metadata into
+  portable synchronization events, assembles plan/workout changes as coherent
+  batches, and owns teardown of every listener. The nullable active-plan state
+  participates in the same cache/server freshness and session-generation rules;
+  it exposes the authoritative plan revision but remains read-only.
   The provider exposes loading, current, stale, and recoverable error states,
   retries with a new session generation, and reconciles a direct-write result
   once the repository promise proves that Firestore accepted it remotely. The
@@ -306,6 +309,9 @@ the write boundary.
    disconnect/reconnect, teardown, and owner isolation, while the build rejects
    durable training snapshot storage. The read migration is complete; direct
    material writes still require command migration.
+   The same snapshot now carries the strictly validated server-owned active-plan
+   pointer and revision needed by a later adaptation-evidence normalizer; it does
+   not itself infer associations or run the evaluator.
 6. Implement the same contract in the selected iOS adapter and prove it on a
    physical iPhone before enabling the mobile completion flow.
 7. Apply the same contract and tests to Android when Android returns to scope.

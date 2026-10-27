@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
+import { Timestamp } from 'firebase/firestore'
 import {
   createDateOnly,
   createPlannedWorkoutId,
@@ -6,6 +7,7 @@ import {
   createUserId,
   createUtcDateTime,
   type PlannedWorkout,
+  type ActivePlanState,
   type TrainingPlan,
 } from '../../domain/training'
 import type { TrainingLiveReadEventBatch } from '../../training/trainingSynchronization'
@@ -20,6 +22,7 @@ import {
   type TrainingDocumentListenerSnapshot,
 } from './firestoreTrainingLiveReadSource'
 import {
+  activePlanStateDocumentPath,
   plansCollectionPath,
   profileDocumentPath,
   runsCollectionPath,
@@ -98,6 +101,14 @@ const createdAt = createUtcDateTime('2026-10-01T12:00:00Z')
 const updatedAt = createUtcDateTime('2026-10-02T12:00:00Z')
 const serverMetadata = { fromCache: false, hasPendingWrites: false }
 
+const activePlanState: ActivePlanState = {
+  userId: ownerId,
+  activePlanId: createTrainingPlanId('plan-1'),
+  activePlanRevision: 2,
+  approvedAt: createdAt,
+  updatedAt,
+}
+
 const planOne: TrainingPlan = {
   id: createTrainingPlanId('plan-1'),
   userId: ownerId,
@@ -140,6 +151,23 @@ function planDocument(plan: TrainingPlan) {
   return { id: plan.id, data: trainingPlanToDocument(plan) }
 }
 
+function activePlanStateDocument(
+  state: ActivePlanState,
+): NonNullable<TrainingDocumentListenerSnapshot['document']> {
+  return {
+    id: 'active',
+    data: {
+      schemaVersion: 1,
+      trainingSchemaVersion: 1,
+      userId: state.userId,
+      activePlanId: state.activePlanId,
+      activePlanRevision: state.activePlanRevision,
+      approvedAt: Timestamp.fromDate(new Date(state.approvedAt)),
+      updatedAt: Timestamp.fromDate(new Date(state.updatedAt)),
+    },
+  }
+}
+
 function createHarness() {
   const backend = new FakeListenerBackend()
   const batches: TrainingLiveReadEventBatch[] = []
@@ -160,6 +188,7 @@ describe('Firestore training live-read source', () => {
 
     expect(backend.documents.map(({ path }) => path)).toEqual([
       profileDocumentPath(ownerId),
+      activePlanStateDocumentPath(ownerId),
     ])
     expect(backend.collections.map(({ path }) => path)).toEqual([
       plansCollectionPath(ownerId),
@@ -170,6 +199,10 @@ describe('Firestore training live-read source', () => {
     backend.document(profileDocumentPath(ownerId)).onSnapshot({
       document: null,
       metadata: { fromCache: true, hasPendingWrites: false },
+    })
+    backend.document(activePlanStateDocumentPath(ownerId)).onSnapshot({
+      document: activePlanStateDocument(activePlanState),
+      metadata: serverMetadata,
     })
     backend.latestCollection(runsCollectionPath(ownerId)).onSnapshot(
       collectionSnapshot([], { fromCache: false, hasPendingWrites: true }),
@@ -194,6 +227,15 @@ describe('Firestore training live-read source', () => {
       [
         expect.objectContaining({
           type: 'source_snapshot',
+          source: 'activePlanState',
+          value: activePlanState,
+          origin: 'server',
+          hasPendingWrites: false,
+        }),
+      ],
+      [
+        expect.objectContaining({
+          type: 'source_snapshot',
           source: 'runs',
           value: [],
           origin: 'server',
@@ -207,6 +249,60 @@ describe('Firestore training live-read source', () => {
           value: [],
           origin: 'server',
           hasPendingWrites: false,
+        }),
+      ],
+    ])
+  })
+
+  it('publishes a missing active-plan state as null with its snapshot metadata', () => {
+    const { backend, batches } = createHarness()
+
+    backend.document(activePlanStateDocumentPath(ownerId)).onSnapshot({
+      document: null,
+      metadata: { fromCache: true, hasPendingWrites: false },
+    })
+
+    expect(batches).toEqual([
+      [
+        expect.objectContaining({
+          type: 'source_snapshot',
+          source: 'activePlanState',
+          value: null,
+          origin: 'cache',
+          hasPendingWrites: false,
+        }),
+      ],
+    ])
+  })
+
+  it.each([
+    ['record schema', { schemaVersion: 2 }],
+    ['training schema', { trainingSchemaVersion: 2 }],
+    ['owner', { userId: 'another-owner' }],
+    ['plan identifier', { activePlanId: '' }],
+    ['revision', { activePlanRevision: 0 }],
+    ['approval timestamp', { approvedAt: 'not-a-timestamp' }],
+    ['unknown field', { unexpected: true }],
+  ])('fails closed for an invalid active-plan %s', (_caseName, changes) => {
+    const { backend, batches } = createHarness()
+
+    backend.document(activePlanStateDocumentPath(ownerId)).onSnapshot({
+      document: {
+        id: 'active',
+        data: {
+          ...activePlanStateDocument(activePlanState).data,
+          ...changes,
+        },
+      },
+      metadata: serverMetadata,
+    })
+
+    expect(batches).toEqual([
+      [
+        expect.objectContaining({
+          type: 'source_error',
+          source: 'activePlanState',
+          recoverable: true,
         }),
       ],
     ])
@@ -359,6 +455,9 @@ describe('Firestore training live-read source', () => {
     const { backend, batches } = createHarness()
 
     backend
+      .document(activePlanStateDocumentPath(ownerId))
+      .onError(new Error('active state unavailable'))
+    backend
       .latestCollection(runsCollectionPath(ownerId))
       .onError(new Error('listener unavailable'))
     backend.document(profileDocumentPath(ownerId)).onSnapshot({
@@ -367,6 +466,14 @@ describe('Firestore training live-read source', () => {
     })
 
     expect(batches).toEqual([
+      [
+        expect.objectContaining({
+          type: 'source_error',
+          source: 'activePlanState',
+          message: 'active state unavailable',
+          recoverable: true,
+        }),
+      ],
       [
         expect.objectContaining({
           type: 'source_error',

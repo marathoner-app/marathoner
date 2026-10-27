@@ -67,6 +67,21 @@ export interface UserProfile extends EntityTimestamps {
 
 export type TrainingPlanStatus = "draft" | "active" | "completed" | "archived";
 
+/**
+ * The server-owned pointer to the currently approved plan revision.
+ *
+ * This record is read-only on clients. It deliberately lives beside, rather
+ * than inside, a TrainingPlan because plan activation and revision advancement
+ * are atomic material commands owned by the server.
+ */
+export interface ActivePlanState {
+  readonly userId: UserId;
+  readonly activePlanId: TrainingPlanId;
+  readonly activePlanRevision: number;
+  readonly approvedAt: UtcDateTime;
+  readonly updatedAt: UtcDateTime;
+}
+
 export interface TrainingPlan extends EntityTimestamps {
   readonly id: TrainingPlanId;
   readonly userId: UserId;

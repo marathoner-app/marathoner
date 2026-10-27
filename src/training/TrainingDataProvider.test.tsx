@@ -9,6 +9,7 @@ import {
   createDateOnly,
   createDurationSeconds,
   createIanaTimeZone,
+  createTrainingPlanId,
   createUserId,
   createUtcDateTime,
   metersToMiles,
@@ -80,6 +81,12 @@ class ControlledLiveReadSource implements TrainingLiveReadSource {
     };
     const events: TrainingLiveReadEvent[] = [
       { ...session, type: "source_snapshot", source: "profile", value: snapshot.profile },
+      {
+        ...session,
+        type: "source_snapshot",
+        source: "activePlanState",
+        value: snapshot.activePlanState,
+      },
       { ...session, type: "source_snapshot", source: "plans", value: snapshot.plans },
       { ...session, type: "source_snapshot", source: "workouts", value: snapshot.workouts },
       { ...session, type: "source_snapshot", source: "runs", value: snapshot.runs },
@@ -200,7 +207,15 @@ async function snapshotFromRepositories(
     )
   ).flat();
 
-  return { ownerId, profile, plans, workouts, runs, shoes };
+  return {
+    ownerId,
+    profile,
+    activePlanState: null,
+    plans,
+    workouts,
+    runs,
+    shoes,
+  };
 }
 
 async function waitForSource(index = sources.length - 1) {
@@ -280,6 +295,9 @@ function IntegrationProbe() {
       <p>Status: {training.status}</p>
       <p>Runs: {training.runs.length}</p>
       <p>Profile: {training.profile?.displayName ?? "none"}</p>
+      <p>
+        Active revision: {training.activePlanState?.activePlanRevision ?? "none"}
+      </p>
       <p>Workout: {workout?.status ?? "none"}</p>
       <p>Total: {Number(metersToMiles(analytics.totalDistance).toFixed(1))}</p>
       <p>Weekly: {Number(metersToMiles(analytics.weeklyDistance).toFixed(1))}</p>
@@ -383,6 +401,7 @@ describe("TrainingDataProvider", () => {
       source.emitSnapshot({
         ownerId: userId,
         profile: null,
+        activePlanState: null,
         plans: [],
         workouts: [],
         runs: [],
@@ -395,6 +414,27 @@ describe("TrainingDataProvider", () => {
     expect(plansList).not.toHaveBeenCalled();
     expect(runsList).not.toHaveBeenCalled();
     expect(shoesList).not.toHaveBeenCalled();
+  });
+
+  it("exposes the server-owned active-plan state without a repository read", async () => {
+    renderProvider();
+    const source = await waitForSource();
+    const snapshot = await snapshotFromRepositories(userId, repositories);
+
+    act(() =>
+      source.emitSnapshot({
+        ...snapshot,
+        activePlanState: {
+          userId,
+          activePlanId: createTrainingPlanId("approved-plan-1"),
+          activePlanRevision: 3,
+          approvedAt: timestamp,
+          updatedAt: timestamp,
+        },
+      }),
+    );
+
+    expect(await screen.findByText("Active revision: 3")).toBeInTheDocument();
   });
 
   it("renders live server changes without reloading", async () => {
