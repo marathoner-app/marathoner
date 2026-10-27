@@ -6,6 +6,7 @@ const forbiddenBuildText = [
   'beta-adaptation@0.1.0-draft',
   'Internal draft plan rehearsal',
   'Internal draft adaptation rehearsal',
+  'Internal live adaptation history',
   'Active only in this rehearsal',
   'Session choice recorded:',
   'internal-plan-rehearsal',

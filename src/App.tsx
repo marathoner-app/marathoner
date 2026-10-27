@@ -17,7 +17,11 @@ import {
   AccountDeletionReceipt,
 } from "./components/AccountDeletion";
 import type { AccountDeletionRequestAcceptedResult } from "./domain/materialCommands/contract";
-import { selectNextPlannedWorkout } from "./domain/training";
+import {
+  createUserId,
+  selectNextPlannedWorkout,
+  type UserId,
+} from "./domain/training";
 import NextWorkoutSummary from "./components/NextWorkoutSummary";
 import { isBetaRunCommandRehearsalMode } from "./components/betaRunCommandRehearsalMode";
 import { isInternalPlanProposalRehearsalMode } from "./components/internalPlanProposalRehearsalMode";
@@ -255,6 +259,7 @@ function App() {
       {!deletionReceipt && !logoutPending && auth.status === "signedIn" && (
         <TrainingDataProvider key={auth.user.uid} userId={auth.user.uid}>
           <AuthenticatedExperience
+            ownerId={createUserId(auth.user.uid)}
             activeSection={activeSection}
             activeSectionDetails={activeSectionDetails}
             reduceMotion={Boolean(reduceMotion)}
@@ -285,6 +290,7 @@ function App() {
 }
 
 type AuthenticatedExperienceProps = {
+  ownerId: UserId;
   activeSection: Section | null;
   activeSectionDetails: (typeof sections)[number] | undefined;
   reduceMotion: boolean;
@@ -297,6 +303,7 @@ type AuthenticatedExperienceProps = {
 };
 
 function AuthenticatedExperience({
+  ownerId,
   activeSection,
   activeSectionDetails,
   reduceMotion,
@@ -432,7 +439,12 @@ function AuthenticatedExperience({
             >
               <InternalPlanProposalRehearsal
                 key={training.profile?.updatedAt ?? "no-profile"}
+                ownerId={ownerId}
                 profile={training.profile}
+                activePlanState={training.activePlanState}
+                plans={training.plans}
+                workouts={training.workouts}
+                runs={training.runs}
               />
             </Suspense>
           )}
