@@ -14,6 +14,7 @@ import {
   resolveAccountDeletionRequest,
   submitAccountDeletionRequest,
 } from '../services/accountDeletionService'
+import SupportDiagnostics from './SupportDiagnostics'
 
 type RequestPhase = 'idle' | 'reauthenticating' | 'submitting' | 'resolving'
 
@@ -267,9 +268,9 @@ export function AccountDeletionDialog({
       >
         <div className="account-settings-header">
           <div>
-            <p className="account-settings-eyebrow">Account settings</p>
+            <p className="account-settings-eyebrow">Marathoner</p>
             <h2 id="account-settings-heading" ref={headingRef} tabIndex={-1}>
-              Delete your Marathoner account
+              Account settings
             </h2>
           </div>
           <button
@@ -283,73 +284,81 @@ export function AccountDeletionDialog({
           </button>
         </div>
 
-        <p>
-          This request permanently deletes your account, runner profile,
-          training plans, workouts, runs, shoes, and beta access.
-        </p>
-        <ul className="account-deletion-facts">
-          <li>Access stops as soon as the request is accepted.</li>
-          <li>Deletion may take up to seven calendar days to finish.</li>
-          <li>This action cannot be undone.</li>
-        </ul>
-        <p>
-          If you need private help, email{' '}
-          <a href={`mailto:${supportEmail}`}>{supportEmail}</a>. After acceptance,
-          include the non-identifying request ID shown by Marathoner.
-        </p>
+        <SupportDiagnostics />
 
-        <form onSubmit={(event) => void submit(event)}>
-          <label htmlFor="account-deletion-password">
-            Re-enter the password for {email ?? 'this account'}
-          </label>
-          <input
-            id="account-deletion-password"
-            name="password"
-            type="password"
-            autoComplete="current-password"
-            value={password}
-            disabled={pending || failure?.kind === 'outcome_unknown'}
-            onChange={(event) => setPassword(event.target.value)}
-          />
+        <section
+          className="account-deletion-section"
+          aria-labelledby="account-deletion-heading"
+        >
+          <h3 id="account-deletion-heading">Delete your Marathoner account</h3>
+          <p>
+            This request permanently deletes your account, runner profile,
+            training plans, workouts, runs, shoes, and beta access.
+          </p>
+          <ul className="account-deletion-facts">
+            <li>Access stops as soon as the request is accepted.</li>
+            <li>Deletion may take up to seven calendar days to finish.</li>
+            <li>This action cannot be undone.</li>
+          </ul>
+          <p>
+            If you need private help, email{' '}
+            <a href={`mailto:${supportEmail}`}>{supportEmail}</a>. After acceptance,
+            include the non-identifying request ID shown by Marathoner.
+          </p>
 
-          {statusMessage && (
-            <p className="account-deletion-status" role="status">
-              {statusMessage}
-            </p>
-          )}
-          {failure && (
-            <p
-              ref={failureRef}
-              className="account-deletion-error"
-              role="alert"
-              tabIndex={-1}
-            >
-              {failure.message}
-            </p>
-          )}
+          <form onSubmit={(event) => void submit(event)}>
+            <label htmlFor="account-deletion-password">
+              Re-enter the password for {email ?? 'this account'}
+            </label>
+            <input
+              id="account-deletion-password"
+              name="password"
+              type="password"
+              autoComplete="current-password"
+              value={password}
+              disabled={pending || failure?.kind === 'outcome_unknown'}
+              onChange={(event) => setPassword(event.target.value)}
+            />
 
-          {failure?.kind === 'outcome_unknown' ? (
-            <button
-              type="button"
-              className="account-deletion-resolve"
-              disabled={pending || commandId === null}
-              onClick={() => {
-                if (commandId) void resolveOriginalCommand(commandId)
-              }}
-            >
-              Check the original request
-            </button>
-          ) : (
-            <button
-              type="submit"
-              className="account-deletion-submit"
-              disabled={pending || password.length === 0}
-              aria-label="Permanently delete my Marathoner account"
-            >
-              Permanently delete my Marathoner account
-            </button>
-          )}
-        </form>
+            {statusMessage && (
+              <p className="account-deletion-status" role="status">
+                {statusMessage}
+              </p>
+            )}
+            {failure && (
+              <p
+                ref={failureRef}
+                className="account-deletion-error"
+                role="alert"
+                tabIndex={-1}
+              >
+                {failure.message}
+              </p>
+            )}
+
+            {failure?.kind === 'outcome_unknown' ? (
+              <button
+                type="button"
+                className="account-deletion-resolve"
+                disabled={pending || commandId === null}
+                onClick={() => {
+                  if (commandId) void resolveOriginalCommand(commandId)
+                }}
+              >
+                Check the original request
+              </button>
+            ) : (
+              <button
+                type="submit"
+                className="account-deletion-submit"
+                disabled={pending || password.length === 0}
+                aria-label="Permanently delete my Marathoner account"
+              >
+                Permanently delete my Marathoner account
+              </button>
+            )}
+          </form>
+        </section>
       </section>
     </div>
   )

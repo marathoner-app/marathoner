@@ -69,9 +69,10 @@ describe('AccountDeletionDialog', () => {
   it('states the full irreversible scope and focuses the dialog heading', () => {
     renderDialog()
 
+    expect(screen.getByRole('heading', { name: 'Account settings' })).toHaveFocus()
     expect(
       screen.getByRole('heading', { name: 'Delete your Marathoner account' }),
-    ).toHaveFocus()
+    ).toBeInTheDocument()
     expect(
       screen.getByText(
         /account, runner profile, training plans, workouts, runs, shoes, and beta access/i,

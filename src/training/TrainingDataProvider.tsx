@@ -18,6 +18,11 @@ import {
   type UserId,
   type UserProfile,
 } from "../domain/training";
+import { recordSlowRunDiagnostic } from "../diagnostics/slowRunDiagnostics";
+import {
+  measureOperation,
+  runCreationTimingNames,
+} from "../persistence/operationTiming";
 import type {
   CreateCompletedRunInput,
   CreateShoeInput,
@@ -288,77 +293,97 @@ export default function TrainingDataProvider({
   );
 
   const createRun = useCallback(
-    async (input: CreateCompletedRunInput) => {
-      const repositories = requireRepositories();
-      const associatedWorkout =
-        input.plannedWorkoutPlanId === undefined ||
-        input.plannedWorkoutId === undefined
-          ? null
-          : synchronizedSnapshot?.workouts.find(
-              (workout) =>
-                workout.planId === input.plannedWorkoutPlanId &&
-                workout.id === input.plannedWorkoutId,
-            ) ?? null;
+    (input: CreateCompletedRunInput) =>
+      measureOperation(
+        runCreationTimingNames.submissionTotal,
+        async () => {
+          const repositories = requireRepositories();
+          const associatedWorkout =
+            input.plannedWorkoutPlanId === undefined ||
+            input.plannedWorkoutId === undefined
+              ? null
+              : synchronizedSnapshot?.workouts.find(
+                  (workout) =>
+                    workout.planId === input.plannedWorkoutPlanId &&
+                    workout.id === input.plannedWorkoutId,
+                ) ?? null;
 
-      if (associatedWorkout?.kind === "rest") {
-        throw new Error("A completed run cannot be attached to a rest day.");
-      }
+          if (associatedWorkout?.kind === "rest") {
+            throw new Error("A completed run cannot be attached to a rest day.");
+          }
 
-      if (
-        input.plannedWorkoutPlanId !== undefined &&
-        input.plannedWorkoutId !== undefined &&
-        associatedWorkout === null
-      ) {
-        throw new Error("That planned workout is no longer available.");
-      }
+          if (
+            input.plannedWorkoutPlanId !== undefined &&
+            input.plannedWorkoutId !== undefined &&
+            associatedWorkout === null
+          ) {
+            throw new Error("That planned workout is no longer available.");
+          }
 
-      if (associatedWorkout?.status === "completed") {
-        throw new Error("That planned workout already has a completion record.");
-      }
+          if (associatedWorkout?.status === "completed") {
+            throw new Error(
+              "That planned workout already has a completion record.",
+            );
+          }
 
-      const run = await repositories.runs.create(input);
-      let completedWorkout: PlannedWorkout | null = null;
+          const run = await repositories.runs.create(input);
+          let completedWorkout: PlannedWorkout | null = null;
 
-      if (
-        run.plannedWorkoutPlanId !== undefined &&
-        run.plannedWorkoutId !== undefined
-      ) {
-        try {
-          completedWorkout = await repositories.workouts.update(
-            run.plannedWorkoutPlanId,
-            run.plannedWorkoutId,
-            { status: "completed" },
-          );
-        } catch (error) {
-          await repositories.runs.delete(run.id);
-          throw error;
-        }
-      }
+          if (
+            run.plannedWorkoutPlanId !== undefined &&
+            run.plannedWorkoutId !== undefined
+          ) {
+            const planId = run.plannedWorkoutPlanId;
+            const workoutId = run.plannedWorkoutId;
+            try {
+              completedWorkout = await measureOperation(
+                runCreationTimingNames.plannedWorkoutAcknowledgement,
+                () =>
+                  repositories.workouts.update(
+                    planId,
+                    workoutId,
+                    { status: "completed" },
+                  ),
+              );
+            } catch (error) {
+              await repositories.runs.delete(run.id);
+              throw error;
+            }
+          }
 
-      acknowledgeServerWrites((kernel) => [
-        {
-          source: "runs",
-          value: replaceById(kernel.sources.runs.value, run).sort((left, right) =>
-            right.startedAt.localeCompare(left.startedAt),
-          ),
+          acknowledgeServerWrites((kernel) => [
+            {
+              source: "runs",
+              value: replaceById(kernel.sources.runs.value, run).sort(
+                (left, right) =>
+                  right.startedAt.localeCompare(left.startedAt),
+              ),
+            },
+            ...(completedWorkout === null
+              ? []
+              : [
+                  {
+                    source: "workouts" as const,
+                    value: replaceById(
+                      kernel.sources.workouts.value,
+                      completedWorkout,
+                    ).sort((left, right) =>
+                      left.scheduledDate.localeCompare(right.scheduledDate),
+                    ),
+                  },
+                ]),
+          ]);
+
+          return run;
         },
-        ...(completedWorkout === null
-          ? []
-          : [
-              {
-                source: "workouts" as const,
-                value: replaceById(
-                  kernel.sources.workouts.value,
-                  completedWorkout,
-                ).sort((left, right) =>
-                  left.scheduledDate.localeCompare(right.scheduledDate),
-                ),
-              },
-            ]),
-      ]);
-
-      return run;
-    },
+        (submission) =>
+          recordSlowRunDiagnostic({
+            submission,
+            plannedWorkout:
+              input.plannedWorkoutPlanId !== undefined &&
+              input.plannedWorkoutId !== undefined,
+          }),
+      ),
     [
       acknowledgeServerWrites,
       requireRepositories,

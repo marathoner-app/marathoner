@@ -57,9 +57,52 @@
 }
 
 .account-settings-dialog h2,
+.account-settings-dialog h3,
 .account-deletion-receipt h1 {
   margin: 0;
   line-height: 1.2;
+}
+
+.account-support-diagnostics {
+  margin-top: 1.5rem;
+  padding: 1rem;
+  border-radius: 0.75rem;
+  background: #eff6ff;
+}
+
+.account-support-diagnostics p {
+  margin: 0.75rem 0 0;
+}
+
+.account-support-diagnostics button {
+  min-height: 2.75rem;
+  margin-top: 0.9rem;
+  padding: 0.6rem 0.85rem;
+}
+
+.account-support-diagnostics label {
+  display: grid;
+  gap: 0.4rem;
+  margin-top: 0.75rem;
+}
+
+.account-support-diagnostics textarea {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 9rem;
+  resize: vertical;
+  font: 0.8rem/1.4 ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.account-support-diagnostics .account-support-diagnostics-note {
+  color: #475569;
+  font-size: 0.9rem;
+}
+
+.account-deletion-section {
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid #cbd5e1;
 }
 
 .account-settings-dialog h2:focus,
@@ -92,8 +135,6 @@
   display: grid;
   gap: 0.75rem;
   margin-top: 1.25rem;
-  padding-top: 1.25rem;
-  border-top: 1px solid #cbd5e1;
 }
 
 .account-settings-dialog label {
