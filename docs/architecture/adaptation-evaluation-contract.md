@@ -80,20 +80,57 @@ iOS, and Functions builds exclude it and scan for leakage. It remains
 disconnected from live runs, recommendations, persistence, guidance, and plan
 mutation.
 
-## Trusted live-evidence prerequisites
+## Saved-history normalization
 
 The signed-in synchronization snapshot now reads the server-owned active-plan
 state, including its authoritative plan ID and positive revision. That closes
 the revision-read prerequisite without adding a client-writable revision to a
 plan or treating plan status alone as authority.
 
-Live adaptation evaluation is still intentionally disconnected. A later
-normalizer must verify that the active state points to the matching active plan,
-resolve completed-run and planned-workout associations, select the bounded
-history window, derive objective counts and safety completeness, and reject
-ambiguous or incomplete evidence. Week kinds, progression state, reschedule
-candidates, and methodology thresholds must remain explicit trusted inputs;
-they cannot be inferred merely because a revision is now readable.
+[`adaptationHistoryNormalization.ts`](../../src/domain/training/adaptationHistoryNormalization.ts)
+is the pure boundary between that saved snapshot and a future evaluation
+caller. Given an explicit owner, active state, plans, workouts, runs,
+seven-calendar-day week, evaluation date, trigger workout, and recent-run
+window size, it verifies:
+
+- owner, active-plan, revision, status, and plan-date agreement;
+- complete plan-and-workout associations for relevant completed runs;
+- unique workouts and at most one completion for each planned workout;
+- agreement between workout status and completed-run presence;
+- a completed or skipped non-rest trigger inside the evaluated week; and
+- that completed evidence is not from the future.
+
+Only then does it derive objective week counts, the trigger kind, days until
+the race, days since the most recent completed planned run, bounded perceived
+efforts, and conservative safety completeness. Recent completions are ordered
+by actual run start time, while the last-completion calendar distance uses each
+run's recorded IANA time zone. Unplanned runs and runs tied coherently to an
+older plan do not contaminate active-plan evidence. Partial, cross-plan,
+cross-owner, duplicate, missing, and contradictory records return stable typed
+issues instead of guessed evidence.
+
+A `ready` result means only that saved history is coherent enough to trust
+these objective facts. It is not permission to evaluate or recommend a plan
+change. The caller must still supply and attest the exact base-plan and
+adaptation artifact versions, current core week, current and next week kinds,
+progression state, and a prevalidated reschedule candidate. Methodology
+thresholds remain injected rules. The normalizer does not load a draft packet,
+invoke the evaluator, persist anything, mutate a plan, or expose participant
+guidance.
+
+## Trusted live-evidence prerequisites
+
+Live adaptation evaluation remains intentionally disconnected. A future
+trusted caller must assemble the normalizer's objective evidence with the
+explicit trusted facts above, confirm completeness, and load an approved
+non-draft rule artifact before invoking the evaluator. Revision readability and
+a history-ready result do not independently satisfy those gates.
+
+The first product integration should remain owner-only and read-only: expose
+the normalized facts and refusal issues for internal daily-use inspection
+without displaying a participant recommendation or offering a plan-change
+action. That rehearsal can validate the data path before the professional
+review and external-use gates are funded.
 
 ## Activation gates
 

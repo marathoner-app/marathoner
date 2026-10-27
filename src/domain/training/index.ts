@@ -1,4 +1,5 @@
 export * from "./adaptationEvaluation";
+export * from "./adaptationHistoryNormalization";
 export * from "./adaptationPlanProjection";
 export * from "./calculations";
 export * from "./dates";
