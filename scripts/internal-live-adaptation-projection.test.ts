@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { projectInternalLiveAdaptation } from "../src/components/internalLiveAdaptationProjection";
+import {
+  previewWorkoutsForInternalLiveAdaptation,
+  projectInternalLiveAdaptation,
+} from "../src/components/internalLiveAdaptationProjection";
 import {
   ADAPTATION_HISTORY_EVIDENCE_SCHEMA_VERSION,
   createDateOnly,
@@ -62,6 +65,22 @@ const workouts: readonly PlannedWorkout[] = [
   runWorkout("week-2-tempo", "2026-11-06", 6_500, "tempo"),
   runWorkout("week-2-long", "2026-11-08", 9_000, "long"),
 ];
+const restWorkout: PlannedWorkout = {
+  id: createPlannedWorkoutId("week-2-rest"),
+  userId: ownerId,
+  planId,
+  scheduledDate: createDateOnly("2026-11-03"),
+  phase: "marathon_training",
+  status: "planned",
+  kind: "rest",
+  createdAt: timestamp,
+  updatedAt: timestamp,
+};
+const otherPlanWorkout: PlannedWorkout = {
+  ...workouts[0],
+  planId: createTrainingPlanId("other-plan"),
+  targetDistance: createDistanceMeters(12_000),
+};
 
 const evidence: AdaptationHistoryEvidenceV1 = {
   schemaVersion: ADAPTATION_HISTORY_EVIDENCE_SCHEMA_VERSION,
@@ -204,6 +223,88 @@ describe("projectInternalLiveAdaptation", () => {
     ).toMatchObject({
       kind: "not_ready",
       code: "reschedule_candidate_mismatch",
+    });
+  });
+});
+
+describe("previewWorkoutsForInternalLiveAdaptation", () => {
+  it("reconciles a complete projection into a view-only calendar snapshot", () => {
+    const projected = projectInternalLiveAdaptation({
+      evidence,
+      activePlan,
+      workouts,
+      action: "hold_progression",
+      rescheduleCandidate: noCandidate,
+    });
+    expect(projected.kind).toBe("ready");
+    if (projected.kind !== "ready") return;
+
+    const preview = previewWorkoutsForInternalLiveAdaptation({
+      activePlan,
+      workouts: [...workouts, restWorkout, otherPlanWorkout],
+      projection: projected.projection,
+    });
+
+    expect(preview.kind).toBe("ready");
+    if (preview.kind !== "ready") return;
+    expect(preview.initialDate).toBe("2026-11-02");
+    expect(
+      preview.workouts.find(({ id }) => id === "week-2-easy"),
+    ).toEqual({
+      ...workouts[4],
+      targetDistance: createDistanceMeters(4_000),
+      targetDuration: undefined,
+    });
+    expect(preview.workouts.at(-2)).toBe(restWorkout);
+    expect(preview.workouts.at(-1)).toBe(otherPlanWorkout);
+    expect(
+      workouts.find(({ id }) => id === "week-2-easy"),
+    ).toHaveProperty("targetDistance", 4_500);
+  });
+
+  it("refuses missing, duplicate, and incompatible synchronized mappings", () => {
+    const projected = projectInternalLiveAdaptation({
+      evidence,
+      activePlan,
+      workouts,
+      action: "hold_progression",
+      rescheduleCandidate: noCandidate,
+    });
+    expect(projected.kind).toBe("ready");
+    if (projected.kind !== "ready") return;
+
+    expect(
+      previewWorkoutsForInternalLiveAdaptation({
+        activePlan,
+        workouts: workouts.slice(0, -1),
+        projection: projected.projection,
+      }),
+    ).toMatchObject({ kind: "not_ready", code: "preview_workout_missing" });
+
+    expect(
+      previewWorkoutsForInternalLiveAdaptation({
+        activePlan,
+        workouts: [...workouts, workouts[0]],
+        projection: projected.projection,
+      }),
+    ).toMatchObject({
+      kind: "not_ready",
+      code: "preview_duplicate_live_workout",
+    });
+
+    expect(
+      previewWorkoutsForInternalLiveAdaptation({
+        activePlan,
+        workouts: workouts.map((workout) =>
+          workout.id === "week-2-easy" && workout.kind !== "rest"
+            ? { ...workout, phase: "race_preparation" as const }
+            : workout,
+        ),
+        projection: projected.projection,
+      }),
+    ).toMatchObject({
+      kind: "not_ready",
+      code: "preview_workout_mismatch",
     });
   });
 });

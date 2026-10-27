@@ -1,6 +1,6 @@
 import draftFixturesText from "../docs/methodology/artifacts/beta-adaptation/0.1.0-draft/fixtures.json?raw";
 import draftRulesText from "../docs/methodology/artifacts/beta-adaptation/0.1.0-draft/beta-adaptation.json?raw";
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
 import InternalLiveAdaptationRehearsal from "../src/components/InternalLiveAdaptationRehearsal";
@@ -178,6 +178,7 @@ describe("InternalLiveAdaptationRehearsal", () => {
         packet={packet}
         activePlan={activePlan}
         workouts={workouts}
+        distanceUnit="mile"
       />,
     );
 
@@ -217,6 +218,27 @@ describe("InternalLiveAdaptationRehearsal", () => {
       screen.getByRole("heading", { name: "Draft plan projection" }),
     ).toBeVisible();
     expect(screen.getByText("Projected revision")).toBeVisible();
+    const calendarPreview = screen.getByRole("region", {
+      name: "Session-only projected plan",
+    });
+    expect(calendarPreview).toBeVisible();
+    expect(
+      within(calendarPreview).getByRole("heading", { name: "Week 2 of 25" }),
+    ).toBeVisible();
+    expect(within(calendarPreview).getAllByText("2.5 mi").length).toBeGreaterThan(0);
+
+    await user.click(
+      screen.getByRole("button", { name: "Review the choice again" }),
+    );
+    expect(
+      screen.queryByRole("region", { name: "Session-only projected plan" }),
+    ).not.toBeInTheDocument();
+    await user.click(
+      screen.getByRole("button", { name: "Apply in rehearsal" }),
+    );
+    expect(
+      screen.getByRole("region", { name: "Session-only projected plan" }),
+    ).toBeVisible();
 
     await user.selectOptions(
       screen.getByLabelText("Current week kind"),
@@ -241,6 +263,7 @@ describe("InternalLiveAdaptationRehearsal", () => {
         packet={packet}
         activePlan={activePlan}
         workouts={workouts}
+        distanceUnit="mile"
       />,
     );
 
@@ -267,6 +290,7 @@ describe("InternalLiveAdaptationRehearsal", () => {
         packet={packet}
         activePlan={activePlan}
         workouts={workouts}
+        distanceUnit="mile"
       />,
     );
 
@@ -291,6 +315,7 @@ describe("InternalLiveAdaptationRehearsal", () => {
         packet={packet}
         activePlan={activePlan}
         workouts={workouts}
+        distanceUnit="mile"
       />,
     );
 
@@ -310,6 +335,9 @@ describe("InternalLiveAdaptationRehearsal", () => {
     expect(
       screen.queryByRole("heading", { name: "Draft plan projection" }),
     ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("region", { name: "Session-only projected plan" }),
+    ).not.toBeInTheDocument();
   });
 
   it("shows the exact session-only reschedule projection", async () => {
@@ -321,6 +349,7 @@ describe("InternalLiveAdaptationRehearsal", () => {
         packet={packet}
         activePlan={activePlan}
         workouts={workouts}
+        distanceUnit="mile"
       />,
     );
 
@@ -337,6 +366,11 @@ describe("InternalLiveAdaptationRehearsal", () => {
     ).toBeVisible();
     expect(screen.getByText("Before: 2026-10-26, Easy run, 4 km")).toBeVisible();
     expect(screen.getByText("After: 2026-10-27, Easy run, 4 km")).toBeVisible();
+    const calendarPreview = screen.getByRole("region", {
+      name: "Session-only projected plan",
+    });
+    expect(within(calendarPreview).getByText("Tue, Oct 27")).toBeVisible();
+    expect(within(calendarPreview).getByText("Skipped")).toBeVisible();
   });
 
   it("assembles only normalized history and explicit trusted facts", () => {
