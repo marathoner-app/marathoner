@@ -18,6 +18,10 @@ import {
   type UserId,
   type UserProfile,
 } from "../domain/training";
+import type {
+  PlannedWorkoutCommandReferenceV1,
+  RunCompletionReceiptResult,
+} from "../domain/materialCommands/contract";
 import { recordSlowRunDiagnostic } from "../diagnostics/slowRunDiagnostics";
 import {
   measureOperation,
@@ -30,6 +34,16 @@ import type {
   TrainingRepositories,
   UpdateCompletedRunInput,
 } from "../persistence/trainingRepositories";
+import {
+  completedRunCommandsEnabled as defaultCompletedRunCommandsEnabled,
+} from "../services/completedRunCommandActivation";
+import type {
+  CompletedRunCommandClient,
+  RunCompletionClientResult,
+  RunCompletionSubmission,
+  RunDeletionClientResult,
+  RunDeletionSubmission,
+} from "../services/completedRunCommandClient";
 import {
   TrainingDataContext,
   type TrainingDataContextValue,
@@ -53,11 +67,23 @@ export type TrainingLiveReadSourceFactory = (
   sessionGeneration: number,
 ) => Promise<TrainingLiveReadSource>;
 
+export type CompletedRunCommandClientFactory = () =>
+  Promise<CompletedRunCommandClient>;
+
+export type CompletedRunCommandOperation = "complete" | "delete";
+
+export type CompletedRunCommandIdFactory = (
+  operation: CompletedRunCommandOperation,
+) => string;
+
 type TrainingDataProviderProps = {
   readonly userId: string;
   readonly children: ReactNode;
   readonly repositoryFactory?: TrainingRepositoryFactory;
   readonly liveReadSourceFactory?: TrainingLiveReadSourceFactory;
+  readonly completedRunCommandsEnabled?: boolean;
+  readonly completedRunCommandClientFactory?: CompletedRunCommandClientFactory;
+  readonly createCompletedRunCommandId?: CompletedRunCommandIdFactory;
 };
 
 const defaultRepositoryFactory: TrainingRepositoryFactory = async (userId) => {
@@ -75,6 +101,27 @@ const defaultLiveReadSourceFactory: TrainingLiveReadSourceFactory = async (
     "../persistence/firestore"
   );
   return createFirestoreTrainingLiveReadSource(userId, sessionGeneration);
+};
+
+const defaultCompletedRunCommandClientFactory: CompletedRunCommandClientFactory =
+  async () => {
+    const { firebaseCompletedRunCommandClient } = await import(
+      "../services/firebaseCompletedRunCommandClient"
+    );
+    return firebaseCompletedRunCommandClient;
+  };
+
+const defaultCompletedRunCommandId: CompletedRunCommandIdFactory = (
+  operation,
+) => `run-${operation}-${globalThis.crypto.randomUUID()}`;
+
+type PendingRunCompletion = {
+  readonly input: CreateCompletedRunInput;
+  readonly submission: RunCompletionSubmission;
+};
+
+type PendingRunDeletion = {
+  readonly submission: RunDeletionSubmission;
 };
 
 function messageFor(error: unknown): string {
@@ -97,6 +144,66 @@ function errorFor(state: TrainingSynchronizationState): string | null {
   return null;
 }
 
+function plannedWorkoutReference(
+  planId: CreateCompletedRunInput["plannedWorkoutPlanId"],
+  workoutId: CreateCompletedRunInput["plannedWorkoutId"],
+  snapshot: SynchronizedTrainingSnapshot | null,
+  operation: CompletedRunCommandOperation,
+): PlannedWorkoutCommandReferenceV1 | null {
+  if (planId === undefined && workoutId === undefined) return null;
+  if (planId === undefined || workoutId === undefined) {
+    throw new Error("Select a complete planned-workout association.");
+  }
+
+  const workout = snapshot?.workouts.find(
+    (candidate) => candidate.planId === planId && candidate.id === workoutId,
+  );
+
+  if (workout === undefined) {
+    throw new Error("That planned workout is no longer available.");
+  }
+  if (workout.kind === "rest") {
+    throw new Error("A completed run cannot be attached to a rest day.");
+  }
+  if (operation === "complete" && workout.status === "completed") {
+    throw new Error("That planned workout already has a completion record.");
+  }
+
+  return {
+    planId: workout.planId,
+    workoutId: workout.id,
+    expectedUpdatedAt: workout.updatedAt,
+  };
+}
+
+function completedRunFromReceipt(
+  userId: UserId,
+  input: CreateCompletedRunInput,
+  receipt: RunCompletionReceiptResult,
+): CompletedRun {
+  return {
+    ...input,
+    id: receipt.completedRunId,
+    userId,
+    createdAt: receipt.completedRunUpdatedAt,
+    updatedAt: receipt.completedRunUpdatedAt,
+  };
+}
+
+function completionFailure(result: RunCompletionClientResult): Error {
+  if (result.status === "run_completed") {
+    return new Error("The completed run receipt was handled incorrectly.");
+  }
+  return new Error(result.message);
+}
+
+function deletionFailure(result: RunDeletionClientResult): Error {
+  if (result.status === "run_deleted") {
+    return new Error("The run deletion receipt was handled incorrectly.");
+  }
+  return new Error(result.message);
+}
+
 type AcknowledgedSource =
   | { readonly source: "profile"; readonly value: UserProfile | null }
   | { readonly source: "workouts"; readonly value: readonly PlannedWorkout[] }
@@ -116,9 +223,16 @@ export default function TrainingDataProvider({
   children,
   repositoryFactory = defaultRepositoryFactory,
   liveReadSourceFactory = defaultLiveReadSourceFactory,
+  completedRunCommandsEnabled = defaultCompletedRunCommandsEnabled,
+  completedRunCommandClientFactory = defaultCompletedRunCommandClientFactory,
+  createCompletedRunCommandId = defaultCompletedRunCommandId,
 }: TrainingDataProviderProps) {
   const userId = useMemo(() => createUserId(rawUserId), [rawUserId]);
   const repositoryRef = useRef<TrainingRepositories | null>(null);
+  const completedRunCommandClientRef =
+    useRef<CompletedRunCommandClient | null>(null);
+  const pendingRunCompletionRef = useRef<PendingRunCompletion | null>(null);
+  const pendingRunDeletionRef = useRef<PendingRunDeletion | null>(null);
   const unsubscribeRef = useRef<(() => void) | null>(null);
   const sessionGenerationRef = useRef(0);
   const [synchronization, setSynchronization] = useState(() =>
@@ -134,6 +248,9 @@ export default function TrainingDataProvider({
     unsubscribeRef.current?.();
     unsubscribeRef.current = null;
     repositoryRef.current = null;
+    completedRunCommandClientRef.current = null;
+    pendingRunCompletionRef.current = null;
+    pendingRunDeletionRef.current = null;
     setSynchronization(
       createTrainingSynchronizationKernel({
         ownerId: userId,
@@ -142,14 +259,18 @@ export default function TrainingDataProvider({
     );
 
     try {
-      const [repositories, source] = await Promise.all([
+      const [repositories, source, completedRunCommandClient] = await Promise.all([
         repositoryFactory(userId),
         liveReadSourceFactory(userId, generation),
+        completedRunCommandsEnabled
+          ? completedRunCommandClientFactory()
+          : Promise.resolve(null),
       ]);
 
       if (generation !== sessionGenerationRef.current) return;
 
       repositoryRef.current = repositories;
+      completedRunCommandClientRef.current = completedRunCommandClient;
       const unsubscribe = source.subscribe((events) => {
         if (generation !== sessionGenerationRef.current) return;
 
@@ -168,6 +289,7 @@ export default function TrainingDataProvider({
       if (generation !== sessionGenerationRef.current) return;
 
       repositoryRef.current = null;
+      completedRunCommandClientRef.current = null;
       setSynchronization((current) =>
         reduceTrainingSynchronization(current, {
           type: "source_error",
@@ -179,7 +301,13 @@ export default function TrainingDataProvider({
         }),
       );
     }
-  }, [liveReadSourceFactory, repositoryFactory, userId]);
+  }, [
+    completedRunCommandClientFactory,
+    completedRunCommandsEnabled,
+    liveReadSourceFactory,
+    repositoryFactory,
+    userId,
+  ]);
 
   useEffect(() => {
     void startSynchronization();
@@ -189,6 +317,9 @@ export default function TrainingDataProvider({
       unsubscribeRef.current?.();
       unsubscribeRef.current = null;
       repositoryRef.current = null;
+      completedRunCommandClientRef.current = null;
+      pendingRunCompletionRef.current = null;
+      pendingRunDeletionRef.current = null;
     };
   }, [startSynchronization]);
 
@@ -251,6 +382,18 @@ export default function TrainingDataProvider({
     return repositoryRef.current;
   }, [synchronization.state.status]);
 
+  const requireCompletedRunCommandClient = useCallback(() => {
+    if (synchronization.state.status !== "current") {
+      throw new Error("Training data is not current. Reconnect and try again.");
+    }
+
+    if (completedRunCommandClientRef.current === null) {
+      throw new Error("Run commands are still loading. Please try again.");
+    }
+
+    return completedRunCommandClientRef.current;
+  }, [synchronization.state.status]);
+
   const createShoe = useCallback(
     async (input: CreateShoeInput) => {
       const shoe = await requireRepositories().shoes.create(input);
@@ -297,6 +440,62 @@ export default function TrainingDataProvider({
       measureOperation(
         runCreationTimingNames.submissionTotal,
         async () => {
+          if (completedRunCommandsEnabled) {
+            const commandClient = requireCompletedRunCommandClient();
+            const pending = pendingRunCompletionRef.current;
+
+            if (pending !== null) {
+              const resolved = await commandClient.resolveCompletion(
+                pending.submission.commandId,
+              );
+              if (resolved.status === "run_completed") {
+                pendingRunCompletionRef.current = null;
+                return completedRunFromReceipt(userId, pending.input, resolved);
+              }
+              if (resolved.status !== "outcome_unknown") {
+                pendingRunCompletionRef.current = null;
+              }
+              throw completionFailure(resolved);
+            }
+
+            const plannedWorkout = plannedWorkoutReference(
+              input.plannedWorkoutPlanId,
+              input.plannedWorkoutId,
+              synchronizedSnapshot,
+              "complete",
+            );
+            const submission: RunCompletionSubmission = {
+              commandId: createCompletedRunCommandId("complete"),
+              input: {
+                plannedWorkout,
+                shoeId: input.shoeId,
+                startedAt: input.startedAt,
+                timeZone: input.timeZone,
+                distance: input.distance,
+                duration: input.duration,
+                perceivedEffort: input.perceivedEffort,
+                unusualPain: input.unusualPain,
+                notes: input.notes,
+              },
+            };
+            pendingRunCompletionRef.current = { input, submission };
+
+            let result = await commandClient.submitCompletion(submission);
+            if (result.status === "outcome_unknown") {
+              result = await commandClient.resolveCompletion(
+                submission.commandId,
+              );
+            }
+            if (result.status === "run_completed") {
+              pendingRunCompletionRef.current = null;
+              return completedRunFromReceipt(userId, input, result);
+            }
+            if (result.status !== "outcome_unknown") {
+              pendingRunCompletionRef.current = null;
+            }
+            throw completionFailure(result);
+          }
+
           const repositories = requireRepositories();
           const associatedWorkout =
             input.plannedWorkoutPlanId === undefined ||
@@ -386,8 +585,12 @@ export default function TrainingDataProvider({
       ),
     [
       acknowledgeServerWrites,
+      completedRunCommandsEnabled,
+      createCompletedRunCommandId,
+      requireCompletedRunCommandClient,
       requireRepositories,
-      synchronizedSnapshot?.workouts,
+      synchronizedSnapshot,
+      userId,
     ],
   );
 
@@ -409,6 +612,59 @@ export default function TrainingDataProvider({
 
   const deleteRun = useCallback(
     async (id: CompletedRunId) => {
+      if (completedRunCommandsEnabled) {
+        const commandClient = requireCompletedRunCommandClient();
+        const pending = pendingRunDeletionRef.current;
+
+        if (pending !== null) {
+          const resolved = await commandClient.resolveDeletion(
+            pending.submission.commandId,
+          );
+          if (resolved.status === "run_deleted") {
+            pendingRunDeletionRef.current = null;
+            if (pending.submission.completedRunId === id) return;
+          } else {
+            if (resolved.status !== "outcome_unknown") {
+              pendingRunDeletionRef.current = null;
+            }
+            throw deletionFailure(resolved);
+          }
+        }
+
+        const currentSnapshot = synchronizedSnapshot;
+        const run = currentSnapshot?.runs.find(
+          (candidate) => candidate.id === id,
+        );
+
+        if (currentSnapshot === null || run === undefined) return;
+
+        const submission: RunDeletionSubmission = {
+          commandId: createCompletedRunCommandId("delete"),
+          completedRunId: run.id,
+          expectedCompletedRunUpdatedAt: run.updatedAt,
+          plannedWorkout: plannedWorkoutReference(
+            run.plannedWorkoutPlanId,
+            run.plannedWorkoutId,
+            currentSnapshot,
+            "delete",
+          ),
+        };
+        pendingRunDeletionRef.current = { submission };
+
+        let result = await commandClient.submitDeletion(submission);
+        if (result.status === "outcome_unknown") {
+          result = await commandClient.resolveDeletion(submission.commandId);
+        }
+        if (result.status === "run_deleted") {
+          pendingRunDeletionRef.current = null;
+          return;
+        }
+        if (result.status !== "outcome_unknown") {
+          pendingRunDeletionRef.current = null;
+        }
+        throw deletionFailure(result);
+      }
+
       const repositories = requireRepositories();
       const currentSnapshot = synchronizedSnapshot;
       const run = currentSnapshot?.runs.find(
@@ -472,7 +728,14 @@ export default function TrainingDataProvider({
             ]),
       ]);
     },
-    [acknowledgeServerWrites, requireRepositories, synchronizedSnapshot],
+    [
+      acknowledgeServerWrites,
+      completedRunCommandsEnabled,
+      createCompletedRunCommandId,
+      requireCompletedRunCommandClient,
+      requireRepositories,
+      synchronizedSnapshot,
+    ],
   );
 
   const value: TrainingDataContextValue = {

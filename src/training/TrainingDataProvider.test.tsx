@@ -5,6 +5,7 @@ import { recordSlowRunDiagnostic } from "../diagnostics/slowRunDiagnostics";
 import {
   calculateShoeDistance,
   calculateTrainingAnalytics,
+  createCompletedRunId,
   createDateOnly,
   createDurationSeconds,
   createIanaTimeZone,
@@ -18,7 +19,13 @@ import {
 import { createDocumentTrainingRepositories } from "../persistence/documentTrainingRepositories";
 import { InMemoryDocumentStore } from "../persistence/testing/InMemoryDocumentStore";
 import type { TrainingRepositories } from "../persistence/trainingRepositories";
+import type {
+  CompletedRunCommandClient,
+  RunCompletionClientResult,
+  RunDeletionClientResult,
+} from "../services/completedRunCommandClient";
 import TrainingDataProvider, {
+  type CompletedRunCommandClientFactory,
   type TrainingLiveReadSourceFactory,
   type TrainingRepositoryFactory,
 } from "./TrainingDataProvider";
@@ -100,6 +107,26 @@ let repositories: TrainingRepositories;
 let repositoryFactory: TrainingRepositoryFactory;
 let liveReadSourceFactory: TrainingLiveReadSourceFactory;
 let sources: ControlledLiveReadSource[];
+let completedRunCommandClient: CompletedRunCommandClient;
+let completedRunCommandClientFactory: CompletedRunCommandClientFactory;
+
+function unknownCompletion(commandId: string): RunCompletionClientResult {
+  return {
+    status: "outcome_unknown",
+    commandId,
+    code: "resolve-by-command-id",
+    message: "The completion outcome is still unknown.",
+  };
+}
+
+function unknownDeletion(commandId: string): RunDeletionClientResult {
+  return {
+    status: "outcome_unknown",
+    commandId,
+    code: "resolve-by-command-id",
+    message: "The deletion outcome is still unknown.",
+  };
+}
 
 beforeEach(() => {
   mockedRecordSlowRunDiagnostic.mockClear();
@@ -115,6 +142,29 @@ beforeEach(() => {
     sources.push(source);
     return source;
   };
+  completedRunCommandClient = {
+    submitCompletion: vi.fn(async ({ commandId }) =>
+      unknownCompletion(commandId),
+    ),
+    submitDeletion: vi.fn(async ({ commandId }) => unknownDeletion(commandId)),
+    submitUpdate: vi.fn(async ({ commandId }) => ({
+      status: "outcome_unknown" as const,
+      commandId,
+      code: "resolve-by-command-id" as const,
+      message: "The update outcome is still unknown.",
+    })),
+    resolveCompletion: vi.fn(async (commandId) =>
+      unknownCompletion(commandId),
+    ),
+    resolveDeletion: vi.fn(async (commandId) => unknownDeletion(commandId)),
+    resolveUpdate: vi.fn(async (commandId) => ({
+      status: "outcome_unknown" as const,
+      commandId,
+      code: "resolve-by-command-id" as const,
+      message: "The update outcome is still unknown.",
+    })),
+  };
+  completedRunCommandClientFactory = async () => completedRunCommandClient;
 });
 
 async function createNamedRepositories(
@@ -182,6 +232,23 @@ function renderProvider(children = <IntegrationProbe />) {
   );
 }
 
+function renderCommandProvider(children = <IntegrationProbe />) {
+  return render(
+    <TrainingDataProvider
+      userId={userId}
+      repositoryFactory={repositoryFactory}
+      liveReadSourceFactory={liveReadSourceFactory}
+      completedRunCommandsEnabled
+      completedRunCommandClientFactory={completedRunCommandClientFactory}
+      createCompletedRunCommandId={(operation) =>
+        `run-${operation}-test-command`
+      }
+    >
+      {children}
+    </TrainingDataProvider>,
+  );
+}
+
 function IntegrationProbe() {
   const training = useTrainingData();
 
@@ -238,15 +305,17 @@ function IntegrationProbe() {
         type="button"
         disabled={!training.canWrite || !workout || !shoe}
         onClick={() =>
-          void training.createRun({
-            plannedWorkoutPlanId: workout?.planId,
-            plannedWorkoutId: workout?.id,
-            shoeId: shoe?.id,
-            startedAt: createUtcDateTime("2026-08-03T14:00:00Z"),
-            timeZone,
-            distance: milesToMeters(3),
-            duration: createDurationSeconds(1_800),
-          })
+          void training
+            .createRun({
+              plannedWorkoutPlanId: workout?.planId,
+              plannedWorkoutId: workout?.id,
+              shoeId: shoe?.id,
+              startedAt: createUtcDateTime("2026-08-03T14:00:00Z"),
+              timeZone,
+              distance: milesToMeters(3),
+              duration: createDurationSeconds(1_800),
+            })
+            .catch(() => undefined)
         }
       >
         Complete workout
@@ -263,7 +332,9 @@ function IntegrationProbe() {
       <button
         type="button"
         disabled={!training.canWrite || !run}
-        onClick={() => run && void training.deleteRun(run.id)}
+        onClick={() =>
+          run && void training.deleteRun(run.id).catch(() => undefined)
+        }
       >
         Delete run
       </button>
@@ -281,6 +352,25 @@ function IntegrationProbe() {
 }
 
 describe("TrainingDataProvider", () => {
+  it("does not initialize the command client while the migration is disabled", async () => {
+    const commandFactory = vi.fn(completedRunCommandClientFactory);
+    render(
+      <TrainingDataProvider
+        userId={userId}
+        repositoryFactory={repositoryFactory}
+        liveReadSourceFactory={liveReadSourceFactory}
+        completedRunCommandClientFactory={commandFactory}
+      >
+        <IntegrationProbe />
+      </TrainingDataProvider>,
+    );
+    const source = await waitForSource();
+    await publishRepositories(source);
+
+    expect(await screen.findByText("Status: current")).toBeInTheDocument();
+    expect(commandFactory).not.toHaveBeenCalled();
+  });
+
   it("starts live synchronization without repository startup reads", async () => {
     const profileLoad = vi.spyOn(repositories.profile, "load");
     const plansList = vi.spyOn(repositories.plans, "list");
@@ -496,6 +586,210 @@ describe("TrainingDataProvider", () => {
     await waitFor(async () => expect(await repositories.runs.list()).toEqual([]));
     expect(await screen.findByText("Runs: 0")).toBeInTheDocument();
     expect(screen.getByText("Workout: planned")).toBeInTheDocument();
+  });
+
+  it("routes completion through a command while listener snapshots remain visible truth", async () => {
+    const plan = await repositories.plans.create({
+      name: "First Marathon Journey",
+      startDate: createDateOnly("2026-08-03"),
+      targetRaceDate: createDateOnly("2027-01-10"),
+    });
+    const workout = await repositories.workouts.create({
+      planId: plan.id,
+      scheduledDate: createDateOnly("2026-08-03"),
+      phase: "base_building",
+      kind: "run",
+      purpose: "easy",
+      targetDistance: milesToMeters(5),
+    });
+    const shoe = await repositories.shoes.create({ name: "Daily Trainer" });
+    const directCreate = vi.spyOn(repositories.runs, "create");
+    vi.mocked(completedRunCommandClient.submitCompletion).mockResolvedValue({
+      status: "run_completed",
+      commandId: "run-complete-test-command",
+      completedRunId: createCompletedRunId("run-command-confirmed"),
+      completedRunUpdatedAt: timestamp,
+      completedPlannedWorkout: {
+        planId: workout.planId,
+        workoutId: workout.id,
+        updatedAt: timestamp,
+      },
+    });
+    const user = userEvent.setup();
+    renderCommandProvider();
+    const source = await waitForSource();
+    await publishRepositories(source);
+
+    await user.click(screen.getByRole("button", { name: "Complete workout" }));
+
+    await waitFor(() =>
+      expect(completedRunCommandClient.submitCompletion).toHaveBeenCalledWith({
+        commandId: "run-complete-test-command",
+        input: {
+          plannedWorkout: {
+            planId: workout.planId,
+            workoutId: workout.id,
+            expectedUpdatedAt: workout.updatedAt,
+          },
+          shoeId: shoe.id,
+          startedAt: createUtcDateTime("2026-08-03T14:00:00Z"),
+          timeZone,
+          distance: milesToMeters(3),
+          duration: createDurationSeconds(1_800),
+          perceivedEffort: undefined,
+          unusualPain: undefined,
+          notes: undefined,
+        },
+      }),
+    );
+    expect(directCreate).not.toHaveBeenCalled();
+    expect(screen.getByText("Runs: 0")).toBeInTheDocument();
+    expect(screen.getByText("Workout: planned")).toBeInTheDocument();
+    expect(mockedRecordSlowRunDiagnostic).toHaveBeenCalledWith({
+      submission: expect.objectContaining({ outcome: "succeeded" }),
+      plannedWorkout: true,
+    });
+
+    await repositories.runs.create({
+      plannedWorkoutPlanId: workout.planId,
+      plannedWorkoutId: workout.id,
+      shoeId: shoe.id,
+      startedAt: createUtcDateTime("2026-08-03T14:00:00Z"),
+      timeZone,
+      distance: milesToMeters(3),
+      duration: createDurationSeconds(1_800),
+    });
+    await repositories.workouts.update(workout.planId, workout.id, {
+      status: "completed",
+    });
+    await publishRepositories(source);
+
+    expect(await screen.findByText("Runs: 1")).toBeInTheDocument();
+    expect(screen.getByText("Workout: completed")).toBeInTheDocument();
+  });
+
+  it("resolves an ambiguous completion with its original command ID", async () => {
+    const plan = await repositories.plans.create({
+      name: "First Marathon Journey",
+      startDate: createDateOnly("2026-08-03"),
+      targetRaceDate: createDateOnly("2027-01-10"),
+    });
+    const workout = await repositories.workouts.create({
+      planId: plan.id,
+      scheduledDate: createDateOnly("2026-08-03"),
+      phase: "base_building",
+      kind: "run",
+      purpose: "easy",
+      targetDistance: milesToMeters(5),
+    });
+    await repositories.shoes.create({ name: "Daily Trainer" });
+    const directCreate = vi.spyOn(repositories.runs, "create");
+    vi.mocked(completedRunCommandClient.submitCompletion).mockResolvedValue(
+      unknownCompletion("run-complete-test-command"),
+    );
+    vi.mocked(completedRunCommandClient.resolveCompletion)
+      .mockResolvedValueOnce(
+        unknownCompletion("run-complete-test-command"),
+      )
+      .mockResolvedValueOnce({
+        status: "run_completed",
+        commandId: "run-complete-test-command",
+        completedRunId: createCompletedRunId("run-command-resolved"),
+        completedRunUpdatedAt: timestamp,
+        completedPlannedWorkout: {
+          planId: workout.planId,
+          workoutId: workout.id,
+          updatedAt: timestamp,
+        },
+      });
+    const user = userEvent.setup();
+    renderCommandProvider();
+    const source = await waitForSource();
+    await publishRepositories(source);
+    const complete = screen.getByRole("button", { name: "Complete workout" });
+
+    await user.click(complete);
+    await waitFor(() =>
+      expect(completedRunCommandClient.resolveCompletion).toHaveBeenCalledTimes(1),
+    );
+    await user.click(complete);
+
+    await waitFor(() =>
+      expect(completedRunCommandClient.resolveCompletion).toHaveBeenCalledTimes(2),
+    );
+    expect(completedRunCommandClient.submitCompletion).toHaveBeenCalledOnce();
+    expect(completedRunCommandClient.resolveCompletion).toHaveBeenNthCalledWith(
+      1,
+      "run-complete-test-command",
+    );
+    expect(completedRunCommandClient.resolveCompletion).toHaveBeenNthCalledWith(
+      2,
+      "run-complete-test-command",
+    );
+    expect(directCreate).not.toHaveBeenCalled();
+  });
+
+  it("routes deletion through a command and waits for listener removal", async () => {
+    const shoe = await repositories.shoes.create({ name: "Daily Trainer" });
+    const run = await repositories.runs.create({
+      shoeId: shoe.id,
+      startedAt: createUtcDateTime("2026-08-03T14:00:00Z"),
+      timeZone,
+      distance: milesToMeters(3),
+      duration: createDurationSeconds(1_800),
+    });
+    const directDelete = vi.spyOn(repositories.runs, "delete");
+    vi.mocked(completedRunCommandClient.submitDeletion).mockResolvedValue({
+      status: "run_deleted",
+      commandId: "run-delete-test-command",
+      completedRunId: run.id,
+      deletedAt: timestamp,
+      reopenedPlannedWorkout: null,
+    });
+    const user = userEvent.setup();
+    renderCommandProvider();
+    const source = await waitForSource();
+    await publishRepositories(source);
+
+    await user.click(screen.getByRole("button", { name: "Delete run" }));
+
+    await waitFor(() =>
+      expect(completedRunCommandClient.submitDeletion).toHaveBeenCalledWith({
+        commandId: "run-delete-test-command",
+        completedRunId: run.id,
+        expectedCompletedRunUpdatedAt: run.updatedAt,
+        plannedWorkout: null,
+      }),
+    );
+    expect(directDelete).not.toHaveBeenCalled();
+    expect(screen.getByText("Runs: 1")).toBeInTheDocument();
+
+    await repositories.runs.delete(run.id);
+    await publishRepositories(source);
+    expect(await screen.findByText("Runs: 0")).toBeInTheDocument();
+  });
+
+  it("keeps completed-run editing on its acknowledged repository path", async () => {
+    const shoe = await repositories.shoes.create({ name: "Daily Trainer" });
+    await repositories.runs.create({
+      shoeId: shoe.id,
+      startedAt: createUtcDateTime("2026-08-03T14:00:00Z"),
+      timeZone,
+      distance: milesToMeters(3),
+      duration: createDurationSeconds(1_800),
+    });
+    const directUpdate = vi.spyOn(repositories.runs, "update");
+    const user = userEvent.setup();
+    renderCommandProvider();
+    const source = await waitForSource();
+    await publishRepositories(source);
+
+    await user.click(screen.getByRole("button", { name: "Edit run" }));
+
+    await waitFor(() => expect(directUpdate).toHaveBeenCalledOnce());
+    expect(completedRunCommandClient.submitUpdate).not.toHaveBeenCalled();
+    expect(await screen.findByText("Total: 4")).toBeInTheDocument();
+    expect(screen.getByText("Status: current")).toBeInTheDocument();
   });
 
   it("surfaces a listener error and creates a fresh subscription on retry", async () => {
