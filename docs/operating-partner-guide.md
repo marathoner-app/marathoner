@@ -76,7 +76,11 @@ conflict.
    [founding cohort plan](founding-cohort-plan.md). Focus on personal
    introductions, local clubs and programs, independent running stores, race
    organizers, participant fit, recruitment pauses, and the two-, four-, and
-   eight-week learning decisions.
+   eight-week learning decisions. Then read the
+   [founding-beta incident and support playbook](operations/founding-beta-incident-and-support.md)
+   for the support route, operating roles, privacy boundary, pause triggers,
+   and fictional incident walkthroughs. The playbook is prepared for internal
+   use; it does not replace the later live-system rehearsal.
 
 7. **Review the current execution view.** Open the
    [master tracker](https://github.com/marathoner-app/marathoner/issues/104),

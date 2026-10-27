@@ -337,8 +337,12 @@ gate triggers scope or date review before external invitations are promised.
   operator-runner, and rehearsal paths.
 - Publish truthful beta consent, privacy, data-use, limitations, and support
   language.
-- Provide incident triage, rollback or feature-disable, participant support,
-  and recruitment-pause procedures.
+- Use the
+  [founding-beta incident and support playbook](operations/founding-beta-incident-and-support.md)
+  for incident triage, participant support, privacy-safe records, named pause
+  decisions, communication, and resumption. Live rollback, feature-disable,
+  deletion, export, and restore evidence remains in #124 after its dependencies
+  pass.
 - Instrument activation and cohort measures without placing participant records
   or private research notes in the public repository.
 - Complete the TestFlight metadata, review, tester, feedback, and release
