@@ -4,6 +4,7 @@ import {
   isRecommendationDecisionCommandEnvelope,
   isRunCompletionCommandEnvelope,
   isRunDeletionCommandEnvelope,
+  isRunUpdateCommandEnvelope,
   isMaterialCommandResult,
   materialCommandIdFrom,
   parseMaterialCommand,
@@ -18,6 +19,8 @@ import {
   type RunCompletionReceiptResult,
   type RunDeletionCommandEnvelope,
   type RunDeletionReceiptResult,
+  type RunUpdateCommandEnvelope,
+  type RunUpdateReceiptResult,
 } from '../../src/domain/materialCommands/contract.js'
 import type { RunCommandProjectionFailureResult } from './completedRunCommandProjection.js'
 import {
@@ -35,6 +38,7 @@ export type MaterialCommandLogEntry = Readonly<{
     | 'plan.approve-generated'
     | 'recommendation.decide'
     | 'run.complete'
+    | 'run.update'
     | 'run.delete'
     | 'unknown'
   status: MaterialCommandResult['status']
@@ -56,6 +60,7 @@ export interface MaterialCommandStore {
     | AccountDeletionRequestAcceptedResult
     | PlanApprovalReceiptResult
     | RunCompletionReceiptResult
+    | RunUpdateReceiptResult
     | RunDeletionReceiptResult
     | null
   >
@@ -79,6 +84,18 @@ export interface RunDeletionStore {
     ownerId: string
   }): Promise<
     | { kind: 'deleted'; result: RunDeletionReceiptResult }
+    | { kind: 'rejected'; result: RunCommandProjectionFailureResult }
+    | { kind: 'conflict' }
+    | { kind: 'membership-required' }
+  >
+}
+
+export interface RunUpdateStore {
+  commit(options: {
+    envelope: RunUpdateCommandEnvelope
+    ownerId: string
+  }): Promise<
+    | { kind: 'updated'; result: RunUpdateReceiptResult }
     | { kind: 'rejected'; result: RunCommandProjectionFailureResult }
     | { kind: 'conflict' }
     | { kind: 'membership-required' }
@@ -109,6 +126,7 @@ export interface HandlerDependencies {
   planApproval?: PlanApprovalHandlerDependencies
   runCompletion?: { store: RunCompletionStore }
   runDeletion?: { store: RunDeletionStore }
+  runUpdate?: { store: RunUpdateStore }
   store: MaterialCommandStore
 }
 
@@ -452,6 +470,60 @@ export async function executeMaterialCommand(
       return result
     }
   }
+  if (isRunUpdateCommandEnvelope(parsed.envelope)) {
+    const runUpdate = dependencies.runUpdate
+    if (!runUpdate) {
+      const result = runCommandNotEnabledResult(parsed.envelope.commandId)
+      logResult(
+        dependencies,
+        'material-command-result',
+        result,
+        parsed.envelope.command.type,
+      )
+      return result
+    }
+    if (options.appCheckVerified !== true) {
+      const result = runCommandAppCheckRequiredResult(
+        parsed.envelope.commandId,
+      )
+      logResult(
+        dependencies,
+        'material-command-result',
+        result,
+        parsed.envelope.command.type,
+      )
+      return result
+    }
+
+    try {
+      const stored = await runUpdate.store.commit({
+        envelope: parsed.envelope,
+        ownerId: options.authenticatedUserId,
+      })
+      const result =
+        stored.kind === 'membership-required'
+          ? runCommandMembershipRequiredResult(parsed.envelope.commandId)
+          : stored.kind === 'conflict'
+            ? conflictResult(parsed.envelope.commandId)
+            : stored.result
+      logResult(
+        dependencies,
+        'material-command-result',
+        result,
+        parsed.envelope.command.type,
+      )
+      return result
+    } catch (error) {
+      const result = failureFor(error, parsed.envelope.commandId)
+      logResult(
+        dependencies,
+        'material-command-result',
+        result,
+        parsed.envelope.command.type,
+      )
+      return result
+    }
+  }
   if (isRecommendationDecisionCommandEnvelope(parsed.envelope)) {
     const result = recommendationDecisionNotEnabledResult(
       parsed.envelope.commandId,
@@ -546,6 +618,8 @@ export async function resolveMaterialCommand(
           ? 'plan.approve-generated'
           : stored?.status === 'run_completed'
             ? 'run.complete'
+            : stored?.status === 'run_updated'
+              ? 'run.update'
             : stored?.status === 'run_deleted'
               ? 'run.delete'
               : stored

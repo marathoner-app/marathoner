@@ -6,12 +6,14 @@ import {
   createRecommendationDecisionCommand,
   createRunCompletionCommand,
   createRunDeletionCommand,
+  createRunUpdateCommand,
   materialCommandSignature,
   type MaterialCommandCommittedResult,
   type PlanApprovalReceiptResult,
   type ProofMaterialCommandEnvelope,
   type RunCompletionReceiptResult,
   type RunDeletionReceiptResult,
+  type RunUpdateReceiptResult,
 } from '../../src/domain/materialCommands/contract.js'
 import { createRecommendationId } from '../../src/domain/recommendations/recommendationEvidence.js'
 import { createIanaTimeZone, createUtcDateTime } from '../../src/domain/training/dates.js'
@@ -32,6 +34,7 @@ import {
   type MaterialCommandStore,
   type RunCompletionStore,
   type RunDeletionStore,
+  type RunUpdateStore,
 } from './materialCommandHandler.js'
 import type {
   PlanApprovalArtifactPolicyRecord,
@@ -83,6 +86,20 @@ const runDeletionCommand = createRunDeletionCommand(
     plannedWorkout: null,
   },
 )
+const runUpdateCommand = createRunUpdateCommand('update-run-command-0001', {
+  completedRunId: createCompletedRunId('run-0001'),
+  expectedCompletedRunUpdatedAt: createUtcDateTime(
+    '2026-10-08T13:00:00.000Z',
+  ),
+  input: {
+    plannedWorkout: null,
+    startedAt: createUtcDateTime('2026-10-08T12:00:00.000Z'),
+    timeZone: createIanaTimeZone('America/Los_Angeles'),
+    distance: createDistanceMeters(5_000),
+    duration: createDurationSeconds(1_775),
+    notes: privateRunNote,
+  },
+})
 
 class InMemoryMaterialCommandStore implements MaterialCommandStore {
   proofCount = 0
@@ -94,6 +111,7 @@ class InMemoryMaterialCommandStore implements MaterialCommandStore {
     string,
     | MaterialCommandCommittedResult
     | RunCompletionReceiptResult
+    | RunUpdateReceiptResult
     | RunDeletionReceiptResult
   >()
   failure: unknown = null
@@ -167,6 +185,19 @@ class InMemoryRunDeletionStore implements RunDeletionStore {
   commit = vi.fn(async () => ({ kind: 'deleted' as const, result: this.result }))
 }
 
+class InMemoryRunUpdateStore implements RunUpdateStore {
+  readonly result: RunUpdateReceiptResult = {
+    status: 'run_updated',
+    commandId: runUpdateCommand.commandId,
+    completedRunId: runUpdateCommand.command.completedRunId,
+    completedRunUpdatedAt: createUtcDateTime('2026-10-08T13:30:00.000Z'),
+    reopenedPlannedWorkout: null,
+    completedPlannedWorkout: null,
+  }
+
+  commit = vi.fn(async () => ({ kind: 'updated' as const, result: this.result }))
+}
+
 function approvedPolicyRecord(): PlanApprovalArtifactPolicyRecord {
   return {
     supportedScopeId,
@@ -191,8 +222,16 @@ function dependencies(
   planApproval?: PlanApprovalHandlerDependencies,
   runCompletion?: { store: RunCompletionStore },
   runDeletion?: { store: RunDeletionStore },
+  runUpdate?: { store: RunUpdateStore },
 ) {
-  return { store, planApproval, runCompletion, runDeletion, log: vi.fn() }
+  return {
+    store,
+    planApproval,
+    runCompletion,
+    runDeletion,
+    runUpdate,
+    log: vi.fn(),
+  }
 }
 
 describe('material-command handler', () => {
@@ -756,6 +795,152 @@ describe('material-command handler', () => {
       commandType: 'run.complete',
       status: 'run_completed',
     })
+  })
+
+  it('keeps run updates unavailable when their store is absent', async () => {
+    const boundary = dependencies()
+
+    await expect(
+      executeMaterialCommand(
+        {
+          appCheckVerified: true,
+          authenticatedUserId: ownerId,
+          data: runUpdateCommand,
+        },
+        boundary,
+      ),
+    ).resolves.toEqual({
+      status: 'authorization_error',
+      commandId: runUpdateCommand.commandId,
+      code: 'approved-beta-membership-required',
+      message: 'Completed-run commands are not enabled in this environment.',
+    })
+    expect(boundary.log).toHaveBeenCalledWith({
+      event: 'material-command-result',
+      commandType: 'run.update',
+      status: 'authorization_error',
+    })
+  })
+
+  it('requires App Check and membership before run updates', async () => {
+    const runStore: RunUpdateStore = {
+      commit: vi.fn(async () => ({ kind: 'membership-required' as const })),
+    }
+    const boundary = dependencies(
+      new InMemoryMaterialCommandStore(),
+      undefined,
+      undefined,
+      undefined,
+      { store: runStore },
+    )
+
+    await expect(
+      executeMaterialCommand(
+        { authenticatedUserId: ownerId, data: runUpdateCommand },
+        boundary,
+      ),
+    ).resolves.toEqual(
+      expect.objectContaining({
+        status: 'authorization_error',
+        code: 'app-check-required',
+      }),
+    )
+    expect(runStore.commit).not.toHaveBeenCalled()
+
+    await expect(
+      executeMaterialCommand(
+        {
+          appCheckVerified: true,
+          authenticatedUserId: ownerId,
+          data: runUpdateCommand,
+        },
+        boundary,
+      ),
+    ).resolves.toEqual(
+      expect.objectContaining({
+        status: 'authorization_error',
+        code: 'approved-beta-membership-required',
+      }),
+    )
+  })
+
+  it('passes run updates to persistence and resolves their redacted receipts', async () => {
+    const materialStore = new InMemoryMaterialCommandStore()
+    const runStore = new InMemoryRunUpdateStore()
+    const boundary = dependencies(
+      materialStore,
+      undefined,
+      undefined,
+      undefined,
+      { store: runStore },
+    )
+
+    await expect(
+      executeMaterialCommand(
+        {
+          appCheckVerified: true,
+          authenticatedUserId: ownerId,
+          data: runUpdateCommand,
+        },
+        boundary,
+      ),
+    ).resolves.toEqual(runStore.result)
+    expect(runStore.commit).toHaveBeenCalledWith({
+      envelope: runUpdateCommand,
+      ownerId,
+    })
+
+    materialStore.resolutionResults.set(
+      `${ownerId}:${runStore.result.commandId}`,
+      runStore.result,
+    )
+    await expect(
+      resolveMaterialCommand(
+        {
+          authenticatedUserId: ownerId,
+          data: { commandId: runStore.result.commandId },
+        },
+        boundary,
+      ),
+    ).resolves.toEqual(runStore.result)
+    expect(boundary.log).toHaveBeenLastCalledWith({
+      event: 'material-command-resolution',
+      commandType: 'run.update',
+      status: 'run_updated',
+    })
+    const logs = JSON.stringify(boundary.log.mock.calls)
+    expect(logs).not.toContain(ownerId)
+    expect(logs).not.toContain(runUpdateCommand.commandId)
+    expect(logs).not.toContain(privateRunNote)
+  })
+
+  it('maps a reused run-update command ID to the shared conflict result', async () => {
+    const runStore: RunUpdateStore = {
+      commit: vi.fn(async () => ({ kind: 'conflict' as const })),
+    }
+    const boundary = dependencies(
+      new InMemoryMaterialCommandStore(),
+      undefined,
+      undefined,
+      undefined,
+      { store: runStore },
+    )
+
+    await expect(
+      executeMaterialCommand(
+        {
+          appCheckVerified: true,
+          authenticatedUserId: ownerId,
+          data: runUpdateCommand,
+        },
+        boundary,
+      ),
+    ).resolves.toEqual(
+      expect.objectContaining({
+        status: 'conflict',
+        code: 'command-id-reused',
+      }),
+    )
   })
 
   it('keeps run deletion unavailable when its store is absent', async () => {
