@@ -11,3 +11,8 @@ interface ImportMetaEnv {
 interface ImportMeta {
   readonly env: ImportMetaEnv
 }
+
+declare module "virtual:internal-plan-rehearsal-rules" {
+  const rulesText: string | null;
+  export default rulesText;
+}

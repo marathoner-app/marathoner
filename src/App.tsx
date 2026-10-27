@@ -20,6 +20,7 @@ import type { AccountDeletionRequestAcceptedResult } from "./domain/materialComm
 import { selectNextPlannedWorkout } from "./domain/training";
 import NextWorkoutSummary from "./components/NextWorkoutSummary";
 import { isBetaRunCommandRehearsalMode } from "./components/betaRunCommandRehearsalMode";
+import { isInternalPlanProposalRehearsalMode } from "./components/internalPlanProposalRehearsalMode";
 
 const publicSupportEmail = "kevin@marathonerapp.com";
 const BetaRunCommandRehearsal = isBetaRunCommandRehearsalMode(
@@ -27,6 +28,10 @@ const BetaRunCommandRehearsal = isBetaRunCommandRehearsalMode(
 )
   ? lazy(() => import("./components/BetaRunCommandRehearsalLive"))
   : null;
+const InternalPlanProposalRehearsal =
+  isInternalPlanProposalRehearsalMode(import.meta.env.MODE)
+    ? lazy(() => import("./components/InternalPlanProposalRehearsalLive"))
+    : null;
 
 const sections = [
   { id: "plan", label: "Plan", title: "Plan Your Workouts" },
@@ -417,6 +422,20 @@ function AuthenticatedExperience({
               </motion.button>
             ))}
           </nav>
+          {InternalPlanProposalRehearsal && (
+            <Suspense
+              fallback={
+                <div className="training-home-status" role="status">
+                  <p>Loading the internal plan rehearsal...</p>
+                </div>
+              }
+            >
+              <InternalPlanProposalRehearsal
+                key={training.profile?.updatedAt ?? "no-profile"}
+                profile={training.profile}
+              />
+            </Suspense>
+          )}
           {BetaRunCommandRehearsal && (
             <Suspense
               fallback={

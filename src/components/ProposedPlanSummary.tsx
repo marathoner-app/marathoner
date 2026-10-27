@@ -8,8 +8,8 @@ import {
 
 type ProposedPlanSummaryProps = {
   readonly result: GeneratedPlanResultV1;
-  readonly onReviewInputs: () => void;
-  readonly onContinueReview: () => void;
+  readonly onReviewInputs?: () => void;
+  readonly onContinueReview?: () => void;
 };
 
 const dateFormatter = new Intl.DateTimeFormat("en-US", {
@@ -181,14 +181,16 @@ export default function ProposedPlanSummary({
         </dl>
       </section>
 
-      <div className="proposed-plan-actions">
-        <button type="button" className="secondary" onClick={onReviewInputs}>
-          Review inputs
-        </button>
-        <button type="button" onClick={onContinueReview}>
-          Continue review
-        </button>
-      </div>
+      {onReviewInputs && onContinueReview && (
+        <div className="proposed-plan-actions">
+          <button type="button" className="secondary" onClick={onReviewInputs}>
+            Review inputs
+          </button>
+          <button type="button" onClick={onContinueReview}>
+            Continue review
+          </button>
+        </div>
+      )}
     </article>
   );
 }

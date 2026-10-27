@@ -85,4 +85,14 @@ describe("ProposedPlanSummary", () => {
     expect(onReviewInputs).toHaveBeenCalledOnce();
     expect(onContinueReview).toHaveBeenCalledOnce();
   });
+
+  it("omits every review action when rendered read-only", () => {
+    render(
+      <ProposedPlanSummary
+        result={generatedResult("generated-exact-date-distance-target")}
+      />,
+    );
+
+    expect(screen.queryByRole("button")).not.toBeInTheDocument();
+  });
 });
