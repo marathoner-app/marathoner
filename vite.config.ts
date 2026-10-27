@@ -14,27 +14,60 @@ import { firebaseProjectConfigurations } from './src/firebaseConfig'
 const repositoryRoot = path.dirname(fileURLToPath(import.meta.url))
 const internalPlanRulesModuleId = 'virtual:internal-plan-rehearsal-rules'
 const resolvedInternalPlanRulesModuleId = `\0${internalPlanRulesModuleId}`
+const internalAdaptationPacketModuleId =
+  'virtual:internal-adaptation-rehearsal-packet'
+const resolvedInternalAdaptationPacketModuleId =
+  `\0${internalAdaptationPacketModuleId}`
 
-function internalPlanRehearsalRulesPlugin(mode: string) {
+function internalRehearsalArtifactsPlugin(mode: string) {
   return {
-    name: 'internal-plan-rehearsal-rules',
+    name: 'internal-rehearsal-artifacts',
     resolveId(id: string) {
-      return id === internalPlanRulesModuleId
-        ? resolvedInternalPlanRulesModuleId
-        : null
+      if (id === internalPlanRulesModuleId) {
+        return resolvedInternalPlanRulesModuleId
+      }
+      if (id === internalAdaptationPacketModuleId) {
+        return resolvedInternalAdaptationPacketModuleId
+      }
+      return null
     },
     load(id: string) {
-      if (id !== resolvedInternalPlanRulesModuleId) return null
-      if (mode !== 'internal-plan-rehearsal') return 'export default null'
+      if (
+        id !== resolvedInternalPlanRulesModuleId &&
+        id !== resolvedInternalAdaptationPacketModuleId
+      ) {
+        return null
+      }
+      if (mode !== 'internal-plan-rehearsal') {
+        return 'export default null'
+      }
+
+      if (id === resolvedInternalPlanRulesModuleId) {
+        const rulesText = readFileSync(
+          path.join(
+            repositoryRoot,
+            'docs/methodology/artifacts/beta-rules/0.1.0-draft/beta-rules.json',
+          ),
+          'utf8',
+        )
+        return `export default ${JSON.stringify(rulesText)}`
+      }
 
       const rulesText = readFileSync(
         path.join(
           repositoryRoot,
-          'docs/methodology/artifacts/beta-rules/0.1.0-draft/beta-rules.json',
+          'docs/methodology/artifacts/beta-adaptation/0.1.0-draft/beta-adaptation.json',
         ),
         'utf8',
       )
-      return `export default ${JSON.stringify(rulesText)}`
+      const fixturesText = readFileSync(
+        path.join(
+          repositoryRoot,
+          'docs/methodology/artifacts/beta-adaptation/0.1.0-draft/fixtures.json',
+        ),
+        'utf8',
+      )
+      return `export default ${JSON.stringify({ rulesText, fixturesText })}`
     },
   }
 }
@@ -62,7 +95,7 @@ export default defineConfig(({ command, mode }) => {
 
   return {
     base: isIosBuild ? './' : '/',
-    plugins: [internalPlanRehearsalRulesPlugin(mode), react()],
+    plugins: [internalRehearsalArtifactsPlugin(mode), react()],
     optimizeDeps: {
       entries: ['index.html'],
     },

@@ -66,15 +66,19 @@ mutation, performs no write, and cannot change a plan autonomously.
 
 ## Internal draft evidence
 
-Tests load the exact pinned `beta-adaptation@0.1.0-draft` packet outside runtime
-source, adapt its values into the injected rule contract, and run every frozen
-fixture through the production evaluator. They additionally prove deterministic
-output, one-hard-effort protection, exact and just-outside boundaries, malformed
-input rejection, provenance, and approval semantics.
+Tests and the owner-only `internal-plan-rehearsal` mode load the exact pinned
+`beta-adaptation@0.1.0-draft` packet, adapt its values into the injected rule
+contract, and run frozen fixtures through the production evaluator. Tests prove
+every fixture plus deterministic output, one-hard-effort protection, exact and
+just-outside boundaries, malformed input rejection, provenance, and approval
+semantics. The local UI makes those synthetic results inspectable without
+normalizing live training history or offering a plan-change action.
 
-The draft remains unapproved and runtime-ineligible. It is not imported by
-browser or Functions source and is not connected to recommendations,
-persistence, guidance, plan mutation, or any signed-in product path.
+The draft remains unapproved and runtime-ineligible. A Vite virtual module
+injects it only into the explicitly selected local owner mode. Ordinary web,
+iOS, and Functions builds exclude it and scan for leakage. It remains
+disconnected from live runs, recommendations, persistence, guidance, and plan
+mutation.
 
 ## Activation gates
 

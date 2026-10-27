@@ -1,0 +1,122 @@
+.internal-adaptation-rehearsal {
+  width: min(100%, 72rem);
+  margin: 2rem auto 0;
+  padding: clamp(1.25rem, 3vw, 2rem);
+  border: 2px solid #345d67;
+  border-radius: 1rem;
+  background: #edf8f8;
+  color: #16282d;
+}
+
+.internal-adaptation-rehearsal > header {
+  max-width: 50rem;
+}
+
+.internal-adaptation-rehearsal-eyebrow {
+  margin: 0 0 0.35rem;
+  color: #28515a;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.internal-adaptation-rehearsal h2,
+.internal-adaptation-rehearsal h3 {
+  color: inherit;
+}
+
+.internal-adaptation-rehearsal form {
+  display: grid;
+  max-width: 42rem;
+  margin-top: 1.5rem;
+  gap: 0.75rem;
+}
+
+.internal-adaptation-rehearsal form label {
+  font-weight: 750;
+}
+
+.internal-adaptation-rehearsal form select {
+  width: min(100%, 32rem);
+}
+
+.internal-adaptation-rehearsal form button {
+  width: fit-content;
+}
+
+.internal-adaptation-rehearsal-error,
+.internal-adaptation-rehearsal-result {
+  margin-top: 1.5rem;
+  padding: 1rem;
+  border-radius: 0.75rem;
+  background: #dceced;
+}
+
+.internal-adaptation-rehearsal-match,
+.internal-adaptation-rehearsal-mismatch {
+  margin-top: 0;
+  padding: 0.75rem;
+  border-radius: 0.6rem;
+  font-weight: 700;
+}
+
+.internal-adaptation-rehearsal-match {
+  background: #d8eedf;
+  color: #1f5130;
+}
+
+.internal-adaptation-rehearsal-mismatch,
+.internal-adaptation-rehearsal-error {
+  background: #f9d8d5;
+  color: #7a201a;
+}
+
+.internal-adaptation-rehearsal-result dl {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
+  gap: 0.75rem;
+}
+
+.internal-adaptation-rehearsal-result dl > div {
+  min-width: 0;
+  padding: 0.75rem;
+  border-radius: 0.6rem;
+  background: #f8ffff;
+}
+
+.internal-adaptation-rehearsal-result dt {
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.internal-adaptation-rehearsal-result dd {
+  overflow-wrap: anywhere;
+  margin: 0.3rem 0 0;
+}
+
+.internal-adaptation-rehearsal-result details {
+  margin-top: 1rem;
+}
+
+.internal-adaptation-rehearsal-result summary {
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.internal-adaptation-rehearsal-result pre {
+  max-width: 100%;
+  overflow: auto;
+  padding: 1rem;
+  border-radius: 0.6rem;
+  background: #16282d;
+  color: #f8ffff;
+  font-size: 0.8rem;
+}
+
+.internal-adaptation-rehearsal-boundary {
+  margin-bottom: 0;
+  font-weight: 650;
+}

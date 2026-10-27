@@ -3,7 +3,9 @@ import path from 'node:path'
 
 const forbiddenBuildText = [
   'beta-rules@0.1.0-draft',
+  'beta-adaptation@0.1.0-draft',
   'Internal draft plan rehearsal',
+  'Internal draft adaptation rehearsal',
   'internal-plan-rehearsal',
 ]
 const textExtensions = new Set(['.css', '.html', '.js', '.json', '.map', '.txt'])
@@ -63,5 +65,5 @@ if (leaks.length > 0) {
 }
 
 console.log(
-  `Verified that ${path.relative(process.cwd(), resolvedOutputDirectory)} excludes the internal plan rehearsal.`,
+  `Verified that ${path.relative(process.cwd(), resolvedOutputDirectory)} excludes the internal methodology rehearsals.`,
 )
