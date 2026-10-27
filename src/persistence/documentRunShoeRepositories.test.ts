@@ -112,7 +112,11 @@ describe("completed run repository", () => {
       duration: createDurationSeconds(30 * 60),
     });
 
-    Object.values(runCreationTimingNames).forEach((name) => {
+    [
+      runCreationTimingNames.total,
+      runCreationTimingNames.associations,
+      runCreationTimingNames.writeAcknowledgement,
+    ].forEach((name) => {
       const entries = performance.getEntriesByName(name, "measure");
 
       expect(entries).toHaveLength(1);

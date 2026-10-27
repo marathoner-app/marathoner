@@ -424,10 +424,10 @@ describe('App authentication state', () => {
     await user.click(settingsButton)
 
     expect(
-      screen.getByRole('dialog', { name: 'Delete your Marathoner account' })
+      screen.getByRole('dialog', { name: 'Account settings' })
     ).toBeInTheDocument()
     expect(
-      screen.getByRole('heading', { name: 'Delete your Marathoner account' })
+      screen.getByRole('heading', { name: 'Account settings' })
     ).toHaveFocus()
 
     await user.click(

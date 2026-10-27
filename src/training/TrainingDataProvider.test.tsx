@@ -1,6 +1,7 @@
 import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { recordSlowRunDiagnostic } from "../diagnostics/slowRunDiagnostics";
 import {
   calculateShoeDistance,
   calculateTrainingAnalytics,
@@ -29,6 +30,12 @@ import type {
   TrainingSnapshotOrigin,
 } from "./trainingSynchronization";
 import { useTrainingData } from "./useTrainingData";
+
+vi.mock("../diagnostics/slowRunDiagnostics", () => ({
+  recordSlowRunDiagnostic: vi.fn(),
+}));
+
+const mockedRecordSlowRunDiagnostic = vi.mocked(recordSlowRunDiagnostic);
 
 const userId = createUserId("runner-1");
 const timestamp = createUtcDateTime("2026-08-03T12:00:00Z");
@@ -95,6 +102,7 @@ let liveReadSourceFactory: TrainingLiveReadSourceFactory;
 let sources: ControlledLiveReadSource[];
 
 beforeEach(() => {
+  mockedRecordSlowRunDiagnostic.mockClear();
   repositories = createDocumentTrainingRepositories(
     new InMemoryDocumentStore(),
     userId,
@@ -468,6 +476,10 @@ describe("TrainingDataProvider", () => {
     await user.click(screen.getByRole("button", { name: "Complete workout" }));
     await waitFor(async () => expect(await repositories.runs.list()).toHaveLength(1));
     expect(await screen.findByText("Runs: 1")).toBeInTheDocument();
+    expect(mockedRecordSlowRunDiagnostic).toHaveBeenCalledWith({
+      submission: expect.objectContaining({ outcome: "succeeded" }),
+      plannedWorkout: true,
+    });
     expect(screen.getByText("Workout: completed")).toBeInTheDocument();
     expect(screen.getByText("Total: 3")).toBeInTheDocument();
     expect(screen.getByText("Shoe: 3")).toBeInTheDocument();
