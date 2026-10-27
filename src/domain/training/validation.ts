@@ -2,6 +2,8 @@ import type { TrainingPlan, PlannedWorkout, CompletedRun, Shoe, UserProfile } fr
 
 export const COMPLETED_RUN_NOTES_MAX_LENGTH = 500;
 export const SHOE_NAME_MAX_LENGTH = 120;
+export const USER_PROFILE_DISPLAY_NAME_MAX_LENGTH = 120;
+export const USER_PROFILE_SCHEDULE_CONSTRAINTS_MAX_LENGTH = 500;
 
 export interface ValidationIssue {
   readonly field: string;
@@ -35,20 +37,24 @@ export function validateUserProfile(profile: UserProfile): ValidationIssue[] {
     ...validateTimestamps(profile),
   ];
 
-  if (profile.displayName !== undefined && profile.displayName.length > 120) {
+  if (
+    profile.displayName !== undefined &&
+    profile.displayName.length > USER_PROFILE_DISPLAY_NAME_MAX_LENGTH
+  ) {
     issues.push({
       field: "displayName",
-      message: "Display name cannot exceed 120 characters.",
+      message: `Display name cannot exceed ${USER_PROFILE_DISPLAY_NAME_MAX_LENGTH} characters.`,
     });
   }
 
   if (
     profile.scheduleConstraints !== undefined &&
-    profile.scheduleConstraints.length > 500
+    profile.scheduleConstraints.length >
+      USER_PROFILE_SCHEDULE_CONSTRAINTS_MAX_LENGTH
   ) {
     issues.push({
       field: "scheduleConstraints",
-      message: "Schedule constraints cannot exceed 500 characters.",
+      message: `Schedule constraints cannot exceed ${USER_PROFILE_SCHEDULE_CONSTRAINTS_MAX_LENGTH} characters.`,
     });
   }
 

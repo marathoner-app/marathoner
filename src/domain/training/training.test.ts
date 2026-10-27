@@ -9,6 +9,8 @@ import {
   calculateWeeklyDistanceTrend,
   COMPLETED_RUN_NOTES_MAX_LENGTH,
   SHOE_NAME_MAX_LENGTH,
+  USER_PROFILE_DISPLAY_NAME_MAX_LENGTH,
+  USER_PROFILE_SCHEDULE_CONSTRAINTS_MAX_LENGTH,
   createCompletedRunId,
   createDateOnly,
   createDistanceMeters,
@@ -258,6 +260,37 @@ describe("training domain validation", () => {
       {
         field: "preferredLongRunDay",
         message: "Preferred long-run day must be one of the available training days.",
+      },
+    ]);
+  });
+
+  it("shares the persisted profile text bounds", () => {
+    expect(
+      validateUserProfile({
+        ...profile,
+        displayName: "d".repeat(USER_PROFILE_DISPLAY_NAME_MAX_LENGTH),
+        scheduleConstraints: "s".repeat(
+          USER_PROFILE_SCHEDULE_CONSTRAINTS_MAX_LENGTH,
+        ),
+      }),
+    ).toEqual([]);
+
+    expect(
+      validateUserProfile({
+        ...profile,
+        displayName: "d".repeat(USER_PROFILE_DISPLAY_NAME_MAX_LENGTH + 1),
+        scheduleConstraints: "s".repeat(
+          USER_PROFILE_SCHEDULE_CONSTRAINTS_MAX_LENGTH + 1,
+        ),
+      }),
+    ).toEqual([
+      {
+        field: "displayName",
+        message: `Display name cannot exceed ${USER_PROFILE_DISPLAY_NAME_MAX_LENGTH} characters.`,
+      },
+      {
+        field: "scheduleConstraints",
+        message: `Schedule constraints cannot exceed ${USER_PROFILE_SCHEDULE_CONSTRAINTS_MAX_LENGTH} characters.`,
       },
     ]);
   });

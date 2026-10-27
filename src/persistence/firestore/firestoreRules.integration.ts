@@ -44,7 +44,10 @@ function planDocument(userId = firstUserId) {
   };
 }
 
-function profileDocument(userId = firstUserId) {
+function profileDocument(
+  userId = firstUserId,
+  overrides: Record<string, unknown> = {},
+) {
   return {
     schemaVersion: 1,
     userId,
@@ -57,11 +60,18 @@ function profileDocument(userId = firstUserId) {
     currentWeeklyDistanceMeters: 24_000,
     currentRunningFrequencyDaysPerWeek: 4,
     longestRecentRunDistanceMeters: 12_000,
+    recentPerformance: {
+      completedOn: "2026-09-27",
+      distanceMeters: 5_000,
+      durationSeconds: 1_800,
+    },
     availableTrainingDays: ["tuesday", "thursday", "saturday", "sunday"],
     preferredLongRunDay: "sunday",
+    scheduleConstraints: "Weekdays after work.\nWeekend mornings.",
     completionGoal: "complete_first_marathon",
     createdAt: new Date("2026-10-05T12:00:00.000Z"),
     updatedAt: new Date("2026-10-05T12:00:00.000Z"),
+    ...overrides,
   };
 }
 
@@ -156,6 +166,64 @@ describe("Firestore training-data ownership rules", () => {
         updatedAt: new Date("2026-10-05T13:00:00.000Z"),
       }),
     );
+    await assertFails(
+      updateDoc(reference, {
+        schemaVersion: 2,
+        updatedAt: new Date("2026-10-05T13:00:00.000Z"),
+      }),
+    );
+    await assertSucceeds(
+      updateDoc(reference, {
+        displayName: "Updated Runner",
+        updatedAt: new Date("2026-10-05T13:00:00.000Z"),
+      }),
+    );
+    await assertFails(
+      updateDoc(reference, {
+        updatedAt: new Date("2026-10-05T12:30:00.000Z"),
+      }),
+    );
+  });
+
+  it.each([
+    ["an incoherent create timestamp", {
+      updatedAt: new Date("2026-10-05T13:00:00.000Z"),
+    }],
+    ["a whitespace-only display name", { displayName: "   " }],
+    ["an oversized display name", { displayName: "d".repeat(121) }],
+    ["whitespace-only schedule constraints", { scheduleConstraints: "\t\n" }],
+    ["oversized schedule constraints", { scheduleConstraints: "s".repeat(501) }],
+    ["a malformed race date", {
+      targetRace: { kind: "date", date: "05/02/2027" },
+    }],
+    ["a reversed race window", {
+      targetRace: {
+        kind: "window",
+        startDate: "2027-06-01",
+        endDate: "2027-05-01",
+      },
+    }],
+    ["a malformed recent-performance date", {
+      recentPerformance: {
+        completedOn: "09/27/2026",
+        distanceMeters: 5_000,
+        durationSeconds: 1_800,
+      },
+    }],
+    ["duplicate available training days", {
+      availableTrainingDays: ["tuesday", "tuesday", "sunday"],
+    }],
+    ["a preferred day outside the available days", {
+      availableTrainingDays: ["tuesday", "thursday"],
+      preferredLongRunDay: "sunday",
+    }],
+  ])("rejects a profile with %s", async (_, overrides) => {
+    const database = testEnvironment
+      .authenticatedContext(firstUserId)
+      .firestore();
+    const reference = doc(database, `users/${firstUserId}`);
+
+    await assertFails(setDoc(reference, profileDocument(firstUserId, overrides)));
   });
 
   it("allows a runner to create and read a document in their own path", async () => {
