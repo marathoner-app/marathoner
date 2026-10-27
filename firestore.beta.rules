@@ -79,6 +79,13 @@ service cloud.firestore {
         && value.matches('^[\\s\\S]*\\S[\\s\\S]*$');
     }
 
+    function isBoundedIdentifier(value) {
+      return value is string
+        && value.size() > 0
+        && value.size() <= 128
+        && value.matches('^[^/\\s]([^/]*[^/\\s])?$');
+    }
+
     function hasValidAvailableTrainingDays(data) {
       return !data.keys().hasAny(['availableTrainingDays'])
         || (data.availableTrainingDays is list
@@ -231,6 +238,89 @@ service cloud.firestore {
         && next.updatedAt >= prior.updatedAt;
     }
 
+    function hasValidRunAssociations(data) {
+      let hasPlanId = data.keys().hasAny(['plannedWorkoutPlanId']);
+      let hasWorkoutId = data.keys().hasAny(['plannedWorkoutId']);
+      return hasPlanId == hasWorkoutId
+        && (!hasPlanId
+          || (isBoundedIdentifier(data.plannedWorkoutPlanId)
+            && isBoundedIdentifier(data.plannedWorkoutId)))
+        && (!data.keys().hasAny(['shoeId'])
+          || isBoundedIdentifier(data.shoeId));
+    }
+
+    function hasValidOptionalRunFeedback(data) {
+      return (!data.keys().hasAny(['perceivedEffort'])
+          || data.perceivedEffort in [
+            'much_easier_than_expected',
+            'easier_than_expected',
+            'about_right',
+            'harder_than_expected',
+            'much_harder_than_expected'
+          ])
+        && (!data.keys().hasAny(['unusualPain'])
+          || data.unusualPain is bool)
+        && (!data.keys().hasAny(['notes'])
+          || isNonblankBoundedString(data.notes, 500));
+    }
+
+    function isValidRunWrite(userId) {
+      let data = request.resource.data;
+      return isValidOwnedWrite(userId)
+        && data.keys().hasAll([
+          'schemaVersion',
+          'userId',
+          'startedAt',
+          'timeZone',
+          'distanceMeters',
+          'durationSeconds',
+          'createdAt',
+          'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'schemaVersion',
+          'userId',
+          'plannedWorkoutPlanId',
+          'plannedWorkoutId',
+          'shoeId',
+          'startedAt',
+          'timeZone',
+          'distanceMeters',
+          'durationSeconds',
+          'perceivedEffort',
+          'unusualPain',
+          'notes',
+          'createdAt',
+          'updatedAt'
+        ])
+        && data.startedAt is timestamp
+        && isNonblankBoundedString(data.timeZone, 64)
+        && data.distanceMeters is int
+        && data.distanceMeters > 0
+        && data.durationSeconds is int
+        && data.durationSeconds > 0
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp
+        && data.updatedAt >= data.createdAt
+        && hasValidRunAssociations(data)
+        && hasValidOptionalRunFeedback(data);
+    }
+
+    function isValidRunCreate(userId) {
+      return isValidRunWrite(userId)
+        && request.resource.data.createdAt == request.resource.data.updatedAt;
+    }
+
+    function isValidRunUpdate(userId) {
+      let next = request.resource.data;
+      let prior = resource.data;
+      return isValidRunWrite(userId)
+        && next.schemaVersion == prior.schemaVersion
+        && next.userId == prior.userId
+        && next.createdAt == prior.createdAt
+        && next.updatedAt >= prior.updatedAt;
+    }
+
     function isValidShoeWrite(userId) {
       let data = request.resource.data;
       return isValidOwnedWrite(userId)
@@ -345,8 +435,10 @@ service cloud.firestore {
 
     match /users/{userId}/runs/{runId} {
       allow read, delete: if canAccessBetaTrainingData(userId);
-      allow create, update: if canAccessBetaTrainingData(userId)
-        && isValidOwnedWrite(userId);
+      allow create: if canAccessBetaTrainingData(userId)
+        && isValidRunCreate(userId);
+      allow update: if canAccessBetaTrainingData(userId)
+        && isValidRunUpdate(userId);
     }
 
     match /users/{userId}/shoes/{shoeId} {

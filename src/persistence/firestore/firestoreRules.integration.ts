@@ -91,6 +91,37 @@ function shoeDocument(
   };
 }
 
+function runDocument(
+  userId = firstUserId,
+  overrides: Record<string, unknown> = {},
+): Record<string, unknown> {
+  const document: Record<string, unknown> = {
+    schemaVersion: 1,
+    userId,
+    plannedWorkoutPlanId: "plan-1",
+    plannedWorkoutId: "workout-1",
+    shoeId: "shoe-1",
+    startedAt: new Date("2026-10-05T12:00:00.000Z"),
+    timeZone: "America/Los_Angeles",
+    distanceMeters: 5_000,
+    durationSeconds: 1_800,
+    perceivedEffort: "about_right",
+    unusualPain: false,
+    notes: "Comfortable progression run.",
+    createdAt: new Date("2026-10-05T13:00:00.000Z"),
+    updatedAt: new Date("2026-10-05T13:00:00.000Z"),
+    ...overrides,
+  };
+
+  for (const [key, value] of Object.entries(document)) {
+    if (value === undefined) {
+      delete document[key];
+    }
+  }
+
+  return document;
+}
+
 beforeAll(async () => {
   testEnvironment = await initializeTestEnvironment({
     projectId,
@@ -383,7 +414,6 @@ describe("Firestore training-data ownership rules", () => {
   });
 
   it.each([
-    ["runs/run-1", { schemaVersion: 1, userId: firstUserId }],
     ["shoes/shoe-1", shoeDocument()],
   ])(
     "applies the same ownership boundary to %s",
@@ -399,6 +429,106 @@ describe("Firestore training-data ownership rules", () => {
       await assertFails(getDoc(doc(otherDatabase, path)));
     },
   );
+
+  it("accepts the exact completed-run lifecycle for its owner", async () => {
+    const ownerDatabase = testEnvironment
+      .authenticatedContext(firstUserId)
+      .firestore();
+    const otherDatabase = testEnvironment
+      .authenticatedContext(secondUserId)
+      .firestore();
+    const path = `users/${firstUserId}/runs/run-1`;
+    const ownerReference = doc(ownerDatabase, path);
+    const otherReference = doc(otherDatabase, path);
+
+    await assertSucceeds(setDoc(ownerReference, runDocument()));
+    await assertSucceeds(getDoc(ownerReference));
+    await assertFails(getDoc(otherReference));
+    await assertSucceeds(
+      updateDoc(ownerReference, {
+        distanceMeters: 5_100,
+        perceivedEffort: "easier_than_expected",
+        updatedAt: new Date("2026-10-05T14:00:00.000Z"),
+      }),
+    );
+    await assertFails(
+      updateDoc(otherReference, {
+        distanceMeters: 10_000,
+        updatedAt: new Date("2026-10-05T15:00:00.000Z"),
+      }),
+    );
+    await assertFails(deleteDoc(otherReference));
+    await assertSucceeds(deleteDoc(ownerReference));
+  });
+
+  it.each([
+    ["an unknown field", { unexpectedField: true }],
+    ["a blank time zone", { timeZone: "" }],
+    ["zero distance", { distanceMeters: 0 }],
+    ["fractional distance", { distanceMeters: 1.5 }],
+    ["zero duration", { durationSeconds: 0 }],
+    ["an invalid perceived effort", { perceivedEffort: "fast" }],
+    ["a non-boolean pain flag", { unusualPain: "no" }],
+    ["blank notes", { notes: " \n " }],
+    ["oversized notes", { notes: "n".repeat(501) }],
+    ["only a plan association", { plannedWorkoutId: undefined }],
+    ["an invalid shoe identifier", { shoeId: "shoes/shoe-1" }],
+    ["incoherent create timestamps", {
+      updatedAt: new Date("2026-10-05T14:00:00.000Z"),
+    }],
+  ])("rejects a completed run with %s", async (_, overrides) => {
+    const database = testEnvironment
+      .authenticatedContext(firstUserId)
+      .firestore();
+    const reference = doc(database, `users/${firstUserId}/runs/run-1`);
+
+    await assertFails(setDoc(reference, runDocument(firstUserId, overrides)));
+  });
+
+  it("rejects a completed run missing a required field", async () => {
+    const database = testEnvironment
+      .authenticatedContext(firstUserId)
+      .firestore();
+    const reference = doc(database, `users/${firstUserId}/runs/run-1`);
+    const incompleteRun = runDocument();
+    delete incompleteRun.startedAt;
+
+    await assertFails(setDoc(reference, incompleteRun));
+  });
+
+  it("preserves immutable run fields and monotonic update time", async () => {
+    const database = testEnvironment
+      .authenticatedContext(firstUserId)
+      .firestore();
+    const reference = doc(database, `users/${firstUserId}/runs/run-1`);
+
+    await assertSucceeds(setDoc(reference, runDocument()));
+    await assertFails(
+      setDoc(
+        reference,
+        runDocument(secondUserId, {
+          updatedAt: new Date("2026-10-05T14:00:00.000Z"),
+        }),
+      ),
+    );
+    await assertFails(
+      updateDoc(reference, {
+        schemaVersion: 2,
+        updatedAt: new Date("2026-10-05T14:00:00.000Z"),
+      }),
+    );
+    await assertFails(
+      updateDoc(reference, {
+        createdAt: new Date("2026-10-05T12:00:00.000Z"),
+        updatedAt: new Date("2026-10-05T14:00:00.000Z"),
+      }),
+    );
+    await assertFails(
+      updateDoc(reference, {
+        updatedAt: new Date("2026-10-05T12:59:59.000Z"),
+      }),
+    );
+  });
 
   it("accepts exact shoe creation and makes retirement terminal", async () => {
     const database = testEnvironment

@@ -85,6 +85,37 @@ function shoeDocument(
   };
 }
 
+function runDocument(
+  userId = firstUserId,
+  overrides: Record<string, unknown> = {},
+): Record<string, unknown> {
+  const document: Record<string, unknown> = {
+    schemaVersion: 1,
+    userId,
+    plannedWorkoutPlanId: "plan-1",
+    plannedWorkoutId: "workout-1",
+    shoeId: "shoe-1",
+    startedAt: new Date("2026-10-05T12:00:00.000Z"),
+    timeZone: "America/Los_Angeles",
+    distanceMeters: 5_000,
+    durationSeconds: 1_800,
+    perceivedEffort: "about_right",
+    unusualPain: false,
+    notes: "Comfortable progression run.",
+    createdAt: new Date("2026-10-05T13:00:00.000Z"),
+    updatedAt: new Date("2026-10-05T13:00:00.000Z"),
+    ...overrides,
+  };
+
+  for (const [key, value] of Object.entries(document)) {
+    if (value === undefined) {
+      delete document[key];
+    }
+  }
+
+  return document;
+}
+
 function authenticatedContext(
   userId: string,
   emailVerified = true,
@@ -224,7 +255,7 @@ describe("founding-beta membership rules", () => {
         planId: "plan-1",
       },
     ],
-    ["runs/run-1", { schemaVersion: 1, userId: firstUserId }],
+    ["runs/run-1", runDocument()],
     ["shoes/shoe-1", shoeDocument()],
   ])(
     "allows an approved verified owner to write and read %s",
@@ -284,6 +315,62 @@ describe("founding-beta membership rules", () => {
       ),
     );
     await assertFails(deleteDoc(reference));
+  });
+
+  it("enforces the exact completed-run lifecycle for an approved member", async () => {
+    await seedMembership(firstUserId);
+    await seedMembership(secondUserId);
+    const ownerDatabase = authenticatedContext(firstUserId).firestore();
+    const otherDatabase = authenticatedContext(secondUserId).firestore();
+    const path = `users/${firstUserId}/runs/run-1`;
+    const ownerReference = doc(ownerDatabase, path);
+    const otherReference = doc(otherDatabase, path);
+
+    await assertSucceeds(setDoc(ownerReference, runDocument()));
+    await assertSucceeds(getDoc(ownerReference));
+    await assertSucceeds(
+      updateDoc(ownerReference, {
+        durationSeconds: 1_750,
+        notes: "Felt controlled throughout.",
+        updatedAt: new Date("2026-10-05T14:00:00.000Z"),
+      }),
+    );
+    await assertFails(
+      setDoc(
+        ownerReference,
+        runDocument(firstUserId, {
+          unexpectedField: true,
+          updatedAt: new Date("2026-10-05T15:00:00.000Z"),
+        }),
+      ),
+    );
+    await assertFails(
+      setDoc(
+        ownerReference,
+        runDocument(firstUserId, {
+          distanceMeters: 0,
+          updatedAt: new Date("2026-10-05T15:00:00.000Z"),
+        }),
+      ),
+    );
+    await assertFails(
+      setDoc(
+        ownerReference,
+        runDocument(firstUserId, {
+          plannedWorkoutId: undefined,
+          updatedAt: new Date("2026-10-05T15:00:00.000Z"),
+        }),
+      ),
+    );
+    await assertFails(
+      updateDoc(ownerReference, {
+        createdAt: new Date("2026-10-05T12:00:00.000Z"),
+        updatedAt: new Date("2026-10-05T15:00:00.000Z"),
+      }),
+    );
+    await assertFails(getDoc(otherReference));
+    await assertFails(deleteDoc(otherReference));
+    await assertSucceeds(deleteDoc(ownerReference));
   });
 
   it("denies an approved account whose email is not verified", async () => {
