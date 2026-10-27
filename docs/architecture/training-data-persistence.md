@@ -226,6 +226,16 @@ does not approve a proposal or change a plan. It gives later internal evidence
 normalization a trusted active-plan ID and revision without duplicating revision
 state on each plan document.
 
+The shared adaptation-history normalizer consumes that state together with a
+loaded owner snapshot. It treats the active pointer as authoritative, verifies
+the corresponding plan/workout/run ownership and association graph, and
+rejects contradictory saved records before deriving objective evidence. It is
+read-only and Firebase-independent: it neither repairs storage nor interprets a
+plan's `status` as a substitute for the server-owned pointer. Runs without a
+planned-workout association and runs coherently associated with a historical
+plan remain valid saved history but are excluded from active-plan adaptation
+evidence.
+
 ## Completed-run documents
 
 Path: `users/{userId}/runs/{runId}`
