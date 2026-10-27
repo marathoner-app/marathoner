@@ -263,9 +263,7 @@ service cloud.firestore {
           'createdAt',
           'updatedAt'
         ])
-        && data.name is string
-        && data.name.size() > 0
-        && data.name.matches('^[\\s\\S]*\\S[\\s\\S]*$')
+        && isNonblankBoundedString(data.name, 120)
         && isDateOnlyString(data.startDate)
         && isDateOnlyString(data.targetRaceDate)
         && data.targetRaceDate >= data.startDate

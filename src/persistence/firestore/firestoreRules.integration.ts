@@ -300,6 +300,7 @@ describe("Firestore training-data ownership rules", () => {
       setDoc(
         reference,
         planDocument(firstUserId, {
+          name: "p".repeat(120),
           endDate: "2027-01-17",
           completionGoal: "complete_first_marathon",
         }),
@@ -324,6 +325,7 @@ describe("Firestore training-data ownership rules", () => {
       { updatedAt: new Date("2026-07-30T13:00:00.000Z") },
     ],
     ["a whitespace-only name", { name: "  \t" }],
+    ["an oversized name", { name: "p".repeat(121) }],
     ["a malformed start date", { startDate: "08/01/2026" }],
     ["a target before its start", { targetRaceDate: "2026-07-31" }],
     ["an end before its target", { endDate: "2027-01-09" }],
@@ -638,11 +640,22 @@ describe("Firestore training-data ownership rules", () => {
     await assertFails(deleteDoc(doc(ownerDatabase, evidencePath)));
   });
 
-  it("keeps operator activation controls entirely server-owned", async () => {
-    const controlPath = "operatorControls/recommendationActivation";
+  it.each([
+    [
+      "recommendation activation",
+      "operatorControls/recommendationActivation",
+      "operator-activation-control@1",
+    ],
+    ["feature controls", "operatorControls/featureControls", "feature-controls@1"],
+    [
+      "minimum client version",
+      "operatorControls/minimumClientVersion",
+      "minimum-client-version@1",
+    ],
+  ])("keeps %s entirely server-owned", async (_, controlPath, schemaVersion) => {
     await testEnvironment.withSecurityRulesDisabled(async (context) => {
       await setDoc(doc(context.firestore(), controlPath), {
-        schemaVersion: "operator-activation-control@1",
+        schemaVersion,
         revision: 1,
       });
     });

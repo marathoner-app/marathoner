@@ -10,6 +10,7 @@ import {
   COMPLETED_RUN_NOTES_MAX_LENGTH,
   PLANNED_WORKOUT_NOTES_MAX_LENGTH,
   SHOE_NAME_MAX_LENGTH,
+  TRAINING_PLAN_NAME_MAX_LENGTH,
   USER_PROFILE_DISPLAY_NAME_MAX_LENGTH,
   USER_PROFILE_SCHEDULE_CONSTRAINTS_MAX_LENGTH,
   createCompletedRunId,
@@ -179,6 +180,24 @@ describe("training domain validation", () => {
     expect(validateTrainingPlan(invalidPlan)).toContainEqual({
       field: "targetRaceDate",
       message: "Target race date cannot precede plan start date.",
+    });
+  });
+
+  it("bounds training-plan names", () => {
+    expect(
+      validateTrainingPlan({
+        ...plan,
+        name: "p".repeat(TRAINING_PLAN_NAME_MAX_LENGTH),
+      }),
+    ).toEqual([]);
+    expect(
+      validateTrainingPlan({
+        ...plan,
+        name: "p".repeat(TRAINING_PLAN_NAME_MAX_LENGTH + 1),
+      }),
+    ).toContainEqual({
+      field: "name",
+      message: `Plan name cannot exceed ${TRAINING_PLAN_NAME_MAX_LENGTH} characters.`,
     });
   });
 

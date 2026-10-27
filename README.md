@@ -224,6 +224,9 @@ The development/test-only Creator Radar boundary is documented in
   guidance is approved or rendered.
 - Firestore structure and security behavior are documented in
   [`docs/architecture/training-data-persistence.md`](docs/architecture/training-data-persistence.md).
+- The external-beta negative cases, remaining client writes, command-migration
+  gates, and retained CI evidence are indexed in the
+  [`Firestore rules acceptance record`](docs/security/firestore-rules-acceptance.md).
 
 ## Prerequisites
 
