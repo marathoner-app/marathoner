@@ -243,6 +243,23 @@ submission or resolution never calls the transport, queues work, or replays
 after reconnection; the caller must explicitly use the matching resolution
 method with the original command ID.
 
+`TrainingDataProvider` now contains the current listener-aware migration path
+for completed-run creation and deletion. In command mode it supplies the
+listener-confirmed run and workout revisions, retains an ambiguous command ID
+for explicit resolution, and never falls back to a direct create or delete.
+Command receipts finish the form action but do not synthesize Track or Analyze
+state; the live-read listener remains the only visible source of truth. Run
+editing intentionally retains its existing repository path and latency
+diagnostics.
+
+The migration is prepared but cannot be activated yet.
+`VITE_COMPLETED_RUN_COMMANDS_ENABLED` is typed and validated, defaults to
+`false` in every checked-in environment, and currently rejects `true` at build
+time. Issue #347 must record a passing development create/delete smoke test and
+rollback rehearsal before a reviewed code change can approve live activation.
+This makes the next activation small and explicit without allowing an `.env`
+change to bypass the gate.
+
 Two independent Firebase app instances now prove the completed-run lane against
 the Authentication, Functions, and Firestore emulators. When both are signed in
 as the same runner and race to complete one planned workout, exactly one run,
@@ -262,10 +279,11 @@ owner IDs, command IDs, completed-run IDs, notes, payloads, or thrown error
 objects.
 
 This proof does not activate the lane in a deployed environment. Functions
-deployment, production provider and UI migration, denial of direct material
-writes in Firestore Security Rules, live listener synchronization and cache
-isolation, App Check enforcement, and adaptation commands all remain open in
-their owning issues.
+deployment and smoke testing, the activation approval described above, denial
+of direct material writes in Firestore Security Rules, App Check enforcement,
+and adaptation commands all remain open in their owning issues. Live listener
+synchronization and account-cache isolation are already implemented through
+#159; the prepared provider path preserves that boundary.
 
 `PlanApprovalReview` owns the participant-facing handoff from a fully reviewed
 proposal to that client. Its final confirmation snapshots the exact input and
