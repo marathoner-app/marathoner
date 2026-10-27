@@ -15,7 +15,9 @@ the phone while preserving the desktop header treatment. The isolated
 recommendation-review fixture verifies that the internal preview notice,
 narrative sequence, and both decision actions remain visible and operable at
 phone width and 200% text without connecting the dormant component to the
-application or Firebase.
+application or Firebase. The isolated reviewed-guidance fixture applies the
+same boundaries to guidance context, limitations, and dismissal at phone width
+and 200% text without importing the draft guidance manifest.
 
 Install Chromium once after `npm install`:
 

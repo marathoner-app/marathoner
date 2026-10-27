@@ -1,0 +1,130 @@
+.reviewed-guidance-card {
+  box-sizing: border-box;
+  width: min(100%, 42rem);
+  margin: 1.25rem auto;
+  padding: clamp(1.25rem, 4vw, 2rem);
+  overflow-wrap: anywhere;
+  border: 1px solid #cbd5e1;
+  border-radius: 0.9rem;
+  background: #ffffff;
+  color: #17202a;
+  line-height: 1.5;
+  text-align: left;
+}
+
+.reviewed-guidance-card h2,
+.reviewed-guidance-card h3,
+.reviewed-guidance-card p {
+  margin: 0;
+}
+
+.reviewed-guidance-card h2 {
+  margin-top: 0.35rem;
+  font-size: clamp(1.5rem, 4vw, 2.25rem);
+  line-height: 1.2;
+}
+
+.reviewed-guidance-eyebrow {
+  color: #315866;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.reviewed-guidance-context {
+  margin-top: 0.7rem !important;
+  color: #475569;
+  font-size: 0.9rem;
+  font-weight: 650;
+}
+
+.reviewed-guidance-preview {
+  display: grid;
+  gap: 0.25rem;
+  margin-top: 1.25rem;
+  padding: 0.9rem 1rem;
+  border: 1px solid #9a6a00;
+  border-radius: 0.55rem;
+  background: #fffaf0;
+}
+
+.reviewed-guidance-message {
+  margin-top: 1.25rem !important;
+  font-size: 1.05rem;
+}
+
+.reviewed-guidance-limitations {
+  margin-top: 1.25rem;
+  padding: 1rem;
+  border-left: 0.3rem solid #2e6fbb;
+  background: #eef4fb;
+}
+
+.reviewed-guidance-limitations h3,
+.reviewed-guidance-outcome h3 {
+  font-size: 1rem;
+  line-height: 1.3;
+}
+
+.reviewed-guidance-limitations ul {
+  display: grid;
+  gap: 0.5rem;
+  margin: 0.6rem 0 0;
+  padding-left: 1.25rem;
+}
+
+.reviewed-guidance-pending,
+.reviewed-guidance-outcome {
+  margin-top: 1rem !important;
+  padding: 0.9rem 1rem;
+  border-radius: 0.55rem;
+}
+
+.reviewed-guidance-pending {
+  background: #eef4fb;
+}
+
+.reviewed-guidance-outcome {
+  border: 1px solid #9a6a00;
+  background: #fffaf0;
+}
+
+.reviewed-guidance-outcome:focus {
+  outline: 3px solid #2e6fbb;
+  outline-offset: 0.25rem;
+}
+
+.reviewed-guidance-outcome p {
+  margin-top: 0.4rem;
+}
+
+.reviewed-guidance-outcome button,
+.reviewed-guidance-actions button {
+  min-width: 2.75rem;
+  min-height: 2.75rem;
+  padding: 0.65rem 1rem;
+}
+
+.reviewed-guidance-outcome button {
+  margin-top: 0.85rem;
+}
+
+.reviewed-guidance-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 1.25rem;
+}
+
+.reviewed-guidance-card .secondary {
+  border: 1px solid #17202a;
+  background: #ffffff;
+  color: #17202a;
+}
+
+@media (max-width: 600px) {
+  .reviewed-guidance-actions button,
+  .reviewed-guidance-outcome button {
+    width: 100%;
+  }
+}
