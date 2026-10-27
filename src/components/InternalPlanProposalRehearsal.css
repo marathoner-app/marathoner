@@ -47,6 +47,56 @@
   font-size: 0.92rem;
 }
 
+.internal-plan-start-candidates {
+  min-width: 0;
+  margin: 0.25rem 0 0.5rem;
+  padding: 1rem;
+  border: 1px solid #b99a5f;
+  border-radius: 0.75rem;
+}
+
+.internal-plan-start-candidates legend {
+  padding: 0 0.35rem;
+  font-weight: 750;
+}
+
+.internal-plan-start-candidates p {
+  margin: 0 0 0.75rem;
+  color: #594b32;
+  font-size: 0.92rem;
+}
+
+.internal-plan-start-candidates > div {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 11rem), 1fr));
+  gap: 0.6rem;
+}
+
+.internal-plan-rehearsal form .internal-plan-start-candidates button {
+  display: grid;
+  width: 100%;
+  margin: 0;
+  padding: 0.7rem 0.8rem;
+  border: 1px solid #7c5c25;
+  border-radius: 0.6rem;
+  background: #fffdf7;
+  color: #242117;
+  text-align: left;
+}
+
+.internal-plan-rehearsal form
+  .internal-plan-start-candidates
+  button[aria-pressed="true"] {
+  outline: 3px solid #7c5c25;
+  outline-offset: 1px;
+  background: #f4e5c3;
+}
+
+.internal-plan-rehearsal form .internal-plan-start-candidates button small {
+  margin-top: 0.2rem;
+  color: #715019;
+}
+
 .internal-plan-rehearsal-confirmation {
   display: grid;
   grid-template-columns: auto 1fr;
