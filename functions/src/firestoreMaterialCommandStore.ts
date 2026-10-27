@@ -9,6 +9,7 @@ import {
   type ProofMaterialCommandEnvelope,
   type RunCompletionReceiptResult,
   type RunDeletionReceiptResult,
+  type RunUpdateReceiptResult,
 } from '../../src/domain/materialCommands/contract.js'
 import type { MaterialCommandStore } from './materialCommandHandler.js'
 
@@ -30,6 +31,7 @@ export function storedMaterialCommandResult(
   | AccountDeletionRequestAcceptedResult
   | PlanApprovalReceiptResult
   | RunCompletionReceiptResult
+  | RunUpdateReceiptResult
   | RunDeletionReceiptResult {
   if (
     !isMaterialCommandResult(data) ||
@@ -37,6 +39,7 @@ export function storedMaterialCommandResult(
       data.status !== 'accepted' &&
       data.status !== 'plan_approved' &&
       data.status !== 'run_completed' &&
+      data.status !== 'run_updated' &&
       data.status !== 'run_deleted')
   ) {
     throw new Error('A stored material-command receipt is invalid.')

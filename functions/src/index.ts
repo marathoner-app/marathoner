@@ -26,6 +26,7 @@ import { FirestoreOperatorActivationControlStore } from './firestoreOperatorActi
 import { FirestorePlanApprovalStore } from './firestorePlanApprovalStore.js'
 import { FirestoreRunCompletionStore } from './firestoreRunCompletionStore.js'
 import { FirestoreRunDeletionStore } from './firestoreRunDeletionStore.js'
+import { FirestoreRunUpdateStore } from './firestoreRunUpdateStore.js'
 import {
   executeMaterialCommand,
   resolveMaterialCommand as resolveMaterialCommandRequest,
@@ -94,6 +95,7 @@ const dependencies = {
     ? {
         runCompletion: { store: new FirestoreRunCompletionStore(database) },
         runDeletion: { store: new FirestoreRunDeletionStore(database) },
+        runUpdate: { store: new FirestoreRunUpdateStore(database) },
       }
     : {}),
   log: (entry: MaterialCommandLogEntry) => {

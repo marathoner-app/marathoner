@@ -26,11 +26,13 @@ import {
   createRecommendationDecisionCommand,
   createRunCompletionCommand,
   createRunDeletionCommand,
+  createRunUpdateCommand,
   isMaterialCommandResult,
   type MaterialCommandEnvelope,
   type PlanApprovalReceiptResult,
   type RunCompletionReceiptResult,
   type RunDeletionReceiptResult,
+  type RunUpdateReceiptResult,
 } from '../../src/domain/materialCommands/contract.js'
 import { createRecommendationId } from '../../src/domain/recommendations/recommendationEvidence.js'
 import {
@@ -66,6 +68,7 @@ import { OPERATOR_ACTIVATION_CONTROL_PATH } from './firestoreOperatorActivationC
 import { FirestorePlanApprovalStore } from './firestorePlanApprovalStore.js'
 import { FirestoreRunCompletionStore } from './firestoreRunCompletionStore.js'
 import { FirestoreRunDeletionStore } from './firestoreRunDeletionStore.js'
+import { FirestoreRunUpdateStore } from './firestoreRunUpdateStore.js'
 
 const projectId = 'demo-marathoner'
 const email = 'material-command-owner@example.test'
@@ -106,6 +109,8 @@ const generatedFixture = {
 const supportedScopeId = 'synthetic-consistent-runner@1'
 const runPlanId = createTrainingPlanId('run-command-plan-0001')
 const runWorkoutId = createPlannedWorkoutId('run-command-workout-0001')
+const nextRunPlanId = createTrainingPlanId('run-command-plan-0002')
+const nextRunWorkoutId = createPlannedWorkoutId('run-command-workout-0002')
 const runShoeId = createShoeId('run-command-shoe-0001')
 const workoutUpdatedAt = createUtcDateTime('2026-10-08T18:00:00.000Z')
 
@@ -148,6 +153,53 @@ function runDeletionCommand(
             workoutId: completion.completedPlannedWorkout.workoutId,
             expectedUpdatedAt: completion.completedPlannedWorkout.updatedAt,
           },
+  })
+}
+
+function runUpdateCommand(
+  commandId: string,
+  completion: RunCompletionReceiptResult | RunUpdateReceiptResult,
+  options: {
+    durationSeconds?: number
+    plannedWorkout?: {
+      planId: typeof runPlanId
+      workoutId: typeof runWorkoutId
+      expectedUpdatedAt: typeof workoutUpdatedAt
+    } | {
+      planId: typeof nextRunPlanId
+      workoutId: typeof nextRunWorkoutId
+      expectedUpdatedAt: typeof workoutUpdatedAt
+    } | null
+  } = {},
+) {
+  const currentReceipt =
+    completion.status === 'run_completed'
+      ? completion.completedPlannedWorkout
+      : completion.completedPlannedWorkout ?? null
+  const currentAssociation =
+    currentReceipt === null
+      ? null
+      : {
+          planId: currentReceipt.planId,
+          workoutId: currentReceipt.workoutId,
+          expectedUpdatedAt: currentReceipt.updatedAt,
+        }
+  return createRunUpdateCommand(commandId, {
+    completedRunId: completion.completedRunId,
+    expectedCompletedRunUpdatedAt: completion.completedRunUpdatedAt,
+    input: {
+      plannedWorkout:
+        options.plannedWorkout === undefined
+          ? currentAssociation
+          : options.plannedWorkout,
+      startedAt: createUtcDateTime('2026-10-08T17:00:00.000Z'),
+      timeZone: createIanaTimeZone('America/Los_Angeles'),
+      distance: createDistanceMeters(5_000),
+      duration: createDurationSeconds(options.durationSeconds ?? 1_775),
+      perceivedEffort: 'about_right',
+      unusualPain: false,
+      notes: 'Emulator update fixture',
+    },
   })
 }
 
@@ -300,6 +352,13 @@ function requireRunCompletionReceipt(value: unknown): RunCompletionReceiptResult
 function requireRunDeletionReceipt(value: unknown): RunDeletionReceiptResult {
   if (!isMaterialCommandResult(value) || value.status !== 'run_deleted') {
     throw new Error('Expected a run-deletion receipt.')
+  }
+  return value
+}
+
+function requireRunUpdateReceipt(value: unknown): RunUpdateReceiptResult {
+  if (!isMaterialCommandResult(value) || value.status !== 'run_updated') {
+    throw new Error('Expected a run-update receipt.')
   }
   return value
 }
@@ -1195,6 +1254,407 @@ describe('material-command emulator boundary', () => {
     await expect(database.doc(collisionPath).get()).resolves.toEqual(
       expect.objectContaining({ exists: true }),
     )
+  })
+
+  it('updates a run without disturbing its retained workout association and replays the receipt', async () => {
+    await seedWorkout()
+    await signInOwner()
+    const completion = requireRunCompletionReceipt(
+      (
+        await submit(
+          runCompletionCommand('complete-run-before-update', {
+            plannedWorkout: {
+              planId: runPlanId,
+              workoutId: runWorkoutId,
+              expectedUpdatedAt: workoutUpdatedAt,
+            },
+          }),
+        )
+      ).data,
+    )
+    const command = runUpdateCommand(
+      'update-run-emulator-retained',
+      completion,
+    )
+
+    const first = requireRunUpdateReceipt((await submit(command)).data)
+    expect((await submit(command)).data).toEqual(first)
+    expect((await resolve({ commandId: command.commandId })).data).toEqual(first)
+    expect(first).toEqual({
+      status: 'run_updated',
+      commandId: command.commandId,
+      completedRunId: completion.completedRunId,
+      completedRunUpdatedAt: first.completedRunUpdatedAt,
+      reopenedPlannedWorkout: null,
+      completedPlannedWorkout: null,
+    })
+    expect(
+      (
+        await database
+          .doc(`users/${ownerId}/runs/${completion.completedRunId}`)
+          .get()
+      ).data(),
+    ).toEqual(
+      expect.objectContaining({
+        durationSeconds: 1_775,
+        plannedWorkoutPlanId: runPlanId,
+        plannedWorkoutId: runWorkoutId,
+      }),
+    )
+    expect((await database.doc(workoutPath()).get()).data()).toEqual(
+      expect.objectContaining({ status: 'completed' }),
+    )
+    expect((await database.doc(guardPath()).get()).data()).toEqual(
+      expect.objectContaining({
+        commandId: 'complete-run-before-update',
+        completedRunId: completion.completedRunId,
+      }),
+    )
+
+    const changed = runUpdateCommand(command.commandId, completion, {
+      durationSeconds: 1_776,
+    })
+    expect((await submit(changed)).data).toEqual(
+      expect.objectContaining({
+        status: 'conflict',
+        code: 'command-id-reused',
+      }),
+    )
+  })
+
+  it('moves a completed run between workouts in one transaction', async () => {
+    await Promise.all([
+      seedWorkout(),
+      seedWorkout({ planId: nextRunPlanId, workoutId: nextRunWorkoutId }),
+    ])
+    await signInOwner()
+    const completion = requireRunCompletionReceipt(
+      (
+        await submit(
+          runCompletionCommand('complete-run-before-move', {
+            plannedWorkout: {
+              planId: runPlanId,
+              workoutId: runWorkoutId,
+              expectedUpdatedAt: workoutUpdatedAt,
+            },
+          }),
+        )
+      ).data,
+    )
+    const command = runUpdateCommand('update-run-emulator-move', completion, {
+      plannedWorkout: {
+        planId: nextRunPlanId,
+        workoutId: nextRunWorkoutId,
+        expectedUpdatedAt: workoutUpdatedAt,
+      },
+    })
+
+    const receipt = requireRunUpdateReceipt((await submit(command)).data)
+
+    expect(receipt.reopenedPlannedWorkout).toEqual({
+      planId: runPlanId,
+      workoutId: runWorkoutId,
+      updatedAt: receipt.completedRunUpdatedAt,
+    })
+    expect(receipt.completedPlannedWorkout).toEqual({
+      planId: nextRunPlanId,
+      workoutId: nextRunWorkoutId,
+      updatedAt: receipt.completedRunUpdatedAt,
+    })
+    expect((await database.doc(workoutPath()).get()).data()).toEqual(
+      expect.objectContaining({ status: 'planned' }),
+    )
+    await expect(database.doc(guardPath()).get()).resolves.toEqual(
+      expect.objectContaining({ exists: false }),
+    )
+    expect(
+      (
+        await database
+          .doc(workoutPath(nextRunWorkoutId, nextRunPlanId))
+          .get()
+      ).data(),
+    ).toEqual(expect.objectContaining({ status: 'completed' }))
+    expect(
+      (
+        await database
+          .doc(guardPath(nextRunWorkoutId, nextRunPlanId))
+          .get()
+      ).data(),
+    ).toEqual(
+      expect.objectContaining({ completedRunId: completion.completedRunId }),
+    )
+    expect(
+      (
+        await database
+          .doc(`users/${ownerId}/runs/${completion.completedRunId}`)
+          .get()
+      ).data(),
+    ).toEqual(
+      expect.objectContaining({
+        plannedWorkoutPlanId: nextRunPlanId,
+        plannedWorkoutId: nextRunWorkoutId,
+      }),
+    )
+  })
+
+  it('removes and then adds a workout association without partial state', async () => {
+    await Promise.all([
+      seedWorkout(),
+      seedWorkout({ planId: nextRunPlanId, workoutId: nextRunWorkoutId }),
+    ])
+    await signInOwner()
+    const completion = requireRunCompletionReceipt(
+      (
+        await submit(
+          runCompletionCommand('complete-run-before-reassociation', {
+            plannedWorkout: {
+              planId: runPlanId,
+              workoutId: runWorkoutId,
+              expectedUpdatedAt: workoutUpdatedAt,
+            },
+          }),
+        )
+      ).data,
+    )
+    const removed = requireRunUpdateReceipt(
+      (
+        await submit(
+          runUpdateCommand('update-run-remove-association', completion, {
+            plannedWorkout: null,
+          }),
+        )
+      ).data,
+    )
+    expect(removed.reopenedPlannedWorkout).toEqual({
+      planId: runPlanId,
+      workoutId: runWorkoutId,
+      updatedAt: removed.completedRunUpdatedAt,
+    })
+    expect(removed.completedPlannedWorkout).toBeNull()
+
+    const added = requireRunUpdateReceipt(
+      (
+        await submit(
+          runUpdateCommand('update-run-add-association', removed, {
+            plannedWorkout: {
+              planId: nextRunPlanId,
+              workoutId: nextRunWorkoutId,
+              expectedUpdatedAt: workoutUpdatedAt,
+            },
+          }),
+        )
+      ).data,
+    )
+    expect(added.reopenedPlannedWorkout).toBeNull()
+    expect(added.completedPlannedWorkout).toEqual({
+      planId: nextRunPlanId,
+      workoutId: nextRunWorkoutId,
+      updatedAt: added.completedRunUpdatedAt,
+    })
+    expect((await database.doc(workoutPath()).get()).data()).toEqual(
+      expect.objectContaining({ status: 'planned' }),
+    )
+    expect(
+      (
+        await database
+          .doc(workoutPath(nextRunWorkoutId, nextRunPlanId))
+          .get()
+      ).data(),
+    ).toEqual(expect.objectContaining({ status: 'completed' }))
+  })
+
+  it('rejects stale and cross-owner updates without effects or receipts', async () => {
+    await Promise.all([
+      seedWorkout(),
+      seedWorkout({
+        planId: nextRunPlanId,
+        workoutId: nextRunWorkoutId,
+        userId: otherOwnerId,
+      }),
+    ])
+    await signInOwner()
+    const completion = requireRunCompletionReceipt(
+      (
+        await submit(
+          runCompletionCommand('complete-run-before-invalid-update', {
+            plannedWorkout: {
+              planId: runPlanId,
+              workoutId: runWorkoutId,
+              expectedUpdatedAt: workoutUpdatedAt,
+            },
+          }),
+        )
+      ).data,
+    )
+    const stale = createRunUpdateCommand('update-run-emulator-stale', {
+      completedRunId: completion.completedRunId,
+      expectedCompletedRunUpdatedAt: createUtcDateTime(
+        '2026-10-08T17:59:59.000Z',
+      ),
+      input: runUpdateCommand('unused-update-command', completion).command.input,
+    })
+    expect((await submit(stale)).data).toEqual(
+      expect.objectContaining({
+        status: 'stale_revision',
+        code: 'completed-run-version-changed',
+      }),
+    )
+    const foreignTarget = runUpdateCommand(
+      'update-run-emulator-foreign-target',
+      completion,
+      {
+        plannedWorkout: {
+          planId: nextRunPlanId,
+          workoutId: nextRunWorkoutId,
+          expectedUpdatedAt: workoutUpdatedAt,
+        },
+      },
+    )
+    expect((await submit(foreignTarget)).data).toEqual(
+      expect.objectContaining({
+        status: 'authorization_error',
+        code: 'training-resource-access-denied',
+      }),
+    )
+    expect((await database.doc(workoutPath()).get()).data()).toEqual(
+      expect.objectContaining({ status: 'completed' }),
+    )
+    await expect(database.doc(guardPath()).get()).resolves.toEqual(
+      expect.objectContaining({ exists: true }),
+    )
+    for (const rejected of [stale, foreignTarget]) {
+      await expect(
+        database
+          .doc(
+            `materialCommandReceipts/${ownerId}/commands/${rejected.commandId}`,
+          )
+          .get(),
+      ).resolves.toEqual(expect.objectContaining({ exists: false }))
+    }
+  })
+
+  it('rolls back run, workouts, guards, and receipt when an update fails', async () => {
+    await Promise.all([
+      seedWorkout(),
+      seedWorkout({ planId: nextRunPlanId, workoutId: nextRunWorkoutId }),
+    ])
+    await signInOwner()
+    const completion = requireRunCompletionReceipt(
+      (
+        await submit(
+          runCompletionCommand('complete-run-before-update-rollback', {
+            plannedWorkout: {
+              planId: runPlanId,
+              workoutId: runWorkoutId,
+              expectedUpdatedAt: workoutUpdatedAt,
+            },
+          }),
+        )
+      ).data,
+    )
+    const command = runUpdateCommand(
+      'update-run-emulator-rollback',
+      completion,
+      {
+        plannedWorkout: {
+          planId: nextRunPlanId,
+          workoutId: nextRunWorkoutId,
+          expectedUpdatedAt: workoutUpdatedAt,
+        },
+      },
+    )
+    const store = new FirestoreRunUpdateStore(database, {
+      now: () => new Date(Date.parse(completion.completedRunUpdatedAt) + 1),
+      onBeforeCommit: () => {
+        throw new Error('Intentional update transaction failure.')
+      },
+    })
+
+    await expect(
+      store.commit({ envelope: command, ownerId }),
+    ).rejects.toThrow('Intentional update transaction failure.')
+
+    expect(
+      (
+        await database
+          .doc(`users/${ownerId}/runs/${completion.completedRunId}`)
+          .get()
+      ).data(),
+    ).toEqual(expect.objectContaining({ durationSeconds: 1_800 }))
+    expect((await database.doc(workoutPath()).get()).data()).toEqual(
+      expect.objectContaining({ status: 'completed' }),
+    )
+    await expect(database.doc(guardPath()).get()).resolves.toEqual(
+      expect.objectContaining({ exists: true }),
+    )
+    expect(
+      (
+        await database
+          .doc(workoutPath(nextRunWorkoutId, nextRunPlanId))
+          .get()
+      ).data(),
+    ).toEqual(expect.objectContaining({ status: 'planned' }))
+    await expect(
+      database.doc(guardPath(nextRunWorkoutId, nextRunPlanId)).get(),
+    ).resolves.toEqual(expect.objectContaining({ exists: false }))
+    await expect(
+      database
+        .doc(`materialCommandReceipts/${ownerId}/commands/${command.commandId}`)
+        .get(),
+    ).resolves.toEqual(expect.objectContaining({ exists: false }))
+  })
+
+  it('allows only one of two authenticated clients to update one run revision', async () => {
+    await signInOwnerOnBothClients()
+    const completion = requireRunCompletionReceipt(
+      (
+        await submit(
+          runCompletionCommand('complete-run-before-two-client-update'),
+        )
+      ).data,
+    )
+    const commands = [
+      runUpdateCommand('update-run-two-client-first', completion, {
+        durationSeconds: 1_701,
+        plannedWorkout: null,
+      }),
+      runUpdateCommand('update-run-two-client-second', completion, {
+        durationSeconds: 1_702,
+        plannedWorkout: null,
+      }),
+    ] as const
+
+    const results = await Promise.all([
+      submit(commands[0]),
+      otherSubmit(commands[1]),
+    ])
+    const values = results.map((result) => result.data)
+    expect(
+      values.filter(
+        (value) =>
+          isMaterialCommandResult(value) && value.status === 'run_updated',
+      ),
+    ).toHaveLength(1)
+    expect(
+      values.filter(
+        (value) =>
+          isMaterialCommandResult(value) && value.status === 'stale_revision',
+      ),
+    ).toHaveLength(1)
+    const storedRun = (
+      await database
+        .doc(`users/${ownerId}/runs/${completion.completedRunId}`)
+        .get()
+    ).data()
+    expect([1_701, 1_702]).toContain(storedRun?.durationSeconds)
+    const receipts = await database
+      .collection(`materialCommandReceipts/${ownerId}/commands`)
+      .get()
+    expect(
+      receipts.docs.filter((document) =>
+        commands.some((command) => command.commandId === document.id),
+      ),
+    ).toHaveLength(1)
   })
 
   it('atomically deletes a planned run, reopens its workout, and replays the receipt', async () => {

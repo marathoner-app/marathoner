@@ -1,6 +1,7 @@
 import {
   isRunCompletionCommandEnvelope,
   isRunDeletionCommandEnvelope,
+  isRunUpdateCommandEnvelope,
   materialCommandIdFrom,
   parseMaterialCommand,
   type MaterialCommandAuthorizationResult,
@@ -12,6 +13,8 @@ import {
   type RunCompletionReceiptResult,
   type RunDeletionCommandEnvelope,
   type RunDeletionReceiptResult,
+  type RunUpdateCommandEnvelope,
+  type RunUpdateReceiptResult,
 } from '../../src/domain/materialCommands/contract.js'
 import {
   createUtcDateTime,
@@ -89,6 +92,30 @@ export interface RunDeletionProjection {
   readonly receipt: RunDeletionReceiptResult
 }
 
+export interface RunUpdateProjection {
+  readonly updatedRun: {
+    readonly path: string
+    readonly entity: CompletedRun
+  }
+  readonly reopenedPlannedWorkout: {
+    readonly path: string
+    readonly entity: PlannedWorkout
+  } | null
+  readonly completedPlannedWorkout: {
+    readonly path: string
+    readonly entity: PlannedWorkout
+  } | null
+  readonly completionGuardToDelete: {
+    readonly path: string
+    readonly record: WorkoutCompletionGuardRecordV1
+  } | null
+  readonly completionGuardToCreate: {
+    readonly path: string
+    readonly record: WorkoutCompletionGuardRecordV1
+  } | null
+  readonly receipt: RunUpdateReceiptResult
+}
+
 export type RunCommandProjectionFailureResult =
   | MaterialCommandValidationResult
   | MaterialCommandAuthorizationResult
@@ -102,6 +129,10 @@ export type RunCompletionProjectionDecision =
 
 export type RunDeletionProjectionDecision =
   | { readonly ok: true; readonly projection: RunDeletionProjection }
+  | { readonly ok: false; readonly result: RunCommandProjectionFailureResult }
+
+export type RunUpdateProjectionDecision =
+  | { readonly ok: true; readonly projection: RunUpdateProjection }
   | { readonly ok: false; readonly result: RunCommandProjectionFailureResult }
 
 export interface RunCompletionProjectionOptions {
@@ -121,6 +152,18 @@ export interface RunDeletionProjectionOptions {
   readonly loadedRun: CompletedRun | null
   readonly loadedPlannedWorkout: PlannedWorkout | null
   readonly loadedCompletionGuard: WorkoutCompletionGuardRecordV1 | null
+}
+
+export interface RunUpdateProjectionOptions {
+  readonly authenticatedOwnerId: string
+  readonly updatedAt: string
+  readonly envelope: unknown
+  readonly loadedRun: CompletedRun | null
+  readonly loadedPreviousPlannedWorkout: PlannedWorkout | null
+  readonly loadedPreviousCompletionGuard: WorkoutCompletionGuardRecordV1 | null
+  readonly loadedNextPlannedWorkout: PlannedWorkout | null
+  readonly loadedNextCompletionGuard: WorkoutCompletionGuardRecordV1 | null
+  readonly loadedShoe: Shoe | null
 }
 
 export class RunCommandProjectionError extends Error {
@@ -226,6 +269,26 @@ function parseDeletionEnvelope(
         parsed.envelope.commandId,
         'invalid-run-deletion',
         'A valid completed-run deletion command is required.',
+      ),
+    }
+  }
+  return { ok: true, envelope: parsed.envelope }
+}
+
+function parseUpdateEnvelope(
+  value: unknown,
+):
+  | { readonly ok: true; readonly envelope: RunUpdateCommandEnvelope }
+  | { readonly ok: false; readonly result: RunCommandProjectionFailureResult } {
+  const parsed = parseMaterialCommand(value)
+  if (!parsed.ok) return parsed
+  if (!isRunUpdateCommandEnvelope(parsed.envelope)) {
+    return {
+      ok: false,
+      result: validationResult(
+        parsed.envelope.commandId,
+        'invalid-run-update',
+        'A valid completed-run update command is required.',
       ),
     }
   }
@@ -578,6 +641,518 @@ export function projectRunCompletion(
                 completionGuard.plannedWorkoutId,
               ),
               record: completionGuard,
+            },
+      receipt,
+    },
+  }
+}
+
+interface RunWorkoutAssociation {
+  readonly planId: TrainingPlanId
+  readonly workoutId: PlannedWorkoutId
+}
+
+function runWorkoutAssociation(run: CompletedRun): RunWorkoutAssociation | null {
+  const hasPlan = run.plannedWorkoutPlanId !== undefined
+  const hasWorkout = run.plannedWorkoutId !== undefined
+  if (hasPlan !== hasWorkout) {
+    projectionError(
+      'invalid-server-record',
+      'The loaded completed run has an incomplete workout association.',
+    )
+  }
+  return hasPlan && hasWorkout
+    ? {
+        planId: run.plannedWorkoutPlanId as TrainingPlanId,
+        workoutId: run.plannedWorkoutId as PlannedWorkoutId,
+      }
+    : null
+}
+
+function associationsMatch(
+  left: RunWorkoutAssociation | null,
+  right: RunWorkoutAssociation | null,
+): boolean {
+  if (left === null || right === null) return left === right
+  return left.planId === right.planId && left.workoutId === right.workoutId
+}
+
+function requireLinkedCompletedWorkout(options: {
+  commandId: string
+  ownerId: UserId
+  association: RunWorkoutAssociation
+  run: CompletedRun
+  workout: PlannedWorkout | null
+  guard: WorkoutCompletionGuardRecordV1 | null
+}):
+  | { readonly ok: true; readonly workout: PlannedWorkout; readonly guard: WorkoutCompletionGuardRecordV1 }
+  | { readonly ok: false; readonly result: RunCommandProjectionFailureResult } {
+  const workout = options.workout
+  if (workout === null) {
+    return {
+      ok: false,
+      result: validationResult(
+        options.commandId,
+        'invalid-run-update',
+        'The linked planned workout is not available for this update.',
+      ),
+    }
+  }
+  if (workout.userId !== options.ownerId) {
+    return { ok: false, result: authorizationResult(options.commandId) }
+  }
+  requireValidLoadedWorkout(workout)
+  if (
+    workout.planId !== options.association.planId ||
+    workout.id !== options.association.workoutId ||
+    workout.kind === 'rest' ||
+    workout.status !== 'completed'
+  ) {
+    return {
+      ok: false,
+      result: validationResult(
+        options.commandId,
+        'invalid-run-update',
+        'The linked workout is not the completed workout associated with this run.',
+      ),
+    }
+  }
+
+  const guard = options.guard
+  if (guard === null) {
+    return {
+      ok: false,
+      result: validationResult(
+        options.commandId,
+        'invalid-run-update',
+        'The workout completion cannot be uniquely linked to this run.',
+      ),
+    }
+  }
+  validateLoadedGuard(guard)
+  if (guard.userId !== options.ownerId) {
+    return { ok: false, result: authorizationResult(options.commandId) }
+  }
+  if (
+    guard.planId !== options.association.planId ||
+    guard.plannedWorkoutId !== options.association.workoutId ||
+    guard.completedRunId !== options.run.id
+  ) {
+    return {
+      ok: false,
+      result: validationResult(
+        options.commandId,
+        'invalid-run-update',
+        'The workout completion guard does not identify this run.',
+      ),
+    }
+  }
+  return { ok: true, workout, guard }
+}
+
+function projectUpdatedRun(
+  envelope: RunUpdateCommandEnvelope,
+  ownerId: UserId,
+  prior: CompletedRun,
+  updatedAt: UtcDateTime,
+): CompletedRun {
+  const input = envelope.command.input
+  const run: CompletedRun = {
+    id: prior.id,
+    userId: ownerId,
+    ...(input.plannedWorkout === null
+      ? {}
+      : {
+          plannedWorkoutPlanId: input.plannedWorkout.planId,
+          plannedWorkoutId: input.plannedWorkout.workoutId,
+        }),
+    ...(input.shoeId === undefined ? {} : { shoeId: input.shoeId }),
+    startedAt: input.startedAt,
+    timeZone: input.timeZone,
+    distance: input.distance,
+    duration: input.duration,
+    ...(input.perceivedEffort === undefined
+      ? {}
+      : { perceivedEffort: input.perceivedEffort }),
+    ...(input.unusualPain === undefined
+      ? {}
+      : { unusualPain: input.unusualPain }),
+    ...(input.notes === undefined ? {} : { notes: input.notes }),
+    createdAt: prior.createdAt,
+    updatedAt,
+  }
+  if (validateCompletedRun(run).length > 0) {
+    projectionError(
+      'invalid-server-record',
+      'The validated command did not project a valid updated run.',
+    )
+  }
+  return run
+}
+
+export function projectRunUpdate(
+  options: RunUpdateProjectionOptions,
+): RunUpdateProjectionDecision {
+  const parsed = parseUpdateEnvelope(options.envelope)
+  if (!parsed.ok) return parsed
+  const envelope = parsed.envelope
+  const ownerId = requireOwnerId(options.authenticatedOwnerId)
+  const updatedAt = requireServerTime(options.updatedAt, 'update')
+  const run = options.loadedRun
+
+  if (run === null || run.id !== envelope.command.completedRunId) {
+    return {
+      ok: false,
+      result: validationResult(
+        envelope.commandId,
+        'invalid-run-update',
+        'The completed run is not available for update.',
+      ),
+    }
+  }
+  if (run.userId !== ownerId) {
+    return { ok: false, result: authorizationResult(envelope.commandId) }
+  }
+  requireValidLoadedRun(run)
+  if (run.updatedAt !== envelope.command.expectedCompletedRunUpdatedAt) {
+    return {
+      ok: false,
+      result: staleRunResult(
+        envelope.commandId,
+        envelope.command.expectedCompletedRunUpdatedAt,
+        run,
+      ),
+    }
+  }
+  if (Date.parse(updatedAt) <= Date.parse(run.updatedAt)) {
+    projectionError(
+      'invalid-server-input',
+      'Server update time must advance the loaded run version.',
+    )
+  }
+  if (Date.parse(envelope.command.input.startedAt) > Date.parse(updatedAt)) {
+    return {
+      ok: false,
+      result: validationResult(
+        envelope.commandId,
+        'invalid-run-update',
+        'A completed run cannot start in the future.',
+      ),
+    }
+  }
+
+  const previousAssociation = runWorkoutAssociation(run)
+  const nextReference = envelope.command.input.plannedWorkout
+  const nextAssociation =
+    nextReference === null
+      ? null
+      : { planId: nextReference.planId, workoutId: nextReference.workoutId }
+  const retainsAssociation = associationsMatch(
+    previousAssociation,
+    nextAssociation,
+  )
+
+  let previousState: {
+    readonly workout: PlannedWorkout
+    readonly guard: WorkoutCompletionGuardRecordV1
+  } | null = null
+  if (previousAssociation === null) {
+    if (
+      options.loadedPreviousPlannedWorkout !== null ||
+      options.loadedPreviousCompletionGuard !== null
+    ) {
+      projectionError(
+        'invalid-server-input',
+        'An unplanned run cannot receive prior workout state.',
+      )
+    }
+  } else {
+    const prior = requireLinkedCompletedWorkout({
+      commandId: envelope.commandId,
+      ownerId,
+      association: previousAssociation,
+      run,
+      workout: options.loadedPreviousPlannedWorkout,
+      guard: options.loadedPreviousCompletionGuard,
+    })
+    if (!prior.ok) return prior
+    previousState = prior
+    if (Date.parse(updatedAt) < Date.parse(previousState.workout.updatedAt)) {
+      projectionError(
+        'invalid-server-input',
+        'Server update time cannot precede the linked workout version.',
+      )
+    }
+  }
+
+  let nextWorkout: PlannedWorkout | null = null
+  if (nextReference === null) {
+    if (
+      options.loadedNextPlannedWorkout !== null ||
+      options.loadedNextCompletionGuard !== null
+    ) {
+      projectionError(
+        'invalid-server-input',
+        'An unplanned update cannot receive next-workout state.',
+      )
+    }
+  } else if (retainsAssociation) {
+    if (
+      previousState === null ||
+      options.loadedNextPlannedWorkout === null ||
+      options.loadedNextCompletionGuard === null
+    ) {
+      projectionError(
+        'invalid-server-input',
+        'A retained association requires the same loaded workout and guard.',
+      )
+    }
+    const next = requireLinkedCompletedWorkout({
+      commandId: envelope.commandId,
+      ownerId,
+      association: nextAssociation as RunWorkoutAssociation,
+      run,
+      workout: options.loadedNextPlannedWorkout,
+      guard: options.loadedNextCompletionGuard,
+    })
+    if (!next.ok) return next
+    if (
+      next.workout.updatedAt !== previousState.workout.updatedAt ||
+      next.guard.commandId !== previousState.guard.commandId
+    ) {
+      projectionError(
+        'invalid-server-input',
+        'A retained association must use one consistent loaded workout state.',
+      )
+    }
+    if (next.workout.updatedAt !== nextReference.expectedUpdatedAt) {
+      return {
+        ok: false,
+        result: staleWorkoutResult(
+          envelope.commandId,
+          nextReference.expectedUpdatedAt,
+          next.workout,
+        ),
+      }
+    }
+    nextWorkout = next.workout
+  } else {
+    const workout = options.loadedNextPlannedWorkout
+    if (workout === null) {
+      return {
+        ok: false,
+        result: validationResult(
+          envelope.commandId,
+          'planned-workout-not-completable',
+          'The requested planned workout is not available for completion.',
+        ),
+      }
+    }
+    if (workout.userId !== ownerId) {
+      return { ok: false, result: authorizationResult(envelope.commandId) }
+    }
+    requireValidLoadedWorkout(workout)
+    if (
+      workout.planId !== nextReference.planId ||
+      workout.id !== nextReference.workoutId
+    ) {
+      return {
+        ok: false,
+        result: validationResult(
+          envelope.commandId,
+          'planned-workout-not-completable',
+          'The loaded workout does not match the requested association.',
+        ),
+      }
+    }
+    if (options.loadedNextCompletionGuard !== null) {
+      const guard = options.loadedNextCompletionGuard
+      validateLoadedGuard(guard)
+      if (guard.userId !== ownerId) {
+        return { ok: false, result: authorizationResult(envelope.commandId) }
+      }
+      if (
+        guard.planId !== nextReference.planId ||
+        guard.plannedWorkoutId !== nextReference.workoutId
+      ) {
+        projectionError(
+          'invalid-server-record',
+          'The loaded completion guard does not match its workout identity.',
+        )
+      }
+      return {
+        ok: false,
+        result: {
+          status: 'conflict',
+          commandId: envelope.commandId,
+          code: 'planned-workout-already-completed',
+          message: 'This planned workout already has a completed run.',
+          planId: nextReference.planId,
+          plannedWorkoutId: nextReference.workoutId,
+          completedRunId: guard.completedRunId,
+        },
+      }
+    }
+    if (workout.updatedAt !== nextReference.expectedUpdatedAt) {
+      return {
+        ok: false,
+        result: staleWorkoutResult(
+          envelope.commandId,
+          nextReference.expectedUpdatedAt,
+          workout,
+        ),
+      }
+    }
+    if (Date.parse(updatedAt) < Date.parse(workout.updatedAt)) {
+      projectionError(
+        'invalid-server-input',
+        'Server update time cannot precede the loaded workout version.',
+      )
+    }
+    if (workout.kind === 'rest' || workout.status !== 'planned') {
+      return {
+        ok: false,
+        result: validationResult(
+          envelope.commandId,
+          'planned-workout-not-completable',
+          'Only a current planned run or walk-run can be completed.',
+        ),
+      }
+    }
+    nextWorkout = workout
+  }
+
+  const shoeId = envelope.command.input.shoeId
+  if (shoeId === undefined) {
+    if (options.loadedShoe !== null) {
+      projectionError(
+        'invalid-server-input',
+        'A shoeless run cannot receive a server-loaded shoe.',
+      )
+    }
+  } else {
+    const shoe = options.loadedShoe
+    if (shoe === null || shoe.id !== shoeId) {
+      return {
+        ok: false,
+        result: validationResult(
+          envelope.commandId,
+          'shoe-not-available',
+          'The selected shoe is not available for this update.',
+        ),
+      }
+    }
+    if (shoe.userId !== ownerId) {
+      return { ok: false, result: authorizationResult(envelope.commandId) }
+    }
+    requireValidLoadedShoe(shoe)
+    if (shoe.status !== 'active') {
+      return {
+        ok: false,
+        result: validationResult(
+          envelope.commandId,
+          'shoe-not-available',
+          'The selected shoe is not active.',
+        ),
+      }
+    }
+  }
+
+  const updatedRun = projectUpdatedRun(envelope, ownerId, run, updatedAt)
+  const reopenedWorkout =
+    previousState === null || retainsAssociation
+      ? null
+      : reopenedWorkoutEntity(previousState.workout, updatedAt)
+  const completedWorkout =
+    nextWorkout === null || retainsAssociation
+      ? null
+      : completedWorkoutEntity(nextWorkout, updatedAt)
+  const guardToCreate: WorkoutCompletionGuardRecordV1 | null =
+    completedWorkout === null
+      ? null
+      : {
+          schemaVersion: WORKOUT_COMPLETION_GUARD_SCHEMA_VERSION,
+          trainingSchemaVersion: TRAINING_SCHEMA_VERSION,
+          userId: ownerId,
+          planId: completedWorkout.planId,
+          plannedWorkoutId: completedWorkout.id,
+          completedRunId: run.id,
+          commandId: envelope.commandId,
+          createdAt: updatedAt,
+        }
+  const receipt: RunUpdateReceiptResult = {
+    status: 'run_updated',
+    commandId: envelope.commandId,
+    completedRunId: run.id,
+    completedRunUpdatedAt: updatedAt,
+    reopenedPlannedWorkout:
+      reopenedWorkout === null
+        ? null
+        : {
+            planId: reopenedWorkout.planId,
+            workoutId: reopenedWorkout.id,
+            updatedAt: reopenedWorkout.updatedAt,
+          },
+    completedPlannedWorkout:
+      completedWorkout === null
+        ? null
+        : {
+            planId: completedWorkout.planId,
+            workoutId: completedWorkout.id,
+            updatedAt: completedWorkout.updatedAt,
+          },
+  }
+
+  return {
+    ok: true,
+    projection: {
+      updatedRun: {
+        path: runDocumentPath(ownerId, updatedRun.id),
+        entity: updatedRun,
+      },
+      reopenedPlannedWorkout:
+        reopenedWorkout === null
+          ? null
+          : {
+              path: workoutDocumentPath(
+                ownerId,
+                reopenedWorkout.planId,
+                reopenedWorkout.id,
+              ),
+              entity: reopenedWorkout,
+            },
+      completedPlannedWorkout:
+        completedWorkout === null
+          ? null
+          : {
+              path: workoutDocumentPath(
+                ownerId,
+                completedWorkout.planId,
+                completedWorkout.id,
+              ),
+              entity: completedWorkout,
+            },
+      completionGuardToDelete:
+        previousState === null || retainsAssociation
+          ? null
+          : {
+              path: workoutCompletionGuardDocumentPath(
+                ownerId,
+                previousState.guard.planId,
+                previousState.guard.plannedWorkoutId,
+              ),
+              record: previousState.guard,
+            },
+      completionGuardToCreate:
+        guardToCreate === null
+          ? null
+          : {
+              path: workoutCompletionGuardDocumentPath(
+                ownerId,
+                guardToCreate.planId,
+                guardToCreate.plannedWorkoutId,
+              ),
+              record: guardToCreate,
             },
       receipt,
     },
