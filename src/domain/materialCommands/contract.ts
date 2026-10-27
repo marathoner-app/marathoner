@@ -41,6 +41,8 @@ export const PLAN_APPROVAL_COMMAND_SCHEMA_VERSION = 1 as const
 export const PLAN_APPROVAL_COMMAND_TYPE = 'plan.approve-generated' as const
 export const RUN_COMPLETION_COMMAND_SCHEMA_VERSION = 1 as const
 export const RUN_COMPLETION_COMMAND_TYPE = 'run.complete' as const
+export const RUN_UPDATE_COMMAND_SCHEMA_VERSION = 1 as const
+export const RUN_UPDATE_COMMAND_TYPE = 'run.update' as const
 export const RUN_DELETION_COMMAND_SCHEMA_VERSION = 1 as const
 export const RUN_DELETION_COMMAND_TYPE = 'run.delete' as const
 export const RECOMMENDATION_DECISION_COMMAND_SCHEMA_VERSION = 1 as const
@@ -125,6 +127,16 @@ export interface RunCompletionCommandEnvelope
   }
 }
 
+export interface RunUpdateCommandEnvelope extends MaterialCommandEnvelopeBase {
+  command: {
+    type: typeof RUN_UPDATE_COMMAND_TYPE
+    schemaVersion: typeof RUN_UPDATE_COMMAND_SCHEMA_VERSION
+    completedRunId: CompletedRunId
+    expectedCompletedRunUpdatedAt: UtcDateTime
+    input: CompletedRunCommandInputV1
+  }
+}
+
 export interface RunDeletionCommandEnvelope
   extends MaterialCommandEnvelopeBase {
   command: {
@@ -152,6 +164,7 @@ export type MaterialCommandEnvelope =
   | AccountDeletionRequestEnvelope
   | PlanApprovalCommandEnvelope
   | RunCompletionCommandEnvelope
+  | RunUpdateCommandEnvelope
   | RunDeletionCommandEnvelope
   | RecommendationDecisionCommandEnvelope
 
@@ -177,6 +190,12 @@ export function isRunCompletionCommandEnvelope(
   envelope: MaterialCommandEnvelope,
 ): envelope is RunCompletionCommandEnvelope {
   return envelope.command.type === RUN_COMPLETION_COMMAND_TYPE
+}
+
+export function isRunUpdateCommandEnvelope(
+  envelope: MaterialCommandEnvelope,
+): envelope is RunUpdateCommandEnvelope {
+  return envelope.command.type === RUN_UPDATE_COMMAND_TYPE
 }
 
 export function isRunDeletionCommandEnvelope(
@@ -233,6 +252,16 @@ export interface RunCompletionReceiptResult {
   commandId: string
   completedRunId: CompletedRunId
   completedRunUpdatedAt: UtcDateTime
+  completedPlannedWorkout: PlannedWorkoutCommandReceiptV1 | null
+}
+
+/** A replay identifies every record whose listener confirmation completes the edit. */
+export interface RunUpdateReceiptResult {
+  status: 'run_updated'
+  commandId: string
+  completedRunId: CompletedRunId
+  completedRunUpdatedAt: UtcDateTime
+  reopenedPlannedWorkout: PlannedWorkoutCommandReceiptV1 | null
   completedPlannedWorkout: PlannedWorkoutCommandReceiptV1 | null
 }
 
@@ -298,6 +327,7 @@ export interface MaterialCommandValidationResult
     | 'invalid-active-plan-revision'
     | 'invalid-plan-proposal'
     | 'invalid-run-completion'
+    | 'invalid-run-update'
     | 'invalid-run-deletion'
     | 'invalid-recommendation-decision'
     | 'planned-workout-not-completable'
@@ -373,6 +403,7 @@ export type MaterialCommandResult =
   | AccountDeletionRequestAcceptedResult
   | PlanApprovalReceiptResult
   | RunCompletionReceiptResult
+  | RunUpdateReceiptResult
   | RunDeletionReceiptResult
   | RecommendationDecisionReceiptResult
   | PlanApprovalStaleRevisionResult
@@ -1042,6 +1073,67 @@ export function parseMaterialCommand(value: unknown): ParsedMaterialCommand {
     }
   }
 
+  if (command.type === RUN_UPDATE_COMMAND_TYPE) {
+    if (
+      !hasExactKeys(command, [
+        'type',
+        'schemaVersion',
+        'completedRunId',
+        'expectedCompletedRunUpdatedAt',
+        'input',
+      ])
+    ) {
+      return {
+        ok: false,
+        result: validationResult(
+          commandId,
+          'invalid-run-update',
+          'The completed-run update input is invalid.',
+        ),
+      }
+    }
+    if (command.schemaVersion !== RUN_UPDATE_COMMAND_SCHEMA_VERSION) {
+      return {
+        ok: false,
+        result: unsupportedVersionResult(
+          commandId,
+          'unsupported-command-schema-version',
+          RUN_UPDATE_COMMAND_SCHEMA_VERSION,
+        ),
+      }
+    }
+    if (
+      !isCompletedRunIdValue(command.completedRunId) ||
+      !isUtcDateTime(command.expectedCompletedRunUpdatedAt) ||
+      !isCompletedRunCommandInput(command.input)
+    ) {
+      return {
+        ok: false,
+        result: validationResult(
+          commandId,
+          'invalid-run-update',
+          'The completed-run update input is invalid.',
+        ),
+      }
+    }
+    return {
+      ok: true,
+      envelope: {
+        envelopeVersion: MATERIAL_COMMAND_ENVELOPE_VERSION,
+        appProtocolVersion: MATERIAL_COMMAND_APP_PROTOCOL_VERSION,
+        commandId,
+        command: {
+          type: RUN_UPDATE_COMMAND_TYPE,
+          schemaVersion: RUN_UPDATE_COMMAND_SCHEMA_VERSION,
+          completedRunId: command.completedRunId,
+          expectedCompletedRunUpdatedAt:
+            command.expectedCompletedRunUpdatedAt,
+          input: command.input,
+        },
+      },
+    }
+  }
+
   if (command.type === RUN_DELETION_COMMAND_TYPE) {
     if (
       !hasExactKeys(command, [
@@ -1206,6 +1298,16 @@ export function materialCommandSignature(
   if (isRunCompletionCommandEnvelope(envelope)) {
     signature.push(canonicalJson(envelope.command.input))
   }
+  if (isRunUpdateCommandEnvelope(envelope)) {
+    signature.push(
+      canonicalJson({
+        completedRunId: envelope.command.completedRunId,
+        expectedCompletedRunUpdatedAt:
+          envelope.command.expectedCompletedRunUpdatedAt,
+        input: envelope.command.input,
+      }),
+    )
+  }
   if (isRunDeletionCommandEnvelope(envelope)) {
     signature.push(
       canonicalJson({
@@ -1260,6 +1362,41 @@ export function isRunCompletionReceiptResult(
     isUtcDateTime(value.completedRunUpdatedAt) &&
     (value.completedPlannedWorkout === null ||
       isPlannedWorkoutCommandReceipt(value.completedPlannedWorkout))
+  )
+}
+
+export function isRunUpdateReceiptResult(
+  value: unknown,
+): value is RunUpdateReceiptResult {
+  if (
+    !isRecord(value) ||
+    !hasExactKeys(value, [
+      'status',
+      'commandId',
+      'completedRunId',
+      'completedRunUpdatedAt',
+      'reopenedPlannedWorkout',
+      'completedPlannedWorkout',
+    ]) ||
+    value.status !== 'run_updated' ||
+    typeof value.commandId !== 'string' ||
+    !commandIdPattern.test(value.commandId) ||
+    !isCompletedRunIdValue(value.completedRunId) ||
+    !isUtcDateTime(value.completedRunUpdatedAt) ||
+    (value.reopenedPlannedWorkout !== null &&
+      !isPlannedWorkoutCommandReceipt(value.reopenedPlannedWorkout)) ||
+    (value.completedPlannedWorkout !== null &&
+      !isPlannedWorkoutCommandReceipt(value.completedPlannedWorkout))
+  ) {
+    return false
+  }
+  return !(
+    value.reopenedPlannedWorkout !== null &&
+    value.completedPlannedWorkout !== null &&
+    value.reopenedPlannedWorkout.planId ===
+      value.completedPlannedWorkout.planId &&
+    value.reopenedPlannedWorkout.workoutId ===
+      value.completedPlannedWorkout.workoutId
   )
 }
 
@@ -1442,6 +1579,10 @@ export function isMaterialCommandResult(
     return isRunCompletionReceiptResult(value)
   }
 
+  if (value.status === 'run_updated') {
+    return isRunUpdateReceiptResult(value)
+  }
+
   if (value.status === 'run_deleted') {
     return isRunDeletionReceiptResult(value)
   }
@@ -1461,6 +1602,7 @@ export function isMaterialCommandResult(
         value.code === 'invalid-active-plan-revision' ||
         value.code === 'invalid-plan-proposal' ||
         value.code === 'invalid-run-completion' ||
+        value.code === 'invalid-run-update' ||
         value.code === 'invalid-run-deletion' ||
         value.code === 'invalid-recommendation-decision' ||
         value.code === 'planned-workout-not-completable' ||
@@ -1605,6 +1747,34 @@ export function createRunCompletionCommand(
   if (!parsed.ok) throw new Error(parsed.result.message)
   if (!isRunCompletionCommandEnvelope(parsed.envelope)) {
     throw new Error('The run-completion command parsed as the wrong command type.')
+  }
+  return parsed.envelope
+}
+
+export function createRunUpdateCommand(
+  commandId: string,
+  options: {
+    completedRunId: CompletedRunId
+    expectedCompletedRunUpdatedAt: UtcDateTime
+    input: CompletedRunCommandInputV1
+  },
+): RunUpdateCommandEnvelope {
+  const parsed = parseMaterialCommand({
+    envelopeVersion: MATERIAL_COMMAND_ENVELOPE_VERSION,
+    appProtocolVersion: MATERIAL_COMMAND_APP_PROTOCOL_VERSION,
+    commandId,
+    command: {
+      type: RUN_UPDATE_COMMAND_TYPE,
+      schemaVersion: RUN_UPDATE_COMMAND_SCHEMA_VERSION,
+      completedRunId: options.completedRunId,
+      expectedCompletedRunUpdatedAt:
+        options.expectedCompletedRunUpdatedAt,
+      input: options.input,
+    },
+  })
+  if (!parsed.ok) throw new Error(parsed.result.message)
+  if (!isRunUpdateCommandEnvelope(parsed.envelope)) {
+    throw new Error('The run-update command parsed as the wrong command type.')
   }
   return parsed.envelope
 }

@@ -11,6 +11,7 @@ import {
   type RunCompletionDuplicateResult,
   type RunCommandStaleRevisionResult,
   type RunDeletionReceiptResult,
+  type RunUpdateReceiptResult,
 } from '../domain/materialCommands/contract'
 import type {
   GeneratedPlanV1,
@@ -33,6 +34,7 @@ type UnrelatedMaterialCommandSuccess =
   | AccountDeletionRequestAcceptedResult
   | RunCompletionReceiptResult
   | RunDeletionReceiptResult
+  | RunUpdateReceiptResult
   | RecommendationDecisionReceiptResult
   | RunCompletionDuplicateResult
   | RunCommandStaleRevisionResult
@@ -66,6 +68,7 @@ function mapPlanApprovalResult(
     result.status === 'accepted' ||
     result.status === 'recommendation_decided' ||
     result.status === 'run_completed' ||
+    result.status === 'run_updated' ||
     result.status === 'run_deleted' ||
     isRunCompletionDuplicateResult(result) ||
     isRunCommandStaleRevisionResult(result)
