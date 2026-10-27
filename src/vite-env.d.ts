@@ -16,3 +16,11 @@ declare module "virtual:internal-plan-rehearsal-rules" {
   const rulesText: string | null;
   export default rulesText;
 }
+
+declare module "virtual:internal-adaptation-rehearsal-packet" {
+  const packetText: {
+    readonly rulesText: string;
+    readonly fixturesText: string;
+  } | null;
+  export default packetText;
+}
