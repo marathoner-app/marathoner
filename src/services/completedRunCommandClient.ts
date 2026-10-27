@@ -1,6 +1,7 @@
 import {
   createRunCompletionCommand,
   createRunDeletionCommand,
+  createRunUpdateCommand,
   isRunCompletionDuplicateResult,
   isRunCommandStaleRevisionResult,
   type CompletedRunStaleRevisionResult,
@@ -18,6 +19,7 @@ import {
   type RunCompletionDuplicateResult,
   type RunCompletionReceiptResult,
   type RunDeletionReceiptResult,
+  type RunUpdateReceiptResult,
 } from '../domain/materialCommands/contract'
 import type { UtcDateTime } from '../domain/training/dates'
 import type { CompletedRunId } from '../domain/training/identifiers'
@@ -36,6 +38,13 @@ export interface RunDeletionSubmission {
   completedRunId: CompletedRunId
   expectedCompletedRunUpdatedAt: UtcDateTime
   plannedWorkout: PlannedWorkoutCommandReferenceV1 | null
+}
+
+export interface RunUpdateSubmission {
+  commandId: string
+  completedRunId: CompletedRunId
+  expectedCompletedRunUpdatedAt: UtcDateTime
+  input: CompletedRunCommandInputV1
 }
 
 type SharedRunCommandFailureResult =
@@ -57,6 +66,12 @@ export type RunDeletionClientFailureResult =
   | CompletedRunStaleRevisionResult
   | PlannedWorkoutStaleRevisionResult
 
+export type RunUpdateClientFailureResult =
+  | SharedRunCommandFailureResult
+  | RunCompletionDuplicateResult
+  | CompletedRunStaleRevisionResult
+  | PlannedWorkoutStaleRevisionResult
+
 export type RunCompletionClientResult =
   | RunCompletionReceiptResult
   | RunCompletionClientFailureResult
@@ -65,6 +80,10 @@ export type RunDeletionClientResult =
   | RunDeletionReceiptResult
   | RunDeletionClientFailureResult
 
+export type RunUpdateClientResult =
+  | RunUpdateReceiptResult
+  | RunUpdateClientFailureResult
+
 export interface CompletedRunCommandClient {
   submitCompletion(
     submission: RunCompletionSubmission,
@@ -72,8 +91,10 @@ export interface CompletedRunCommandClient {
   submitDeletion(
     submission: RunDeletionSubmission,
   ): Promise<RunDeletionClientResult>
+  submitUpdate(submission: RunUpdateSubmission): Promise<RunUpdateClientResult>
   resolveCompletion(commandId: string): Promise<RunCompletionClientResult>
   resolveDeletion(commandId: string): Promise<RunDeletionClientResult>
+  resolveUpdate(commandId: string): Promise<RunUpdateClientResult>
 }
 
 function unknownOutcome(commandId: string): MaterialCommandOutcomeUnknownResult {
@@ -134,6 +155,16 @@ function mapDeletionResult(
   return mapSharedFailure(result, commandId)
 }
 
+function mapUpdateResult(
+  result: MaterialCommandResult,
+  commandId: string,
+): RunUpdateClientResult {
+  if (result.status === 'run_updated') return result
+  if (isRunCompletionDuplicateResult(result)) return result
+  if (isRunCommandStaleRevisionResult(result)) return result
+  return mapSharedFailure(result, commandId)
+}
+
 export function createCompletedRunCommandClient(
   options: MaterialCommandClientOptions,
 ): CompletedRunCommandClient {
@@ -164,6 +195,19 @@ export function createCompletedRunCommandClient(
       )
     },
 
+    async submitUpdate(submission) {
+      const command = createRunUpdateCommand(submission.commandId, {
+        completedRunId: submission.completedRunId,
+        expectedCompletedRunUpdatedAt:
+          submission.expectedCompletedRunUpdatedAt,
+        input: submission.input,
+      })
+      return mapUpdateResult(
+        await materialCommandClient.submit(command),
+        submission.commandId,
+      )
+    },
+
     async resolveCompletion(commandId) {
       return mapCompletionResult(
         await materialCommandClient.resolve(commandId),
@@ -173,6 +217,13 @@ export function createCompletedRunCommandClient(
 
     async resolveDeletion(commandId) {
       return mapDeletionResult(
+        await materialCommandClient.resolve(commandId),
+        commandId,
+      )
+    },
+
+    async resolveUpdate(commandId) {
+      return mapUpdateResult(
         await materialCommandClient.resolve(commandId),
         commandId,
       )
