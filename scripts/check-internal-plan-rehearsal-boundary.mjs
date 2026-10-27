@@ -7,6 +7,7 @@ const forbiddenBuildText = [
   'Internal draft plan rehearsal',
   'Internal draft adaptation rehearsal',
   'Active only in this rehearsal',
+  'Session choice recorded:',
   'internal-plan-rehearsal',
 ]
 const textExtensions = new Set(['.css', '.html', '.js', '.json', '.map', '.txt'])

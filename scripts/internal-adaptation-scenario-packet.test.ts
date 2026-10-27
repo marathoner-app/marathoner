@@ -21,6 +21,17 @@ describe("createInternalAdaptationScenarioPacket", () => {
     });
     expect(packet.cases).toHaveLength(19);
     expect(packet.rules.outcomes).toHaveLength(17);
+    expect(packet.outcomeDetails).toHaveLength(17);
+    expect(
+      packet.outcomeDetails.find(
+        (outcome) =>
+          outcome.reasonCode === "ADAPT-HOLD-REPEATED-HARD-EFFORT",
+      ),
+    ).toMatchObject({
+      runnerApprovalRequired: true,
+      when: expect.stringContaining("four recent associated runs"),
+      planMutation: expect.stringContaining("Keep the next week's dates"),
+    });
 
     const holdFixture = packet.cases.find(
       (fixture) => fixture.id === "hold-at-two-hard-effort-boundary",

@@ -42,6 +42,14 @@ approval requirement, and provenance, and confirms whether the result matches
 the fixture's expected outcome. The evidence is inspectable but remains
 in-memory and read-only.
 
+When a matching frozen result is a recommendation that requires runner
+approval, the lab also presents the exact draft condition and plan-mutation
+description through the isolated recommendation-review interface. **Keep in
+rehearsal** and **Apply in rehearsal** record only an in-memory interface choice.
+Refused, no-change, invalid, mismatched, and non-approval outcomes expose no
+choice. Rerunning or changing the scenario clears the choice, and neither action
+submits a command, persists a decision, projects a plan, or changes live data.
+
 The adaptation lab deliberately does not derive evidence from saved runs. The
 signed-in client does not yet have a trusted active-plan revision and
 association-normalization seam, so presenting live-run results now would require

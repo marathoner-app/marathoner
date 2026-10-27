@@ -44,10 +44,113 @@ describe("InternalAdaptationScenarioRehearsal", () => {
     ).toBeInTheDocument();
     expect(screen.getByText("Yes")).toBeInTheDocument();
     expect(
+      screen.getByRole("heading", {
+        name: "Internal Hold progression",
+      }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("note")).toHaveTextContent(
+      "not approved training guidance",
+    );
+    expect(
+      screen.getByRole("button", { name: "Keep in rehearsal" }),
+    ).toBeEnabled();
+    expect(
+      screen.getByRole("button", { name: "Apply in rehearsal" }),
+    ).toBeEnabled();
+    expect(
       screen.getByText(/no recommendation record or plan change was created/iu),
     ).toBeInTheDocument();
+  });
+
+  it("records and resets only an in-memory recommendation choice", async () => {
+    const user = userEvent.setup();
+    render(<InternalAdaptationScenarioRehearsal packet={packet} />);
+
+    await user.selectOptions(
+      screen.getByLabelText("Frozen draft scenario"),
+      "hold-at-two-hard-effort-boundary",
+    );
+    await user.click(
+      screen.getByRole("button", { name: "Evaluate read-only scenario" }),
+    );
+    await user.click(
+      screen.getByRole("button", { name: "Apply in rehearsal" }),
+    );
+
     expect(
-      screen.queryByRole("button", { name: /apply/iu }),
+      screen.getByRole("heading", {
+        name: "Session choice recorded: Apply draft change",
+      }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/no real plan changed/iu),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Apply in rehearsal" }),
+    ).not.toBeInTheDocument();
+
+    await user.click(
+      screen.getByRole("button", { name: "Evaluate read-only scenario" }),
+    );
+
+    expect(
+      screen.queryByRole("heading", {
+        name: "Session choice recorded: Apply draft change",
+      }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Apply in rehearsal" }),
+    ).toBeEnabled();
+
+    await user.selectOptions(
+      screen.getByLabelText("Frozen draft scenario"),
+      "no-change-on-track",
+    );
+
+    expect(
+      screen.queryByRole("button", { name: "Apply in rehearsal" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("does not offer decisions for matching no-change outcomes", async () => {
+    const user = userEvent.setup();
+    render(<InternalAdaptationScenarioRehearsal packet={packet} />);
+
+    await user.selectOptions(
+      screen.getByLabelText("Frozen draft scenario"),
+      "no-change-on-track",
+    );
+    await user.click(
+      screen.getByRole("button", { name: "Evaluate read-only scenario" }),
+    );
+
+    expect(screen.getAllByText("No change")).toHaveLength(2);
+    expect(
+      screen.queryByRole("button", { name: "Keep in rehearsal" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Apply in rehearsal" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("does not offer decisions for matching refused outcomes", async () => {
+    const user = userEvent.setup();
+    render(<InternalAdaptationScenarioRehearsal packet={packet} />);
+
+    await user.selectOptions(
+      screen.getByLabelText("Frozen draft scenario"),
+      "refuse-three-missed-runs",
+    );
+    await user.click(
+      screen.getByRole("button", { name: "Evaluate read-only scenario" }),
+    );
+
+    expect(screen.getByText("Refused")).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Keep in rehearsal" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Apply in rehearsal" }),
     ).not.toBeInTheDocument();
   });
 
@@ -80,5 +183,11 @@ describe("InternalAdaptationScenarioRehearsal", () => {
     expect(screen.getByRole("alert")).toHaveTextContent(
       "does not match the frozen expected outcome",
     );
+    expect(
+      screen.queryByRole("button", { name: "Keep in rehearsal" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Apply in rehearsal" }),
+    ).not.toBeInTheDocument();
   });
 });

@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from "react";
+import { useRef, useState, type FormEvent } from "react";
 import {
   evaluateAdaptation,
   type AdaptationEvaluationInputV1,
@@ -8,9 +8,11 @@ import {
 import {
   inputForInternalAdaptationScenario,
   valuesForInternalAdaptationScenario,
+  type DraftAdaptationOutcomeDetail,
   type DraftAdaptationFixture,
   type InternalAdaptationScenarioPacket,
 } from "./internalAdaptationScenarioPacket";
+import InternalAdaptationDecisionRehearsal from "./InternalAdaptationDecisionRehearsal";
 import "./InternalAdaptationScenarioRehearsal.css";
 
 interface InternalAdaptationScenarioRehearsalProps {
@@ -26,7 +28,9 @@ type RehearsalOutcome =
       readonly input: AdaptationEvaluationInputV1;
       readonly result: AdaptationEvaluationResultV1;
       readonly outcomeRule: AdaptationOutcomeRuleV1 | null;
+      readonly outcomeDetail: DraftAdaptationOutcomeDetail | null;
       readonly matchesExpected: boolean;
+      readonly evaluationId: number;
     };
 
 function readableIdentifier(value: string): string {
@@ -54,6 +58,7 @@ export default function InternalAdaptationScenarioRehearsal({
   const [outcome, setOutcome] = useState<RehearsalOutcome>({
     kind: "not_run",
   });
+  const evaluationSequence = useRef(0);
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -82,6 +87,13 @@ export default function InternalAdaptationScenarioRehearsal({
         : (packet.rules.outcomes.find(
             (candidate) => candidate.reasonCode === result.reasonCode,
           ) ?? null);
+    const outcomeDetail =
+      result.kind === "invalid_input"
+        ? null
+        : (packet.outcomeDetails.find(
+            (candidate) => candidate.reasonCode === result.reasonCode,
+          ) ?? null);
+    evaluationSequence.current += 1;
 
     setOutcome({
       kind: "evaluated",
@@ -89,7 +101,9 @@ export default function InternalAdaptationScenarioRehearsal({
       input,
       result,
       outcomeRule,
+      outcomeDetail,
       matchesExpected: resultMatchesExpected(result, fixture),
+      evaluationId: evaluationSequence.current,
     });
   };
 
@@ -230,6 +244,17 @@ export default function InternalAdaptationScenarioRehearsal({
             Read-only internal result. No recommendation record or plan change
             was created.
           </p>
+
+          {outcome.matchesExpected &&
+            outcome.result.kind === "recommendation" &&
+            outcome.result.runnerApprovalRequired &&
+            outcome.outcomeDetail !== null && (
+              <InternalAdaptationDecisionRehearsal
+                key={outcome.evaluationId}
+                result={outcome.result}
+                outcomeDetail={outcome.outcomeDetail}
+              />
+            )}
         </div>
       )}
     </section>
