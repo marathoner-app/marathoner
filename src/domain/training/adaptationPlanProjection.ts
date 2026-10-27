@@ -490,6 +490,12 @@ function requireAdjustment(value: unknown): AdaptationPlanAdjustmentV1 {
   return fail("invalid_input", "adjustment.action is not supported.");
 }
 
+export function parseAdaptationPlanAdjustment(
+  value: unknown,
+): AdaptationPlanAdjustmentV1 {
+  return requireAdjustment(value);
+}
+
 function parseInput(value: unknown): AdaptationPlanProjectionInputV1 {
   const input = requireExactRecord(
     value,

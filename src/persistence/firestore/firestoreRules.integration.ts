@@ -469,7 +469,7 @@ describe("Firestore training-data ownership rules", () => {
       `users/${firstUserId}/recommendationEvidence/recommendation-0001`;
     await testEnvironment.withSecurityRulesDisabled(async (context) => {
       await setDoc(doc(context.firestore(), evidencePath), {
-        schemaVersion: "recommendation-evidence@1",
+        schemaVersion: "recommendation-evidence@2",
         recommendationId: "recommendation-0001",
       });
     });

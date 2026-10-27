@@ -5,7 +5,7 @@ import type { DocumentData, Firestore } from 'firebase-admin/firestore'
 import {
   createRecommendationId,
   validateRecommendationEvidence,
-  type RecommendationEvidenceV1,
+  type RecommendationEvidenceV2,
   type RecommendationId,
 } from '../../src/domain/recommendations/recommendationEvidence.js'
 import { createUserId } from '../../src/domain/training/identifiers.js'
@@ -32,29 +32,30 @@ export function recommendationEvidencePath(
 
 function parseStoredEvidence(
   data: DocumentData | undefined,
-): RecommendationEvidenceV1 {
+): RecommendationEvidenceV2 {
   if (data === undefined) {
     throw new RecommendationEvidenceStoreError('evidence-not-found')
   }
   if (validateRecommendationEvidence(data).length > 0) {
     throw new RecommendationEvidenceStoreError('stored-evidence-invalid')
   }
-  return data as RecommendationEvidenceV1
+  return data as RecommendationEvidenceV2
 }
 
-function assertValidEvidence(value: unknown): asserts value is RecommendationEvidenceV1 {
+function assertValidEvidence(value: unknown): asserts value is RecommendationEvidenceV2 {
   if (validateRecommendationEvidence(value).length > 0) {
     throw new RecommendationEvidenceStoreError('invalid-evidence')
   }
 }
 
-function immutableEvidenceFields(evidence: RecommendationEvidenceV1) {
+function immutableEvidenceFields(evidence: RecommendationEvidenceV2) {
   return {
     schemaVersion: evidence.schemaVersion,
     recommendationId: evidence.recommendationId,
     evaluatedPlanId: evidence.evaluatedPlanId,
     evaluationInput: evidence.evaluationInput,
     evaluationResult: evidence.evaluationResult,
+    planAdjustment: evidence.planAdjustment,
     recommendedAt: evidence.recommendedAt,
   }
 }
@@ -63,9 +64,9 @@ export class FirestoreRecommendationEvidenceStore {
   constructor(private readonly database: Firestore) {}
 
   async createPending(options: {
-    evidence: RecommendationEvidenceV1
+    evidence: RecommendationEvidenceV2
     ownerId: string
-  }): Promise<RecommendationEvidenceV1> {
+  }): Promise<RecommendationEvidenceV2> {
     assertValidEvidence(options.evidence)
     if (options.evidence.decision !== 'pending') {
       throw new RecommendationEvidenceStoreError('invalid-transition')
@@ -91,9 +92,9 @@ export class FirestoreRecommendationEvidenceStore {
   }
 
   async recordDecision(options: {
-    evidence: RecommendationEvidenceV1
+    evidence: RecommendationEvidenceV2
     ownerId: string
-  }): Promise<RecommendationEvidenceV1> {
+  }): Promise<RecommendationEvidenceV2> {
     assertValidEvidence(options.evidence)
     if (options.evidence.decision === 'pending') {
       throw new RecommendationEvidenceStoreError('invalid-transition')
@@ -129,7 +130,7 @@ export class FirestoreRecommendationEvidenceStore {
   async read(options: {
     ownerId: string
     recommendationId: RecommendationId
-  }): Promise<RecommendationEvidenceV1> {
+  }): Promise<RecommendationEvidenceV2> {
     const snapshot = await this.database
       .doc(
         recommendationEvidencePath(
