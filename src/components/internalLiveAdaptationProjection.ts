@@ -35,6 +35,24 @@ export type InternalLiveAdaptationProjectionResult =
       readonly message: string;
     };
 
+export interface InternalLiveAdaptationCalendarPreviewRequest {
+  readonly activePlan: TrainingPlan;
+  readonly workouts: readonly PlannedWorkout[];
+  readonly projection: AdaptationPlanProjectionV1;
+}
+
+export type InternalLiveAdaptationCalendarPreviewResult =
+  | {
+      readonly kind: "ready";
+      readonly workouts: readonly PlannedWorkout[];
+      readonly initialDate: DateOnly;
+    }
+  | {
+      readonly kind: "not_ready";
+      readonly code: string;
+      readonly message: string;
+    };
+
 class LiveProjectionInputError extends Error {
   constructor(
     readonly code: string,
@@ -227,4 +245,184 @@ export function projectInternalLiveAdaptation(
     }
     throw error;
   }
+}
+
+function calendarPreviewRefusal(
+  code: string,
+  message: string,
+): InternalLiveAdaptationCalendarPreviewResult {
+  return { kind: "not_ready", code, message };
+}
+
+function sourceTargetKind(
+  workout: Exclude<PlannedWorkout, { readonly kind: "rest" }>,
+): AdaptationPlanWorkoutV1["target"]["kind"] | null {
+  const hasDistance = workout.targetDistance !== undefined;
+  const hasDuration = workout.targetDuration !== undefined;
+  if (hasDistance === hasDuration) return null;
+  return hasDistance ? "distance" : "duration";
+}
+
+function sameProjectedWorkout(
+  left: AdaptationPlanWorkoutV1,
+  right: AdaptationPlanWorkoutV1,
+): boolean {
+  return JSON.stringify(left) === JSON.stringify(right);
+}
+
+export function previewWorkoutsForInternalLiveAdaptation(
+  request: InternalLiveAdaptationCalendarPreviewRequest,
+): InternalLiveAdaptationCalendarPreviewResult {
+  const { activePlan, workouts, projection } = request;
+  if (
+    activePlan.status !== "active" ||
+    projection.planId !== activePlan.id
+  ) {
+    return calendarPreviewRefusal(
+      "preview_plan_mismatch",
+      "The projected revision no longer matches the loaded active plan.",
+    );
+  }
+  if (projection.changes.length === 0) {
+    return calendarPreviewRefusal(
+      "preview_has_no_changes",
+      "The projected revision has no material workout change to preview.",
+    );
+  }
+
+  const liveById = new Map<
+    PlannedWorkout["id"],
+    Exclude<PlannedWorkout, { readonly kind: "rest" }>
+  >();
+  for (const workout of workouts) {
+    if (workout.planId !== activePlan.id || workout.kind === "rest") continue;
+    if (workout.userId !== activePlan.userId) {
+      return calendarPreviewRefusal(
+        "preview_owner_mismatch",
+        `Workout ${workout.id} does not belong to the active-plan owner.`,
+      );
+    }
+    if (liveById.has(workout.id)) {
+      return calendarPreviewRefusal(
+        "preview_duplicate_live_workout",
+        `Workout ${workout.id} appears more than once in the synchronized snapshot.`,
+      );
+    }
+    liveById.set(workout.id, workout);
+  }
+  let livePrescriptions: readonly AdaptationPlanWorkoutV1[];
+  try {
+    livePrescriptions = projectionWorkouts(activePlan, workouts);
+  } catch (error) {
+    if (error instanceof LiveProjectionInputError) {
+      return calendarPreviewRefusal(error.code, error.message);
+    }
+    throw error;
+  }
+  const livePrescriptionById = new Map(
+    livePrescriptions.map((workout) => [workout.id, workout]),
+  );
+
+  const projectedById = new Map<
+    AdaptationPlanWorkoutV1["id"],
+    AdaptationPlanWorkoutV1
+  >();
+  const replacements = new Map<PlannedWorkout["id"], PlannedWorkout>();
+  for (const projected of projection.workouts) {
+    if (projectedById.has(projected.id)) {
+      return calendarPreviewRefusal(
+        "preview_duplicate_projected_workout",
+        `Workout ${projected.id} appears more than once in the projection.`,
+      );
+    }
+    projectedById.set(projected.id, projected);
+    const live = liveById.get(projected.id);
+    if (live === undefined) {
+      return calendarPreviewRefusal(
+        "preview_workout_missing",
+        `Projected workout ${projected.id} is not present in the synchronized snapshot.`,
+      );
+    }
+    const compatibleKind =
+      projected.kind === live.kind &&
+      projected.phase === live.phase &&
+      (projected.kind !== "run" ||
+        (live.kind === "run" && projected.purpose === live.purpose));
+    if (
+      !compatibleKind ||
+      sourceTargetKind(live) !== projected.target.kind
+    ) {
+      return calendarPreviewRefusal(
+        "preview_workout_mismatch",
+        `Projected workout ${projected.id} does not match the synchronized prescription.`,
+      );
+    }
+    const replacement: PlannedWorkout =
+      projected.target.kind === "distance"
+        ? {
+            ...live,
+            scheduledDate: projected.scheduledDate,
+            targetDistance: projected.target.distance,
+            targetDuration: undefined,
+          }
+        : {
+            ...live,
+            scheduledDate: projected.scheduledDate,
+            targetDistance: undefined,
+            targetDuration: projected.target.duration,
+          };
+    replacements.set(projected.id, replacement);
+  }
+
+  if (
+    projectedById.size !== liveById.size ||
+    Array.from(liveById.keys()).some((id) => !projectedById.has(id))
+  ) {
+    return calendarPreviewRefusal(
+      "preview_snapshot_incomplete",
+      "The projection does not contain the complete active-plan workout snapshot.",
+    );
+  }
+
+  const changedIds = new Set<PlannedWorkout["id"]>();
+  for (const change of projection.changes) {
+    const projected = projectedById.get(change.workoutId);
+    const livePrescription = livePrescriptionById.get(change.workoutId);
+    if (
+      changedIds.has(change.workoutId) ||
+      projected === undefined ||
+      livePrescription === undefined ||
+      !sameProjectedWorkout(change.before, livePrescription) ||
+      !sameProjectedWorkout(change.after, projected) ||
+      sameProjectedWorkout(change.before, change.after)
+    ) {
+      return calendarPreviewRefusal(
+        "preview_change_mismatch",
+        "The projected change list does not match the projected workout snapshot.",
+      );
+    }
+    changedIds.add(change.workoutId);
+  }
+  for (const [id, projected] of projectedById) {
+    const livePrescription = livePrescriptionById.get(id);
+    if (
+      livePrescription === undefined ||
+      changedIds.has(id) === sameProjectedWorkout(projected, livePrescription)
+    ) {
+      return calendarPreviewRefusal(
+        "preview_change_mismatch",
+        "The projected change list does not match the projected workout snapshot.",
+      );
+    }
+  }
+
+  return {
+    kind: "ready",
+    workouts: workouts.map((workout) =>
+      workout.planId === activePlan.id
+        ? (replacements.get(workout.id) ?? workout)
+        : workout,
+    ),
+    initialDate: projection.changes[0].after.scheduledDate,
+  };
 }

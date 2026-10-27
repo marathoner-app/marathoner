@@ -197,6 +197,16 @@ before-and-after projection. Choosing to keep the current plan never calls the
 projector. A successful rehearsal projection creates no recommendation record,
 approval receipt, material command, persisted revision, or real plan mutation.
 
+After that explicit session-only apply choice, a second fail-closed adapter can
+reconcile the complete projection with the synchronized active-plan workout
+snapshot and render the changed week through the ordinary Plan calendar. It
+preserves workout identity, ownership, status, timestamps, unaffected rest
+days, and the owner's preferred distance unit. Missing, duplicate, incomplete,
+or incompatible mappings refuse the calendar preview rather than showing a
+partial revision. The preview disappears when the owner keeps the current plan,
+reopens the choice, or changes any evaluation input; it never replaces the
+listener-confirmed plan state.
+
 The projector remains disconnected from participant-facing acceptance,
 material-command handling, plan persistence, and activation controls. Ordinary
 production, iOS, beta iOS, and Functions artifacts exclude this owner-only

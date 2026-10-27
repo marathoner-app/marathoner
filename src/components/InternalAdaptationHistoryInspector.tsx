@@ -7,6 +7,7 @@ import {
   type ActivePlanState,
   type CompletedRun,
   type DateOnly,
+  type DistanceUnit,
   type IanaTimeZone,
   type PlannedWorkout,
   type TrainingPlan,
@@ -27,6 +28,7 @@ interface InternalAdaptationHistoryInspectorProps {
   readonly workouts: readonly PlannedWorkout[];
   readonly runs: readonly CompletedRun[];
   readonly timeZone: IanaTimeZone;
+  readonly distanceUnit: DistanceUnit;
   readonly draftPacket: InternalAdaptationScenarioPacket;
   readonly initialEvaluationDate?: DateOnly;
 }
@@ -98,6 +100,7 @@ export default function InternalAdaptationHistoryInspector({
   workouts,
   runs,
   timeZone,
+  distanceUnit,
   draftPacket,
   initialEvaluationDate,
 }: InternalAdaptationHistoryInspectorProps) {
@@ -370,6 +373,7 @@ export default function InternalAdaptationHistoryInspector({
               packet={draftPacket}
               activePlan={inspectedActivePlan}
               workouts={workouts}
+              distanceUnit={distanceUnit}
             />
           )}
         </div>

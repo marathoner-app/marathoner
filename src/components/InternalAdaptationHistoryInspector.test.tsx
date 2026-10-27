@@ -108,6 +108,7 @@ function renderInspector(overrides: {
       workouts={overrides.workouts ?? [completedWorkout, skippedWorkout]}
       runs={overrides.runs ?? [completedRun]}
       timeZone={timeZone}
+      distanceUnit="mile"
       draftPacket={draftPacket}
       initialEvaluationDate={createDateOnly("2026-10-27")}
     />,

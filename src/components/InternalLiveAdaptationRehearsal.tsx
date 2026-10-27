@@ -1,4 +1,4 @@
-import { useRef, useState, type FormEvent } from "react";
+import { useMemo, useRef, useState, type FormEvent } from "react";
 import {
   evaluateAdaptation,
   type AdaptationEvaluationResultV1,
@@ -7,10 +7,12 @@ import {
   type AdaptationPlanWorkoutV1,
   type AdaptationRescheduleCandidateV1,
   type AdaptationWeekKind,
+  type DistanceUnit,
   type PlannedWorkout,
   type RunPurpose,
   type TrainingPlan,
 } from "../domain/training";
+import Calendar from "./Calendar";
 import InternalAdaptationDecisionRehearsal from "./InternalAdaptationDecisionRehearsal";
 import type {
   DraftAdaptationOutcomeDetail,
@@ -18,6 +20,7 @@ import type {
 } from "./internalAdaptationScenarioPacket";
 import { inputForInternalLiveAdaptation } from "./internalLiveAdaptationEvaluation";
 import {
+  previewWorkoutsForInternalLiveAdaptation,
   projectInternalLiveAdaptation,
   type InternalLiveAdaptationProjectionResult,
 } from "./internalLiveAdaptationProjection";
@@ -27,6 +30,7 @@ interface InternalLiveAdaptationRehearsalProps {
   readonly packet: InternalAdaptationScenarioPacket;
   readonly activePlan: TrainingPlan;
   readonly workouts: readonly PlannedWorkout[];
+  readonly distanceUnit: DistanceUnit;
 }
 
 type BooleanChoice = "" | "yes" | "no";
@@ -64,6 +68,7 @@ export default function InternalLiveAdaptationRehearsal({
   packet,
   activePlan,
   workouts,
+  distanceUnit,
 }: InternalLiveAdaptationRehearsalProps) {
   const [currentCoreWeek, setCurrentCoreWeek] = useState("");
   const [currentWeekKind, setCurrentWeekKind] = useState<
@@ -94,6 +99,14 @@ export default function InternalLiveAdaptationRehearsal({
   const [projectionOutcome, setProjectionOutcome] =
     useState<InternalLiveAdaptationProjectionResult | null>(null);
   const evaluationSequence = useRef(0);
+  const calendarPreview = useMemo(() => {
+    if (projectionOutcome?.kind !== "ready") return null;
+    return previewWorkoutsForInternalLiveAdaptation({
+      activePlan,
+      workouts,
+      projection: projectionOutcome.projection,
+    });
+  }, [activePlan, projectionOutcome, workouts]);
 
   const clearOutcome = () => {
     setOutcome({ kind: "not_run" });
@@ -571,6 +584,47 @@ export default function InternalLiveAdaptationRehearsal({
                 This projection exists only in this page session. It was not
                 saved, no command was sent, and the real plan did not change.
               </p>
+            </section>
+          )}
+
+          {calendarPreview?.kind === "not_ready" && (
+            <section className="internal-live-adaptation-projection" role="alert">
+              <p className="internal-adaptation-rehearsal-eyebrow">
+                Calendar preview refused
+              </p>
+              <h4>Projected week could not be reconciled safely</h4>
+              <p>{calendarPreview.message}</p>
+              <p>
+                Internal code: <code>{calendarPreview.code}</code>
+              </p>
+            </section>
+          )}
+
+          {calendarPreview?.kind === "ready" && (
+            <section
+              className="internal-live-adaptation-calendar-preview"
+              aria-labelledby="internal-live-adaptation-calendar-preview-title"
+            >
+              <p className="internal-adaptation-rehearsal-eyebrow">
+                Unapproved session-only calendar
+              </p>
+              <p
+                id="internal-live-adaptation-calendar-preview-title"
+                className="internal-live-adaptation-calendar-title"
+              >
+                <strong>Session-only projected plan</strong>
+              </p>
+              <p>
+                Inspect the changed week in the same calendar treatment as the
+                real Plan screen. This is a view-only draft; the synchronized
+                plan remains unchanged.
+              </p>
+              <Calendar
+                plan={activePlan}
+                workouts={calendarPreview.workouts}
+                distanceUnit={distanceUnit}
+                initialDate={calendarPreview.initialDate}
+              />
             </section>
           )}
         </div>
