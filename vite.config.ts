@@ -1,6 +1,7 @@
 import { configDefaults, defineConfig } from 'vitest/config'
 import react from '@vitejs/plugin-react'
 import { loadEnv } from 'vite'
+import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import {
@@ -11,6 +12,32 @@ import {
 import { firebaseProjectConfigurations } from './src/firebaseConfig'
 
 const repositoryRoot = path.dirname(fileURLToPath(import.meta.url))
+const internalPlanRulesModuleId = 'virtual:internal-plan-rehearsal-rules'
+const resolvedInternalPlanRulesModuleId = `\0${internalPlanRulesModuleId}`
+
+function internalPlanRehearsalRulesPlugin(mode: string) {
+  return {
+    name: 'internal-plan-rehearsal-rules',
+    resolveId(id: string) {
+      return id === internalPlanRulesModuleId
+        ? resolvedInternalPlanRulesModuleId
+        : null
+    },
+    load(id: string) {
+      if (id !== resolvedInternalPlanRulesModuleId) return null
+      if (mode !== 'internal-plan-rehearsal') return 'export default null'
+
+      const rulesText = readFileSync(
+        path.join(
+          repositoryRoot,
+          'docs/methodology/artifacts/beta-rules/0.1.0-draft/beta-rules.json',
+        ),
+        'utf8',
+      )
+      return `export default ${JSON.stringify(rulesText)}`
+    },
+  }
+}
 
 // https://vite.dev/config/
 export default defineConfig(({ command, mode }) => {
@@ -35,7 +62,7 @@ export default defineConfig(({ command, mode }) => {
 
   return {
     base: isIosBuild ? './' : '/',
-    plugins: [react()],
+    plugins: [internalPlanRehearsalRulesPlugin(mode), react()],
     optimizeDeps: {
       entries: ['index.html'],
     },
