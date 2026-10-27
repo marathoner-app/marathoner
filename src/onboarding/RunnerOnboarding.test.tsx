@@ -10,6 +10,7 @@ import {
   milesToMeters,
   type UserProfile,
 } from "../domain/training";
+import { findBetaBlockingAccessibilityViolations } from "../test/accessibility";
 import RunnerOnboarding from "./RunnerOnboarding";
 
 const timestamp = createUtcDateTime("2026-10-05T12:00:00Z");
@@ -44,6 +45,14 @@ beforeEach(() => {
 });
 
 describe("RunnerOnboarding", () => {
+  it("has no beta-blocking accessibility violations in runner setup", async () => {
+    render(
+      <RunnerOnboarding profile={null} onSave={onSave} onClose={onClose} />,
+    );
+
+    expect(await findBetaBlockingAccessibilityViolations()).toEqual([]);
+  });
+
   it("moves focus into the modal, contains it, and closes with Escape", async () => {
     const user = userEvent.setup();
     render(
