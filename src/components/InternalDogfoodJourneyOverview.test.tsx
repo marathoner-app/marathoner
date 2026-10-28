@@ -166,6 +166,11 @@ describe("InternalDogfoodJourneyOverview", () => {
     ).toHaveAttribute("href", "#internal-session-today-comparison");
     expect(
       within(navigation).getByRole("link", {
+        name: "Rehearse session-draft feedback",
+      }),
+    ).toHaveAttribute("href", "#internal-session-draft-feedback");
+    expect(
+      within(navigation).getByRole("link", {
         name: "Inspect synchronized history",
       }),
     ).toHaveAttribute("href", "#internal-adaptation-history");
@@ -184,6 +189,24 @@ describe("InternalDogfoodJourneyOverview", () => {
     ).toHaveAttribute("href", "#internal-safety-review");
     expect(
       screen.getByText(/draft plan activation lasts only for this rehearsal/iu),
+    ).toBeVisible();
+  });
+
+  it("explains that session feedback is explicit, transient, and separate from saved history", () => {
+    renderOverview();
+
+    expect(
+      screen.getByText(
+        /explicitly confirm completed workout\/run pairs and skipped draft workouts in memory/iu,
+      ),
+    ).toBeVisible();
+    expect(
+      screen.getByText(/never infers or persists an association/iu),
+    ).toBeVisible();
+    expect(
+      screen.getByText(
+        /saved-history inspection continues to read the synchronized owner plan/iu,
+      ),
     ).toBeVisible();
   });
 

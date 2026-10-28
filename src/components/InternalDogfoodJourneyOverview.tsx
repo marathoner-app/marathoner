@@ -49,7 +49,7 @@ const journeySteps = [
     href: "#internal-session-draft-feedback",
     title: "Rehearse session-draft feedback",
     description:
-      "Explicitly pair a draft workout and same-date synchronized run in memory, then send that owner-confirmed evidence through the existing draft evaluator.",
+      "Explicitly confirm completed workout/run pairs and skipped draft workouts in memory, then send that transient history through the existing draft evaluator.",
   },
   {
     href: "#internal-adaptation-history",
@@ -200,7 +200,8 @@ export default function InternalDogfoodJourneyOverview({
       <aside className="internal-dogfood-boundary" aria-label="Data boundary">
         <strong>Keep the two data lanes separate.</strong> Draft plan activation
         lasts only for this rehearsal session and never writes Firestore. Its
-        feedback lane requires an explicit, transient workout/run pairing.
+        feedback lane only uses draft workouts the owner explicitly confirms as
+        completed or skipped; it never infers or persists an association.
         Saved-history inspection continues to read the synchronized owner plan,
         workouts, and runs shown above.
       </aside>
