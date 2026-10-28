@@ -17,6 +17,7 @@ import {
   assembleInternalSessionDraftAdaptation,
   type InternalSessionDraftAdaptationAssembly,
   type InternalSessionDraftRunPair,
+  type InternalSessionDraftSkippedWorkout,
 } from "./internalSessionDraftAdaptation";
 
 interface InternalSessionDraftFeedbackRehearsalProps {
@@ -29,6 +30,11 @@ interface InternalSessionDraftFeedbackRehearsalProps {
 interface ConfirmedPair {
   readonly workoutId: PlannedWorkoutId;
   readonly runId: CompletedRun["id"];
+  readonly confirmedAt: ReturnType<typeof createUtcDateTime>;
+}
+
+interface ConfirmedSkippedWorkout {
+  readonly workoutId: PlannedWorkoutId;
   readonly confirmedAt: ReturnType<typeof createUtcDateTime>;
 }
 
@@ -72,13 +78,21 @@ export default function InternalSessionDraftFeedbackRehearsal({
 }: InternalSessionDraftFeedbackRehearsalProps) {
   const [selectedWorkoutId, setSelectedWorkoutId] = useState("");
   const [selectedRunId, setSelectedRunId] = useState("");
+  const [selectedSkippedWorkoutId, setSelectedSkippedWorkoutId] = useState("");
   const [confirmedPairs, setConfirmedPairs] = useState<readonly ConfirmedPair[]>(
     [],
   );
+  const [confirmedSkippedWorkouts, setConfirmedSkippedWorkouts] = useState<
+    readonly ConfirmedSkippedWorkout[]
+  >([]);
 
   const confirmedWorkoutIds = useMemo(
-    () => new Set(confirmedPairs.map((pair) => pair.workoutId)),
-    [confirmedPairs],
+    () =>
+      new Set([
+        ...confirmedPairs.map((pair) => pair.workoutId),
+        ...confirmedSkippedWorkouts.map((workout) => workout.workoutId),
+      ]),
+    [confirmedPairs, confirmedSkippedWorkouts],
   );
   const confirmedRunIds = useMemo(
     () => new Set(confirmedPairs.map((pair) => pair.runId)),
@@ -117,6 +131,17 @@ export default function InternalSessionDraftFeedbackRehearsal({
     );
   }, [confirmedRunIds, projection, runs, selectedWorkout]);
 
+  const eligibleSkippedWorkouts = useMemo(() => {
+    if (projection === null) return [];
+
+    return projection.workouts.filter(
+      (
+        workout,
+      ): workout is Exclude<PlannedWorkout, { readonly kind: "rest" }> =>
+        workout.kind !== "rest" && !confirmedWorkoutIds.has(workout.id),
+    );
+  }, [confirmedWorkoutIds, projection]);
+
   const resolvedConfirmedPairs = useMemo(
     () =>
       confirmedPairs.flatMap((pair) => {
@@ -133,10 +158,27 @@ export default function InternalSessionDraftFeedbackRehearsal({
     [confirmedPairs, projection, runs],
   );
 
+  const resolvedConfirmedSkippedWorkouts = useMemo(
+    () =>
+      confirmedSkippedWorkouts.flatMap((confirmedWorkout) => {
+        const workout = projection?.workouts.find(
+          (candidate) => candidate.id === confirmedWorkout.workoutId,
+        );
+        return workout === undefined || workout.kind === "rest"
+          ? []
+          : [{ ...confirmedWorkout, workout }];
+      }),
+    [confirmedSkippedWorkouts, projection],
+  );
+  const confirmedEventCount =
+    resolvedConfirmedPairs.length + resolvedConfirmedSkippedWorkouts.length;
+
   const assembly = useMemo<InternalSessionDraftAdaptationAssembly | null>(() => {
     if (
       projection === null ||
-      resolvedConfirmedPairs.length !== confirmedPairs.length
+      resolvedConfirmedPairs.length !== confirmedPairs.length ||
+      resolvedConfirmedSkippedWorkouts.length !==
+        confirmedSkippedWorkouts.length
     ) {
       return null;
     }
@@ -150,8 +192,20 @@ export default function InternalSessionDraftFeedbackRehearsal({
           confirmedAt,
         }),
       ),
+      skippedWorkouts: resolvedConfirmedSkippedWorkouts.map(
+        ({ workoutId, confirmedAt }): InternalSessionDraftSkippedWorkout => ({
+          workoutId,
+          confirmedAt,
+        }),
+      ),
     });
-  }, [confirmedPairs.length, projection, resolvedConfirmedPairs]);
+  }, [
+    confirmedPairs.length,
+    confirmedSkippedWorkouts.length,
+    projection,
+    resolvedConfirmedPairs,
+    resolvedConfirmedSkippedWorkouts,
+  ]);
 
   if (projection === null) return null;
 
@@ -175,6 +229,23 @@ export default function InternalSessionDraftFeedbackRehearsal({
     setSelectedRunId("");
   };
 
+  const handleSkippedWorkoutSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const workout = eligibleSkippedWorkouts.find(
+      (candidate) => candidate.id === selectedSkippedWorkoutId,
+    );
+    if (workout === undefined) return;
+
+    setConfirmedSkippedWorkouts((current) => [
+      ...current,
+      {
+        workoutId: workout.id,
+        confirmedAt: createUtcDateTime(new Date().toISOString()),
+      },
+    ]);
+    setSelectedSkippedWorkoutId("");
+  };
+
   return (
     <section
       id="internal-session-draft-feedback"
@@ -190,14 +261,13 @@ export default function InternalSessionDraftFeedbackRehearsal({
           Rehearse session-draft feedback
         </h2>
         <p>
-          Build a deliberate history of draft workouts paired with synchronized
-          runs from the same local date, then pass transient copies through the
-          existing adaptation rehearsal. Nothing here changes the saved runs or
-          plan.
+          Build a deliberate history of completed and skipped draft workouts,
+          then pass transient copies through the existing adaptation rehearsal.
+          Nothing here changes the saved runs or plan.
         </p>
       </header>
 
-      {resolvedConfirmedPairs.length > 0 && (
+      {confirmedEventCount > 0 && (
         <section
           className="internal-session-draft-feedback-confirmed"
           aria-labelledby="internal-session-draft-feedback-confirmed-title"
@@ -206,10 +276,10 @@ export default function InternalSessionDraftFeedbackRehearsal({
             Confirmed session history
           </h3>
           <p>
-            {resolvedConfirmedPairs.length}{" "}
-            {resolvedConfirmedPairs.length === 1
-              ? "confirmed pair is"
-              : "confirmed pairs are"}{" "}
+            {confirmedEventCount}{" "}
+            {confirmedEventCount === 1
+              ? "confirmed event is"
+              : "confirmed events are"}{" "}
             contributing evidence. The latest dated workout is always the
             evaluation trigger.
           </p>
@@ -237,14 +307,40 @@ export default function InternalSessionDraftFeedbackRehearsal({
                 </button>
               </li>
             ))}
+            {resolvedConfirmedSkippedWorkouts.map(({ workout }) => (
+              <li key={`skipped:${workout.id}`}>
+                <span>
+                  <strong>{workoutLabel(workout)}</strong>
+                  <br />
+                  Skipped for rehearsal · no run associated
+                </span>
+                <button
+                  type="button"
+                  aria-label={`Remove skipped workout for ${formatDate(workout.scheduledDate)}`}
+                  onClick={() =>
+                    setConfirmedSkippedWorkouts((current) =>
+                      current.filter(
+                        (confirmedWorkout) =>
+                          confirmedWorkout.workoutId !== workout.id,
+                      ),
+                    )
+                  }
+                >
+                  Remove skip
+                </button>
+              </li>
+            ))}
           </ul>
         </section>
       )}
 
+      <h3 className="internal-session-draft-feedback-entry-title">
+        Add a completed workout
+      </h3>
       {eligibleWorkouts.length === 0 ? (
         <p className="internal-session-draft-feedback-empty">
-          {confirmedPairs.length > 0
-            ? "Every currently eligible workout/run pair is already in this rehearsal. Remove a pair to choose it again."
+          {confirmedEventCount > 0
+            ? "No unused workout/run pair is currently available. Remove an event or log another same-date run."
             : "No non-rest draft workout has a same-date synchronized run yet. Log a run from the daily comparison before rehearsing feedback."}
         </p>
       ) : (
@@ -301,6 +397,44 @@ export default function InternalSessionDraftFeedbackRehearsal({
         </form>
       )}
 
+      <h3 className="internal-session-draft-feedback-entry-title">
+        Add a skipped workout
+      </h3>
+      {eligibleSkippedWorkouts.length === 0 ? (
+        <p className="internal-session-draft-feedback-empty">
+          Every non-rest draft workout is already in this rehearsal. Remove an
+          event to choose it again.
+        </p>
+      ) : (
+        <form onSubmit={handleSkippedWorkoutSubmit}>
+          <label htmlFor="session-draft-feedback-skipped-workout">
+            Draft workout to skip
+          </label>
+          <select
+            id="session-draft-feedback-skipped-workout"
+            required
+            value={selectedSkippedWorkoutId}
+            onChange={(event) =>
+              setSelectedSkippedWorkoutId(event.target.value)
+            }
+          >
+            <option value="">Choose the workout to mark skipped</option>
+            {eligibleSkippedWorkouts.map((workout) => (
+              <option key={workout.id} value={workout.id}>
+                {workoutLabel(workout)}
+              </option>
+            ))}
+          </select>
+          <p className="internal-adaptation-history-help">
+            This is an explicit owner rehearsal choice, not an automatic claim
+            that the runner missed the workout. It does not create run evidence.
+          </p>
+          <button type="submit" disabled={selectedSkippedWorkoutId === ""}>
+            Mark skipped for rehearsal
+          </button>
+        </form>
+      )}
+
       {assembly?.normalization.kind === "not_ready" && (
         <section
           className="internal-adaptation-history-result"
@@ -329,12 +463,17 @@ export default function InternalSessionDraftFeedbackRehearsal({
           </h3>
           <p>
             The strict history normalizer accepted all owner-confirmed transient
-            pairs. They remain separate from saved synchronized history.
+            events. They remain separate from saved synchronized history.
           </p>
           <InternalLiveAdaptationRehearsal
-            key={confirmedPairs
-              .map((pair) => `${pair.workoutId}:${pair.runId}`)
-              .join("|")}
+            key={[
+              ...confirmedPairs.map(
+                (pair) => `completed:${pair.workoutId}:${pair.runId}`,
+              ),
+              ...confirmedSkippedWorkouts.map(
+                (workout) => `skipped:${workout.workoutId}`,
+              ),
+            ].join("|")}
             evidence={assembly.normalization.evidence}
             packet={draftPacket}
             activePlan={assembly.plan}
@@ -346,8 +485,8 @@ export default function InternalSessionDraftFeedbackRehearsal({
 
       <aside className="internal-adaptation-history-boundary">
         Session-only and unapproved for participants. These confirmations do not
-        write Firestore, associate real runs, save a recommendation, or change
-        the draft plan.
+        write Firestore, associate real runs, save completed or skipped workout
+        statuses, save a recommendation, or change the draft plan.
       </aside>
     </section>
   );

@@ -93,6 +93,7 @@ describe("assembleInternalSessionDraftAdaptation", () => {
         },
         { workoutId, run, confirmedAt },
       ],
+      skippedWorkouts: [],
     });
 
     expect(assembly?.normalization.kind).toBe("ready");
@@ -152,6 +153,7 @@ describe("assembleInternalSessionDraftAdaptation", () => {
             confirmedAt,
           },
         ],
+        skippedWorkouts: [],
       }),
     ).toBeNull();
   });
@@ -168,6 +170,7 @@ describe("assembleInternalSessionDraftAdaptation", () => {
             confirmedAt: secondConfirmedAt,
           },
         ],
+        skippedWorkouts: [],
       }),
     ).toBeNull();
 
@@ -188,6 +191,85 @@ describe("assembleInternalSessionDraftAdaptation", () => {
           {
             workoutId: secondWorkoutId,
             run,
+            confirmedAt: secondConfirmedAt,
+          },
+        ],
+        skippedWorkouts: [],
+      }),
+    ).toBeNull();
+  });
+
+  it("combines completed-run history with a later skipped-workout trigger", () => {
+    const assembly = assembleInternalSessionDraftAdaptation({
+      projection,
+      pairs: [{ workoutId, run, confirmedAt }],
+      skippedWorkouts: [
+        {
+          workoutId: secondWorkoutId,
+          confirmedAt: secondConfirmedAt,
+        },
+      ],
+    });
+
+    expect(assembly?.workouts).toEqual([
+      expect.objectContaining({ id: workoutId, status: "completed" }),
+      expect.objectContaining({ id: secondWorkoutId, status: "skipped" }),
+    ]);
+    expect(assembly?.runs).toEqual([
+      expect.objectContaining({
+        id: run.id,
+        plannedWorkoutId: workoutId,
+      }),
+    ]);
+    if (assembly?.normalization.kind === "ready") {
+      expect(assembly.normalization.evidence).toMatchObject({
+        evaluationDate: "2030-01-09",
+        triggerWorkoutId: secondWorkoutId,
+        triggerKind: "planned_run_skipped",
+        recentRunCount: 1,
+        currentWeek: {
+          completedRunCount: 1,
+          skippedRunCount: 1,
+        },
+      });
+    } else {
+      expect(assembly?.normalization).toMatchObject({ kind: "ready" });
+    }
+    expect(projection.workouts.map(({ status }) => status)).toEqual([
+      "planned",
+      "planned",
+    ]);
+  });
+
+  it("keeps a skip without completed-run history visibly not ready", () => {
+    const assembly = assembleInternalSessionDraftAdaptation({
+      projection,
+      pairs: [],
+      skippedWorkouts: [
+        {
+          workoutId: secondWorkoutId,
+          confirmedAt: secondConfirmedAt,
+        },
+      ],
+    });
+
+    expect(assembly?.normalization).toMatchObject({
+      kind: "not_ready",
+      issues: [
+        expect.objectContaining({ code: "missing_completed_planned_run" }),
+      ],
+    });
+    expect(projection.workouts[1]?.status).toBe("planned");
+  });
+
+  it("refuses to confirm one workout as both completed and skipped", () => {
+    expect(
+      assembleInternalSessionDraftAdaptation({
+        projection,
+        pairs: [{ workoutId, run, confirmedAt }],
+        skippedWorkouts: [
+          {
+            workoutId,
             confirmedAt: secondConfirmedAt,
           },
         ],

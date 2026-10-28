@@ -83,6 +83,10 @@
   font-weight: 700;
 }
 
+.internal-session-draft-feedback-entry-title {
+  margin: 1.5rem 0 0;
+}
+
 .internal-session-draft-feedback-confirmed {
   max-width: 42rem;
   margin-top: 1.5rem;
