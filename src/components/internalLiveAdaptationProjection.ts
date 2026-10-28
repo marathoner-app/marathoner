@@ -28,6 +28,7 @@ export type InternalLiveAdaptationProjectionResult =
   | {
       readonly kind: "ready";
       readonly projection: AdaptationPlanProjectionV1;
+      readonly adjustment: AdaptationPlanAdjustmentV1;
     }
   | {
       readonly kind: "not_ready";
@@ -222,6 +223,7 @@ export function projectInternalLiveAdaptation(
       );
     }
     const workouts = projectionWorkouts(request.activePlan, request.workouts);
+    const adjustment = adjustmentFor(request, workouts);
     const projection = projectAdaptationPlan({
       schemaVersion: ADAPTATION_PLAN_PROJECTION_INPUT_SCHEMA_VERSION,
       planId: request.activePlan.id,
@@ -229,9 +231,9 @@ export function projectInternalLiveAdaptation(
       evaluatedPlanRevision: request.evidence.evaluatedPlanRevision,
       targetRaceDate: request.activePlan.targetRaceDate,
       workouts,
-      adjustment: adjustmentFor(request, workouts),
+      adjustment,
     });
-    return { kind: "ready", projection };
+    return { kind: "ready", projection, adjustment };
   } catch (error) {
     if (
       error instanceof LiveProjectionInputError ||

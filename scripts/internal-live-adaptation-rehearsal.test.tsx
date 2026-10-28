@@ -218,6 +218,16 @@ describe("InternalLiveAdaptationRehearsal", () => {
       screen.getByRole("heading", { name: "Draft plan projection" }),
     ).toBeVisible();
     expect(screen.getByText("Projected revision")).toBeVisible();
+    const recommendationEvidence = screen.getByRole("region", {
+      name: "Pending recommendation evidence assembled",
+    });
+    expect(recommendationEvidence).toBeVisible();
+    expect(
+      within(recommendationEvidence).getByText("recommendation-evidence@2"),
+    ).toBeVisible();
+    expect(
+      within(recommendationEvidence).getByText("Week 1 to week 2"),
+    ).toBeVisible();
     const calendarPreview = screen.getByRole("region", {
       name: "Session-only projected plan",
     });

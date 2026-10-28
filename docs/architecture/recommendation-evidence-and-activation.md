@@ -42,6 +42,14 @@ The contract can validate internal evidence from a draft evaluator. Validation i
 not activation: a structurally correct draft record still cannot be presented to
 a participant or applied to a plan.
 
+The owner-only live rehearsal now carries its exact evaluated input through the
+material result, preserves the exact adjustment used by the projection, and can
+assemble one valid pending `RecommendationEvidenceV2` in memory. The assembler
+requires an explicit recommendation identifier and timestamp, checks the active
+plan, revision transition, action agreement, and material change, then runs the
+complete evidence validator. The resulting proof is not written to Firestore,
+does not call a material command, and cannot mutate the synchronized plan.
+
 ## Operator activation control
 
 `OperatorActivationControlV1` defines one revisioned operator-owned record with
