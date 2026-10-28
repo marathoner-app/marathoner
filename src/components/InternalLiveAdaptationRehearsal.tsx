@@ -33,6 +33,7 @@ import {
 import {
   assembleInternalLiveRecommendationEvidence,
 } from "./internalLiveRecommendationEvidence";
+import type { InternalSessionDraftPlanContext } from "./internalSessionDraftPlanContext";
 
 interface InternalLiveAdaptationRehearsalProps {
   readonly evidence: AdaptationHistoryEvidenceV1;
@@ -40,6 +41,7 @@ interface InternalLiveAdaptationRehearsalProps {
   readonly activePlan: TrainingPlan;
   readonly workouts: readonly PlannedWorkout[];
   readonly distanceUnit: DistanceUnit;
+  readonly planContext?: InternalSessionDraftPlanContext;
 }
 
 type BooleanChoice = "" | "yes" | "no";
@@ -80,6 +82,7 @@ export default function InternalLiveAdaptationRehearsal({
   activePlan,
   workouts,
   distanceUnit,
+  planContext,
 }: InternalLiveAdaptationRehearsalProps) {
   const decisionContentRegistry = useMemo(
     () =>
@@ -160,11 +163,13 @@ export default function InternalLiveAdaptationRehearsal({
       candidateRunnerAvailable !== "" &&
       candidateTargetDateEmpty !== "" &&
       candidateConsecutiveRuns !== "");
-  const formIsComplete =
+  const manualPlanContextIsComplete =
     currentCoreWeek !== "" &&
     currentWeekKind !== "" &&
     nextWeekKind !== "" &&
-    nextWeekIntroducesProgression !== "" &&
+    nextWeekIntroducesProgression !== "";
+  const formIsComplete =
+    (planContext !== undefined || manualPlanContextIsComplete) &&
     candidateChoice !== "" &&
     candidateIsComplete &&
     completenessConfirmed;
@@ -203,13 +208,19 @@ export default function InternalLiveAdaptationRehearsal({
     event.preventDefault();
     if (!formIsComplete) return;
 
+    const evaluationPlanContext =
+      planContext ??
+      ({
+        currentCoreWeek: Number(currentCoreWeek),
+        currentWeekKind: currentWeekKind as AdaptationWeekKind,
+        nextWeekKind: nextWeekKind as AdaptationWeekKind,
+        nextWeekIntroducesProgression: booleanFromChoice(
+          nextWeekIntroducesProgression as Exclude<BooleanChoice, "">,
+        ),
+      } satisfies InternalSessionDraftPlanContext);
+
     const input = inputForInternalLiveAdaptation(evidence, packet, {
-      currentCoreWeek: Number(currentCoreWeek),
-      currentWeekKind,
-      nextWeekKind,
-      nextWeekIntroducesProgression: booleanFromChoice(
-        nextWeekIntroducesProgression,
-      ),
+      ...evaluationPlanContext,
       rescheduleCandidate: candidateForEvaluation(),
       inputCompletenessConfirmed: completenessConfirmed,
     });
@@ -271,76 +282,120 @@ export default function InternalLiveAdaptationRehearsal({
       </dl>
 
       <form onSubmit={handleSubmit}>
-        <label htmlFor="live-adaptation-core-week">Current core week</label>
-        <input
-          id="live-adaptation-core-week"
-          type="number"
-          min="1"
-          step="1"
-          required
-          value={currentCoreWeek}
-          onChange={(event) => {
-            setCurrentCoreWeek(event.target.value);
-            clearOutcome();
-          }}
-        />
+        {planContext === undefined ? (
+          <>
+            <label htmlFor="live-adaptation-core-week">Current core week</label>
+            <input
+              id="live-adaptation-core-week"
+              type="number"
+              min="1"
+              step="1"
+              required
+              value={currentCoreWeek}
+              onChange={(event) => {
+                setCurrentCoreWeek(event.target.value);
+                clearOutcome();
+              }}
+            />
 
-        <label htmlFor="live-adaptation-current-week-kind">
-          Current week kind
-        </label>
-        <select
-          id="live-adaptation-current-week-kind"
-          required
-          value={currentWeekKind}
-          onChange={(event) => {
-            setCurrentWeekKind(event.target.value as AdaptationWeekKind | "");
-            clearOutcome();
-          }}
-        >
-          <option value="">Choose the current week kind</option>
-          {weekKinds.map((kind) => (
-            <option key={kind} value={kind}>
-              {readableIdentifier(kind)}
-            </option>
-          ))}
-        </select>
+            <label htmlFor="live-adaptation-current-week-kind">
+              Current week kind
+            </label>
+            <select
+              id="live-adaptation-current-week-kind"
+              required
+              value={currentWeekKind}
+              onChange={(event) => {
+                setCurrentWeekKind(
+                  event.target.value as AdaptationWeekKind | "",
+                );
+                clearOutcome();
+              }}
+            >
+              <option value="">Choose the current week kind</option>
+              {weekKinds.map((kind) => (
+                <option key={kind} value={kind}>
+                  {readableIdentifier(kind)}
+                </option>
+              ))}
+            </select>
 
-        <label htmlFor="live-adaptation-next-week-kind">Next week kind</label>
-        <select
-          id="live-adaptation-next-week-kind"
-          required
-          value={nextWeekKind}
-          onChange={(event) => {
-            setNextWeekKind(event.target.value as AdaptationWeekKind | "");
-            clearOutcome();
-          }}
-        >
-          <option value="">Choose the next week kind</option>
-          {weekKinds.map((kind) => (
-            <option key={kind} value={kind}>
-              {readableIdentifier(kind)}
-            </option>
-          ))}
-        </select>
+            <label htmlFor="live-adaptation-next-week-kind">
+              Next week kind
+            </label>
+            <select
+              id="live-adaptation-next-week-kind"
+              required
+              value={nextWeekKind}
+              onChange={(event) => {
+                setNextWeekKind(
+                  event.target.value as AdaptationWeekKind | "",
+                );
+                clearOutcome();
+              }}
+            >
+              <option value="">Choose the next week kind</option>
+              {weekKinds.map((kind) => (
+                <option key={kind} value={kind}>
+                  {readableIdentifier(kind)}
+                </option>
+              ))}
+            </select>
 
-        <label htmlFor="live-adaptation-progression">
-          Does the next week introduce progression?
-        </label>
-        <select
-          id="live-adaptation-progression"
-          required
-          value={nextWeekIntroducesProgression}
-          onChange={(event) => {
-            setNextWeekIntroducesProgression(
-              event.target.value as BooleanChoice,
-            );
-            clearOutcome();
-          }}
-        >
-          <option value="">Choose yes or no</option>
-          <option value="yes">Yes</option>
-          <option value="no">No</option>
-        </select>
+            <label htmlFor="live-adaptation-progression">
+              Does the next week introduce progression?
+            </label>
+            <select
+              id="live-adaptation-progression"
+              required
+              value={nextWeekIntroducesProgression}
+              onChange={(event) => {
+                setNextWeekIntroducesProgression(
+                  event.target.value as BooleanChoice,
+                );
+                clearOutcome();
+              }}
+            >
+              <option value="">Choose yes or no</option>
+              <option value="yes">Yes</option>
+              <option value="no">No</option>
+            </select>
+          </>
+        ) : (
+          <section
+            className="internal-live-adaptation-plan-context"
+            aria-labelledby="internal-live-adaptation-plan-context-title"
+          >
+            <h4 id="internal-live-adaptation-plan-context-title">
+              Derived session plan context
+            </h4>
+            <dl>
+              <div>
+                <dt>Current core week</dt>
+                <dd>{planContext.currentCoreWeek}</dd>
+              </div>
+              <div>
+                <dt>Current week kind</dt>
+                <dd>{readableIdentifier(planContext.currentWeekKind)}</dd>
+              </div>
+              <div>
+                <dt>Next week kind</dt>
+                <dd>{readableIdentifier(planContext.nextWeekKind)}</dd>
+              </div>
+              <div>
+                <dt>Next week introduces progression</dt>
+                <dd>
+                  {planContext.nextWeekIntroducesProgression ? "Yes" : "No"}
+                </dd>
+              </div>
+            </dl>
+            <p className="internal-adaptation-history-help">
+              These facts come from the activated session draft and its pinned
+              base-plan packet. They are locked to keep the evaluation aligned
+              with the plan being previewed.
+            </p>
+          </section>
+        )}
 
         <fieldset>
           <legend>Prevalidated reschedule candidate</legend>

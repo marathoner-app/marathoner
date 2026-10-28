@@ -123,6 +123,7 @@ export default function InternalPlanProposalRehearsalLive({
         runs={runs}
         distanceUnit={profile?.preferredDistanceUnit ?? "mile"}
         draftPacket={adaptationPacket}
+        planRuleSet={ruleSet}
       />
       <InternalAdaptationHistoryInspector
         ownerId={ownerId}

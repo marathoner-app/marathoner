@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
 import {
@@ -16,6 +16,7 @@ import {
 } from "../domain/training";
 import InternalSessionDraftFeedbackRehearsal from "./InternalSessionDraftFeedbackRehearsal";
 import type { InternalAdaptationScenarioPacket } from "./internalAdaptationScenarioPacket";
+import type { InternalPlanProposalRehearsalRuleSet } from "./internalPlanProposalRehearsalRules";
 
 const ownerId = createUserId("owner-1");
 const planId = createTrainingPlanId("session-plan-1");
@@ -89,8 +90,31 @@ const draftPacket = {
     basePlanArtifactVersion: "test-base-plan-draft",
     adaptationArtifactVersion: "test-adaptation-draft",
     allowedReschedulePurposes: [],
+    supportedCoreWeeks: { minimum: 1, maximum: 14 },
   },
 } as unknown as InternalAdaptationScenarioPacket;
+const planRuleSet = {
+  coreWeekKinds: Array.from({ length: 15 }, () => "load"),
+  rules: {
+    positionPurposes: ["easy", "easy", "recovery", "long"],
+    leadInWeek: {
+      distancesMetersByPosition: [
+        createDistanceMeters(5_000),
+        createDistanceMeters(5_000),
+        createDistanceMeters(4_000),
+        createDistanceMeters(10_000),
+      ],
+    },
+    coreWeeks: Array.from({ length: 15 }, (_, index) => ({
+      distancesMetersByPosition: [
+        createDistanceMeters(5_000),
+        createDistanceMeters(5_000),
+        createDistanceMeters(4_000),
+        createDistanceMeters(10_000 + index * 1_000),
+      ],
+    })),
+  },
+} as unknown as InternalPlanProposalRehearsalRuleSet;
 
 function renderRehearsal(
   projectionOverride: GeneratedPlanEntityProjection | null = projection,
@@ -102,6 +126,7 @@ function renderRehearsal(
       runs={runs}
       distanceUnit="mile"
       draftPacket={draftPacket}
+      planRuleSet={planRuleSet}
     />,
   );
 }
@@ -136,6 +161,17 @@ describe("InternalSessionDraftFeedbackRehearsal", () => {
     ).toBeVisible();
     expect(
       screen.getByRole("heading", { name: "Evaluate live draft evidence" }),
+    ).toBeVisible();
+    const planContext = screen.getByRole("region", {
+      name: "Derived session plan context",
+    });
+    expect(within(planContext).getByText("Current core week")).toBeVisible();
+    expect(within(planContext).getByText("1")).toBeVisible();
+    expect(
+      screen.queryByLabelText("Current core week"),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByText(/facts come from the activated session draft/iu),
     ).toBeVisible();
     expect(
       screen.getByText(/do not write Firestore, associate real runs/iu),
@@ -285,6 +321,7 @@ describe("InternalSessionDraftFeedbackRehearsal", () => {
         runs={[]}
         distanceUnit="mile"
         draftPacket={draftPacket}
+        planRuleSet={planRuleSet}
       />,
     );
     expect(

@@ -60,6 +60,13 @@ run evidence. Every pairing, skip, and evaluator result stays in memory. This
 feedback rehearsal does not associate or change a synchronized run, save a
 workout status, write Firestore, or approve the draft methodology.
 
+When that transient history is coherent, the rehearsal derives and locks the
+current core week, current and next week kinds, and next-week progression state
+from the activated draft and pinned base-plan packet. It refuses lead-in, race,
+recovery, or otherwise unsupported trigger weeks instead of asking the owner to
+guess. Availability and any reschedule candidate remain explicit owner inputs
+because the plan cannot determine those facts.
+
 The same mode also shows **Internal draft adaptation rehearsal**. This second
 tool requires the owner to choose one frozen scenario from the pinned adaptation
 fixture packet. It runs the normalized synthetic evidence through the production
