@@ -28,8 +28,11 @@ explains the conflict instead of offering a date that generation must reject.
 It never selects a date automatically, and the date field remains editable so
 invalid and unsupported boundaries can still be rehearsed. Choose a date and
 truthfully answer the two rehearsal-only confirmations. The selection,
-confirmations, generated proposal, and selected frozen profile stay in memory;
-they are not written to Firebase.
+confirmations, generated proposal, and selected profile are not written to
+Firebase. For the frozen-profile path only, the current browser tab retains the
+fixture version, chosen date, confirmations, and activation intent so it can
+regenerate the base draft after a refresh. It never serializes the profile,
+generated plan, workouts, runs, recommendations, or any account identifier.
 
 The surface can:
 
@@ -45,11 +48,16 @@ draft plan dates and first scheduled training workout, then projects the same
 session draft into the signed-in home next-workout card and the normal Plan
 calendar. Both surfaces label the plan as an owner-only, unsaved rehearsal. The
 projection disappears when the proposal inputs or profile source change, when
-activation is cleared, or when the page reloads. Changing sources also clears
-the date and both confirmations so no proposal or downstream session adjustment
-can appear attached to different inputs. It does not call the plan-approval
-command, write a plan or workouts, replace synchronized plan data, or change
-Track's available workout associations.
+activation is cleared, or when the page reloads on the saved-owner-profile
+path. The frozen-profile base draft is regenerated after refresh from the exact
+checked-in fixture and pinned draft artifacts; any accepted adjustment,
+confirmed feedback, or synthetic evidence still resets. Changing sources also
+clears the retained intent, date, and both confirmations so no proposal or
+downstream session adjustment can appear attached to different inputs. Signing
+out, closing the tab, a fixture or artifact version mismatch, or a failed
+regeneration also clears the intent. It does not call the plan-approval command,
+write a plan or workouts, replace synchronized plan data, or change Track's
+available workout associations.
 
 The home summary also compares the draft schedule for the owner's current local
 date with synchronized completed runs logged on that date. This is a visual,
@@ -146,8 +154,9 @@ only the synchronized active plan; it does not treat the session-only initial
 plan projection, the home same-date comparison, or owner-confirmed session-draft
 feedback as persisted evidence.
 
-None of these surfaces can approve or persist a plan or recommendation, and
-rehearsal activation cannot escape the current page session. Ordinary
+None of these surfaces can approve or persist a plan or recommendation. The
+frozen-profile base activation can survive refresh only inside the current
+browser-tab session; it cannot escape the internal rehearsal build. Ordinary
 development, production web, iOS development, iOS beta, and Functions builds do
 not include these surfaces, the frozen eligible profile, or either draft packet.
 The distributable build commands scan their output and fail if any appears.
