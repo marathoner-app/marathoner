@@ -37,6 +37,8 @@ const planId = createTrainingPlanId('recommendation-plan-0001')
 const recommendationId = createRecommendationId(
   'recommendation-decision-0001',
 )
+const adaptationArtifactVersion =
+  'fixture-adaptation-policy@0.1.0-draft'
 const decidedAt = new Date('2026-10-27T18:05:00.000Z')
 const adminApp = initializeApp({ projectId }, 'recommendation-decision-persistence')
 const database = getFirestore(adminApp)
@@ -97,7 +99,7 @@ function pendingEvidence(
     evaluationInput: {
       schemaVersion: ADAPTATION_EVALUATION_INPUT_SCHEMA_VERSION,
       basePlanArtifactVersion: 'fixture-plan-family@0.1.0-draft',
-      adaptationArtifactVersion: 'fixture-adaptation-policy@0.1.0-draft',
+      adaptationArtifactVersion,
       activePlanStatus: 'active',
       activePlanRevision: 3,
       evaluatedPlanRevision: 3,
@@ -169,7 +171,7 @@ function pendingEvidence(
           'fixture-plan-family@0.1.0-draft',
         ),
         adaptationArtifactVersion: createAdaptationArtifactVersion(
-          'fixture-adaptation-policy@0.1.0-draft',
+          adaptationArtifactVersion,
         ),
       },
     },
@@ -251,8 +253,16 @@ describe('Firestore recommendation decision transaction', () => {
       },
     )
 
-    const first = await decisionStore.commit({ ownerId, envelope: command })
-    const replay = await decisionStore.commit({ ownerId, envelope: command })
+    const first = await decisionStore.commit({
+      authorizedAdaptationArtifactVersion: adaptationArtifactVersion,
+      ownerId,
+      envelope: command,
+    })
+    const replay = await decisionStore.commit({
+      authorizedAdaptationArtifactVersion: adaptationArtifactVersion,
+      ownerId,
+      envelope: command,
+    })
 
     expect(first).toEqual(replay)
     expect(first).toEqual({
@@ -299,8 +309,16 @@ describe('Firestore recommendation decision transaction', () => {
         },
       )
 
-      const first = await decisionStore.commit({ ownerId, envelope: command })
-      const replay = await decisionStore.commit({ ownerId, envelope: command })
+      const first = await decisionStore.commit({
+        authorizedAdaptationArtifactVersion: adaptationArtifactVersion,
+        ownerId,
+        envelope: command,
+      })
+      const replay = await decisionStore.commit({
+        authorizedAdaptationArtifactVersion: adaptationArtifactVersion,
+        ownerId,
+        envelope: command,
+      })
 
       expect(first).toEqual(replay)
       expect(first).toEqual({
@@ -384,14 +402,20 @@ describe('Firestore recommendation decision transaction', () => {
       },
     )
 
-    await expect(decisionStore.commit({ ownerId, envelope: command })).resolves.toEqual({
-      kind: 'stale',
-      result: expect.objectContaining({
-        status: 'stale_revision',
-        expectedActivePlanRevision: 3,
-        actualActivePlanRevision: 4,
+    await expect(
+      decisionStore.commit({
+        authorizedAdaptationArtifactVersion: adaptationArtifactVersion,
+        ownerId,
+        envelope: command,
       }),
-    })
+    ).resolves.toEqual({
+        kind: 'stale',
+        result: expect.objectContaining({
+          status: 'stale_revision',
+          expectedActivePlanRevision: 3,
+          actualActivePlanRevision: 4,
+        }),
+      })
     await expect(evidenceStore.read({ ownerId, recommendationId })).resolves.toEqual(evidence)
     expect(
       (
@@ -426,10 +450,18 @@ describe('Firestore recommendation decision transaction', () => {
     })
 
     await expect(
-      decisionStore.commit({ ownerId, envelope: declined }),
+      decisionStore.commit({
+        authorizedAdaptationArtifactVersion: adaptationArtifactVersion,
+        ownerId,
+        envelope: declined,
+      }),
     ).resolves.toEqual(expect.objectContaining({ kind: 'decided' }))
     await expect(
-      decisionStore.commit({ ownerId, envelope: accepted }),
+      decisionStore.commit({
+        authorizedAdaptationArtifactVersion: adaptationArtifactVersion,
+        ownerId,
+        envelope: accepted,
+      }),
     ).resolves.toEqual({ kind: 'conflict' })
     expect(
       (await evidenceStore.read({ ownerId, recommendationId })).decision,
@@ -438,5 +470,34 @@ describe('Firestore recommendation decision transaction', () => {
       (await database.doc(`users/${ownerId}/planState/active`).get()).data()
         ?.activePlanRevision,
     ).toBe(3)
+  })
+
+  it('refuses an artifact that changed after authorization without writing', async () => {
+    const evidence = pendingEvidence()
+    await evidenceStore.createPending({ ownerId, evidence })
+    const command = createRecommendationDecisionCommand(
+      'changed-artifact-recommendation-0001',
+      {
+        recommendationId,
+        decision: 'declined',
+        expectedEvaluatedPlanRevision: 3,
+      },
+    )
+
+    await expect(
+      decisionStore.commit({
+        authorizedAdaptationArtifactVersion: 'another-policy@1.0.0',
+        ownerId,
+        envelope: command,
+      }),
+    ).rejects.toMatchObject({ code: 'artifact-version-changed' })
+    await expect(
+      evidenceStore.read({ ownerId, recommendationId }),
+    ).resolves.toEqual(evidence)
+    await expect(
+      database
+        .doc(materialCommandReceiptPath(ownerId, command.commandId))
+        .get(),
+    ).resolves.toEqual(expect.objectContaining({ exists: false }))
   })
 })

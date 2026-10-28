@@ -126,9 +126,9 @@ versions, identifiers, or request payloads.
 
 Firebase Admin SDK writes bypass Firestore Security Rules. Therefore Security
 Rules remain the client-deny boundary, while this callable guard is the
-authoritative dynamic-control boundary for server-owned plan writes. A future
-recommendation approval command must use the same gate before evidence or plan
-mutation; the current slice does not create that command.
+authoritative dynamic-control boundary for server-owned plan writes. The
+recommendation decision command now uses that same gate before evidence or plan
+mutation and derives its artifact version from server-owned evidence.
 
 ## Prepared decision command boundary
 
@@ -144,16 +144,17 @@ only when it identifies a plan revision strictly newer than the evaluated one.
 This prevents an evidence record from claiming acceptance when no plan change
 was committed.
 
-The callable currently recognizes and validates this command but returns
-`recommendation-decisions-not-enabled` before any read or write. It does not
-store a receipt, modify a plan, or change recommendation evidence. A later
-implementation must commit accepted evidence, the newer plan revision, and the
-receipt in one transaction; it must commit declined evidence and its receipt
-together. Until that transaction, activation policy, and participant-facing UI
-are complete, the command remains fail-closed.
+The callable recognizes and validates this command, requires authenticated
+ownership and App Check, then reads the owner-scoped server evidence to derive
+the exact adaptation artifact version. The client cannot supply or override
+that version. The existing operator activation gate must allow the `adaptation`
+capability, exact stable artifact, and protocol versions before the atomic
+decision store is called. Missing, malformed, disabled, draft, stale-protocol,
+and non-allowlisted states all return the same calm unavailable result before
+the transaction.
 
-The trusted transaction store now implements that persistence contract behind
-the disabled callable path. A decline finalizes the pending evidence and creates
+The trusted transaction store implements that persistence contract behind the
+fail-closed activation path. A decline finalizes the pending evidence and creates
 its owner-scoped receipt together. An acceptance verifies the authoritative
 active-plan ID and revision, reproduces the exact stored adjustment against the
 current plan, and snapshots the complete evaluated plan and workout set below
@@ -170,11 +171,25 @@ Same-signature retries return the original receipt before current state is
 re-evaluated, while stale revisions, unsafe projections, malformed state, and
 command-ID conflicts write nothing.
 
-This store is implementation evidence, not activation. The callable still
-returns `recommendation-decisions-not-enabled`, so neither a web nor iOS client
-can invoke the transaction. Wiring it into the handler still requires the
-reviewed adaptation artifact, activation gate, and participant-facing decision
-experience.
+The callable runtime now assembles the evidence reader, activation gate, and
+transaction store, but that assembly is implementation readiness rather than
+activation. The current draft artifact is rejected by contract and the current
+operator control does not enable or allowlist adaptation. Recommendation
+generation and participant-facing decision UI also remain disconnected. A
+same-signature retry and command-ID resolution can return the original receipt,
+but no current participant path can create an eligible pending recommendation.
+
+The transaction rechecks that the evidence artifact version is identical to
+the version authorized by the gate. If it changed between the server evidence
+read and the transaction read, the transaction aborts without evidence, plan,
+snapshot, or receipt writes. This closes the authorization-to-commit seam
+without weakening evidence immutability or trusting the client.
+
+After App Check, the handler checks for an existing owner-scoped receipt before
+reevaluating current activation. An exact retry therefore returns the original
+receipt even if adaptation has since been disabled, while a changed command
+that reuses the same identifier remains a conflict. A new command still has to
+pass the current evidence and activation checks.
 
 ## Immutability and ownership
 

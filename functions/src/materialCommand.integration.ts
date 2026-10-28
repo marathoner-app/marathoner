@@ -34,7 +34,19 @@ import {
   type RunDeletionReceiptResult,
   type RunUpdateReceiptResult,
 } from '../../src/domain/materialCommands/contract.js'
-import { createRecommendationId } from '../../src/domain/recommendations/recommendationEvidence.js'
+import {
+  RECOMMENDATION_EVIDENCE_SCHEMA_VERSION,
+  createRecommendationId,
+  type RecommendationEvidenceV2,
+  type RecommendationId,
+} from '../../src/domain/recommendations/recommendationEvidence.js'
+import {
+  ADAPTATION_EVALUATION_INPUT_SCHEMA_VERSION,
+  ADAPTATION_EVALUATION_RESULT_SCHEMA_VERSION,
+  createAdaptationArtifactVersion,
+  createAdaptationExplanationKey,
+  createAdaptationReasonCode,
+} from '../../src/domain/training/adaptationEvaluation.js'
 import {
   createIanaTimeZone,
   createUtcDateTime,
@@ -113,6 +125,7 @@ const nextRunPlanId = createTrainingPlanId('run-command-plan-0002')
 const nextRunWorkoutId = createPlannedWorkoutId('run-command-workout-0002')
 const runShoeId = createShoeId('run-command-shoe-0001')
 const workoutUpdatedAt = createUtcDateTime('2026-10-08T18:00:00.000Z')
+const stableAdaptationArtifactVersion = 'fixture-adaptation-policy@1.0.0'
 
 function runCompletionCommand(
   commandId: string,
@@ -303,6 +316,8 @@ function approvedPolicyRecord(): PlanApprovalArtifactPolicyRecord {
 }
 
 function activationControl(options: {
+  adaptationArtifactVersions?: readonly string[]
+  adaptationEnabled?: boolean
   approvedArtifactVersions?: readonly string[]
   generationEnabled?: boolean
   minimumAppProtocolVersion?: number
@@ -324,7 +339,11 @@ function activationControl(options: {
           ],
       },
       guidance: { enabled: false, approvedArtifactVersions: [] },
-      adaptation: { enabled: false, approvedArtifactVersions: [] },
+      adaptation: {
+        enabled: options.adaptationEnabled ?? false,
+        approvedArtifactVersions:
+          options.adaptationArtifactVersions ?? [],
+      },
     },
   }
 }
@@ -333,6 +352,87 @@ async function seedActivationControl(
   control: ReturnType<typeof activationControl> = activationControl(),
 ) {
   await database.doc(OPERATOR_ACTIVATION_CONTROL_PATH).set(control)
+}
+
+function pendingRecommendationEvidence(
+  recommendationId: RecommendationId,
+): RecommendationEvidenceV2 {
+  const planId = createTrainingPlanId('recommendation-command-plan-0001')
+  return {
+    schemaVersion: RECOMMENDATION_EVIDENCE_SCHEMA_VERSION,
+    recommendationId,
+    evaluatedPlanId: planId,
+    evaluationInput: {
+      schemaVersion: ADAPTATION_EVALUATION_INPUT_SCHEMA_VERSION,
+      basePlanArtifactVersion: 'fixture-plan-family@1.0.0',
+      adaptationArtifactVersion: stableAdaptationArtifactVersion,
+      activePlanStatus: 'active',
+      activePlanRevision: 3,
+      evaluatedPlanRevision: 3,
+      safetyGateState: 'none_reported',
+      inputCompletenessConfirmed: true,
+      triggerKind: 'planned_run_completed',
+      currentCoreWeek: 4,
+      currentWeekKind: 'load',
+      nextWeekKind: 'load',
+      nextWeekIntroducesProgression: true,
+      daysUntilRace: 100,
+      currentWeek: {
+        plannedRunCount: 4,
+        completedRunCount: 4,
+        skippedRunCount: 0,
+        pendingRunCount: 0,
+      },
+      daysSinceLastCompletedPlannedRun: 1,
+      recentEfforts: [
+        'harder_than_expected',
+        'harder_than_expected',
+        'about_right',
+      ],
+      rescheduleCandidate: {
+        present: false,
+        workoutPurpose: null,
+        delayCalendarDays: null,
+        samePlanWeek: false,
+        runnerConfirmedAvailable: false,
+        targetDateEmpty: false,
+        consecutiveRunDatesAfterMove: 0,
+      },
+    },
+    evaluationResult: {
+      schemaVersion: ADAPTATION_EVALUATION_RESULT_SCHEMA_VERSION,
+      kind: 'recommendation',
+      action: 'hold_progression',
+      reasonCode: createAdaptationReasonCode(
+        'ADAPT-HOLD-REPEATED-HARD-EFFORT',
+      ),
+      explanationKey: createAdaptationExplanationKey(
+        'adaptation.hold.repeated_hard_effort',
+      ),
+      runnerApprovalRequired: true,
+      provenance: {
+        inputSchemaVersion: ADAPTATION_EVALUATION_INPUT_SCHEMA_VERSION,
+        evaluatorVersion: createAdaptationArtifactVersion(
+          'fixture-adaptation-evaluator@1.0.0',
+        ),
+        basePlanArtifactVersion: createAdaptationArtifactVersion(
+          'fixture-plan-family@1.0.0',
+        ),
+        adaptationArtifactVersion: createAdaptationArtifactVersion(
+          stableAdaptationArtifactVersion,
+        ),
+      },
+    },
+    planAdjustment: {
+      action: 'hold_progression',
+      sourceWeekNumber: 4,
+      targetWeekNumber: 5,
+    },
+    decision: 'pending',
+    recommendedAt: createUtcDateTime('2026-10-27T18:00:00.000Z'),
+    decidedAt: null,
+    resultingPlanRevision: null,
+  }
 }
 
 function requirePlanApprovalReceipt(value: unknown): PlanApprovalReceiptResult {
@@ -633,6 +733,76 @@ describe('material-command emulator boundary', () => {
         )
         .get(),
     ).resolves.toEqual(expect.objectContaining({ exists: false }))
+  })
+
+  it('commits an allowed stable recommendation decline through the callable boundary', async () => {
+    const recommendationId = createRecommendationId(
+      'recommendation-command-emulator-allowed-0001',
+    )
+    const evidence = pendingRecommendationEvidence(recommendationId)
+    await database
+      .doc(`users/${ownerId}/recommendationEvidence/${recommendationId}`)
+      .set(evidence)
+    await seedActivationControl(
+      activationControl({
+        adaptationEnabled: true,
+        adaptationArtifactVersions: [stableAdaptationArtifactVersion],
+      }),
+    )
+    await signInOwner()
+    const command = createRecommendationDecisionCommand(
+      'decide-recommendation-command-emulator-allowed-0001',
+      {
+        recommendationId,
+        decision: 'declined',
+        expectedEvaluatedPlanRevision: 3,
+      },
+    )
+
+    const first = (await submit(command)).data
+    await seedActivationControl()
+    const replay = (await submit(command)).data
+    const resolved = (await resolve({ commandId: command.commandId })).data
+
+    expect(first).toEqual({
+      status: 'recommendation_decided',
+      commandId: command.commandId,
+      recommendationId,
+      decision: 'declined',
+      evaluatedPlanRevision: 3,
+      resultingPlanRevision: null,
+      decidedAt: expect.any(String),
+    })
+    expect(replay).toEqual(first)
+    expect(resolved).toEqual(first)
+    const conflict = await submit(
+      createRecommendationDecisionCommand(command.commandId, {
+        recommendationId,
+        decision: 'accepted',
+        expectedEvaluatedPlanRevision: 3,
+      }),
+    )
+    expect(conflict.data).toEqual(
+      expect.objectContaining({
+        status: 'conflict',
+        code: 'command-id-reused',
+      }),
+    )
+    expect(
+      (
+        await database
+          .doc(`users/${ownerId}/recommendationEvidence/${recommendationId}`)
+          .get()
+      ).data(),
+    ).toEqual(
+      expect.objectContaining({
+        decision: 'declined',
+        resultingPlanRevision: null,
+      }),
+    )
+    await expect(
+      database.collection(`users/${ownerId}/plans`).get(),
+    ).resolves.toEqual(expect.objectContaining({ empty: true }))
   })
 
   it('commits one effect and returns the original receipt for a duplicate ID', async () => {

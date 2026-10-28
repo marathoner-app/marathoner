@@ -24,6 +24,8 @@ import { FirestoreAccountDeletionRequestStore } from './firestoreAccountDeletion
 import { FirestoreMaterialCommandStore } from './firestoreMaterialCommandStore.js'
 import { FirestoreOperatorActivationControlStore } from './firestoreOperatorActivationControlStore.js'
 import { FirestorePlanApprovalStore } from './firestorePlanApprovalStore.js'
+import { FirestoreRecommendationDecisionStore } from './firestoreRecommendationDecisionStore.js'
+import { FirestoreRecommendationEvidenceStore } from './firestoreRecommendationEvidenceStore.js'
 import { FirestoreRunCompletionStore } from './firestoreRunCompletionStore.js'
 import { FirestoreRunDeletionStore } from './firestoreRunDeletionStore.js'
 import { FirestoreRunUpdateStore } from './firestoreRunUpdateStore.js'
@@ -76,13 +78,14 @@ const useCompletedRunCommands = shouldInstallCompletedRunCommandStores({
   functionsEmulator,
   projectId: gcloudProject.value(),
 })
+const operatorActivationGate = new OperatorActivationGate(
+  new FirestoreOperatorActivationControlStore(database),
+)
 
 const dependencies = {
   store: new FirestoreMaterialCommandStore(database),
   planApproval: {
-    activationGate: new OperatorActivationGate(
-      new FirestoreOperatorActivationControlStore(database),
-    ),
+    activationGate: operatorActivationGate,
     policyRecords: useEmulatorPlanApprovalPolicy
       ? emulatorPlanApprovalPolicy
       : PRODUCTION_PLAN_APPROVAL_ARTIFACT_POLICY,
@@ -90,6 +93,11 @@ const dependencies = {
     supportedScopeId: useEmulatorPlanApprovalPolicy
       ? emulatorPlanApprovalScopeId
       : null,
+  },
+  recommendationDecision: {
+    activationGate: operatorActivationGate,
+    evidence: new FirestoreRecommendationEvidenceStore(database),
+    store: new FirestoreRecommendationDecisionStore(database),
   },
   ...(useCompletedRunCommands
     ? {
