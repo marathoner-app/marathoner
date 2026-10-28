@@ -773,6 +773,67 @@ describe('App training sections', () => {
     ).toBeInTheDocument()
   })
 
+  it('keeps a legacy runner setup draft mounted while its profile write converges', async () => {
+    const user = userEvent.setup()
+    const legacyProfile = {
+      ...completeRunnerProfile,
+      consistentRunningWeeks: undefined
+    }
+    const updatedProfile = {
+      ...completeRunnerProfile,
+      consistentRunningWeeks: 12,
+      updatedAt: createUtcDateTime('2026-10-28T20:00:00Z')
+    }
+    let resolveSave!: (profile: UserProfile) => void
+    const pendingSave = new Promise<UserProfile>((resolve) => {
+      resolveSave = resolve
+    })
+    trainingMock.profile = legacyProfile
+    trainingMock.saveProfile.mockReturnValueOnce(pendingSave)
+    const view = renderSignedInApp()
+
+    await user.type(
+      screen.getByLabelText(/How many consecutive weeks/i),
+      '12'
+    )
+    await user.click(screen.getByRole('button', { name: 'Complete setup' }))
+
+    trainingMock.status = 'stale'
+    trainingMock.staleReasons = ['pending_writes']
+    view.rerender(
+      <AuthProvider>
+        <App />
+      </AuthProvider>
+    )
+
+    expect(
+      screen.getByRole('dialog', { name: 'Tell us where you are starting' })
+    ).toBeInTheDocument()
+    expect(screen.getByLabelText(/How many consecutive weeks/i)).toHaveValue(12)
+    for (const savingButton of screen.getAllByRole('button', { name: 'Saving…' })) {
+      expect(savingButton).toBeDisabled()
+    }
+
+    trainingMock.status = 'current'
+    trainingMock.staleReasons = []
+    trainingMock.profile = updatedProfile
+    view.rerender(
+      <AuthProvider>
+        <App />
+      </AuthProvider>
+    )
+    resolveSave(updatedProfile)
+
+    await waitFor(() =>
+      expect(
+        screen.queryByRole('dialog', { name: 'Tell us where you are starting' })
+      ).not.toBeInTheDocument()
+    )
+    expect(
+      screen.getByRole('button', { name: 'Edit runner profile' })
+    ).toBeInTheDocument()
+  })
+
   it('renders the signed-in training companion screen', () => {
     renderSignedInApp()
 
