@@ -72,13 +72,12 @@ that does not match explicit local configuration. The served local client may
 contain the fixed token in memory because Firebase requires it for the debug
 provider; no committed or uploaded build artifact may contain it.
 
-### Localhost debug-token workflow (external evidence pending)
+### Localhost debug-token workflow and evidence
 
 The development Enterprise site key authorizes the supported GitHub Pages
 hosts, not localhost. Local Auth and Firestore use therefore require one
-separately registered development debug token. No such token has been created
-or verified for this implementation yet; the following workflow is the
-reviewed procedure, not a claim of console or traffic evidence:
+separately registered development debug token. The following workflow is the
+reviewed procedure used for the owner-only browser rehearsal:
 
 1. In the **development** Firebase project only, an administrator creates an App
    Check debug token named `development-local-<operator>-<device>` and records
@@ -101,6 +100,15 @@ reviewed procedure, not a claim of console or traffic evidence:
 5. Remove the local file when it is not needed. Revoke immediately after
    suspected exposure or loss of custody, and at least every 90 days while the
    token remains active.
+
+On October 28, 2026, the development web registration received the owner-only
+token `development-local-kevin-mac`. From `http://127.0.0.1:5173/`, Vite mode
+`internal-plan-rehearsal` passed the App Check startup gate, completed
+Email/Password sign-in, and loaded the saved runner-setup state through an
+owner-scoped Firestore read. The token value remained only in the ignored
+mode-`0600` `.env.internal-plan-rehearsal.local` file and was not recorded in
+the repository, test output, screenshots, issues, or pull requests. The next
+required rotation date is January 26, 2027.
 
 Never use the development browser token for beta, iOS, production output, another
 operator/device, or CI artifacts. Never set the debug global manually.
