@@ -31,6 +31,8 @@ const forbiddenBuildText = [
   'Owner-only daily comparison',
   'Today in the session draft',
   'Same-date comparison only',
+  'internal-eligible-profile@1.0.0',
+  'Frozen eligible rehearsal profile',
 ]
 const textExtensions = new Set(['.css', '.html', '.js', '.json', '.map', '.txt'])
 

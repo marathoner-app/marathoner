@@ -192,6 +192,93 @@ describe("InternalPlanProposalRehearsal", () => {
     ).not.toBeInTheDocument();
   });
 
+  it("completes the real session journey with the frozen eligible profile and resets on source change", async () => {
+    const user = userEvent.setup();
+    const onSessionActivationChange = vi.fn();
+    render(
+      <InternalPlanProposalRehearsal
+        profile={null}
+        ruleSet={ruleSet}
+        onSessionActivationChange={onSessionActivationChange}
+      />,
+    );
+
+    expect(
+      screen.getByRole("radio", { name: /saved owner profile/iu }),
+    ).toBeChecked();
+    expect(
+      screen.getByRole("button", { name: "Generate read-only proposal" }),
+    ).toBeDisabled();
+
+    await user.click(
+      screen.getByRole("radio", {
+        name: /frozen eligible rehearsal profile/iu,
+      }),
+    );
+
+    expect(
+      screen.getByRole("complementary", {
+        name: "Frozen rehearsal profile details",
+      }),
+    ).toHaveTextContent("internal-eligible-profile@1.0.0");
+    expect(
+      screen.getByRole("complementary", {
+        name: "Frozen rehearsal profile details",
+      }),
+    ).toHaveTextContent("42 km");
+    expect(
+      screen.getByRole("button", {
+        name: "January 7, 2030 18 weeks to race",
+      }),
+    ).toBeInTheDocument();
+
+    await user.click(
+      screen.getByRole("button", {
+        name: "January 7, 2030 18 weeks to race",
+      }),
+    );
+    await user.click(
+      screen.getByLabelText(/confirmed the frozen eligible rehearsal profile/iu),
+    );
+    await user.click(screen.getByLabelText(/no pain or unusual symptoms/iu));
+    await user.click(
+      screen.getByRole("button", { name: "Generate read-only proposal" }),
+    );
+
+    expect(
+      screen.getByRole("heading", { name: "Founding beta completion plan" }),
+    ).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Continue review" }));
+    await user.click(
+      screen.getByRole("button", {
+        name: "Activate only in this rehearsal",
+      }),
+    );
+    expect(onSessionActivationChange).toHaveBeenLastCalledWith(
+      expect.objectContaining({ kind: "generated" }),
+    );
+
+    await user.click(
+      screen.getByRole("radio", { name: /saved owner profile/iu }),
+    );
+
+    expect(onSessionActivationChange).toHaveBeenLastCalledWith(null);
+    expect(screen.getByLabelText("Plan start date")).toHaveValue("");
+    expect(
+      screen.getByLabelText(/confirmed the saved profile represents/iu),
+    ).not.toBeChecked();
+    expect(
+      screen.getByLabelText(/no pain or unusual symptoms/iu),
+    ).not.toBeChecked();
+    expect(
+      screen.queryByRole("heading", { name: "Founding beta completion plan" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Generate read-only proposal" }),
+    ).toBeDisabled();
+  });
+
   it("clears session activation when a proposal input changes", async () => {
     const user = userEvent.setup();
     const onSessionActivationChange = vi.fn();
@@ -285,7 +372,7 @@ describe("InternalPlanProposalRehearsal", () => {
 
     expect(
       screen.getByRole("heading", {
-        name: "The saved starting point is outside this draft",
+        name: "The selected starting point is outside this draft",
       }),
     ).toBeInTheDocument();
     expect(screen.getByText("Unsupported cohort gate")).toBeInTheDocument();

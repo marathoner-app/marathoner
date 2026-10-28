@@ -11,21 +11,30 @@ Start the mode with:
 npm run dev:plan-rehearsal
 ```
 
-After signing into the development environment, finish and save the runner
-profile. The signed-in home then shows **Internal draft plan rehearsal**. For an
-exact race date that falls on the saved preferred long-run day, the tool offers
-one explicit start-date choice for every whole-week horizon allowed by the
-pinned draft that does not predate the saved recent effort. When that chronology
-removes every aligned choice, the tool explains the conflict instead of
-offering a date that generation must reject. It never selects a date
-automatically, and the date field remains editable so invalid and unsupported
-boundaries can still be rehearsed. Choose a date and truthfully answer the two
-rehearsal-only confirmations. The selection, confirmations, and generated
-proposal stay in memory; they are not written to Firebase.
+After signing into the development environment, the signed-in home shows
+**Internal draft plan rehearsal**. Its profile-source control defaults to the
+current saved owner profile. That path preserves the real boundary result and
+never changes the saved profile. An explicit second choice loads the versioned
+`internal-eligible-profile@1.0.0` synthetic profile so the owner can complete
+the proposal, activation, Home, Plan, calendar, and feedback journey even when
+the real profile is correctly outside the draft cohort. The surface displays
+the frozen profile's relevant inputs and provenance before generation.
+
+For an exact race date that falls on the selected profile's preferred long-run
+day, the tool offers one explicit start-date choice for every whole-week horizon
+allowed by the pinned draft that does not predate the selected profile's saved
+recent effort. When that chronology removes every aligned choice, the tool
+explains the conflict instead of offering a date that generation must reject.
+It never selects a date automatically, and the date field remains editable so
+invalid and unsupported boundaries can still be rehearsed. Choose a date and
+truthfully answer the two rehearsal-only confirmations. The selection,
+confirmations, generated proposal, and selected frozen profile stay in memory;
+they are not written to Firebase.
 
 The surface can:
 
 - map the current saved profile into the plan-generation input contract;
+- map the frozen eligible profile through that same production input mapper;
 - run the exact hash-pinned draft packet through the deterministic generator;
 - show incomplete, invalid, unsupported, or generated results; and
 - review a generated proposal and explicitly activate it only inside the
@@ -35,10 +44,12 @@ Session activation is an interface rehearsal, not a plan approval. It shows the
 draft plan dates and first scheduled training workout, then projects the same
 session draft into the signed-in home next-workout card and the normal Plan
 calendar. Both surfaces label the plan as an owner-only, unsaved rehearsal. The
-projection disappears when the proposal inputs change, activation is cleared,
-or the page reloads. It does not call the plan-approval command, write a plan or
-workouts, replace synchronized plan data, or change Track's available workout
-associations.
+projection disappears when the proposal inputs or profile source change, when
+activation is cleared, or when the page reloads. Changing sources also clears
+the date and both confirmations so no proposal or downstream session adjustment
+can appear attached to different inputs. It does not call the plan-approval
+command, write a plan or workouts, replace synchronized plan data, or change
+Track's available workout associations.
 
 The home summary also compares the draft schedule for the owner's current local
 date with synchronized completed runs logged on that date. This is a visual,
@@ -124,8 +135,8 @@ feedback as persisted evidence.
 None of these surfaces can approve or persist a plan or recommendation, and
 rehearsal activation cannot escape the current page session. Ordinary
 development, production web, iOS development, iOS beta, and Functions builds do
-not include these surfaces or either draft packet. The distributable build
-commands scan their output and fail if any appears.
+not include these surfaces, the frozen eligible profile, or either draft packet.
+The distributable build commands scan their output and fail if any appears.
 
 Independent methodology review remains required before the rules or generated
 plans can be used by real-world participants. Reviewer changes can be applied
