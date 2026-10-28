@@ -14,12 +14,15 @@ import {
   createUserId,
 } from '../../src/domain/training/identifiers.js'
 import type {
+  CompletionGoal,
   CompletedRun,
   PerceivedEffort,
   PlannedWorkout,
   RunPurpose,
   Shoe,
   ShoeStatus,
+  TrainingPlan,
+  TrainingPlanStatus,
   TrainingPhase,
   WorkoutStatus,
 } from '../../src/domain/training/types.js'
@@ -27,6 +30,7 @@ import {
   createDistanceMeters,
   createDurationSeconds,
 } from '../../src/domain/training/units.js'
+import { validateTrainingPlan } from '../../src/domain/training/validation.js'
 import { TRAINING_SCHEMA_VERSION } from '../../src/persistence/trainingSchema.js'
 import {
   WORKOUT_COMPLETION_GUARD_SCHEMA_VERSION,
@@ -51,6 +55,8 @@ const RUN_PURPOSES = [
   'race',
 ] as const
 const SHOE_STATUSES = ['active', 'retired'] as const
+const PLAN_STATUSES = ['draft', 'active', 'completed', 'archived'] as const
+const COMPLETION_GOALS = ['complete_first_marathon'] as const
 
 function invalidRecord(message: string): never {
   throw new Error(`A stored training record is invalid: ${message}`)
@@ -175,6 +181,40 @@ export function plannedWorkoutFromAdminDocument(
         purpose: readEnum(data, 'purpose', RUN_PURPOSES) as RunPurpose,
       }
     : { ...base, ...targets, kind }
+}
+
+export function trainingPlanFromAdminDocument(
+  id: string,
+  data: DocumentData | undefined,
+): TrainingPlan | null {
+  if (data === undefined) return null
+  requireTrainingSchema(data)
+  const endDate = readOptionalString(data, 'endDate')
+  const completionGoal = readOptionalString(data, 'completionGoal')
+  if (
+    completionGoal !== undefined &&
+    !COMPLETION_GOALS.includes(completionGoal as CompletionGoal)
+  ) {
+    invalidRecord('completionGoal has an unsupported value.')
+  }
+  const plan: TrainingPlan = {
+    id: createTrainingPlanId(id),
+    userId: createUserId(readString(data, 'userId')),
+    name: readString(data, 'name'),
+    startDate: createDateOnly(readString(data, 'startDate')),
+    targetRaceDate: createDateOnly(readString(data, 'targetRaceDate')),
+    ...(endDate === undefined ? {} : { endDate: createDateOnly(endDate) }),
+    ...(completionGoal === undefined
+      ? {}
+      : { completionGoal: completionGoal as CompletionGoal }),
+    status: readEnum(data, 'status', PLAN_STATUSES) as TrainingPlanStatus,
+    createdAt: readTimestamp(data, 'createdAt'),
+    updatedAt: readTimestamp(data, 'updatedAt'),
+  }
+  if (validateTrainingPlan(plan).length > 0) {
+    invalidRecord('the training plan is invalid.')
+  }
+  return plan
 }
 
 export function shoeFromAdminDocument(

@@ -69,6 +69,7 @@ table and the deletion runner in the same pull request.
 | `users/{uid}/plans/{planId}/workouts/{workoutId}` | Planned workouts | Covered by recursive deletion of `users/{uid}`. |
 | `users/{uid}/plans/{planId}/metadata/generation` | Server-owned plan-generation versions, approved scope, command ID, and audit reason codes | Covered by recursive deletion of `users/{uid}`. |
 | `users/{uid}/planState/active` | Server-owned current plan ID, revision, and approval timestamps | Covered by recursive deletion of `users/{uid}`. |
+| `users/{uid}/planRevisionSnapshots/{planId}--revision-{revision}` | Server-only evaluated plan and workout snapshots retained before an accepted recommendation advances the active revision | Covered by recursive deletion of `users/{uid}`. |
 | `users/{uid}/recommendationEvidence/{recommendationId}` | Server-owned recommendation inputs, result, provenance, runner decision, and resulting plan revision | Covered by recursive deletion of `users/{uid}`. |
 | `users/{uid}/runs/{runId}` | Completed runs and feedback | Covered by recursive deletion of `users/{uid}`. |
 | `users/{uid}/shoes/{shoeId}` | Shoe records | Covered by recursive deletion of `users/{uid}`. |
@@ -83,12 +84,13 @@ current data store. The proof document was deleted and its explicit rule was
 removed. Recursive deletion of the user tree would nevertheless remove any
 unexpected descendant left below that owner.
 
-Manifest version `1` remains valid for plan activation and recommendation
-evidence because no deletion root changed: active state, generation provenance,
-and recommendation evidence are descendants of the already recursive
-`users/{uid}` root, and plan-approval receipts are descendants of the already
-recursive `materialCommandReceipts/{uid}` root. Emulator fixtures seed these
-exact paths and verify owner deletion and cross-owner preservation. The global
+Manifest version `1` remains valid for plan activation, revision snapshots, and
+recommendation evidence because no deletion root changed: active state,
+generation provenance, plan snapshots, and recommendation evidence are
+descendants of the already recursive `users/{uid}` root, and material-command
+receipts are descendants of the already recursive
+`materialCommandReceipts/{uid}` root. Emulator fixtures seed these exact paths
+and verify owner deletion and cross-owner preservation. The global
 `operatorControls/recommendationActivation` record contains no participant
 identity or training data and is not part of an individual account deletion.
 

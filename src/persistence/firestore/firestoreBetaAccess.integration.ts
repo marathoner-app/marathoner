@@ -687,6 +687,30 @@ describe("founding-beta membership rules", () => {
     await assertFails(deleteDoc(doc(ownerDatabase, evidencePath)));
   });
 
+  it("keeps evaluated plan-revision snapshots server-only", async () => {
+    await seedMembership(firstUserId);
+    const snapshotPath =
+      `users/${firstUserId}/planRevisionSnapshots/plan-1--revision-1`;
+    const workoutPath = `${snapshotPath}/workouts/workout-1`;
+    await testEnvironment.withSecurityRulesDisabled(async (context) => {
+      await setDoc(doc(context.firestore(), snapshotPath), {
+        schemaVersion: 1,
+        userId: firstUserId,
+      });
+      await setDoc(doc(context.firestore(), workoutPath), {
+        schemaVersion: 1,
+        userId: firstUserId,
+      });
+    });
+
+    const ownerDatabase = authenticatedContext(firstUserId).firestore();
+    for (const path of [snapshotPath, workoutPath]) {
+      await assertFails(getDoc(doc(ownerDatabase, path)));
+      await assertFails(setDoc(doc(ownerDatabase, path), {}));
+      await assertFails(deleteDoc(doc(ownerDatabase, path)));
+    }
+  });
+
   it.each([
     [
       "recommendation activation",

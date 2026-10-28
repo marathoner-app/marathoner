@@ -7,6 +7,7 @@ import {
   type MaterialCommandCommittedResult,
   type PlanApprovalReceiptResult,
   type ProofMaterialCommandEnvelope,
+  type RecommendationDecisionReceiptResult,
   type RunCompletionReceiptResult,
   type RunDeletionReceiptResult,
   type RunUpdateReceiptResult,
@@ -30,6 +31,7 @@ export function storedMaterialCommandResult(
   | MaterialCommandCommittedResult
   | AccountDeletionRequestAcceptedResult
   | PlanApprovalReceiptResult
+  | RecommendationDecisionReceiptResult
   | RunCompletionReceiptResult
   | RunUpdateReceiptResult
   | RunDeletionReceiptResult {
@@ -38,6 +40,7 @@ export function storedMaterialCommandResult(
     (data.status !== 'committed' &&
       data.status !== 'accepted' &&
       data.status !== 'plan_approved' &&
+      data.status !== 'recommendation_decided' &&
       data.status !== 'run_completed' &&
       data.status !== 'run_updated' &&
       data.status !== 'run_deleted')

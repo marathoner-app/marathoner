@@ -152,6 +152,30 @@ receipt in one transaction; it must commit declined evidence and its receipt
 together. Until that transaction, activation policy, and participant-facing UI
 are complete, the command remains fail-closed.
 
+The trusted transaction store now implements that persistence contract behind
+the disabled callable path. A decline finalizes the pending evidence and creates
+its owner-scoped receipt together. An acceptance verifies the authoritative
+active-plan ID and revision, reproduces the exact stored adjustment against the
+current plan, and snapshots the complete evaluated plan and workout set below
+`users/{uid}/planRevisionSnapshots/{planId}--revision-{revision}` before it
+updates the canonical workouts, advances active state, finalizes evidence, and
+creates the receipt. All of those writes share one Firestore transaction.
+
+Canonical plan and workout IDs do not change, so completed-run associations
+remain valid. Repeat and hold decisions may update only still-planned future
+prescriptions. An accepted skipped-run reschedule moves that exact workout and
+returns it to `planned`; any other status transition fails closed. Snapshot
+documents are server-only under both development and beta Security Rules.
+Same-signature retries return the original receipt before current state is
+re-evaluated, while stale revisions, unsafe projections, malformed state, and
+command-ID conflicts write nothing.
+
+This store is implementation evidence, not activation. The callable still
+returns `recommendation-decisions-not-enabled`, so neither a web nor iOS client
+can invoke the transaction. Wiring it into the handler still requires the
+reviewed adaptation artifact, activation gate, and participant-facing decision
+experience.
+
 ## Immutability and ownership
 
 Recommendation evidence becomes server-owned once persisted. Clients may submit

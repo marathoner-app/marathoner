@@ -15,6 +15,7 @@ import {
   type PlanApprovalReceiptResult,
   type PlanApprovalStaleRevisionResult,
   type ProofMaterialCommandEnvelope,
+  type RecommendationDecisionReceiptResult,
   type RunCompletionCommandEnvelope,
   type RunCompletionReceiptResult,
   type RunDeletionCommandEnvelope,
@@ -59,6 +60,7 @@ export interface MaterialCommandStore {
     | MaterialCommandCommittedResult
     | AccountDeletionRequestAcceptedResult
     | PlanApprovalReceiptResult
+    | RecommendationDecisionReceiptResult
     | RunCompletionReceiptResult
     | RunUpdateReceiptResult
     | RunDeletionReceiptResult
@@ -616,6 +618,8 @@ export async function resolveMaterialCommand(
         ? 'account.request-deletion'
         : stored?.status === 'plan_approved'
           ? 'plan.approve-generated'
+          : stored?.status === 'recommendation_decided'
+            ? 'recommendation.decide'
           : stored?.status === 'run_completed'
             ? 'run.complete'
             : stored?.status === 'run_updated'
