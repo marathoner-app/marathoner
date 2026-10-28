@@ -20,12 +20,10 @@ import {
   createRecommendationId,
   type RecommendationId,
 } from "../domain/recommendations";
+import { createDraftRecommendationDecisionContent } from "../recommendations/recommendationDecisionReviewContent";
 import Calendar from "./Calendar";
 import InternalAdaptationDecisionRehearsal from "./InternalAdaptationDecisionRehearsal";
-import type {
-  DraftAdaptationOutcomeDetail,
-  InternalAdaptationScenarioPacket,
-} from "./internalAdaptationScenarioPacket";
+import type { InternalAdaptationScenarioPacket } from "./internalAdaptationScenarioPacket";
 import { inputForInternalLiveAdaptation } from "./internalLiveAdaptationEvaluation";
 import {
   previewWorkoutsForInternalLiveAdaptation,
@@ -54,7 +52,6 @@ type LiveEvaluationOutcome =
       readonly input: AdaptationEvaluationInputV1;
       readonly result: AdaptationEvaluationResultV1;
       readonly outcomeRule: AdaptationOutcomeRuleV1 | null;
-      readonly outcomeDetail: DraftAdaptationOutcomeDetail | null;
       readonly evaluationId: number;
       readonly recommendationId: RecommendationId;
       readonly recommendedAt: UtcDateTime;
@@ -84,6 +81,17 @@ export default function InternalLiveAdaptationRehearsal({
   workouts,
   distanceUnit,
 }: InternalLiveAdaptationRehearsalProps) {
+  const decisionContentRegistry = useMemo(
+    () =>
+      createDraftRecommendationDecisionContent({
+        basePlanArtifactVersion: packet.rules.basePlanArtifactVersion,
+        adaptationArtifactVersion: packet.rules.adaptationArtifactVersion,
+      }),
+    [
+      packet.rules.adaptationArtifactVersion,
+      packet.rules.basePlanArtifactVersion,
+    ],
+  );
   const [currentCoreWeek, setCurrentCoreWeek] = useState("");
   const [currentWeekKind, setCurrentWeekKind] = useState<
     AdaptationWeekKind | ""
@@ -216,12 +224,6 @@ export default function InternalLiveAdaptationRehearsal({
         : (packet.rules.outcomes.find(
             ({ reasonCode }) => reasonCode === result.reasonCode,
           ) ?? null);
-    const outcomeDetail =
-      result.kind === "invalid_input"
-        ? null
-        : (packet.outcomeDetails.find(
-            ({ reasonCode }) => reasonCode === result.reasonCode,
-          ) ?? null);
     evaluationSequence.current += 1;
     const evaluatedAt = Date.now();
     setProjectionOutcome(null);
@@ -230,7 +232,6 @@ export default function InternalLiveAdaptationRehearsal({
       input,
       result,
       outcomeRule,
-      outcomeDetail,
       evaluationId: evaluationSequence.current,
       recommendationId: createRecommendationId(
         `internal-${evaluatedAt}-${evaluationSequence.current}`,
@@ -536,13 +537,11 @@ export default function InternalLiveAdaptationRehearsal({
           </p>
 
           {outcome.result.kind === "recommendation" &&
-            outcome.result.runnerApprovalRequired &&
-            outcome.outcomeDetail !== null && (
+            outcome.result.runnerApprovalRequired && (
               <InternalAdaptationDecisionRehearsal
                 key={outcome.evaluationId}
                 result={outcome.result}
-                outcomeDetail={outcome.outcomeDetail}
-                sourceDescription={`The synchronized owner evidence matched ${outcome.result.reasonCode} in the draft evaluator.`}
+                contentRegistry={decisionContentRegistry}
                 onSessionDecisionChange={(decision) => {
                   if (decision !== "apply") {
                     setProjectionOutcome(null);

@@ -1,14 +1,15 @@
 import { useState } from "react";
+import type { RecommendationAction } from "../domain/recommendations";
 import type { DecidedAdaptationEvaluationResultV1 } from "../domain/training";
-import RecommendationDecisionReview, {
-  type RecommendationDecisionReviewModel,
-} from "./RecommendationDecisionReview";
-import type { DraftAdaptationOutcomeDetail } from "./internalAdaptationScenarioPacket";
+import {
+  resolveInternalRecommendationDecisionReviewModel,
+  type VersionedRecommendationDecisionContent,
+} from "../recommendations/recommendationDecisionReviewContent";
+import RecommendationDecisionReview from "./RecommendationDecisionReview";
 
 interface InternalAdaptationDecisionRehearsalProps {
   readonly result: DecidedAdaptationEvaluationResultV1;
-  readonly outcomeDetail: DraftAdaptationOutcomeDetail;
-  readonly sourceDescription?: string;
+  readonly contentRegistry: readonly VersionedRecommendationDecisionContent[];
   readonly onSessionDecisionChange?: (
     decision: InternalAdaptationSessionDecision | null,
   ) => void;
@@ -16,49 +17,87 @@ interface InternalAdaptationDecisionRehearsalProps {
 
 export type InternalAdaptationSessionDecision = "keep" | "apply";
 
+interface InternalAdaptationSessionDecisionState {
+  readonly resultIdentity: string;
+  readonly decision: InternalAdaptationSessionDecision;
+}
+
+const materialActions: readonly RecommendationAction[] = [
+  "repeat_period",
+  "hold_progression",
+  "reschedule",
+];
+
 function readableIdentifier(value: string): string {
   const words = value.replace(/[-_]/gu, " ");
   return `${words[0]?.toUpperCase() ?? ""}${words.slice(1)}`;
 }
 
-function modelFor(
-  result: DecidedAdaptationEvaluationResultV1,
-  outcomeDetail: DraftAdaptationOutcomeDetail,
-  sourceDescription?: string,
-): RecommendationDecisionReviewModel {
-  return {
-    title: `Internal ${readableIdentifier(result.action ?? "recommendation")}`,
-    observation: outcomeDetail.when,
-    meaning:
-      sourceDescription ??
-      `The frozen scenario matched ${result.reasonCode} in the draft evaluator.`,
-    recommendation:
-      outcomeDetail.planMutation ??
-      "The draft outcome does not define a plan mutation.",
-    impact:
-      "Any choice below is recorded only for this page session. No recommendation command, approval receipt, or real plan mutation is created.",
-    contentState: "internal_preview",
-  };
+function isMaterialAction(
+  value: DecidedAdaptationEvaluationResultV1["action"],
+): value is RecommendationAction {
+  return (
+    value !== null &&
+    materialActions.some((candidate) => candidate === value)
+  );
 }
 
 export default function InternalAdaptationDecisionRehearsal({
   result,
-  outcomeDetail,
-  sourceDescription,
+  contentRegistry,
   onSessionDecisionChange,
 }: InternalAdaptationDecisionRehearsalProps) {
-  const [sessionDecision, setSessionDecision] =
-    useState<InternalAdaptationSessionDecision | null>(null);
+  const [sessionDecisionState, setSessionDecisionState] =
+    useState<InternalAdaptationSessionDecisionState | null>(null);
+  const resultIdentity = [
+    result.action,
+    result.reasonCode,
+    result.explanationKey,
+    result.provenance.basePlanArtifactVersion,
+    result.provenance.adaptationArtifactVersion,
+  ].join(":");
+  const sessionDecision =
+    sessionDecisionState?.resultIdentity === resultIdentity
+      ? sessionDecisionState.decision
+      : null;
+  const model = isMaterialAction(result.action)
+    ? resolveInternalRecommendationDecisionReviewModel(
+        {
+          action: result.action,
+          reasonCode: result.reasonCode,
+          explanationKey: result.explanationKey,
+          basePlanArtifactVersion: result.provenance.basePlanArtifactVersion,
+          adaptationArtifactVersion:
+            result.provenance.adaptationArtifactVersion,
+        },
+        contentRegistry,
+      )
+    : null;
 
   const recordDecision = (decision: InternalAdaptationSessionDecision) => {
-    setSessionDecision(decision);
+    setSessionDecisionState({ resultIdentity, decision });
     onSessionDecisionChange?.(decision);
   };
 
   const reviewAgain = () => {
-    setSessionDecision(null);
+    setSessionDecisionState(null);
     onSessionDecisionChange?.(null);
   };
+
+  if (model === null) {
+    return (
+      <section className="internal-adaptation-session-decision" role="alert">
+        <p className="internal-adaptation-rehearsal-eyebrow">
+          Draft explanation unavailable
+        </p>
+        <h3>This recommendation cannot be rehearsed</h3>
+        <p>
+          The exact draft explanation for this action, reason, and artifact
+          version is missing or ambiguous. No choice is available.
+        </p>
+      </section>
+    );
+  }
 
   if (sessionDecision !== null) {
     return (
@@ -97,7 +136,7 @@ export default function InternalAdaptationDecisionRehearsal({
 
   return (
     <RecommendationDecisionReview
-      model={modelFor(result, outcomeDetail, sourceDescription)}
+      model={model}
       state={{ kind: "ready" }}
       interactionMode="internal_rehearsal"
       onKeep={() => recordDecision("keep")}

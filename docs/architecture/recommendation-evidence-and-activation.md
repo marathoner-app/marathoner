@@ -50,6 +50,15 @@ plan, revision transition, action agreement, and material change, then runs the
 complete evidence validator. The resulting proof is not written to Firestore,
 does not call a material command, and cannot mutate the synchronized plan.
 
+The three bounded material outcomes also have exact versioned draft explanation
+entries for the owner-only rehearsal. Each entry is keyed to the action, reason
+code, explanation key, base-plan artifact, and adaptation artifact, and it uses
+the same decision-review component as the eventual participant path. The
+internal resolver accepts only one complete `draft` entry with an exact draft
+version and no review evidence. The production registry remains empty, and the
+production resolver rejects every draft entry, so this copy is implementation
+and review preparation rather than participant guidance.
+
 ## Operator activation control
 
 `OperatorActivationControlV1` defines one revisioned operator-owned record with

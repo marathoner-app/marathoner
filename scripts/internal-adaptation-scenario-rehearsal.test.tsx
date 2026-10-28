@@ -45,7 +45,7 @@ describe("InternalAdaptationScenarioRehearsal", () => {
     expect(screen.getByText("Yes")).toBeInTheDocument();
     expect(
       screen.getByRole("heading", {
-        name: "Internal Hold progression",
+        name: "Give next week another steady pass",
       }),
     ).toBeInTheDocument();
     expect(screen.getByRole("note")).toHaveTextContent(

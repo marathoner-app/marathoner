@@ -5,10 +5,10 @@ import {
   type AdaptationEvaluationResultV1,
   type AdaptationOutcomeRuleV1,
 } from "../domain/training";
+import { createDraftRecommendationDecisionContent } from "../recommendations/recommendationDecisionReviewContent";
 import {
   inputForInternalAdaptationScenario,
   valuesForInternalAdaptationScenario,
-  type DraftAdaptationOutcomeDetail,
   type DraftAdaptationFixture,
   type InternalAdaptationScenarioPacket,
 } from "./internalAdaptationScenarioPacket";
@@ -28,7 +28,6 @@ type RehearsalOutcome =
       readonly input: AdaptationEvaluationInputV1;
       readonly result: AdaptationEvaluationResultV1;
       readonly outcomeRule: AdaptationOutcomeRuleV1 | null;
-      readonly outcomeDetail: DraftAdaptationOutcomeDetail | null;
       readonly matchesExpected: boolean;
       readonly evaluationId: number;
     };
@@ -54,6 +53,10 @@ function resultMatchesExpected(
 export default function InternalAdaptationScenarioRehearsal({
   packet,
 }: InternalAdaptationScenarioRehearsalProps) {
+  const decisionContentRegistry = createDraftRecommendationDecisionContent({
+    basePlanArtifactVersion: packet.rules.basePlanArtifactVersion,
+    adaptationArtifactVersion: packet.rules.adaptationArtifactVersion,
+  });
   const [selectedFixtureId, setSelectedFixtureId] = useState("");
   const [outcome, setOutcome] = useState<RehearsalOutcome>({
     kind: "not_run",
@@ -87,12 +90,6 @@ export default function InternalAdaptationScenarioRehearsal({
         : (packet.rules.outcomes.find(
             (candidate) => candidate.reasonCode === result.reasonCode,
           ) ?? null);
-    const outcomeDetail =
-      result.kind === "invalid_input"
-        ? null
-        : (packet.outcomeDetails.find(
-            (candidate) => candidate.reasonCode === result.reasonCode,
-          ) ?? null);
     evaluationSequence.current += 1;
 
     setOutcome({
@@ -101,7 +98,6 @@ export default function InternalAdaptationScenarioRehearsal({
       input,
       result,
       outcomeRule,
-      outcomeDetail,
       matchesExpected: resultMatchesExpected(result, fixture),
       evaluationId: evaluationSequence.current,
     });
@@ -247,12 +243,11 @@ export default function InternalAdaptationScenarioRehearsal({
 
           {outcome.matchesExpected &&
             outcome.result.kind === "recommendation" &&
-            outcome.result.runnerApprovalRequired &&
-            outcome.outcomeDetail !== null && (
+            outcome.result.runnerApprovalRequired && (
               <InternalAdaptationDecisionRehearsal
                 key={outcome.evaluationId}
                 result={outcome.result}
-                outcomeDetail={outcome.outcomeDetail}
+                contentRegistry={decisionContentRegistry}
               />
             )}
         </div>
