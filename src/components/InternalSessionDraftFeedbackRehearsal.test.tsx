@@ -125,7 +125,7 @@ describe("InternalSessionDraftFeedbackRehearsal", () => {
     );
     await user.click(
       screen.getByRole("button", {
-        name: "Use this pair for session rehearsal",
+        name: "Add pair to session rehearsal",
       }),
     );
 
@@ -138,11 +138,11 @@ describe("InternalSessionDraftFeedbackRehearsal", () => {
       screen.getByRole("heading", { name: "Evaluate live draft evidence" }),
     ).toBeVisible();
     expect(
-      screen.getByText(/does not write Firestore, associate the real run/iu),
+      screen.getByText(/do not write Firestore, associate real runs/iu),
     ).toBeVisible();
   });
 
-  it("clears the confirmed evidence when either explicit choice changes", async () => {
+  it("accumulates and removes explicit pairs without reusing a workout or run", async () => {
     const user = userEvent.setup();
     renderRehearsal();
 
@@ -156,7 +156,7 @@ describe("InternalSessionDraftFeedbackRehearsal", () => {
     );
     await user.click(
       screen.getByRole("button", {
-        name: "Use this pair for session rehearsal",
+        name: "Add pair to session rehearsal",
       }),
     );
     expect(
@@ -164,37 +164,44 @@ describe("InternalSessionDraftFeedbackRehearsal", () => {
         name: "Session draft evidence is coherent",
       }),
     ).toBeVisible();
-
-    await user.selectOptions(
-      screen.getByLabelText("Synchronized run"),
-      alternateFirstRun.id,
-    );
+    expect(screen.getByText(/1 confirmed pair is contributing/iu)).toBeVisible();
     expect(
-      screen.queryByRole("heading", {
-        name: "Session draft evidence is coherent",
-      }),
+      screen.queryByRole("option", { name: /Jan 8, 2030/iu }),
     ).not.toBeInTheDocument();
-
-    await user.click(
-      screen.getByRole("button", {
-        name: "Use this pair for session rehearsal",
-      }),
-    );
-    expect(
-      screen.getByRole("heading", {
-        name: "Session draft evidence is coherent",
-      }),
-    ).toBeVisible();
 
     await user.selectOptions(
       screen.getByLabelText("Draft workout"),
       secondWorkoutId,
     );
+    await user.selectOptions(
+      screen.getByLabelText("Synchronized run"),
+      secondRun.id,
+    );
     expect(
-      screen.queryByRole("heading", {
+      screen.getByRole("heading", {
         name: "Session draft evidence is coherent",
       }),
-    ).not.toBeInTheDocument();
+    ).toBeVisible();
+
+    await user.click(
+      screen.getByRole("button", {
+        name: "Add pair to session rehearsal",
+      }),
+    );
+    expect(screen.getByText(/2 confirmed pairs are contributing/iu)).toBeVisible();
+    expect(
+      screen.getByText(/every currently eligible workout\/run pair/iu),
+    ).toBeVisible();
+
+    await user.click(
+      screen.getByRole("button", {
+        name: "Remove confirmed pair for Jan 8, 2030",
+      }),
+    );
+    expect(screen.getByText(/1 confirmed pair is contributing/iu)).toBeVisible();
+    expect(
+      screen.getByRole("option", { name: /Jan 8, 2030/iu }),
+    ).toBeInTheDocument();
   });
 
   it("explains unavailable evidence and stays hidden without a draft", () => {

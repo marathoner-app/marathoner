@@ -16,6 +16,7 @@ import type { InternalAdaptationScenarioPacket } from "./internalAdaptationScena
 import {
   assembleInternalSessionDraftAdaptation,
   type InternalSessionDraftAdaptationAssembly,
+  type InternalSessionDraftRunPair,
 } from "./internalSessionDraftAdaptation";
 
 interface InternalSessionDraftFeedbackRehearsalProps {
@@ -71,7 +72,18 @@ export default function InternalSessionDraftFeedbackRehearsal({
 }: InternalSessionDraftFeedbackRehearsalProps) {
   const [selectedWorkoutId, setSelectedWorkoutId] = useState("");
   const [selectedRunId, setSelectedRunId] = useState("");
-  const [confirmedPair, setConfirmedPair] = useState<ConfirmedPair | null>(null);
+  const [confirmedPairs, setConfirmedPairs] = useState<readonly ConfirmedPair[]>(
+    [],
+  );
+
+  const confirmedWorkoutIds = useMemo(
+    () => new Set(confirmedPairs.map((pair) => pair.workoutId)),
+    [confirmedPairs],
+  );
+  const confirmedRunIds = useMemo(
+    () => new Set(confirmedPairs.map((pair) => pair.runId)),
+    [confirmedPairs],
+  );
 
   const eligibleWorkouts = useMemo(() => {
     if (projection === null) return [];
@@ -81,13 +93,15 @@ export default function InternalSessionDraftFeedbackRehearsal({
         workout,
       ): workout is Exclude<PlannedWorkout, { readonly kind: "rest" }> =>
         workout.kind !== "rest" &&
+        !confirmedWorkoutIds.has(workout.id) &&
         runs.some(
           (run) =>
             run.userId === projection.plan.userId &&
+            !confirmedRunIds.has(run.id) &&
             getRunLocalDate(run) === workout.scheduledDate,
         ),
     );
-  }, [projection, runs]);
+  }, [confirmedRunIds, confirmedWorkoutIds, projection, runs]);
 
   const selectedWorkout = eligibleWorkouts.find(
     (workout) => workout.id === selectedWorkoutId,
@@ -98,26 +112,49 @@ export default function InternalSessionDraftFeedbackRehearsal({
     return runs.filter(
       (run) =>
         run.userId === projection.plan.userId &&
+        !confirmedRunIds.has(run.id) &&
         getRunLocalDate(run) === selectedWorkout.scheduledDate,
     );
-  }, [projection, runs, selectedWorkout]);
+  }, [confirmedRunIds, projection, runs, selectedWorkout]);
+
+  const resolvedConfirmedPairs = useMemo(
+    () =>
+      confirmedPairs.flatMap((pair) => {
+        const workout = projection?.workouts.find(
+          (candidate) => candidate.id === pair.workoutId,
+        );
+        const run = runs.find((candidate) => candidate.id === pair.runId);
+        return workout === undefined ||
+          workout.kind === "rest" ||
+          run === undefined
+          ? []
+          : [{ ...pair, workout, run }];
+      }),
+    [confirmedPairs, projection, runs],
+  );
 
   const assembly = useMemo<InternalSessionDraftAdaptationAssembly | null>(() => {
-    if (projection === null || confirmedPair === null) return null;
-    const run = runs.find((candidate) => candidate.id === confirmedPair.runId);
-    if (run === undefined) return null;
+    if (
+      projection === null ||
+      resolvedConfirmedPairs.length !== confirmedPairs.length
+    ) {
+      return null;
+    }
 
     return assembleInternalSessionDraftAdaptation({
       projection,
-      workoutId: confirmedPair.workoutId,
-      run,
-      confirmedAt: confirmedPair.confirmedAt,
+      pairs: resolvedConfirmedPairs.map(
+        ({ workoutId, run, confirmedAt }): InternalSessionDraftRunPair => ({
+          workoutId,
+          run,
+          confirmedAt,
+        }),
+      ),
     });
-  }, [confirmedPair, projection, runs]);
+  }, [confirmedPairs.length, projection, resolvedConfirmedPairs]);
 
   if (projection === null) return null;
 
-  const clearConfirmation = () => setConfirmedPair(null);
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const workout = eligibleWorkouts.find(
@@ -126,11 +163,16 @@ export default function InternalSessionDraftFeedbackRehearsal({
     const run = eligibleRuns.find((candidate) => candidate.id === selectedRunId);
     if (workout === undefined || run === undefined) return;
 
-    setConfirmedPair({
-      workoutId: workout.id,
-      runId: run.id,
-      confirmedAt: createUtcDateTime(new Date().toISOString()),
-    });
+    setConfirmedPairs((current) => [
+      ...current,
+      {
+        workoutId: workout.id,
+        runId: run.id,
+        confirmedAt: createUtcDateTime(new Date().toISOString()),
+      },
+    ]);
+    setSelectedWorkoutId("");
+    setSelectedRunId("");
   };
 
   return (
@@ -148,16 +190,62 @@ export default function InternalSessionDraftFeedbackRehearsal({
           Rehearse session-draft feedback
         </h2>
         <p>
-          Deliberately pair one draft workout with one synchronized run from the
-          same local date, then pass transient copies through the existing
-          adaptation rehearsal. Nothing here changes the saved run or plan.
+          Build a deliberate history of draft workouts paired with synchronized
+          runs from the same local date, then pass transient copies through the
+          existing adaptation rehearsal. Nothing here changes the saved runs or
+          plan.
         </p>
       </header>
 
+      {resolvedConfirmedPairs.length > 0 && (
+        <section
+          className="internal-session-draft-feedback-confirmed"
+          aria-labelledby="internal-session-draft-feedback-confirmed-title"
+        >
+          <h3 id="internal-session-draft-feedback-confirmed-title">
+            Confirmed session history
+          </h3>
+          <p>
+            {resolvedConfirmedPairs.length}{" "}
+            {resolvedConfirmedPairs.length === 1
+              ? "confirmed pair is"
+              : "confirmed pairs are"}{" "}
+            contributing evidence. The latest dated workout is always the
+            evaluation trigger.
+          </p>
+          <ul>
+            {resolvedConfirmedPairs.map(({ workout, run }) => (
+              <li key={`${workout.id}:${run.id}`}>
+                <span>
+                  <strong>{workoutLabel(workout)}</strong>
+                  <br />
+                  {runLabel(run, distanceUnit)}
+                </span>
+                <button
+                  type="button"
+                  aria-label={`Remove confirmed pair for ${formatDate(workout.scheduledDate)}`}
+                  onClick={() =>
+                    setConfirmedPairs((current) =>
+                      current.filter(
+                        (pair) =>
+                          pair.workoutId !== workout.id || pair.runId !== run.id,
+                      ),
+                    )
+                  }
+                >
+                  Remove pair
+                </button>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
       {eligibleWorkouts.length === 0 ? (
         <p className="internal-session-draft-feedback-empty">
-          No non-rest draft workout has a same-date synchronized run yet. Log a
-          run from the daily comparison before rehearsing feedback.
+          {confirmedPairs.length > 0
+            ? "Every currently eligible workout/run pair is already in this rehearsal. Remove a pair to choose it again."
+            : "No non-rest draft workout has a same-date synchronized run yet. Log a run from the daily comparison before rehearsing feedback."}
         </p>
       ) : (
         <form onSubmit={handleSubmit}>
@@ -169,7 +257,6 @@ export default function InternalSessionDraftFeedbackRehearsal({
             onChange={(event) => {
               setSelectedWorkoutId(event.target.value);
               setSelectedRunId("");
-              clearConfirmation();
             }}
           >
             <option value="">Choose the draft workout</option>
@@ -186,10 +273,7 @@ export default function InternalSessionDraftFeedbackRehearsal({
             required
             disabled={selectedWorkout === undefined}
             value={selectedRunId}
-            onChange={(event) => {
-              setSelectedRunId(event.target.value);
-              clearConfirmation();
-            }}
+            onChange={(event) => setSelectedRunId(event.target.value)}
           >
             <option value="">
               {selectedWorkout === undefined
@@ -204,14 +288,15 @@ export default function InternalSessionDraftFeedbackRehearsal({
           </select>
 
           <p className="internal-adaptation-history-help">
-            Confirming creates a completed workout and run association only in
-            this browser-session rehearsal.
+            Each confirmation creates a completed workout and run association
+            only in this browser-session rehearsal. The current pair count is a
+            testing window, not approved production methodology.
           </p>
           <button
             type="submit"
             disabled={selectedWorkout === undefined || selectedRunId === ""}
           >
-            Use this pair for session rehearsal
+            Add pair to session rehearsal
           </button>
         </form>
       )}
@@ -243,11 +328,13 @@ export default function InternalSessionDraftFeedbackRehearsal({
             Session draft evidence is coherent
           </h3>
           <p>
-            The strict history normalizer accepted the owner-confirmed transient
-            pairing. It remains separate from saved synchronized history.
+            The strict history normalizer accepted all owner-confirmed transient
+            pairs. They remain separate from saved synchronized history.
           </p>
           <InternalLiveAdaptationRehearsal
-            key={`${confirmedPair?.workoutId}:${confirmedPair?.runId}`}
+            key={confirmedPairs
+              .map((pair) => `${pair.workoutId}:${pair.runId}`)
+              .join("|")}
             evidence={assembly.normalization.evidence}
             packet={draftPacket}
             activePlan={assembly.plan}
@@ -258,9 +345,9 @@ export default function InternalSessionDraftFeedbackRehearsal({
       )}
 
       <aside className="internal-adaptation-history-boundary">
-        Session-only and unapproved for participants. This confirmation does not
-        write Firestore, associate the real run, save a recommendation, or
-        change the draft plan.
+        Session-only and unapproved for participants. These confirmations do not
+        write Firestore, associate real runs, save a recommendation, or change
+        the draft plan.
       </aside>
     </section>
   );
