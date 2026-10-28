@@ -1,0 +1,106 @@
+.internal-safety-rehearsal {
+  box-sizing: border-box;
+  width: min(100%, 72rem);
+  margin: 2rem auto 0;
+  padding: clamp(1.25rem, 3vw, 2rem);
+  border: 2px solid #764c1a;
+  border-radius: 1rem;
+  background: #fff8e8;
+  color: #17202a;
+  text-align: left;
+}
+
+.internal-safety-rehearsal > header {
+  max-width: 52rem;
+}
+
+.internal-safety-rehearsal h2,
+.internal-safety-rehearsal h3,
+.internal-safety-rehearsal h4,
+.internal-safety-rehearsal p {
+  margin-top: 0;
+}
+
+.internal-safety-rehearsal-eyebrow,
+.internal-safety-result-status {
+  margin-bottom: 0.35rem;
+  color: #764c1a;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.internal-safety-rehearsal > label {
+  display: block;
+  margin-top: 1.5rem;
+  font-weight: 750;
+}
+
+.internal-safety-rehearsal > select {
+  width: min(100%, 42rem);
+  min-height: 2.75rem;
+  margin-top: 0.4rem;
+  padding: 0.55rem 0.7rem;
+  border: 1px solid #764c1a;
+  border-radius: 0.55rem;
+  background: #ffffff;
+  color: #17202a;
+  font: inherit;
+}
+
+.internal-safety-result {
+  margin-top: 1.5rem;
+  padding: clamp(1rem, 2vw, 1.5rem);
+  border: 1px solid #a8793a;
+  border-radius: 0.75rem;
+  background: #ffffff;
+}
+
+.internal-safety-result--emergency {
+  border-width: 2px;
+  border-color: #9f2525;
+  background: #fff3f3;
+}
+
+.internal-safety-result--qualified_help,
+.internal-safety-result--insufficient_information {
+  border-color: #9b641c;
+}
+
+.internal-safety-result-message {
+  max-width: 52rem;
+  font-size: 1.05rem;
+  font-weight: 650;
+}
+
+.internal-safety-result dl {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+  gap: 0.75rem;
+  margin: 1.25rem 0;
+}
+
+.internal-safety-result dl > div {
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  background: #f5f3ee;
+}
+
+.internal-safety-result dt {
+  font-size: 0.8rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.internal-safety-result dd {
+  margin: 0.25rem 0 0;
+}
+
+.internal-safety-result h4 {
+  margin-bottom: 0.4rem;
+}
+
+.internal-safety-result ul {
+  margin-top: 0;
+}

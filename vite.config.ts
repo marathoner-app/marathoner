@@ -18,6 +18,10 @@ const internalAdaptationPacketModuleId =
   'virtual:internal-adaptation-rehearsal-packet'
 const resolvedInternalAdaptationPacketModuleId =
   `\0${internalAdaptationPacketModuleId}`
+const internalSafetyPacketModuleId =
+  'virtual:internal-safety-escalation-packet'
+const resolvedInternalSafetyPacketModuleId =
+  `\0${internalSafetyPacketModuleId}`
 
 function internalRehearsalArtifactsPlugin(mode: string) {
   return {
@@ -29,12 +33,16 @@ function internalRehearsalArtifactsPlugin(mode: string) {
       if (id === internalAdaptationPacketModuleId) {
         return resolvedInternalAdaptationPacketModuleId
       }
+      if (id === internalSafetyPacketModuleId) {
+        return resolvedInternalSafetyPacketModuleId
+      }
       return null
     },
     load(id: string) {
       if (
         id !== resolvedInternalPlanRulesModuleId &&
-        id !== resolvedInternalAdaptationPacketModuleId
+        id !== resolvedInternalAdaptationPacketModuleId &&
+        id !== resolvedInternalSafetyPacketModuleId
       ) {
         return null
       }
@@ -51,6 +59,24 @@ function internalRehearsalArtifactsPlugin(mode: string) {
           'utf8',
         )
         return `export default ${JSON.stringify(rulesText)}`
+      }
+
+      if (id === resolvedInternalSafetyPacketModuleId) {
+        const rulesText = readFileSync(
+          path.join(
+            repositoryRoot,
+            'docs/methodology/artifacts/beta-safety/0.1.0-draft/beta-safety.json',
+          ),
+          'utf8',
+        )
+        const fixturesText = readFileSync(
+          path.join(
+            repositoryRoot,
+            'docs/methodology/artifacts/beta-safety/0.1.0-draft/fixtures.json',
+          ),
+          'utf8',
+        )
+        return `export default ${JSON.stringify({ rulesText, fixturesText })}`
       }
 
       const rulesText = readFileSync(

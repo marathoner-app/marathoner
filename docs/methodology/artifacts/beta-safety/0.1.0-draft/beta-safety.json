@@ -1,0 +1,96 @@
+{
+  "schemaVersion": "beta-safety-review-packet@1",
+  "artifactVersion": "beta-safety@0.1.0-draft",
+  "status": "draft_not_approved",
+  "runtimeUseAllowed": false,
+  "owner": "Marathoner product and claims owner",
+  "requiredReviewerRole": "clinical_safety",
+  "inputContract": {
+    "allowedFields": [
+      "schemaVersion",
+      "artifactVersion",
+      "reportState",
+      "emergencySignals",
+      "otherConcerningOrPersistentSymptoms"
+    ],
+    "freeTextAllowed": false,
+    "persistenceAllowed": false,
+    "reportStates": ["none_reported", "reported", "unanswered"],
+    "emergencySignals": [
+      "chest_pressure_or_pain",
+      "severe_or_sudden_breathing_trouble",
+      "fainting_or_loss_of_consciousness",
+      "new_confusion_or_slurred_speech",
+      "stroke_warning_sign",
+      "heat_illness_emergency_sign"
+    ]
+  },
+  "decisionOrder": [
+    "unsupported_or_unanswered",
+    "emergency_signal",
+    "other_concern",
+    "none_reported"
+  ],
+  "outcomes": [
+    {
+      "kind": "no_escalation",
+      "action": "continue_without_safety_change",
+      "reasonCode": "SAFETY-NO-CONCERN-REPORTED",
+      "message": "No pain or unusual-symptom concern was reported in this check. That does not determine that training is safe.",
+      "limitations": [
+        "Marathoner cannot assess symptoms or confirm that activity is safe.",
+        "Stop and seek appropriate help if pain or unusual symptoms appear or worsen."
+      ],
+      "blockedTrainingCapabilities": [],
+      "preservedCapabilities": ["view_training_history"]
+    },
+    {
+      "kind": "emergency",
+      "action": "stop_and_call_emergency_services",
+      "reasonCode": "SAFETY-STOP-EMERGENCY",
+      "message": "Stop the workout and call 911 now. Do not wait for Marathoner to assess the symptom or resume training.",
+      "limitations": [
+        "This draft is not a complete emergency checklist and cannot decide whether a symptom is safe.",
+        "Do not delay emergency help while using Marathoner."
+      ],
+      "blockedTrainingCapabilities": [
+        "generate_plan",
+        "adapt_plan",
+        "present_training_guidance"
+      ],
+      "preservedCapabilities": ["view_training_history"]
+    },
+    {
+      "kind": "qualified_help",
+      "action": "stop_and_seek_qualified_help",
+      "reasonCode": "SAFETY-STOP-QUALIFIED-HELP",
+      "message": "Stop the workout and seek advice from a qualified health care professional before resuming training.",
+      "limitations": [
+        "Marathoner cannot diagnose the cause or severity of pain or unusual symptoms.",
+        "A race date or planned progression does not override this stop-and-seek-help result."
+      ],
+      "blockedTrainingCapabilities": [
+        "generate_plan",
+        "adapt_plan",
+        "present_training_guidance"
+      ],
+      "preservedCapabilities": ["view_training_history"]
+    },
+    {
+      "kind": "insufficient_information",
+      "action": "withhold_training_recommendation",
+      "reasonCode": "SAFETY-WITHHOLD-INCOMPLETE",
+      "message": "Marathoner does not have enough information to make a training recommendation. Review the concern outside the app before relying on new training advice.",
+      "limitations": [
+        "Missing or ambiguous information never implies that training is safe.",
+        "Use emergency services for urgent warning signs and qualified care for other concerning or persistent symptoms."
+      ],
+      "blockedTrainingCapabilities": [
+        "generate_plan",
+        "adapt_plan",
+        "present_training_guidance"
+      ],
+      "preservedCapabilities": ["view_training_history"]
+    }
+  ]
+}

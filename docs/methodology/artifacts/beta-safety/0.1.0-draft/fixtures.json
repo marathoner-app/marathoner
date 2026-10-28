@@ -1,0 +1,160 @@
+{
+  "schemaVersion": "beta-safety-fixtures@1",
+  "artifactVersion": "beta-safety@0.1.0-draft",
+  "status": "draft_not_approved",
+  "cases": [
+    {
+      "id": "no-concern-reported-does-not-imply-safe",
+      "description": "The runner did not report a concern in this check.",
+      "scenarioContext": "ordinary_training_week",
+      "input": {
+        "schemaVersion": "beta-safety-evaluation-input@1",
+        "artifactVersion": "beta-safety@0.1.0-draft",
+        "reportState": "none_reported",
+        "emergencySignals": [],
+        "otherConcerningOrPersistentSymptoms": false
+      },
+      "expected": {
+        "kind": "no_escalation",
+        "action": "continue_without_safety_change",
+        "reasonCode": "SAFETY-NO-CONCERN-REPORTED"
+      }
+    },
+    {
+      "id": "chest-pressure-is-emergency",
+      "description": "Chest pressure or pain was selected.",
+      "scenarioContext": "completed_run_check_in",
+      "input": {
+        "schemaVersion": "beta-safety-evaluation-input@1",
+        "artifactVersion": "beta-safety@0.1.0-draft",
+        "reportState": "reported",
+        "emergencySignals": ["chest_pressure_or_pain"],
+        "otherConcerningOrPersistentSymptoms": false
+      },
+      "expected": {
+        "kind": "emergency",
+        "action": "stop_and_call_emergency_services",
+        "reasonCode": "SAFETY-STOP-EMERGENCY"
+      }
+    },
+    {
+      "id": "heat-confusion-is-emergency",
+      "description": "Confusion or loss of consciousness in heat was selected.",
+      "scenarioContext": "hot_weather_run",
+      "input": {
+        "schemaVersion": "beta-safety-evaluation-input@1",
+        "artifactVersion": "beta-safety@0.1.0-draft",
+        "reportState": "reported",
+        "emergencySignals": ["heat_illness_emergency_sign"],
+        "otherConcerningOrPersistentSymptoms": true
+      },
+      "expected": {
+        "kind": "emergency",
+        "action": "stop_and_call_emergency_services",
+        "reasonCode": "SAFETY-STOP-EMERGENCY"
+      }
+    },
+    {
+      "id": "persistent-pain-seeks-qualified-help",
+      "description": "Other concerning or persistent pain was reported without a listed emergency signal.",
+      "scenarioContext": "completed_run_check_in",
+      "input": {
+        "schemaVersion": "beta-safety-evaluation-input@1",
+        "artifactVersion": "beta-safety@0.1.0-draft",
+        "reportState": "reported",
+        "emergencySignals": [],
+        "otherConcerningOrPersistentSymptoms": true
+      },
+      "expected": {
+        "kind": "qualified_help",
+        "action": "stop_and_seek_qualified_help",
+        "reasonCode": "SAFETY-STOP-QUALIFIED-HELP"
+      }
+    },
+    {
+      "id": "ambiguous-report-seeks-qualified-help",
+      "description": "A concern was reported without a more specific enumerated selection.",
+      "scenarioContext": "ambiguous_check_in",
+      "input": {
+        "schemaVersion": "beta-safety-evaluation-input@1",
+        "artifactVersion": "beta-safety@0.1.0-draft",
+        "reportState": "reported",
+        "emergencySignals": [],
+        "otherConcerningOrPersistentSymptoms": false
+      },
+      "expected": {
+        "kind": "qualified_help",
+        "action": "stop_and_seek_qualified_help",
+        "reasonCode": "SAFETY-STOP-QUALIFIED-HELP"
+      }
+    },
+    {
+      "id": "unanswered-withholds-training-advice",
+      "description": "The safety question was not answered.",
+      "scenarioContext": "incomplete_check_in",
+      "input": {
+        "schemaVersion": "beta-safety-evaluation-input@1",
+        "artifactVersion": "beta-safety@0.1.0-draft",
+        "reportState": "unanswered",
+        "emergencySignals": [],
+        "otherConcerningOrPersistentSymptoms": false
+      },
+      "expected": {
+        "kind": "insufficient_information",
+        "action": "withhold_training_recommendation",
+        "reasonCode": "SAFETY-WITHHOLD-INCOMPLETE"
+      }
+    },
+    {
+      "id": "unsupported-version-withholds-training-advice",
+      "description": "An unknown artifact version cannot produce a safety decision.",
+      "scenarioContext": "version_mismatch",
+      "input": {
+        "schemaVersion": "beta-safety-evaluation-input@1",
+        "artifactVersion": "beta-safety@unknown",
+        "reportState": "reported",
+        "emergencySignals": ["chest_pressure_or_pain"],
+        "otherConcerningOrPersistentSymptoms": false
+      },
+      "expected": {
+        "kind": "insufficient_information",
+        "action": "withhold_training_recommendation",
+        "reasonCode": "SAFETY-WITHHOLD-INCOMPLETE"
+      }
+    },
+    {
+      "id": "race-date-pressure-cannot-weaken-emergency",
+      "description": "An approaching race cannot weaken an emergency escalation.",
+      "scenarioContext": "race_tomorrow",
+      "input": {
+        "schemaVersion": "beta-safety-evaluation-input@1",
+        "artifactVersion": "beta-safety@0.1.0-draft",
+        "reportState": "reported",
+        "emergencySignals": ["fainting_or_loss_of_consciousness"],
+        "otherConcerningOrPersistentSymptoms": false
+      },
+      "expected": {
+        "kind": "emergency",
+        "action": "stop_and_call_emergency_services",
+        "reasonCode": "SAFETY-STOP-EMERGENCY"
+      }
+    },
+    {
+      "id": "unsafe-progression-cannot-weaken-stop",
+      "description": "A planned progression cannot weaken a stop-and-seek-help result.",
+      "scenarioContext": "aggressive_progression_planned",
+      "input": {
+        "schemaVersion": "beta-safety-evaluation-input@1",
+        "artifactVersion": "beta-safety@0.1.0-draft",
+        "reportState": "reported",
+        "emergencySignals": [],
+        "otherConcerningOrPersistentSymptoms": true
+      },
+      "expected": {
+        "kind": "qualified_help",
+        "action": "stop_and_seek_qualified_help",
+        "reasonCode": "SAFETY-STOP-QUALIFIED-HELP"
+      }
+    }
+  ]
+}

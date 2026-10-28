@@ -4,9 +4,12 @@ import path from 'node:path'
 const forbiddenBuildText = [
   'beta-rules@0.1.0-draft',
   'beta-adaptation@0.1.0-draft',
+  'beta-safety@0.1.0-draft',
   'Internal draft plan rehearsal',
   'Internal draft adaptation rehearsal',
   'Internal live adaptation history',
+  'Pain and unusual-symptom escalation',
+  'SAFETY-STOP-EMERGENCY',
   'Evaluate live draft evidence',
   'Active only in this rehearsal',
   'Session choice recorded:',

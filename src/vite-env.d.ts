@@ -25,3 +25,11 @@ declare module "virtual:internal-adaptation-rehearsal-packet" {
   } | null;
   export default packetText;
 }
+
+declare module "virtual:internal-safety-escalation-packet" {
+  const packetText: {
+    readonly rulesText: string;
+    readonly fixturesText: string;
+  } | null;
+  export default packetText;
+}
