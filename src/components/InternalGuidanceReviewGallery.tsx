@@ -29,6 +29,7 @@ export default function InternalGuidanceReviewGallery() {
 
   return (
     <section
+      id="internal-guidance-review"
       className="internal-guidance-gallery"
       aria-labelledby="internal-guidance-gallery-title"
     >

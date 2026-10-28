@@ -10,6 +10,7 @@ import {
   type UserId,
   type UserProfile,
 } from "../domain/training";
+import InternalDogfoodJourneyOverview from "./InternalDogfoodJourneyOverview";
 import InternalAdaptationHistoryInspector from "./InternalAdaptationHistoryInspector";
 import InternalAdaptationScenarioRehearsal from "./InternalAdaptationScenarioRehearsal";
 import InternalGuidanceReviewGallery from "./InternalGuidanceReviewGallery";
@@ -63,6 +64,14 @@ export default function InternalPlanProposalRehearsalLive({
 
   return (
     <>
+      <InternalDogfoodJourneyOverview
+        ownerId={ownerId}
+        profile={profile}
+        activePlanState={activePlanState}
+        plans={plans}
+        workouts={workouts}
+        runs={runs}
+      />
       <InternalPlanProposalRehearsal profile={profile} ruleSet={ruleSet} />
       <InternalAdaptationHistoryInspector
         ownerId={ownerId}
