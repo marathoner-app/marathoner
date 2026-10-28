@@ -1,7 +1,7 @@
 # Operating partner start-here guide
 
 - **Status:** Active orientation guide
-- **Last reviewed:** October 26, 2026
+- **Last reviewed:** October 28, 2026
 - **Audience:** Marathoner's operating partner and other first-time strategic
   reviewers
 - **Tracking issue:**
@@ -124,15 +124,23 @@ conflict.
 
 ## Current snapshot
 
-As of October 26, 2026:
+As of October 28, 2026:
 
 - Marathoner is a deployed, responsive pre-beta web application with a
   production-shaped Capacitor iOS shell. It is not open for public signup or
   founding-beta invitations.
 - Plan, Track, Analyze, runner setup, authentication, owner-scoped live reads,
-  and local account-deletion boundaries exist. Plan generation, approved
-  methodology, complete command migration, external TestFlight distribution,
-  and beta operations remain incomplete.
+  recommendation-evidence reads, account deletion, and trusted-command
+  boundaries exist. Owner-only internal rehearsal now exercises saved-profile
+  plan generation, unsupported results, start-date choice, session activation,
+  live-history adaptation, recommendation decisions, authored draft guidance,
+  and conservative draft safety outcomes. Draft methodology remains unapproved
+  and excluded from participant production builds.
+- The reviewed beta callable exports are deployed, but normal Track run
+  mutations have not switched to them. Valid-client observation,
+  organization-signed iPhone App Attest proof, command-provider migration,
+  staged enforcement, external TestFlight distribution, and beta operations
+  remain incomplete.
 - Waves 00 and 01 are recorded as passed. Intake/initial-plan, adaptation,
   iOS-daily-companion, and trust/readiness work remain open in their live
   milestones.

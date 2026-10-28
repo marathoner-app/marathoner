@@ -33,6 +33,14 @@ experience includes:
   through Firebase email/password authentication. Public account creation is
   disabled while the beta trust and access controls are incomplete.
 
+An owner-only internal rehearsal can now map a saved runner profile into the
+pinned draft plan rules, produce supported or unsupported results, choose a
+start date, review and activate a session-only plan, inspect saved training
+history, evaluate draft adaptations, preview plan changes, and exercise draft
+recommendation, guidance, and safety presentation. That mode is deliberately
+excluded from production and iOS bundles. It proves implementation; it does not
+approve the draft methodology or authorize participant-facing recommendations.
+
 The visible features share the typed Firestore persistence layer. Follow the
 [open issues](https://github.com/marathoner-app/marathoner/issues) to see what is
 being built next.
@@ -90,7 +98,9 @@ internally testable product is close enough for review to become a real release
 blocker. The
 [founding-beta endurance-rules draft](docs/methodology/artifacts/beta-rules/0.1.0-draft/README.md)
 is the exact unapproved packet awaiting independent endurance-methodology
-review; it is not used by the application. The
+review. Participant production builds cannot import it; the owner-only
+[internal plan rehearsal](docs/methodology/internal-plan-rehearsal.md) loads it
+only in the explicit `internal-plan-rehearsal` development mode. The
 [public prototype access decision](docs/public-prototype-access.md) records why
 open registration is disabled and which trust paths must exist before access
 expands. The
@@ -105,7 +115,9 @@ and validation.
 - Capacitor 8 for the selected root iOS shell
 - Firebase Authentication, Cloud Firestore, and Cloud Functions
 - Framer Motion
+- Apache ECharts
 - Vitest and Testing Library
+- Playwright
 - ESLint
 
 ## Current architecture
@@ -114,8 +126,10 @@ Marathoner is centered on a single-page React application with no client-side
 router or general-purpose application server. Its authenticated training data
 uses typed repositories backed by Cloud Firestore, and the repository contains
 a bounded Cloud Functions backend for trusted material commands. That backend
-is emulator-proven; its first controlled beta deployment and observation remain
-gated by issue #205. The accepted
+is emulator-proven, and its three reviewed callable exports are deployed to the
+beta project. The valid-client observation window, organization-signed iPhone
+proof, rollback evidence, and staged enforcement remain gated by issue #205
+and its successors. The accepted
 [mobile client ADR](docs/architecture/mobile-client-architecture.md) selects a
 thin Capacitor iOS shell around this root application. The committed shell is a
 development foundation. App Check gates Firebase client startup in code and an
@@ -132,9 +146,13 @@ TestFlight are still explicit release gates.
 | `src/components/` | Contains the feature views, authentication forms, title, subtitle, and supporting UI. |
 | `src/domain/training/` | Defines shared training entities, identifiers, units, validation, and calculations without React or Firebase dependencies. |
 | `src/domain/guidance/` | Defines the shared versioned guidance, review, trigger, suppression, correction, and fail-closed presentation contract. |
+| `src/domain/recommendations/` | Defines complete, versioned recommendation evidence and accepted/declined decision invariants. |
+| `src/domain/safety/` | Defines the draft-only conservative safety-escalation contract used by internal rehearsal. |
 | `src/persistence/` | Defines typed training repositories, Firestore conversion, storage paths, ownership integration tests, and recoverable persistence errors. |
 | `src/training/` | Owns authenticated training-data loading, shared feature state, and cross-feature mutations. |
+| `src/recommendations/` | Owns recommendation-evidence loading and the fail-closed decision-review content boundary. |
 | `src/onboarding/` | Owns the resumable runner-profile intake, validation, unit conversion, and completion checks. |
+| `src/diagnostics/` | Retains bounded, privacy-safe slow-operation diagnostics for user-reported latency. |
 | `functions/` | Contains the bounded trusted material-command and account-deletion handlers plus their emulator coverage. |
 | `packages/training-contract/` | Contains versioned portable command and record contracts shared across client and server boundaries. |
 | `src/services/appCheckBootstrap.ts` | Selects the browser or iOS App Check provider, proves a bounded token, and enables refresh before Firebase services. |
@@ -146,7 +164,7 @@ TestFlight are still explicit release gates.
 | `server/creatorRadarEvents/` | Contains an inert server-only development attribution publisher; it is excluded from the browser graph and has no deployed runtime. |
 | `infrastructure/creator-radar-events-development/` | Declares the unapplied, keyless development caller identity with no source-project roles. |
 | `src/styles/` | Contains global and application-shell styles. Feature-specific styles remain beside their components. |
-| `vite.config.ts` | Configures React, production assets, and the GitHub Pages base path. |
+| `vite.config.ts` | Configures React, environment-specific asset paths, tests, Firebase selection, and build-time-only injection of internal rehearsal artifacts. |
 
 The current application flow is deliberately small:
 
@@ -160,10 +178,13 @@ The current application flow is deliberately small:
 5. An incomplete runner profile opens the resumable onboarding intake before
    plan evaluation; saving progress writes through the same profile repository.
 6. Opening Plan, Track, or Analyze mounts a view over that shared snapshot.
-7. Current feature mutations persist through repositories and reconcile with
-   server-confirmed listener results, so every open panel observes the same
-   records. Migration of every material write to trusted server commands is
-   still in progress.
+7. Current feature mutations reconcile with server-confirmed listener results,
+   so every open panel observes the same records. The trusted backend already
+   implements run completion, update, deletion, and recommendation-decision
+   commands, but the normal Track create, edit, and delete paths remain on the
+   client repository until the live activation and provider-migration gates
+   pass. The production recommendation surface is mounted fail-closed with an
+   empty approved-content registry.
 
 The shared training domain model is documented in
 [`docs/architecture/training-domain-model.md`](docs/architecture/training-domain-model.md).
@@ -196,21 +217,26 @@ The development/test-only Creator Radar boundary is documented in
 
 ## Current data limitations
 
-- Completing runner setup stores context only. It does not yet determine
-  eligibility or generate, approve, or activate a training plan.
-- Versioned plan-generation contracts and synthetic conformance fixtures exist,
-  but no generator or training rules are implemented or approved yet.
+- In participant production, completing runner setup stores context only. It
+  does not yet determine eligibility or generate, approve, or activate a
+  training plan.
+- A deterministic generator and adaptation evaluator are implemented against
+  the exact pinned draft artifacts for owner-only internal rehearsal. They
+  remain unapproved, cannot enter production or iOS bundles, and cannot create
+  participant plan or recommendation records.
 - Reusable proposal review, final confirmation, and typed approval-state UI is
-  implemented, including same-command recovery and a post-approval training-data
-  reload. It is not mounted in the signed-in production journey because no live
-  generator or approved methodology exists. Synthetic proposals remain test-only,
-  and accounts without a plan receive an honest empty state. The production
+  implemented, including same-command recovery and a post-approval training-
+  data reload. The complete proposal and session-only activation journey is
+  mounted only in internal rehearsal. Accounts without an approved persisted
+  plan still receive an honest production empty state. The participant
   generation path is tracked in
   [issue #29](https://github.com/marathoner-app/marathoner/issues/29).
-- Owner-scoped real-time training reads and memory-only cache isolation are
-  implemented. Most production mutations still write through the client
-  repository boundary; moving every material write to the authenticated,
-  atomic, revision-safe command backend remains implementation work.
+- Owner-scoped real-time training reads, recommendation-evidence reads, and
+  memory-only cache isolation are implemented. The backend and clients support
+  atomic run and recommendation-decision commands, but normal Track run
+  creation, editing, and deletion remain fail-closed from that command path
+  until the live activation and migration issues pass. Profile and shoe writes
+  remain explicit client-repository operations.
 - The deletion-request lock and fixed, idempotent deletion runner are
   implemented and tested locally, and the shared responsive account-settings
   experience is complete. Live projects remain deliberately blocked; the
@@ -219,9 +245,11 @@ The development/test-only Creator Radar boundary is documented in
   account deletion. The beta-only Blaze and budget boundary is verified but
   does not authorize that deployment.
 - The Track flow captures date, distance, elapsed time, shoe, optional planned-
-  workout association, perceived effort, and notes. Guidance entries remain
-  disabled draft placeholders; no participant-facing coaching or safety
-  guidance is approved or rendered.
+  workout association, perceived effort, and notes. A complete draft guidance
+  set, recommendation explanations, source trace, review gallery, and safety
+  escalation packet exist for internal review. The production approved-content
+  registry remains empty, so no participant-facing coaching or safety guidance
+  is approved or rendered.
 - Firestore structure and security behavior are documented in
   [`docs/architecture/training-data-persistence.md`](docs/architecture/training-data-persistence.md).
 - The external-beta negative cases, remaining client writes, command-migration
@@ -318,9 +346,14 @@ and
 | Command | Purpose |
 | --- | --- |
 | `npm run dev` | Start the Vite development server with hot module replacement. |
+| `npm run dev:plan-rehearsal` | Start the owner-only internal plan and adaptation rehearsal with pinned draft artifacts. |
 | `npm run lint` | Check the repository with ESLint. |
 | `npm test` | Run the automated test suite once. |
 | `npm run test:firestore` | Run ownership and persistence integration tests against the local Firestore emulator. |
+| `npm run test:material-commands` | Run authenticated command and atomic-write tests against the Auth, Functions, and Firestore emulators. |
+| `npm run test:viewport` | Exercise the Track surface at the supported phone viewport with Playwright. |
+| `npm run check:ios` | Build, sync, and inspect the development iOS boundary. |
+| `npm run check:ios:beta` | Build, sync, and inspect the explicit beta iOS boundary without signing or distribution. |
 | `npm run verify:beta-boundary -- --project marathonerapp-beta --confirm CREATE-TEST-AND-DELETE-BETA-FIXTURES` | Operator-only live check that creates and removes fixed fictional beta fixtures. |
 | `npm run test:watch` | Keep the test runner open and rerun affected tests after changes. |
 | `npm run build` | Run TypeScript project checks and create a production build in `dist/`. |
@@ -388,9 +421,12 @@ When writing tests:
 - Keep each test focused on one observable behavior and give it a description
   that explains the expected outcome.
 
-The current suite covers the shared training model, initial App screen and
-section transitions, persisted calendar views, shoe and run mutations,
-authentication error states, derived analytics, and cross-feature consistency.
+The current suite covers the shared training model, app and authentication
+states, persisted calendar views, shoe and run mutations, analytics,
+cross-feature consistency, internal plan and adaptation rehearsal, guidance and
+safety contracts, recommendation evidence and decisions, synchronization and
+account isolation, account deletion, App Check boundaries, material commands,
+mobile viewport behavior, and iOS bundle boundaries.
 
 Firestore integration tests require Java and run separately with
 `npm run test:firestore`; they are not part of the fast jsdom unit suite.
@@ -403,6 +439,10 @@ Before opening a pull request, run:
 npm run lint
 npm test
 npm run test:firestore
+npm run test:material-commands
+npm run test:viewport
+npm run check:ios
+npm run check:ios:beta
 npm run build
 ```
 
@@ -423,9 +463,16 @@ Every pull request targeting `main` runs these read-only GitHub Actions checks:
 
 - **Linked issue** verifies that the pull request closes an existing open issue.
 - **Lint** runs `npm run lint`.
+- **Production dependency audit** rejects advisories in the production
+  dependency inventory.
 - **Unit tests** runs `npm test`.
 - **Production build** runs `npm run build`, including TypeScript checks.
 - **Firestore emulator tests** runs `npm run test:firestore` with Java 21.
+- **Material command emulators** runs `npm run test:material-commands` with
+  Auth, Functions, and Firestore emulators.
+- **Track mobile viewport** runs `npm run test:viewport` in Chromium.
+- **iOS boundary** builds and inspects both development and explicit beta
+  Capacitor bundles without requiring App Store signing.
 
 All checks must pass before the owner performs the final diff review and merges.
 The pull-request workflow does not deploy or modify application environments;
