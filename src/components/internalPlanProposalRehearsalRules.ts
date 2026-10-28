@@ -2,6 +2,7 @@ import {
   createDistanceMeters,
   createPlanGenerationArtifactVersion,
   createPlanGenerationReasonCode,
+  type AdaptationWeekKind,
   type DeterministicPlanRulesV1,
   type PlanGenerationArtifactVersion,
   type PlanGenerationReasonCode,
@@ -10,7 +11,7 @@ import {
   type TrainingPhase,
 } from "../domain/training";
 
-type DraftWeekKind = "load" | "cutback" | "peak" | "taper" | "race";
+type DraftWeekKind = AdaptationWeekKind;
 
 interface RehearsalTrainingWeek {
   readonly phase: TrainingPhase;
@@ -73,6 +74,7 @@ interface RehearsalRulesPacket {
 export interface InternalPlanProposalRehearsalRuleSet {
   readonly artifactStatus: "draft_not_approved";
   readonly generatorVersion: PlanGenerationArtifactVersion;
+  readonly coreWeekKinds: readonly AdaptationWeekKind[];
   readonly rules: DeterministicPlanRulesV1;
 }
 
@@ -143,6 +145,7 @@ export function createInternalPlanProposalRehearsalRuleSet(
     generatorVersion: createPlanGenerationArtifactVersion(
       "deterministic-plan-generator@1.0.0",
     ),
+    coreWeekKinds: packet.planFamily.coreWeeks.map((week) => week.kind),
     rules: {
       rulesetVersion,
       eligibleExperienceLevel: packet.eligibility.experienceLevel,

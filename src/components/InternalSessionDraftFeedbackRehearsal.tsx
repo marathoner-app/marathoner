@@ -13,18 +13,21 @@ import {
 import InternalLiveAdaptationRehearsal from "./InternalLiveAdaptationRehearsal";
 import "./InternalAdaptationHistoryInspector.css";
 import type { InternalAdaptationScenarioPacket } from "./internalAdaptationScenarioPacket";
+import type { InternalPlanProposalRehearsalRuleSet } from "./internalPlanProposalRehearsalRules";
 import {
   assembleInternalSessionDraftAdaptation,
   type InternalSessionDraftAdaptationAssembly,
   type InternalSessionDraftRunPair,
   type InternalSessionDraftSkippedWorkout,
 } from "./internalSessionDraftAdaptation";
+import { deriveInternalSessionDraftPlanContext } from "./internalSessionDraftPlanContext";
 
 interface InternalSessionDraftFeedbackRehearsalProps {
   readonly projection: GeneratedPlanEntityProjection | null;
   readonly runs: readonly CompletedRun[];
   readonly distanceUnit: DistanceUnit;
   readonly draftPacket: InternalAdaptationScenarioPacket;
+  readonly planRuleSet: InternalPlanProposalRehearsalRuleSet;
 }
 
 interface ConfirmedPair {
@@ -75,6 +78,7 @@ export default function InternalSessionDraftFeedbackRehearsal({
   runs,
   distanceUnit,
   draftPacket,
+  planRuleSet,
 }: InternalSessionDraftFeedbackRehearsalProps) {
   const [selectedWorkoutId, setSelectedWorkoutId] = useState("");
   const [selectedRunId, setSelectedRunId] = useState("");
@@ -206,6 +210,16 @@ export default function InternalSessionDraftFeedbackRehearsal({
     resolvedConfirmedPairs,
     resolvedConfirmedSkippedWorkouts,
   ]);
+  const planContextResult = useMemo(() => {
+    if (assembly?.normalization.kind !== "ready") return null;
+
+    return deriveInternalSessionDraftPlanContext({
+      plan: assembly.plan,
+      evaluationDate: assembly.normalization.evidence.evaluationDate,
+      basePlanRules: planRuleSet,
+      adaptationRules: draftPacket.rules,
+    });
+  }, [assembly, draftPacket.rules, planRuleSet]);
 
   if (projection === null) return null;
 
@@ -465,21 +479,36 @@ export default function InternalSessionDraftFeedbackRehearsal({
             The strict history normalizer accepted all owner-confirmed transient
             events. They remain separate from saved synchronized history.
           </p>
-          <InternalLiveAdaptationRehearsal
-            key={[
-              ...confirmedPairs.map(
-                (pair) => `completed:${pair.workoutId}:${pair.runId}`,
-              ),
-              ...confirmedSkippedWorkouts.map(
-                (workout) => `skipped:${workout.workoutId}`,
-              ),
-            ].join("|")}
-            evidence={assembly.normalization.evidence}
-            packet={draftPacket}
-            activePlan={assembly.plan}
-            workouts={assembly.workouts}
-            distanceUnit={distanceUnit}
-          />
+          {planContextResult?.kind === "not_ready" && (
+            <section
+              className="internal-adaptation-history-result"
+              role="alert"
+            >
+              <h4>Session plan context is not ready</h4>
+              <p>{planContextResult.message}</p>
+              <p>
+                Internal code: <code>{planContextResult.code}</code>
+              </p>
+            </section>
+          )}
+          {planContextResult?.kind === "ready" && (
+            <InternalLiveAdaptationRehearsal
+              key={[
+                ...confirmedPairs.map(
+                  (pair) => `completed:${pair.workoutId}:${pair.runId}`,
+                ),
+                ...confirmedSkippedWorkouts.map(
+                  (workout) => `skipped:${workout.workoutId}`,
+                ),
+              ].join("|")}
+              evidence={assembly.normalization.evidence}
+              packet={draftPacket}
+              activePlan={assembly.plan}
+              workouts={assembly.workouts}
+              distanceUnit={distanceUnit}
+              planContext={planContextResult.context}
+            />
+          )}
         </section>
       )}
 

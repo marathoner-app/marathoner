@@ -155,6 +155,7 @@ describe("InternalAdaptationHistoryInspector", () => {
     expect(
       screen.getByText(/history-ready is not participant-ready/iu),
     ).toBeVisible();
+    expect(screen.getByLabelText("Current core week")).toBeVisible();
     expect(
       screen.queryByRole("button", { name: /recommend|apply|change plan/iu }),
     ).not.toBeInTheDocument();
