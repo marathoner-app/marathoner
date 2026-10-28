@@ -5,6 +5,7 @@ import Subtitle from "./components/Subtitle";
 import Calendar from "./components/Calendar";
 import PublicLandingPage from "./components/PublicLandingPage";
 import ShoeTracker from "./components/ShoeTracker";
+import type { ShoeTrackerInitialFocusTarget } from "./components/ShoeTracker";
 import Analyze from "./components/Analyze";
 import { useAuth } from "./auth/useAuth";
 import TrainingDataProvider from "./training/TrainingDataProvider";
@@ -63,6 +64,8 @@ function App() {
   const logout = auth.logout;
   const reduceMotion = useReducedMotion();
   const [activeSection, setActiveSection] = useState<Section | null>(null);
+  const [trackInitialFocusTarget, setTrackInitialFocusTarget] =
+    useState<ShoeTrackerInitialFocusTarget | null>(null);
   const [logoutPending, setLogoutPending] = useState(false);
   const [logoutError, setLogoutError] = useState<string | null>(null);
   const [accountSettingsOpen, setAccountSettingsOpen] = useState(false);
@@ -93,6 +96,7 @@ function App() {
   useEffect(() => {
     if (auth.status !== "signedIn") {
       setActiveSection(null);
+      setTrackInitialFocusTarget(null);
       setLogoutPending(false);
       setLogoutError(null);
       setAccountSettingsOpen(false);
@@ -146,13 +150,20 @@ function App() {
     };
   }, [auth, deletionReceipt, deletionSignOutAttempt]);
 
-  const openSection = (section: Section) => {
+  const openSection = (
+    section: Section,
+    initialFocusTarget: ShoeTrackerInitialFocusTarget | null = null,
+  ) => {
     lastActiveSection.current = section;
+    setTrackInitialFocusTarget(
+      section === "track" ? initialFocusTarget : null,
+    );
     setActiveSection(section);
   };
 
   const closeSection = () => {
     setActiveSection(null);
+    setTrackInitialFocusTarget(null);
   };
 
   const handleLogout = () => {
@@ -278,6 +289,7 @@ function App() {
               ownerId={createUserId(auth.user.uid)}
               activeSection={activeSection}
               activeSectionDetails={activeSectionDetails}
+              trackInitialFocusTarget={trackInitialFocusTarget}
               reduceMotion={Boolean(reduceMotion)}
               onOpenSection={openSection}
               onCloseSection={closeSection}
@@ -310,8 +322,12 @@ type AuthenticatedExperienceProps = {
   ownerId: UserId;
   activeSection: Section | null;
   activeSectionDetails: (typeof sections)[number] | undefined;
+  trackInitialFocusTarget: ShoeTrackerInitialFocusTarget | null;
   reduceMotion: boolean;
-  onOpenSection: (section: Section) => void;
+  onOpenSection: (
+    section: Section,
+    initialFocusTarget?: ShoeTrackerInitialFocusTarget | null,
+  ) => void;
   onCloseSection: () => void;
   onRegisterTrigger: (
     section: Section,
@@ -323,6 +339,7 @@ function AuthenticatedExperience({
   ownerId,
   activeSection,
   activeSectionDetails,
+  trackInitialFocusTarget,
   reduceMotion,
   onOpenSection,
   onCloseSection,
@@ -464,7 +481,14 @@ function AuthenticatedExperience({
                   runs={training.runs}
                   distanceUnit={training.profile.preferredDistanceUnit}
                   timeZone={training.profile.timeZone}
-                  onOpenTrack={() => onOpenSection("track")}
+                  onOpenTrack={(runId) =>
+                    onOpenSection(
+                      "track",
+                      runId === null
+                        ? { kind: "log-run" }
+                        : { kind: "review-run", runId },
+                    )
+                  }
                 />
               </Suspense>
             )}
@@ -541,6 +565,7 @@ function AuthenticatedExperience({
             transitionDuration={sectionTransitionDuration}
             showSynchronizationNotice={showSynchronizationNotice}
             sessionPlanProjection={sessionPlanProjection}
+            trackInitialFocusTarget={trackInitialFocusTarget}
             onClose={onCloseSection}
           />
         </motion.section>
@@ -555,6 +580,7 @@ type SectionContentProps = {
   transitionDuration: number;
   showSynchronizationNotice: boolean;
   sessionPlanProjection: GeneratedPlanEntityProjection | null;
+  trackInitialFocusTarget: ShoeTrackerInitialFocusTarget | null;
   onClose: () => void;
 };
 
@@ -564,6 +590,7 @@ function SectionContent({
   transitionDuration,
   showSynchronizationNotice,
   sessionPlanProjection,
+  trackInitialFocusTarget,
   onClose,
 }: SectionContentProps) {
   const training = useTrainingData();
@@ -655,6 +682,7 @@ function SectionContent({
             onCreateRun={training.createRun}
             onUpdateRun={training.updateRun}
             onDeleteRun={training.deleteRun}
+            initialFocusTarget={trackInitialFocusTarget}
           />
         </fieldset>
       )}

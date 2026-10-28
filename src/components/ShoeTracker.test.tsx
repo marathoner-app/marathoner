@@ -22,7 +22,9 @@ import type {
   CreateShoeInput,
   UpdateCompletedRunInput,
 } from "../persistence/trainingRepositories";
-import ShoeTracker from "./ShoeTracker";
+import ShoeTracker, {
+  type ShoeTrackerInitialFocusTarget,
+} from "./ShoeTracker";
 
 const userId = createUserId("runner-1");
 const timestamp = createUtcDateTime("2026-08-05T14:00:00Z");
@@ -44,6 +46,7 @@ function Harness({
   onUpdateRunCall = () => undefined,
   onDeleteRunCall = () => undefined,
   onRetireShoeCall = () => undefined,
+  initialFocusTarget = null,
 }: {
   initialShoes?: Shoe[];
   initialRuns?: CompletedRun[];
@@ -56,6 +59,7 @@ function Harness({
   ) => void | Promise<void>;
   onDeleteRunCall?: (id: CompletedRun["id"]) => void;
   onRetireShoeCall?: (id: ShoeId, retiredOn: DateOnly) => void;
+  initialFocusTarget?: ShoeTrackerInitialFocusTarget | null;
 }) {
   const [shoes, setShoes] = useState(initialShoes);
   const [runs, setRuns] = useState(initialRuns);
@@ -148,6 +152,7 @@ function Harness({
       onCreateRun={createRun}
       onUpdateRun={updateRun}
       onDeleteRun={deleteRun}
+      initialFocusTarget={initialFocusTarget}
     />
   );
 }
@@ -187,6 +192,49 @@ async function enterElapsedDuration(
 }
 
 describe("ShoeTracker", () => {
+  it("focuses the run date for a targeted log-run entry", async () => {
+    render(<Harness initialFocusTarget={{ kind: "log-run" }} />);
+
+    await waitFor(() => expect(screen.getByLabelText("Run date")).toHaveFocus());
+  });
+
+  it("focuses the matching run action for a targeted review entry", async () => {
+    const shoe: Shoe = {
+      id: createShoeId("shoe-1"),
+      userId,
+      name: "Daily Trainer",
+      startingDistance: createDistanceMeters(0),
+      status: "active",
+      createdAt: timestamp,
+      updatedAt: timestamp,
+    };
+    const run: CompletedRun = {
+      id: createCompletedRunId("run-1"),
+      userId,
+      shoeId: shoe.id,
+      startedAt: timestamp,
+      timeZone: createIanaTimeZone("America/Los_Angeles"),
+      distance: createDistanceMeters(5_000),
+      duration: createDurationSeconds(1_800),
+      createdAt: timestamp,
+      updatedAt: timestamp,
+    };
+
+    render(
+      <Harness
+        initialShoes={[shoe]}
+        initialRuns={[run]}
+        initialFocusTarget={{ kind: "review-run", runId: run.id }}
+      />,
+    );
+
+    await waitFor(() =>
+      expect(
+        screen.getByRole("button", { name: "Edit run from 2026-08-05" }),
+      ).toHaveFocus(),
+    );
+  });
+
   it("gives every run-entry control a persistent visible label", () => {
     render(<Harness />);
 

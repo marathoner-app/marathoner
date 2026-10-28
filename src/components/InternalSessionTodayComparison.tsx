@@ -4,6 +4,7 @@ import {
   metersToKilometers,
   metersToMiles,
   type CompletedRun,
+  type CompletedRunId,
   type DateOnly,
   type DistanceUnit,
   type GeneratedPlanEntityProjection,
@@ -18,7 +19,7 @@ interface InternalSessionTodayComparisonProps {
   readonly distanceUnit: DistanceUnit;
   readonly timeZone: IanaTimeZone;
   readonly today?: DateOnly;
-  readonly onOpenTrack: () => void;
+  readonly onOpenTrack: (runId: CompletedRunId | null) => void;
 }
 
 const dateFormatter = new Intl.DateTimeFormat("en-US", {
@@ -173,7 +174,10 @@ export default function InternalSessionTodayComparison({
         <p role="status" aria-label="Daily comparison status">
           <strong>Daily status:</strong> {dailyStatus}
         </p>
-        <button type="button" onClick={onOpenTrack}>
+        <button
+          type="button"
+          onClick={() => onOpenTrack(todaysRuns[0]?.id ?? null)}
+        >
           {todaysRuns.length > 0
             ? "Review runs in Track"
             : "Open Track to log a run"}
