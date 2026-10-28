@@ -30,6 +30,7 @@ describe("InternalSessionPlanSchedule", () => {
       <InternalSessionPlanSchedule
         projection={projection}
         distanceUnit="mile"
+        isAdapted={false}
       />,
     );
 
@@ -55,11 +56,16 @@ describe("InternalSessionPlanSchedule", () => {
       <InternalSessionPlanSchedule
         projection={projection}
         distanceUnit="mile"
+        isAdapted={false}
       />,
     );
 
     rerender(
-      <InternalSessionPlanSchedule projection={null} distanceUnit="mile" />,
+      <InternalSessionPlanSchedule
+        projection={null}
+        distanceUnit="mile"
+        isAdapted={false}
+      />,
     );
 
     expect(
@@ -67,11 +73,35 @@ describe("InternalSessionPlanSchedule", () => {
     ).not.toBeInTheDocument();
   });
 
+  it("identifies an accepted rehearsal adjustment without implying persistence", () => {
+    render(
+      <InternalSessionPlanSchedule
+        projection={projection}
+        distanceUnit="mile"
+        isAdapted={true}
+      />,
+    );
+
+    const schedule = screen.getByRole("region", {
+      name: "Session-only plan calendar",
+    });
+    expect(schedule).toHaveTextContent(
+      "Adjusted owner-only session projection",
+    );
+    expect(schedule).toHaveTextContent(
+      "This is the accepted rehearsal adjustment rendered through Marathoner's real plan calendar.",
+    );
+    expect(schedule).toHaveTextContent(
+      "It exists only in memory and does not replace synchronized Plan or Track data.",
+    );
+  });
+
   it("has no beta-blocking accessibility violations", async () => {
     render(
       <InternalSessionPlanSchedule
         projection={projection}
         distanceUnit="mile"
+        isAdapted={false}
       />,
     );
 

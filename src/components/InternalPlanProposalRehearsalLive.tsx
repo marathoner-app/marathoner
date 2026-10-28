@@ -43,6 +43,7 @@ interface InternalPlanProposalRehearsalLiveProps {
   readonly onSessionPlanProjectionChange: (
     projection: GeneratedPlanEntityProjection | null,
   ) => void;
+  readonly onSessionAdaptationStateChange: (isActive: boolean) => void;
 }
 
 const utcTimeZone = createIanaTimeZone("UTC");
@@ -76,6 +77,7 @@ export default function InternalPlanProposalRehearsalLive({
   sessionDraftPlan,
   onSessionDraftPlanChange,
   onSessionPlanProjectionChange,
+  onSessionAdaptationStateChange,
 }: InternalPlanProposalRehearsalLiveProps) {
   const baseSessionPlanProjection = useMemo(
     () =>
@@ -92,6 +94,7 @@ export default function InternalPlanProposalRehearsalLive({
   );
   const {
     sessionPlanProjection,
+    isSessionAdaptationActive,
     handleSessionAdaptationProjectionChange,
   } = useInternalSessionPlanProjection(
     sessionDraftPlan,
@@ -101,6 +104,10 @@ export default function InternalPlanProposalRehearsalLive({
   useEffect(() => {
     onSessionPlanProjectionChange(sessionPlanProjection);
   }, [onSessionPlanProjectionChange, sessionPlanProjection]);
+
+  useEffect(() => {
+    onSessionAdaptationStateChange(isSessionAdaptationActive);
+  }, [isSessionAdaptationActive, onSessionAdaptationStateChange]);
 
   if (ruleSet === null || adaptationPacket === null || safetyPacket === null) {
     return null;
@@ -116,6 +123,7 @@ export default function InternalPlanProposalRehearsalLive({
         workouts={workouts}
         runs={runs}
         sessionDraftPlan={sessionDraftPlan}
+        isSessionAdaptationActive={isSessionAdaptationActive}
       />
       <InternalPlanProposalRehearsal
         profile={profile}
@@ -125,6 +133,7 @@ export default function InternalPlanProposalRehearsalLive({
       <InternalSessionPlanSchedule
         projection={sessionPlanProjection}
         distanceUnit={profile?.preferredDistanceUnit ?? "mile"}
+        isAdapted={isSessionAdaptationActive}
       />
       <InternalSessionDraftFeedbackRehearsal
         projection={baseSessionPlanProjection}

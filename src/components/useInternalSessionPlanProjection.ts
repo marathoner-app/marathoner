@@ -12,11 +12,14 @@ export function useInternalSessionPlanProjection(
     readonly sourcePlan: GeneratedPlanResultV1;
     readonly projection: GeneratedPlanEntityProjection;
   } | null>(null);
-  const sessionPlanProjection =
+  const activeAdaptedSessionProjection =
     sessionDraftPlan !== null &&
     adaptedSessionProjection?.sourcePlan === sessionDraftPlan
       ? adaptedSessionProjection.projection
-      : baseSessionPlanProjection;
+      : null;
+  const isSessionAdaptationActive = activeAdaptedSessionProjection !== null;
+  const sessionPlanProjection =
+    activeAdaptedSessionProjection ?? baseSessionPlanProjection;
   const handleSessionAdaptationProjectionChange = useCallback(
     (projection: GeneratedPlanEntityProjection | null) => {
       setAdaptedSessionProjection(
@@ -30,6 +33,7 @@ export function useInternalSessionPlanProjection(
 
   return {
     sessionPlanProjection,
+    isSessionAdaptationActive,
     handleSessionAdaptationProjectionChange,
   } as const;
 }

@@ -352,6 +352,8 @@ function AuthenticatedExperience({
     useState<GeneratedPlanResultV1 | null>(null);
   const [sessionPlanProjection, setSessionPlanProjection] =
     useState<GeneratedPlanEntityProjection | null>(null);
+  const [isSessionAdaptationActive, setIsSessionAdaptationActive] =
+    useState(false);
   const runnerProfileTriggerRef = useRef<HTMLButtonElement>(null);
   const restoreRunnerProfileFocus = useRef(false);
   const onboardingComplete = isRunnerProfileOnboardingComplete(training.profile);
@@ -408,6 +410,7 @@ function AuthenticatedExperience({
 
     setSessionDraftPlan(null);
     setSessionPlanProjection(null);
+    setIsSessionAdaptationActive(false);
   }, [training.profile?.updatedAt]);
 
   return (
@@ -463,7 +466,10 @@ function AuthenticatedExperience({
           </div>
           {InternalSessionPlanNotice && sessionPlanProjection && (
             <Suspense fallback={null}>
-              <InternalSessionPlanNotice surface="home" />
+              <InternalSessionPlanNotice
+                surface="home"
+                isAdapted={isSessionAdaptationActive}
+              />
             </Suspense>
           )}
           <NextWorkoutSummary
@@ -528,6 +534,9 @@ function AuthenticatedExperience({
                 sessionDraftPlan={sessionDraftPlan}
                 onSessionDraftPlanChange={setSessionDraftPlan}
                 onSessionPlanProjectionChange={setSessionPlanProjection}
+                onSessionAdaptationStateChange={
+                  setIsSessionAdaptationActive
+                }
               />
             </Suspense>
           )}
@@ -565,6 +574,7 @@ function AuthenticatedExperience({
             transitionDuration={sectionTransitionDuration}
             showSynchronizationNotice={showSynchronizationNotice}
             sessionPlanProjection={sessionPlanProjection}
+            isSessionAdaptationActive={isSessionAdaptationActive}
             trackInitialFocusTarget={trackInitialFocusTarget}
             onClose={onCloseSection}
           />
@@ -580,6 +590,7 @@ type SectionContentProps = {
   transitionDuration: number;
   showSynchronizationNotice: boolean;
   sessionPlanProjection: GeneratedPlanEntityProjection | null;
+  isSessionAdaptationActive: boolean;
   trackInitialFocusTarget: ShoeTrackerInitialFocusTarget | null;
   onClose: () => void;
 };
@@ -590,6 +601,7 @@ function SectionContent({
   transitionDuration,
   showSynchronizationNotice,
   sessionPlanProjection,
+  isSessionAdaptationActive,
   trackInitialFocusTarget,
   onClose,
 }: SectionContentProps) {
@@ -657,7 +669,10 @@ function SectionContent({
         <>
           {InternalSessionPlanNotice && sessionPlanProjection && (
             <Suspense fallback={null}>
-              <InternalSessionPlanNotice surface="plan" />
+              <InternalSessionPlanNotice
+                surface="plan"
+                isAdapted={isSessionAdaptationActive}
+              />
             </Suspense>
           )}
           <Calendar

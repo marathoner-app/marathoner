@@ -36,10 +36,11 @@ experience includes:
 An owner-only internal rehearsal can now map a saved runner profile into the
 pinned draft plan rules, produce supported or unsupported results, choose a
 start date, review and activate a session-only plan, inspect saved training
-history, evaluate draft adaptations, preview plan changes, and exercise draft
-recommendation, guidance, and safety presentation. That mode is deliberately
-excluded from production and iOS bundles. It proves implementation; it does not
-approve the draft methodology or authorize participant-facing recommendations.
+history, evaluate draft adaptations, preview accepted rehearsal changes across
+the normal Home and Plan surfaces, and exercise draft recommendation, guidance,
+and safety presentation. That mode is deliberately excluded from production
+and iOS bundles. It proves implementation; it does not approve the draft
+methodology or authorize participant-facing recommendations.
 
 The visible features share the typed Firestore persistence layer. Follow the
 [open issues](https://github.com/marathoner-app/marathoner/issues) to see what is
