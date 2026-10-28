@@ -48,6 +48,20 @@ function workout(
   } as PlannedWorkout;
 }
 
+function restWorkout(id: string, scheduledDate: string): PlannedWorkout {
+  return {
+    id: createPlannedWorkoutId(id),
+    userId: ownerId,
+    planId,
+    scheduledDate: createDateOnly(scheduledDate),
+    phase: "base_building",
+    status: "planned",
+    kind: "rest",
+    createdAt: timestamp,
+    updatedAt: timestamp,
+  };
+}
+
 const trigger = workout("trigger", "2030-01-09", { status: "skipped" });
 const evidence = {
   ownerId,
@@ -118,6 +132,23 @@ describe("deriveInternalSessionDraftRescheduleCandidates", () => {
         rules: { ...rules, maximumRescheduleDelayDays: 1 },
       }),
     ).toEqual([]);
+  });
+
+  it("treats a generated rest record as an available target date", () => {
+    expect(
+      deriveInternalSessionDraftRescheduleCandidates({
+        plan,
+        workouts: [
+          workout("completed", "2030-01-08", { status: "completed" }),
+          trigger,
+          restWorkout("friday-rest", "2030-01-10"),
+          workout("saturday", "2030-01-12", { purpose: "recovery" }),
+          workout("sunday", "2030-01-13", { purpose: "long" }),
+        ],
+        evidence,
+        rules: { ...rules, maximumRescheduleDelayDays: 1 },
+      }).map(({ targetDate }) => targetDate),
+    ).toEqual(["2030-01-10"]);
   });
 
   it("omits a move that would create too many consecutive run dates", () => {

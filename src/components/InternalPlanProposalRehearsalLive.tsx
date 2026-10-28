@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import internalRulesText from "virtual:internal-plan-rehearsal-rules";
 import internalAdaptationPacketText from "virtual:internal-adaptation-rehearsal-packet";
 import internalSafetyPacketText from "virtual:internal-safety-escalation-packet";
@@ -27,6 +27,8 @@ import InternalSessionPlanSchedule from "./InternalSessionPlanSchedule";
 import { createInternalAdaptationScenarioPacket } from "./internalAdaptationScenarioPacket";
 import { createInternalPlanProposalRehearsalRuleSet } from "./internalPlanProposalRehearsalRules";
 import { createInternalSafetyEscalationPacket } from "./internalSafetyEscalationPacket";
+import type { InternalPlanRehearsalProfileSource } from "./internalEligiblePlanRehearsalProfile";
+import { selectInternalEligiblePlanRehearsalRunFixture } from "./internalEligiblePlanRehearsalRun";
 import { useInternalSessionPlanProjection } from "./useInternalSessionPlanProjection";
 
 interface InternalPlanProposalRehearsalLiveProps {
@@ -79,6 +81,16 @@ export default function InternalPlanProposalRehearsalLive({
   onSessionPlanProjectionChange,
   onSessionAdaptationStateChange,
 }: InternalPlanProposalRehearsalLiveProps) {
+  const [profileSource, setProfileSource] =
+    useState<InternalPlanRehearsalProfileSource>("saved_profile");
+  const [feedbackSessionRevision, setFeedbackSessionRevision] = useState(0);
+  const handleSessionDraftPlanChange = useCallback(
+    (plan: GeneratedPlanResultV1 | null) => {
+      setFeedbackSessionRevision((current) => current + 1);
+      onSessionDraftPlanChange(plan);
+    },
+    [onSessionDraftPlanChange],
+  );
   const baseSessionPlanProjection = useMemo(
     () =>
       sessionDraftPlan === null
@@ -91,6 +103,14 @@ export default function InternalPlanProposalRehearsalLive({
             status: "active",
           }),
     [ownerId, sessionDraftPlan],
+  );
+  const syntheticRunFixture = useMemo(
+    () =>
+      selectInternalEligiblePlanRehearsalRunFixture(
+        profileSource,
+        baseSessionPlanProjection,
+      ),
+    [baseSessionPlanProjection, profileSource],
   );
   const {
     sessionPlanProjection,
@@ -128,7 +148,8 @@ export default function InternalPlanProposalRehearsalLive({
       <InternalPlanProposalRehearsal
         profile={profile}
         ruleSet={ruleSet}
-        onSessionActivationChange={onSessionDraftPlanChange}
+        onSessionActivationChange={handleSessionDraftPlanChange}
+        onProfileSourceChange={setProfileSource}
       />
       <InternalSessionPlanSchedule
         projection={sessionPlanProjection}
@@ -136,8 +157,10 @@ export default function InternalPlanProposalRehearsalLive({
         isAdapted={isSessionAdaptationActive}
       />
       <InternalSessionDraftFeedbackRehearsal
+        key={`${profileSource}:${feedbackSessionRevision}`}
         projection={baseSessionPlanProjection}
         runs={runs}
+        syntheticRunFixture={syntheticRunFixture}
         distanceUnit={profile?.preferredDistanceUnit ?? "mile"}
         draftPacket={adaptationPacket}
         planRuleSet={ruleSet}

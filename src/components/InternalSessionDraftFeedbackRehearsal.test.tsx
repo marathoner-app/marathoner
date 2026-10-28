@@ -18,6 +18,10 @@ import {
   type GeneratedPlanEntityProjection,
 } from "../domain/training";
 import InternalSessionDraftFeedbackRehearsal from "./InternalSessionDraftFeedbackRehearsal";
+import {
+  INTERNAL_ELIGIBLE_PLAN_REHEARSAL_RUN_VERSION,
+  type InternalEligiblePlanRehearsalRunFixture,
+} from "./internalEligiblePlanRehearsalRun";
 import { createInternalAdaptationScenarioPacket } from "./internalAdaptationScenarioPacket";
 import type { InternalPlanProposalRehearsalRuleSet } from "./internalPlanProposalRehearsalRules";
 
@@ -130,11 +134,13 @@ function renderRehearsal(
   onSessionProjectionChange?: (
     value: GeneratedPlanEntityProjection | null,
   ) => void,
+  syntheticRunFixture?: InternalEligiblePlanRehearsalRunFixture,
 ) {
   return render(
     <InternalSessionDraftFeedbackRehearsal
       projection={projectionOverride}
       runs={runs}
+      syntheticRunFixture={syntheticRunFixture}
       distanceUnit="mile"
       draftPacket={draftPacket}
       planRuleSet={planRuleSet}
@@ -188,6 +194,49 @@ describe("InternalSessionDraftFeedbackRehearsal", () => {
     expect(
       screen.getByText(/do not write Firestore, associate real runs/iu),
     ).toBeVisible();
+  });
+
+  it("discloses and confirms frozen synthetic evidence through the ordinary pipeline", async () => {
+    const user = userEvent.setup();
+    const syntheticRunFixture: InternalEligiblePlanRehearsalRunFixture = {
+      version: INTERNAL_ELIGIBLE_PLAN_REHEARSAL_RUN_VERSION,
+      alignedWorkoutId: firstWorkoutId,
+      run: firstRun,
+    };
+    renderRehearsal(projection, [], undefined, syntheticRunFixture);
+
+    expect(
+      screen.getByRole("complementary", {
+        name: "Frozen completed-run fixture",
+      }),
+    ).toHaveTextContent(INTERNAL_ELIGIBLE_PLAN_REHEARSAL_RUN_VERSION);
+    expect(screen.getByLabelText("Completed run evidence")).toBeDisabled();
+
+    await user.selectOptions(
+      screen.getByLabelText("Draft workout"),
+      firstWorkoutId,
+    );
+    expect(
+      screen.getByRole("option", { name: /synthetic fixture/iu }),
+    ).toBeVisible();
+    await user.selectOptions(
+      screen.getByLabelText("Completed run evidence"),
+      firstRun.id,
+    );
+    await user.click(
+      screen.getByRole("button", {
+        name: "Add pair to session rehearsal",
+      }),
+    );
+
+    expect(
+      screen.getByRole("heading", {
+        name: "Session draft evidence is coherent",
+      }),
+    ).toBeVisible();
+    expect(screen.getByText(/frozen synthetic run/iu)).toBeVisible();
+    expect(firstRun.plannedWorkoutId).toBeUndefined();
+    expect(firstRun.plannedWorkoutPlanId).toBeUndefined();
   });
 
   it("accumulates and removes explicit pairs without reusing a workout or run", async () => {

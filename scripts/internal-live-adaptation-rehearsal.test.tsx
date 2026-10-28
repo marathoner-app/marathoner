@@ -383,8 +383,12 @@ describe("InternalLiveAdaptationRehearsal", () => {
     const calendarPreview = screen.getByRole("region", {
       name: "Session-only projected plan",
     });
-    expect(within(calendarPreview).getByText("Tue, Oct 27")).toBeVisible();
-    expect(within(calendarPreview).getByText("Skipped")).toBeVisible();
+    expect(
+      within(calendarPreview).getByRole("button", {
+        name: /Tue, Oct 27 Easy run 2\.5 mi Scheduled/iu,
+      }),
+    ).toBeVisible();
+    expect(within(calendarPreview).queryByText("Skipped")).not.toBeInTheDocument();
   });
 
   it("assembles only normalized history and explicit trusted facts", () => {

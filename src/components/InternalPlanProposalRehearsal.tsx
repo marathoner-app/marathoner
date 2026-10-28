@@ -13,6 +13,7 @@ import InternalPlanActivationRehearsal from "./InternalPlanActivationRehearsal";
 import {
   INTERNAL_ELIGIBLE_PLAN_REHEARSAL_PROFILE_VERSION,
   internalEligiblePlanRehearsalProfile,
+  type InternalPlanRehearsalProfileSource,
 } from "./internalEligiblePlanRehearsalProfile";
 import type { InternalPlanProposalRehearsalRuleSet } from "./internalPlanProposalRehearsalRules";
 import {
@@ -27,6 +28,9 @@ interface InternalPlanProposalRehearsalProps {
   readonly ruleSet: InternalPlanProposalRehearsalRuleSet;
   readonly onSessionActivationChange: (
     result: GeneratedPlanResultV1 | null,
+  ) => void;
+  readonly onProfileSourceChange?: (
+    source: InternalPlanRehearsalProfileSource,
   ) => void;
 }
 
@@ -45,8 +49,6 @@ type RehearsalOutcome =
       readonly result: PlanGenerationResultV1;
       readonly revision: number;
     };
-
-type RehearsalProfileSource = "saved_profile" | "frozen_eligible_profile";
 
 function readableIdentifier(value: string): string {
   const words = value
@@ -79,10 +81,11 @@ export default function InternalPlanProposalRehearsal({
   profile,
   ruleSet,
   onSessionActivationChange,
+  onProfileSourceChange,
 }: InternalPlanProposalRehearsalProps) {
   const generationRevision = useRef(0);
   const [profileSource, setProfileSource] =
-    useState<RehearsalProfileSource>("saved_profile");
+    useState<InternalPlanRehearsalProfileSource>("saved_profile");
   const [planStartDate, setPlanStartDate] = useState("");
   const [cohortConfirmed, setCohortConfirmed] = useState(false);
   const [noSymptomsReported, setNoSymptomsReported] = useState(false);
@@ -98,9 +101,10 @@ export default function InternalPlanProposalRehearsal({
     ruleSet.rules,
   );
 
-  const updateProfileSource = (source: RehearsalProfileSource) => {
+  const updateProfileSource = (source: InternalPlanRehearsalProfileSource) => {
     onSessionActivationChange(null);
     setProfileSource(source);
+    onProfileSourceChange?.(source);
     setPlanStartDate("");
     setCohortConfirmed(false);
     setNoSymptomsReported(false);

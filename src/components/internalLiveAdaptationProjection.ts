@@ -359,17 +359,24 @@ export function previewWorkoutsForInternalLiveAdaptation(
         `Projected workout ${projected.id} does not match the synchronized prescription.`,
       );
     }
+    const projectedStatus =
+      live.status === "skipped" &&
+      projected.scheduledDate !== live.scheduledDate
+        ? "planned"
+        : live.status;
     const replacement: PlannedWorkout =
       projected.target.kind === "distance"
         ? {
             ...live,
             scheduledDate: projected.scheduledDate,
+            status: projectedStatus,
             targetDistance: projected.target.distance,
             targetDuration: undefined,
           }
         : {
             ...live,
             scheduledDate: projected.scheduledDate,
+            status: projectedStatus,
             targetDistance: undefined,
             targetDuration: projected.target.duration,
           };

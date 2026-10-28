@@ -228,6 +228,44 @@ describe("projectInternalLiveAdaptation", () => {
 });
 
 describe("previewWorkoutsForInternalLiveAdaptation", () => {
+  it("returns a moved skipped workout to planned status in the session preview", () => {
+    const projected = projectInternalLiveAdaptation({
+      evidence,
+      activePlan,
+      workouts,
+      action: "reschedule",
+      rescheduleCandidate: {
+        present: true,
+        workoutPurpose: "easy",
+        delayCalendarDays: 1,
+        samePlanWeek: true,
+        runnerConfirmedAvailable: true,
+        targetDateEmpty: true,
+        consecutiveRunDatesAfterMove: 2,
+      },
+    });
+    expect(projected.kind).toBe("ready");
+    if (projected.kind !== "ready") return;
+
+    const preview = previewWorkoutsForInternalLiveAdaptation({
+      activePlan,
+      workouts,
+      projection: projected.projection,
+    });
+
+    expect(preview.kind).toBe("ready");
+    if (preview.kind !== "ready") return;
+    expect(preview.workouts.find(({ id }) => id === "workout-1")).toEqual({
+      ...workouts[0],
+      scheduledDate: createDateOnly("2026-10-27"),
+      status: "planned",
+      targetDistance: createDistanceMeters(4_000),
+      targetDuration: undefined,
+    });
+    expect(workouts[0]).toHaveProperty("status", "skipped");
+    expect(workouts[0]).toHaveProperty("scheduledDate", "2026-10-26");
+  });
+
   it("reconciles a complete projection into a view-only calendar snapshot", () => {
     const projected = projectInternalLiveAdaptation({
       evidence,

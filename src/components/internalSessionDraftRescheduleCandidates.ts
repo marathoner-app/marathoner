@@ -101,7 +101,9 @@ export function deriveInternalSessionDraftRescheduleCandidates({
 
   const planWorkouts = workouts.filter((workout) => workout.planId === plan.id);
   const occupiedDates = new Set(
-    planWorkouts.map((workout) => workout.scheduledDate),
+    planWorkouts.flatMap((workout) =>
+      workout.kind === "rest" ? [] : [workout.scheduledDate],
+    ),
   );
   const otherRunDatesInWeek = planWorkouts.flatMap((workout) => {
     if (
