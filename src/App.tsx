@@ -21,12 +21,15 @@ import type { AccountDeletionRequestAcceptedResult } from "./domain/materialComm
 import {
   createUserId,
   selectNextPlannedWorkout,
+  type GeneratedPlanEntityProjection,
+  type GeneratedPlanResultV1,
   type UserId,
 } from "./domain/training";
 import NextWorkoutSummary from "./components/NextWorkoutSummary";
 import RecommendationDecisionSurface from "./components/RecommendationDecisionSurface";
 import { isBetaRunCommandRehearsalMode } from "./components/betaRunCommandRehearsalMode";
 import { isInternalPlanProposalRehearsalMode } from "./components/internalPlanProposalRehearsalMode";
+import { resolvePlanSurfaceData } from "./training/planSurfaceData";
 
 const publicSupportEmail = "kevin@marathonerapp.com";
 const BetaRunCommandRehearsal = isBetaRunCommandRehearsalMode(
@@ -320,23 +323,36 @@ function AuthenticatedExperience({
   const training = useTrainingData();
   const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
   const [onboardingDeferred, setOnboardingDeferred] = useState(false);
+  const [sessionDraftPlan, setSessionDraftPlan] =
+    useState<GeneratedPlanResultV1 | null>(null);
+  const [sessionPlanProjection, setSessionPlanProjection] =
+    useState<GeneratedPlanEntityProjection | null>(null);
   const runnerProfileTriggerRef = useRef<HTMLButtonElement>(null);
   const restoreRunnerProfileFocus = useRef(false);
   const onboardingComplete = isRunnerProfileOnboardingComplete(training.profile);
-  const activePlan = useMemo(
+  const synchronizedActivePlan = useMemo(
     () => training.plans.find((plan) => plan.status === "active") ?? null,
     [training.plans],
+  );
+  const planSurfaceData = useMemo(
+    () =>
+      resolvePlanSurfaceData({
+        sessionProjection: sessionPlanProjection,
+        synchronizedPlan: synchronizedActivePlan,
+        synchronizedWorkouts: training.workouts,
+      }),
+    [sessionPlanProjection, synchronizedActivePlan, training.workouts],
   );
   const nextWorkout = useMemo(
     () =>
       training.profile === null
         ? null
         : selectNextPlannedWorkout(
-            activePlan,
-            training.workouts,
+            planSurfaceData.activePlan,
+            planSurfaceData.workouts,
             training.profile.timeZone,
           ),
-    [activePlan, training.profile, training.workouts],
+    [planSurfaceData, training.profile],
   );
   const hasReadableTraining =
     training.status === "current" || training.status === "stale";
@@ -361,6 +377,13 @@ function AuthenticatedExperience({
     runnerProfileTriggerRef.current?.focus();
     restoreRunnerProfileFocus.current = false;
   }, [showOnboarding]);
+
+  useEffect(() => {
+    if (InternalPlanProposalRehearsal === null) return;
+
+    setSessionDraftPlan(null);
+    setSessionPlanProjection(null);
+  }, [training.profile?.updatedAt]);
 
   return (
     <>
@@ -414,7 +437,7 @@ function AuthenticatedExperience({
             </p>
           </div>
           <NextWorkoutSummary
-            plan={activePlan}
+            plan={planSurfaceData.activePlan}
             workout={nextWorkout}
             distanceUnit={training.profile?.preferredDistanceUnit ?? "mile"}
             onOpenPlan={() => onOpenSection("plan")}
@@ -452,6 +475,9 @@ function AuthenticatedExperience({
                 plans={training.plans}
                 workouts={training.workouts}
                 runs={training.runs}
+                sessionDraftPlan={sessionDraftPlan}
+                onSessionDraftPlanChange={setSessionDraftPlan}
+                onSessionPlanProjectionChange={setSessionPlanProjection}
               />
             </Suspense>
           )}
@@ -488,6 +514,7 @@ function AuthenticatedExperience({
             title={activeSectionDetails.title}
             transitionDuration={sectionTransitionDuration}
             showSynchronizationNotice={showSynchronizationNotice}
+            sessionPlanProjection={sessionPlanProjection}
             onClose={onCloseSection}
           />
         </motion.section>
@@ -501,6 +528,7 @@ type SectionContentProps = {
   title: string;
   transitionDuration: number;
   showSynchronizationNotice: boolean;
+  sessionPlanProjection: GeneratedPlanEntityProjection | null;
   onClose: () => void;
 };
 
@@ -509,22 +537,28 @@ function SectionContent({
   title,
   transitionDuration,
   showSynchronizationNotice,
+  sessionPlanProjection,
   onClose,
 }: SectionContentProps) {
   const training = useTrainingData();
   const hasReadableTraining =
     training.status === "current" || training.status === "stale";
-  const activePlan =
+  const synchronizedActivePlan =
     training.plans.find((plan) => plan.status === "active") ??
     training.plans.find((plan) => plan.status === "draft") ??
     training.plans.find((plan) => plan.status !== "archived") ??
     null;
+  const planSurfaceData = resolvePlanSurfaceData({
+    sessionProjection: sessionPlanProjection,
+    synchronizedPlan: synchronizedActivePlan,
+    synchronizedWorkouts: training.workouts,
+  });
   const nextPlanWorkout =
     training.profile === null
       ? null
       : selectNextPlannedWorkout(
-          activePlan,
-          training.workouts,
+          planSurfaceData.activePlan,
+          planSurfaceData.workouts,
           training.profile.timeZone,
         );
   return (
@@ -568,8 +602,8 @@ function SectionContent({
       )}
       {hasReadableTraining && section === "plan" && (
         <Calendar
-          plan={activePlan}
-          workouts={training.workouts}
+          plan={planSurfaceData.activePlan}
+          workouts={planSurfaceData.workouts}
           distanceUnit={training.profile?.preferredDistanceUnit ?? "mile"}
           initialDate={nextPlanWorkout?.scheduledDate}
         />
@@ -581,7 +615,7 @@ function SectionContent({
             runs={training.runs}
             shoes={training.shoes}
             plannedWorkouts={training.workouts.filter(
-              (workout) => workout.planId === activePlan?.id,
+              (workout) => workout.planId === synchronizedActivePlan?.id,
             )}
             onCreateShoe={training.createShoe}
             onRetireShoe={training.retireShoe}

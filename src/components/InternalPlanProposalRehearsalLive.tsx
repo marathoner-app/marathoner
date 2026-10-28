@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo } from "react";
 import internalRulesText from "virtual:internal-plan-rehearsal-rules";
 import internalAdaptationPacketText from "virtual:internal-adaptation-rehearsal-packet";
 import internalSafetyPacketText from "virtual:internal-safety-escalation-packet";
@@ -9,6 +9,7 @@ import {
   projectGeneratedPlanEntities,
   type ActivePlanState,
   type CompletedRun,
+  type GeneratedPlanEntityProjection,
   type GeneratedPlanResultV1,
   type PlannedWorkout,
   type TrainingPlan,
@@ -33,6 +34,13 @@ interface InternalPlanProposalRehearsalLiveProps {
   readonly plans: readonly TrainingPlan[];
   readonly workouts: readonly PlannedWorkout[];
   readonly runs: readonly CompletedRun[];
+  readonly sessionDraftPlan: GeneratedPlanResultV1 | null;
+  readonly onSessionDraftPlanChange: (
+    plan: GeneratedPlanResultV1 | null,
+  ) => void;
+  readonly onSessionPlanProjectionChange: (
+    projection: GeneratedPlanEntityProjection | null,
+  ) => void;
 }
 
 const utcTimeZone = createIanaTimeZone("UTC");
@@ -63,9 +71,10 @@ export default function InternalPlanProposalRehearsalLive({
   plans,
   workouts,
   runs,
+  sessionDraftPlan,
+  onSessionDraftPlanChange,
+  onSessionPlanProjectionChange,
 }: InternalPlanProposalRehearsalLiveProps) {
-  const [sessionDraftPlan, setSessionDraftPlan] =
-    useState<GeneratedPlanResultV1 | null>(null);
   const sessionPlanProjection = useMemo(
     () =>
       sessionDraftPlan === null
@@ -79,6 +88,10 @@ export default function InternalPlanProposalRehearsalLive({
           }),
     [ownerId, sessionDraftPlan],
   );
+
+  useEffect(() => {
+    onSessionPlanProjectionChange(sessionPlanProjection);
+  }, [onSessionPlanProjectionChange, sessionPlanProjection]);
 
   if (ruleSet === null || adaptationPacket === null || safetyPacket === null) {
     return null;
@@ -98,7 +111,7 @@ export default function InternalPlanProposalRehearsalLive({
       <InternalPlanProposalRehearsal
         profile={profile}
         ruleSet={ruleSet}
-        onSessionActivationChange={setSessionDraftPlan}
+        onSessionActivationChange={onSessionDraftPlanChange}
       />
       <InternalSessionPlanSchedule
         projection={sessionPlanProjection}
