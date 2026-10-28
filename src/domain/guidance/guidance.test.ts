@@ -73,6 +73,14 @@ describe("versioned guidance contract", () => {
       expect(item.reviewState).toBe("draft");
       expect(item.publicationState).toBe("disabled");
       expect(item.contentVersion).toContain("-draft");
+      expect(item.reviewEvidence).toBeUndefined();
+      expect(item.title).not.toContain("placeholder");
+      expect(item.body).not.toContain("placeholder");
+      expect(item.body.length).toBeGreaterThan(80);
+      expect(item.limitations.length).toBeGreaterThanOrEqual(2);
+      expect(item.limitations.every((limitation) => limitation.length > 20)).toBe(
+        true,
+      );
       expect(item.contentOwner).not.toBe("");
       expect(item.correctionOwner).not.toBe("");
     }

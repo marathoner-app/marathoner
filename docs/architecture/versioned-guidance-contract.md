@@ -11,9 +11,11 @@ and suppression cannot drift between clients.
 
 This boundary does not approve any training, safety, nutrition, hydration,
 sleep, recovery, or adaptation guidance. The complete founding-beta manifest
-uses `beta-guidance@0.1.0-draft`; every entry is disabled and explicitly says it
-is a placeholder. Issue #135 owns real content and qualified review. Issue #133
-owns product integration and presentation.
+uses `beta-guidance@0.1.0-draft`; every entry is a complete internal draft but
+remains disabled, unreviewed, and unavailable to runners. The
+[draft source trace](../methodology/draft-guidance-sources.md) records its
+authoring inputs. Issue #135 owns qualified review and issue #133 owns later
+product integration and presentation.
 
 ## Version 1 item
 
@@ -33,8 +35,8 @@ owns product integration and presentation.
 The ten required topic values are easy effort, shoes, fueling, hydration,
 sleep, recovery, pain escalation, plan-change explanations, product
 limitations, and unsupported-case explanations. The disabled draft manifest
-owns one placeholder entry for each topic so missing work is visible without
-representing placeholder text as usable content.
+owns one complete draft entry for each topic so the owner and future reviewers
+can assess the exact proposed copy without representing it as usable content.
 
 ## Review and publication are separate
 
@@ -100,10 +102,12 @@ correction or retirement decision is prepared.
 ## Fixtures and safety boundary
 
 [`foundingBetaGuidanceManifest.ts`](../../src/domain/guidance/foundingBetaGuidanceManifest.ts)
-is a completeness and schema fixture. Its trigger and suppression values are
-not live beta configuration, and its text is not approved guidance. Tests also
-construct synthetic approved items to prove the contract's positive path;
-those objects are test-only and are not exported by the application module.
+is the complete draft guidance artifact and a schema fixture. Its trigger and
+suppression values are not live beta configuration, and its text is not
+approved guidance. The owner-only internal build exposes the exact copy in a
+review gallery through the shared guidance card. Tests also construct
+synthetic approved items to prove the contract's positive path; those objects
+are test-only and are not exported by the application module.
 
 No participant-facing component imports the manifest. The existing public
 notice remains truthful: Marathoner's training methodology and safety guidance
@@ -119,8 +123,8 @@ are not yet approved.
   dismissal history, and render accessible guidance across clients.
 - **#134:** define and review the pain and unusual-symptom escalation rules and
   exact language.
-- **#135:** replace placeholders with versioned, reviewed founding-beta
-  content.
+- **#135:** obtain qualified decisions for the exact founding-beta guidance,
+  apply any required corrections, and create a non-draft approved version.
 - **#136:** present reviewed adaptation explanations and choices.
 
 Run:

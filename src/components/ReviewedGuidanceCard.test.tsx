@@ -40,7 +40,7 @@ describe("ReviewedGuidanceCard", () => {
     expect(screen.getByText("After an easy run")).toBeInTheDocument();
     expect(screen.getByRole("note")).toHaveTextContent("Internal preview");
     expect(screen.getByRole("note")).toHaveTextContent(
-      "not approved training guidance",
+      "This draft is not approved training guidance",
     );
     expect(screen.getByText(model.message)).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Keep in mind" })).toBeInTheDocument();
