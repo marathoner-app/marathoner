@@ -1,6 +1,7 @@
 import type {
   ActivePlanState,
   CompletedRun,
+  GeneratedPlanResultV1,
   PlannedWorkout,
   TrainingPlan,
   UserId,
@@ -15,6 +16,7 @@ interface InternalDogfoodJourneyOverviewProps {
   readonly plans: readonly TrainingPlan[];
   readonly workouts: readonly PlannedWorkout[];
   readonly runs: readonly CompletedRun[];
+  readonly sessionDraftPlan: GeneratedPlanResultV1 | null;
 }
 
 interface EvidenceStatus {
@@ -57,6 +59,15 @@ const journeySteps = [
   },
 ] as const;
 
+const dateFormatter = new Intl.DateTimeFormat("en-US", {
+  dateStyle: "medium",
+  timeZone: "UTC",
+});
+
+function formatDate(value: string): string {
+  return dateFormatter.format(new Date(`${value}T00:00:00.000Z`));
+}
+
 export default function InternalDogfoodJourneyOverview({
   ownerId,
   profile,
@@ -64,6 +75,7 @@ export default function InternalDogfoodJourneyOverview({
   plans,
   workouts,
   runs,
+  sessionDraftPlan,
 }: InternalDogfoodJourneyOverviewProps) {
   const synchronizedPlanReady =
     activePlanState !== null &&
@@ -126,6 +138,29 @@ export default function InternalDogfoodJourneyOverview({
           draft methodology is approved for participants.
         </p>
       </header>
+
+      <section
+        className={`internal-dogfood-session-draft ${
+          sessionDraftPlan === null ? "is-not-ready" : "is-ready"
+        }`}
+        aria-labelledby="internal-dogfood-session-draft-title"
+      >
+        <h3 id="internal-dogfood-session-draft-title">Session draft plan</h3>
+        {sessionDraftPlan === null ? (
+          <p>No draft plan is active in this rehearsal session.</p>
+        ) : (
+          <>
+            <p>
+              <strong>{sessionDraftPlan.plan.name}</strong> is active only in
+              this workspace session.
+            </p>
+            <p>
+              Starts {formatDate(sessionDraftPlan.plan.startDate)} · Race day{" "}
+              {formatDate(sessionDraftPlan.plan.targetRaceDate)}
+            </p>
+          </>
+        )}
+      </section>
 
       <ul
         className="internal-dogfood-evidence"

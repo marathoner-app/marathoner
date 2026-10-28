@@ -11,6 +11,9 @@ import "./InternalPlanActivationRehearsal.css";
 interface InternalPlanActivationRehearsalProps {
   readonly result: GeneratedPlanResultV1;
   readonly onReviewInputs: () => void;
+  readonly onSessionActivationChange: (
+    result: GeneratedPlanResultV1 | null,
+  ) => void;
 }
 
 type RehearsalScreen = "proposal" | "confirmation" | "active";
@@ -76,9 +79,25 @@ function workoutCount(result: GeneratedPlanResultV1): number {
 export default function InternalPlanActivationRehearsal({
   result,
   onReviewInputs,
+  onSessionActivationChange,
 }: InternalPlanActivationRehearsalProps) {
   const [screen, setScreen] = useState<RehearsalScreen>("proposal");
   const firstWorkout = firstTrainingWorkout(result);
+
+  const reviewInputs = () => {
+    onSessionActivationChange(null);
+    onReviewInputs();
+  };
+
+  const activateInSession = () => {
+    onSessionActivationChange(result);
+    setScreen("active");
+  };
+
+  const endSessionActivation = () => {
+    onSessionActivationChange(null);
+    setScreen("proposal");
+  };
 
   if (screen === "proposal") {
     return (
@@ -89,7 +108,7 @@ export default function InternalPlanActivationRehearsal({
         </p>
         <ProposedPlanSummary
           result={result}
-          onReviewInputs={onReviewInputs}
+          onReviewInputs={reviewInputs}
           onContinueReview={() => setScreen("confirmation")}
         />
       </div>
@@ -130,7 +149,7 @@ export default function InternalPlanActivationRehearsal({
           </div>
         </dl>
         <div className="internal-plan-activation-actions">
-          <button type="button" className="secondary" onClick={onReviewInputs}>
+          <button type="button" className="secondary" onClick={reviewInputs}>
             Review different inputs
           </button>
           <button
@@ -140,7 +159,7 @@ export default function InternalPlanActivationRehearsal({
           >
             Back to proposal details
           </button>
-          <button type="button" onClick={() => setScreen("active")}>
+          <button type="button" onClick={activateInSession}>
             Activate only in this rehearsal
           </button>
         </div>
@@ -202,10 +221,10 @@ export default function InternalPlanActivationRehearsal({
         plan record, or workout record was created.
       </p>
       <div className="internal-plan-activation-actions">
-        <button type="button" className="secondary" onClick={onReviewInputs}>
+        <button type="button" className="secondary" onClick={reviewInputs}>
           Review different inputs
         </button>
-        <button type="button" onClick={() => setScreen("proposal")}>
+        <button type="button" onClick={endSessionActivation}>
           End rehearsal activation
         </button>
       </div>

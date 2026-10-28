@@ -12,10 +12,12 @@ import {
   createUtcDateTime,
   type ActivePlanState,
   type CompletedRun,
+  type GeneratedPlanResultV1,
   type PlannedWorkout,
   type TrainingPlan,
   type UserProfile,
 } from "../domain/training";
+import { planGenerationContractFixtures } from "../domain/training/planGenerationFixtures";
 import { findBetaBlockingAccessibilityViolations } from "../test/accessibility";
 import InternalDogfoodJourneyOverview from "./InternalDogfoodJourneyOverview";
 
@@ -75,6 +77,13 @@ const activePlanState: ActivePlanState = {
   approvedAt: timestamp,
   updatedAt: timestamp,
 };
+const generatedFixtureResult = planGenerationContractFixtures[0]?.result;
+
+if (generatedFixtureResult?.kind !== "generated") {
+  throw new Error("Expected the first contract fixture to contain a plan.");
+}
+
+const generatedPlan: GeneratedPlanResultV1 = generatedFixtureResult;
 
 function renderOverview(
   overrides: Partial<{
@@ -83,6 +92,7 @@ function renderOverview(
     plans: readonly TrainingPlan[];
     workouts: readonly PlannedWorkout[];
     runs: readonly CompletedRun[];
+    sessionDraftPlan: typeof generatedPlan | null;
   }> = {},
 ) {
   return render(
@@ -97,6 +107,7 @@ function renderOverview(
       plans={overrides.plans ?? [plan]}
       workouts={overrides.workouts ?? [workout]}
       runs={overrides.runs ?? [run]}
+      sessionDraftPlan={overrides.sessionDraftPlan ?? null}
     />,
   );
 }
@@ -163,6 +174,25 @@ describe("InternalDogfoodJourneyOverview", () => {
     ).toHaveAttribute("href", "#internal-safety-review");
     expect(
       screen.getByText(/draft plan activation lasts only for this rehearsal/iu),
+    ).toBeVisible();
+  });
+
+  it("identifies the exact active session draft without calling it synchronized", () => {
+    renderOverview({ sessionDraftPlan: generatedPlan });
+
+    const sessionDraft = screen.getByRole("region", {
+      name: "Session draft plan",
+    });
+    expect(
+      within(sessionDraft).getByText("Synthetic contract plan"),
+    ).toBeVisible();
+    expect(
+      within(sessionDraft).getByText(
+        "Starts Jan 7, 2030 · Race day Jan 13, 2030",
+      ),
+    ).toBeVisible();
+    expect(
+      within(sessionDraft).getByText(/active only in this workspace session/iu),
     ).toBeVisible();
   });
 

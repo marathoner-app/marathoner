@@ -1,8 +1,9 @@
-import { useState, type FormEvent } from "react";
+import { useRef, useState, type FormEvent } from "react";
 import {
   createDateOnly,
   createPlanGenerationInputFromProfile,
   generateDeterministicPlan,
+  type GeneratedPlanResultV1,
   type PlanGenerationProfileField,
   type PlanGenerationResultV1,
   type PlanGenerationValidationIssue,
@@ -20,6 +21,9 @@ import "./InternalPlanProposalRehearsal.css";
 interface InternalPlanProposalRehearsalProps {
   readonly profile: UserProfile | null;
   readonly ruleSet: InternalPlanProposalRehearsalRuleSet;
+  readonly onSessionActivationChange: (
+    result: GeneratedPlanResultV1 | null,
+  ) => void;
 }
 
 type RehearsalOutcome =
@@ -35,6 +39,7 @@ type RehearsalOutcome =
   | {
       readonly kind: "generation_result";
       readonly result: PlanGenerationResultV1;
+      readonly revision: number;
     };
 
 function readableIdentifier(value: string): string {
@@ -65,7 +70,9 @@ function unavailableCandidateMessage(
 export default function InternalPlanProposalRehearsal({
   profile,
   ruleSet,
+  onSessionActivationChange,
 }: InternalPlanProposalRehearsalProps) {
+  const generationRevision = useRef(0);
   const [planStartDate, setPlanStartDate] = useState("");
   const [cohortConfirmed, setCohortConfirmed] = useState(false);
   const [noSymptomsReported, setNoSymptomsReported] = useState(false);
@@ -78,12 +85,14 @@ export default function InternalPlanProposalRehearsal({
   );
 
   const updatePlanStartDate = (value: string) => {
+    onSessionActivationChange(null);
     setPlanStartDate(value);
     setOutcome({ kind: "not_run" });
   };
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    onSessionActivationChange(null);
 
     if (profile === null) {
       setOutcome({ kind: "incomplete_profile", missingFields: [] });
@@ -118,6 +127,7 @@ export default function InternalPlanProposalRehearsal({
       return;
     }
 
+    generationRevision.current += 1;
     setOutcome({
       kind: "generation_result",
       result: generateDeterministicPlan({
@@ -126,6 +136,7 @@ export default function InternalPlanProposalRehearsal({
         generatorVersion: ruleSet.generatorVersion,
         rules: ruleSet.rules,
       }),
+      revision: generationRevision.current,
     });
   };
 
@@ -195,6 +206,7 @@ export default function InternalPlanProposalRehearsal({
             type="checkbox"
             checked={cohortConfirmed}
             onChange={(event) => {
+              onSessionActivationChange(null);
               setCohortConfirmed(event.target.checked);
               setOutcome({ kind: "not_run" });
             }}
@@ -207,6 +219,7 @@ export default function InternalPlanProposalRehearsal({
             type="checkbox"
             checked={noSymptomsReported}
             onChange={(event) => {
+              onSessionActivationChange(null);
               setNoSymptomsReported(event.target.checked);
               setOutcome({ kind: "not_run" });
             }}
@@ -279,8 +292,10 @@ export default function InternalPlanProposalRehearsal({
       {outcome.kind === "generation_result" &&
         outcome.result.kind === "generated" && (
           <InternalPlanActivationRehearsal
+            key={outcome.revision}
             result={outcome.result}
             onReviewInputs={() => setOutcome({ kind: "not_run" })}
+            onSessionActivationChange={onSessionActivationChange}
           />
         )}
     </section>

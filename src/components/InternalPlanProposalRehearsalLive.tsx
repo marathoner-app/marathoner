@@ -1,3 +1,4 @@
+import { useState } from "react";
 import internalRulesText from "virtual:internal-plan-rehearsal-rules";
 import internalAdaptationPacketText from "virtual:internal-adaptation-rehearsal-packet";
 import internalSafetyPacketText from "virtual:internal-safety-escalation-packet";
@@ -5,6 +6,7 @@ import {
   createIanaTimeZone,
   type ActivePlanState,
   type CompletedRun,
+  type GeneratedPlanResultV1,
   type PlannedWorkout,
   type TrainingPlan,
   type UserId,
@@ -58,6 +60,9 @@ export default function InternalPlanProposalRehearsalLive({
   workouts,
   runs,
 }: InternalPlanProposalRehearsalLiveProps) {
+  const [sessionDraftPlan, setSessionDraftPlan] =
+    useState<GeneratedPlanResultV1 | null>(null);
+
   if (ruleSet === null || adaptationPacket === null || safetyPacket === null) {
     return null;
   }
@@ -71,8 +76,13 @@ export default function InternalPlanProposalRehearsalLive({
         plans={plans}
         workouts={workouts}
         runs={runs}
+        sessionDraftPlan={sessionDraftPlan}
       />
-      <InternalPlanProposalRehearsal profile={profile} ruleSet={ruleSet} />
+      <InternalPlanProposalRehearsal
+        profile={profile}
+        ruleSet={ruleSet}
+        onSessionActivationChange={setSessionDraftPlan}
+      />
       <InternalAdaptationHistoryInspector
         ownerId={ownerId}
         activePlanState={activePlanState}

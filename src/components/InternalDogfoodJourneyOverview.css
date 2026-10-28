@@ -25,6 +25,31 @@
   color: inherit;
 }
 
+.internal-dogfood-session-draft {
+  margin: 1.5rem 0;
+  padding: 1rem;
+  border: 1px solid currentColor;
+  border-radius: 0.75rem;
+  background: #ffffffcc;
+}
+
+.internal-dogfood-session-draft.is-ready {
+  color: #1d604d;
+}
+
+.internal-dogfood-session-draft.is-not-ready {
+  color: #86511d;
+}
+
+.internal-dogfood-session-draft h3,
+.internal-dogfood-session-draft p {
+  margin: 0;
+}
+
+.internal-dogfood-session-draft p + p {
+  margin-top: 0.35rem;
+}
+
 .internal-dogfood-evidence {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr));
