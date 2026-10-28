@@ -464,6 +464,7 @@ function AuthenticatedExperience({
                   runs={training.runs}
                   distanceUnit={training.profile.preferredDistanceUnit}
                   timeZone={training.profile.timeZone}
+                  onOpenTrack={() => onOpenSection("track")}
                 />
               </Suspense>
             )}
