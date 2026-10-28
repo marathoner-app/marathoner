@@ -30,9 +30,20 @@ The surface can:
   current rehearsal session.
 
 Session activation is an interface rehearsal, not a plan approval. It shows the
-draft plan dates and first scheduled training workout, then disappears when the
-proposal inputs change or the page reloads. It does not call the plan-approval
-command, write a plan or workouts, or change the real Plan and Track screens.
+draft plan dates and first scheduled training workout, then projects the same
+session draft into the signed-in home next-workout card and the normal Plan
+calendar. Both surfaces label the plan as an owner-only, unsaved rehearsal. The
+projection disappears when the proposal inputs change, activation is cleared,
+or the page reloads. It does not call the plan-approval command, write a plan or
+workouts, replace synchronized plan data, or change Track's available workout
+associations.
+
+The home summary also compares the draft schedule for the owner's current local
+date with synchronized completed runs logged on that date. This is a visual,
+same-date comparison only. It does not infer or save a planned-workout
+association, classify completion, change a run, or turn the session projection
+into authoritative adaptation evidence. The owner-only journey keeps the draft
+projection and synchronized data lanes visibly separate.
 
 The same mode also shows **Internal draft adaptation rehearsal**. This second
 tool requires the owner to choose one frozen scenario from the pinned adaptation
@@ -50,17 +61,30 @@ Refused, no-change, invalid, mismatched, and non-approval outcomes expose no
 choice. Rerunning or changing the scenario clears the choice, and neither action
 submits a command, persists a decision, projects a plan, or changes live data.
 
-The adaptation lab deliberately does not derive evidence from saved runs. The
-signed-in client does not yet have a trusted active-plan revision and
-association-normalization seam, so presenting live-run results now would require
-inventing facts. The frozen lab makes the implemented decision table testable
-without hiding that missing integration boundary.
+The same mode also includes a separate live-history path for synchronized owner
+data. Its inspector receives the authenticated owner's active-plan state,
+plans, workouts, and completed runs; the owner then chooses the evaluation date,
+completed-or-skipped trigger, and recent-run bound. The production normalizer
+either shows complete objective evidence or refuses the snapshot with every
+stable issue, including incomplete or cross-plan associations. A ready history
+result means only that those saved facts are coherent. It does not approve a
+rule or recommendation.
 
-Neither tool can approve or persist a plan or recommendation, and rehearsal
-activation cannot escape the current page session. Ordinary development,
-production web, iOS development, and iOS beta builds do not include these
-surfaces or either draft packet. The distributable build commands scan their
-output and fail if any appears.
+After a ready result, the owner may deliberately supply the remaining facts
+that saved history cannot determine, affirm their completeness, and invoke the
+production evaluator with the pinned draft artifact. A material result can use
+the existing in-memory keep-or-apply rehearsal and preview a bounded adjustment
+through the normal Plan calendar. Any changed history or supplied fact clears
+that result. No recommendation, decision, plan revision, or calendar change is
+saved, and the synchronized plan remains authoritative. This live path uses
+only the synchronized active plan; it does not treat the session-only initial
+plan projection or the home same-date comparison as persisted evidence.
+
+None of these surfaces can approve or persist a plan or recommendation, and
+rehearsal activation cannot escape the current page session. Ordinary
+development, production web, iOS development, iOS beta, and Functions builds do
+not include these surfaces or either draft packet. The distributable build
+commands scan their output and fail if any appears.
 
 Independent methodology review remains required before the rules or generated
 plans can be used by real-world participants. Reviewer changes can be applied
