@@ -5,6 +5,7 @@ import type { TrainingRepositories } from "../trainingRepositories";
 import { FirestoreDocumentStore } from "./firestoreDocumentStore";
 
 export { createFirestoreTrainingLiveReadSource } from "./firestoreTrainingLiveReadSource";
+export { createFirestoreRecommendationEvidenceLiveReadSource } from "./firestoreRecommendationEvidenceLiveReadSource";
 
 export function createFirestoreTrainingRepositories(
   userId: UserId,

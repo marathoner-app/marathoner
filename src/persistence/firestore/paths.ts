@@ -53,3 +53,7 @@ export const shoesCollectionPath = (userId: UserId): string =>
 
 export const shoeDocumentPath = (userId: UserId, shoeId: ShoeId): string =>
   `${shoesCollectionPath(userId)}/${shoeId}`;
+
+export const recommendationEvidenceCollectionPath = (
+  userId: UserId,
+): string => `${userDocumentPath(userId)}/recommendationEvidence`;
