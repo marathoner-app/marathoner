@@ -483,6 +483,14 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    match /users/{userId}/planRevisionSnapshots/{snapshotId} {
+      allow read, write: if false;
+
+      match /{document=**} {
+        allow read, write: if false;
+      }
+    }
+
     match /users/{userId}/recommendationEvidence/{recommendationId} {
       allow read: if isSignedInAs(userId);
       allow write: if false;

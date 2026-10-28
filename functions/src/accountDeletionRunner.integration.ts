@@ -88,6 +88,18 @@ async function seedOwnedData(
       { schemaVersion: 1, userId, activePlanId: 'plan-one' },
     ],
     [
+      `users/${userId}/planRevisionSnapshots/plan-one--revision-1`,
+      { schemaVersion: 1, userId, planId: 'plan-one' },
+    ],
+    [
+      `users/${userId}/planRevisionSnapshots/plan-one--revision-1/records/plan`,
+      { schemaVersion: 1, userId, planId: 'plan-one' },
+    ],
+    [
+      `users/${userId}/planRevisionSnapshots/plan-one--revision-1/workouts/workout-one`,
+      { schemaVersion: 1, userId, planId: 'plan-one' },
+    ],
+    [
       `users/${userId}/recommendationEvidence/recommendation-one`,
       {
         schemaVersion: 'recommendation-evidence@2',
@@ -198,6 +210,9 @@ async function expectOwnerDeletedAndOtherOwnerUntouched() {
     `users/${ownerId}/plans/plan-one/workouts/workout-one`,
     `users/${ownerId}/plans/plan-one/metadata/generation`,
     `users/${ownerId}/planState/active`,
+    `users/${ownerId}/planRevisionSnapshots/plan-one--revision-1`,
+    `users/${ownerId}/planRevisionSnapshots/plan-one--revision-1/records/plan`,
+    `users/${ownerId}/planRevisionSnapshots/plan-one--revision-1/workouts/workout-one`,
     `users/${ownerId}/recommendationEvidence/recommendation-one`,
     `users/${ownerId}/runs/run-one`,
     `users/${ownerId}/shoes/shoe-one`,
@@ -213,6 +228,9 @@ async function expectOwnerDeletedAndOtherOwnerUntouched() {
     `users/${otherOwnerId}/plans/plan-one/workouts/workout-one`,
     `users/${otherOwnerId}/plans/plan-one/metadata/generation`,
     `users/${otherOwnerId}/planState/active`,
+    `users/${otherOwnerId}/planRevisionSnapshots/plan-one--revision-1`,
+    `users/${otherOwnerId}/planRevisionSnapshots/plan-one--revision-1/records/plan`,
+    `users/${otherOwnerId}/planRevisionSnapshots/plan-one--revision-1/workouts/workout-one`,
     `users/${otherOwnerId}/recommendationEvidence/recommendation-one`,
     `users/${otherOwnerId}/runs/run-one`,
     `users/${otherOwnerId}/shoes/shoe-one`,

@@ -30,7 +30,7 @@ export function recommendationEvidencePath(
   return `users/${createUserId(ownerId)}/recommendationEvidence/${createRecommendationId(recommendationId)}`
 }
 
-function parseStoredEvidence(
+export function recommendationEvidenceFromDocument(
   data: DocumentData | undefined,
 ): RecommendationEvidenceV2 {
   if (data === undefined) {
@@ -81,7 +81,7 @@ export class FirestoreRecommendationEvidenceStore {
     return this.database.runTransaction(async (transaction) => {
       const snapshot = await transaction.get(reference)
       if (snapshot.exists) {
-        const stored = parseStoredEvidence(snapshot.data())
+        const stored = recommendationEvidenceFromDocument(snapshot.data())
         if (isDeepStrictEqual(stored, options.evidence)) return stored
         throw new RecommendationEvidenceStoreError('evidence-conflict')
       }
@@ -108,7 +108,7 @@ export class FirestoreRecommendationEvidenceStore {
     )
     return this.database.runTransaction(async (transaction) => {
       const snapshot = await transaction.get(reference)
-      const stored = parseStoredEvidence(snapshot.data())
+      const stored = recommendationEvidenceFromDocument(snapshot.data())
       if (stored.decision !== 'pending') {
         if (isDeepStrictEqual(stored, options.evidence)) return stored
         throw new RecommendationEvidenceStoreError('evidence-conflict')
@@ -139,6 +139,6 @@ export class FirestoreRecommendationEvidenceStore {
         ),
       )
       .get()
-    return parseStoredEvidence(snapshot.data())
+    return recommendationEvidenceFromDocument(snapshot.data())
   }
 }
