@@ -51,5 +51,17 @@ createRoot(root).render(
         </button>
       ))}
     </nav>
+    <section
+      aria-label="Additional signed-in content"
+      style={{
+        display: "grid",
+        flex: "0 0 auto",
+        minHeight: "50rem",
+        placeItems: "end center",
+        width: "100%",
+      }}
+    >
+      <button type="button">Final signed-in action</button>
+    </section>
   </main>,
 );

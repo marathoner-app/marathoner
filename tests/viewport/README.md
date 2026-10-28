@@ -13,8 +13,9 @@ fixture renders the signed-out production shell directly and covers both phone
 (`390 × 844`) and desktop (`1440 × 900`) layout plus the existing login dialog.
 The signed-in home fixture verifies that account controls, welcome content,
 runner setup, next workout, and section navigation remain in readable order on
-the phone while preserving the desktop header treatment. The isolated
-recommendation-review fixture verifies that the internal preview notice,
+the phone while preserving the desktop header treatment and keeping content
+beyond one desktop viewport reachable through normal page scrolling. The
+isolated recommendation-review fixture verifies that the internal preview notice,
 narrative sequence, and both decision actions remain visible and operable at
 phone width and 200% text without connecting the dormant component to the
 application or Firebase. The isolated reviewed-guidance fixture applies the
