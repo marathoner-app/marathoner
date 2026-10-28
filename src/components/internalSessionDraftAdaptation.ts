@@ -25,9 +25,15 @@ export interface InternalSessionDraftRunPair {
   readonly confirmedAt: UtcDateTime;
 }
 
+export interface InternalSessionDraftSkippedWorkout {
+  readonly workoutId: PlannedWorkoutId;
+  readonly confirmedAt: UtcDateTime;
+}
+
 interface AssembleInternalSessionDraftAdaptationRequest {
   readonly projection: GeneratedPlanEntityProjection;
   readonly pairs: readonly InternalSessionDraftRunPair[];
+  readonly skippedWorkouts: readonly InternalSessionDraftSkippedWorkout[];
 }
 
 /**
@@ -38,8 +44,9 @@ interface AssembleInternalSessionDraftAdaptationRequest {
 export function assembleInternalSessionDraftAdaptation({
   projection,
   pairs,
+  skippedWorkouts,
 }: AssembleInternalSessionDraftAdaptationRequest): InternalSessionDraftAdaptationAssembly | null {
-  if (pairs.length === 0) return null;
+  if (pairs.length === 0 && skippedWorkouts.length === 0) return null;
 
   const workoutIds = new Set<PlannedWorkoutId>();
   const runIds = new Set<CompletedRun["id"]>();
@@ -66,30 +73,60 @@ export function assembleInternalSessionDraftAdaptation({
 
   if (resolvedPairs.length !== pairs.length) return null;
 
-  const triggerPair = [...resolvedPairs].sort((left, right) => {
+  const resolvedSkippedWorkouts = skippedWorkouts.flatMap((skippedWorkout) => {
+    const workout = projection.workouts.find(
+      (candidate) => candidate.id === skippedWorkout.workoutId,
+    );
+
+    if (
+      workout === undefined ||
+      workout.kind === "rest" ||
+      workoutIds.has(workout.id)
+    ) {
+      return [];
+    }
+
+    workoutIds.add(workout.id);
+    return [{ ...skippedWorkout, workout }];
+  });
+
+  if (resolvedSkippedWorkouts.length !== skippedWorkouts.length) return null;
+
+  const confirmedEvents = [
+    ...resolvedPairs.map(({ workout, confirmedAt }) => ({
+      workout,
+      confirmedAt,
+      status: "completed" as const,
+    })),
+    ...resolvedSkippedWorkouts.map(({ workout, confirmedAt }) => ({
+      workout,
+      confirmedAt,
+      status: "skipped" as const,
+    })),
+  ];
+  const triggerEvent = [...confirmedEvents].sort((left, right) => {
     const dateComparison = left.workout.scheduledDate.localeCompare(
       right.workout.scheduledDate,
     );
     if (dateComparison !== 0) return dateComparison;
 
-    const startComparison = left.run.startedAt.localeCompare(
-      right.run.startedAt,
-    );
-    if (startComparison !== 0) return startComparison;
-
     return left.workout.id.localeCompare(right.workout.id);
-  })[resolvedPairs.length - 1];
-  if (triggerPair === undefined) return null;
+  })[confirmedEvents.length - 1];
+  if (triggerEvent === undefined) return null;
 
-  const confirmedAtByWorkoutId = new Map(
-    resolvedPairs.map((pair) => [pair.workout.id, pair.confirmedAt]),
+  const confirmedEventByWorkoutId = new Map(
+    confirmedEvents.map((event) => [event.workout.id, event]),
   );
 
   const transientWorkouts = projection.workouts.map((workout) => {
-    const confirmedAt = confirmedAtByWorkoutId.get(workout.id);
-    return confirmedAt === undefined
+    const confirmedEvent = confirmedEventByWorkoutId.get(workout.id);
+    return confirmedEvent === undefined
       ? workout
-      : { ...workout, status: "completed" as const, updatedAt: confirmedAt };
+      : {
+          ...workout,
+          status: confirmedEvent.status,
+          updatedAt: confirmedEvent.confirmedAt,
+        };
   });
   const transientRuns = resolvedPairs.map(({ run, workout, confirmedAt }) => ({
     ...run,
@@ -97,10 +134,10 @@ export function assembleInternalSessionDraftAdaptation({
     plannedWorkoutId: workout.id,
     updatedAt: confirmedAt,
   }));
-  const latestConfirmation = resolvedPairs.reduce(
-    (latest, pair) =>
-      pair.confirmedAt > latest ? pair.confirmedAt : latest,
-    triggerPair.confirmedAt,
+  const latestConfirmation = confirmedEvents.reduce(
+    (latest, event) =>
+      event.confirmedAt > latest ? event.confirmedAt : latest,
+    triggerEvent.confirmedAt,
   );
   const activePlanState: ActivePlanState = {
     userId: projection.plan.userId,
@@ -109,7 +146,12 @@ export function assembleInternalSessionDraftAdaptation({
     approvedAt: projection.plan.createdAt,
     updatedAt: latestConfirmation,
   };
-  const evidenceWeek = evidenceWeekContaining(triggerPair.workout.scheduledDate);
+  const evidenceWeek = evidenceWeekContaining(
+    triggerEvent.workout.scheduledDate,
+  );
+  // The normalizer requires a positive window even when it will separately
+  // report that a skip-only rehearsal lacks completed-run history.
+  const recentRunWindowSize = Math.max(1, resolvedPairs.length);
 
   return {
     activePlanState,
@@ -122,11 +164,11 @@ export function assembleInternalSessionDraftAdaptation({
       plans: [projection.plan],
       workouts: transientWorkouts,
       runs: transientRuns,
-      evaluationDate: triggerPair.workout.scheduledDate,
+      evaluationDate: triggerEvent.workout.scheduledDate,
       currentWeekStartDate: evidenceWeek.startDate,
       currentWeekEndDate: evidenceWeek.endDate,
-      triggerWorkoutId: triggerPair.workout.id,
-      recentRunWindowSize: resolvedPairs.length,
+      triggerWorkoutId: triggerEvent.workout.id,
+      recentRunWindowSize,
     }),
   };
 }

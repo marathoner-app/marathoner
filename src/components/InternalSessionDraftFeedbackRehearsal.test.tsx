@@ -164,7 +164,7 @@ describe("InternalSessionDraftFeedbackRehearsal", () => {
         name: "Session draft evidence is coherent",
       }),
     ).toBeVisible();
-    expect(screen.getByText(/1 confirmed pair is contributing/iu)).toBeVisible();
+    expect(screen.getByText(/1 confirmed event is contributing/iu)).toBeVisible();
     expect(
       screen.queryByRole("option", { name: /Jan 8, 2030/iu }),
     ).not.toBeInTheDocument();
@@ -188,9 +188,9 @@ describe("InternalSessionDraftFeedbackRehearsal", () => {
         name: "Add pair to session rehearsal",
       }),
     );
-    expect(screen.getByText(/2 confirmed pairs are contributing/iu)).toBeVisible();
+    expect(screen.getByText(/2 confirmed events are contributing/iu)).toBeVisible();
     expect(
-      screen.getByText(/every currently eligible workout\/run pair/iu),
+      screen.getByText(/no unused workout\/run pair is currently available/iu),
     ).toBeVisible();
 
     await user.click(
@@ -198,10 +198,78 @@ describe("InternalSessionDraftFeedbackRehearsal", () => {
         name: "Remove confirmed pair for Jan 8, 2030",
       }),
     );
-    expect(screen.getByText(/1 confirmed pair is contributing/iu)).toBeVisible();
+    expect(screen.getByText(/1 confirmed event is contributing/iu)).toBeVisible();
     expect(
-      screen.getByRole("option", { name: /Jan 8, 2030/iu }),
-    ).toBeInTheDocument();
+      screen.getAllByRole("option", { name: /Jan 8, 2030/iu }),
+    ).toHaveLength(2);
+  });
+
+  it("combines an explicit skip with completed-run history and removes it", async () => {
+    const user = userEvent.setup();
+    renderRehearsal();
+
+    await user.selectOptions(
+      screen.getByLabelText("Draft workout"),
+      firstWorkoutId,
+    );
+    await user.selectOptions(
+      screen.getByLabelText("Synchronized run"),
+      firstRun.id,
+    );
+    await user.click(
+      screen.getByRole("button", {
+        name: "Add pair to session rehearsal",
+      }),
+    );
+
+    await user.selectOptions(
+      screen.getByLabelText("Draft workout to skip"),
+      secondWorkoutId,
+    );
+    await user.click(
+      screen.getByRole("button", { name: "Mark skipped for rehearsal" }),
+    );
+
+    expect(screen.getByText(/2 confirmed events are contributing/iu)).toBeVisible();
+    expect(
+      screen.getByText(/skipped for rehearsal · no run associated/iu),
+    ).toBeVisible();
+    expect(
+      screen.getByRole("heading", {
+        name: "Session draft evidence is coherent",
+      }),
+    ).toBeVisible();
+
+    await user.click(
+      screen.getByRole("button", {
+        name: "Remove skipped workout for Jan 9, 2030",
+      }),
+    );
+    expect(screen.getByText(/1 confirmed event is contributing/iu)).toBeVisible();
+    expect(
+      screen.queryByText(/skipped for rehearsal · no run associated/iu),
+    ).not.toBeInTheDocument();
+  });
+
+  it("shows that a skip alone cannot invent completed-run evidence", async () => {
+    const user = userEvent.setup();
+    renderRehearsal();
+
+    await user.selectOptions(
+      screen.getByLabelText("Draft workout to skip"),
+      secondWorkoutId,
+    );
+    await user.click(
+      screen.getByRole("button", { name: "Mark skipped for rehearsal" }),
+    );
+
+    expect(
+      screen.getByRole("heading", { name: "Session evidence is not ready" }),
+    ).toBeVisible();
+    expect(screen.getByText(/missing_completed_planned_run/iu)).toBeVisible();
+    expect(
+      screen.queryByRole("heading", { name: "Evaluate live draft evidence" }),
+    ).not.toBeInTheDocument();
   });
 
   it("explains unavailable evidence and stays hidden without a draft", () => {
