@@ -41,6 +41,10 @@ const InternalPlanProposalRehearsal =
   isInternalPlanProposalRehearsalMode(import.meta.env.MODE)
     ? lazy(() => import("./components/InternalPlanProposalRehearsalLive"))
     : null;
+const InternalSessionPlanNotice =
+  isInternalPlanProposalRehearsalMode(import.meta.env.MODE)
+    ? lazy(() => import("./components/InternalSessionPlanNotice"))
+    : null;
 
 const sections = [
   { id: "plan", label: "Plan", title: "Plan Your Workouts" },
@@ -436,6 +440,11 @@ function AuthenticatedExperience({
                 : "Your saved progress is safe; finish setup before a plan can be evaluated."}
             </p>
           </div>
+          {InternalSessionPlanNotice && sessionPlanProjection && (
+            <Suspense fallback={null}>
+              <InternalSessionPlanNotice surface="home" />
+            </Suspense>
+          )}
           <NextWorkoutSummary
             plan={planSurfaceData.activePlan}
             workout={nextWorkout}
@@ -601,12 +610,19 @@ function SectionContent({
         </div>
       )}
       {hasReadableTraining && section === "plan" && (
-        <Calendar
-          plan={planSurfaceData.activePlan}
-          workouts={planSurfaceData.workouts}
-          distanceUnit={training.profile?.preferredDistanceUnit ?? "mile"}
-          initialDate={nextPlanWorkout?.scheduledDate}
-        />
+        <>
+          {InternalSessionPlanNotice && sessionPlanProjection && (
+            <Suspense fallback={null}>
+              <InternalSessionPlanNotice surface="plan" />
+            </Suspense>
+          )}
+          <Calendar
+            plan={planSurfaceData.activePlan}
+            workouts={planSurfaceData.workouts}
+            distanceUnit={training.profile?.preferredDistanceUnit ?? "mile"}
+            initialDate={nextPlanWorkout?.scheduledDate}
+          />
+        </>
       )}
       {hasReadableTraining && section === "track" && (
         <fieldset className="training-read-only" disabled={!training.canWrite}>

@@ -22,6 +22,10 @@ const forbiddenBuildText = [
   'Internal dogfood journey',
   'Session-only plan calendar',
   'Owner-only session projection',
+  'Owner-only session draft',
+  'Rehearsal preview, not a saved plan',
+  'The next-workout card is previewing this draft.',
+  'The Plan calendar is previewing this draft.',
 ]
 const textExtensions = new Set(['.css', '.html', '.js', '.json', '.map', '.txt'])
 
