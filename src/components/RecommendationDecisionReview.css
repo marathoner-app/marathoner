@@ -95,6 +95,11 @@
   background: #fffaf0;
 }
 
+.recommendation-review-outcome.confirmed {
+  border-color: #2f6f4e;
+  background: #eef8f2;
+}
+
 .recommendation-review-outcome:focus {
   outline: 3px solid #2e6fbb;
   outline-offset: 0.25rem;

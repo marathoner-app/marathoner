@@ -15,6 +15,12 @@ export type RecommendationDecisionReviewState =
   | { readonly kind: "ready" }
   | { readonly kind: "pending"; readonly decision: "keep" | "apply" }
   | {
+      readonly kind: "confirmed";
+      readonly decision: "keep" | "apply";
+      readonly title: string;
+      readonly message: string;
+    }
+  | {
       readonly kind: "unavailable";
       readonly title: string;
       readonly message: string;
@@ -53,7 +59,11 @@ export default function RecommendationDecisionReview({
   const decisionsDisabled = pending || (internalPreview && !internalRehearsal);
 
   useEffect(() => {
-    if (state.kind === "error" || state.kind === "unavailable") {
+    if (
+      state.kind === "confirmed" ||
+      state.kind === "error" ||
+      state.kind === "unavailable"
+    ) {
       outcomeRef.current?.focus();
     }
   }, [state.kind]);
@@ -112,6 +122,19 @@ export default function RecommendationDecisionReview({
             ? "Applying this change. Wait for confirmation before doing anything else."
             : "Keeping your current plan. Wait for confirmation before doing anything else."}
         </p>
+      )}
+
+      {state.kind === "confirmed" && (
+        <div
+          className="recommendation-review-outcome confirmed"
+          role="status"
+          aria-live="polite"
+          tabIndex={-1}
+          ref={outcomeRef}
+        >
+          <h3>{state.title}</h3>
+          <p>{state.message}</p>
+        </div>
       )}
 
       {(state.kind === "error" || state.kind === "unavailable") && (

@@ -161,6 +161,37 @@ describe("RecommendationDecisionReview", () => {
     expect(screen.queryByRole("button")).not.toBeInTheDocument();
   });
 
+  it.each([
+    [
+      "keep" as const,
+      "Current plan kept",
+      "Marathoner confirmed your choice.",
+    ],
+    [
+      "apply" as const,
+      "Recommendation applied",
+      "Marathoner confirmed the plan change.",
+    ],
+  ])(
+    "moves focus to the %s confirmation and removes decision actions",
+    (decision, title, message) => {
+      render(
+        <RecommendationDecisionReview
+          {...props({
+            model: { ...model, contentState: "reviewed" },
+            state: { kind: "confirmed", decision, title, message },
+          })}
+        />,
+      );
+
+      const status = screen.getByRole("status");
+      expect(status).toHaveFocus();
+      expect(status).toHaveTextContent(title);
+      expect(status).toHaveTextContent(message);
+      expect(screen.queryByRole("button")).not.toBeInTheDocument();
+    },
+  );
+
   it("moves focus to a recoverable error and invokes only the retry callback", async () => {
     const user = userEvent.setup();
     const viewProps = props({
