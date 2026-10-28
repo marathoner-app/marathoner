@@ -64,6 +64,8 @@ function unavailableCandidateMessage(
       return "This draft can derive start dates only from an exact race date, not a race window.";
     case "race_weekday_mismatch":
       return "The saved race date does not fall on the preferred long-run day, so this draft has no aligned start-date choices.";
+    case "recent_effort_after_supported_start_window":
+      return "The saved recent effort occurs after every start date allowed by this draft, so no aligned choice is valid for the saved profile.";
   }
 }
 
