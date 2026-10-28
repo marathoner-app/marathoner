@@ -200,10 +200,14 @@ describe("InternalLiveAdaptationRehearsal", () => {
       screen.getByText("ADAPT-HOLD-REPEATED-HARD-EFFORT"),
     ).toBeVisible();
     expect(
-      screen.getByRole("heading", { name: "Internal Hold progression" }),
+      screen.getByRole("heading", {
+        name: "Give next week another steady pass",
+      }),
     ).toBeVisible();
     expect(
-      screen.getByText(/synchronized owner evidence matched/iu),
+      screen.getByText(
+        "At least two of the four most recent planned runs felt harder than expected.",
+      ),
     ).toBeVisible();
 
     await user.click(
