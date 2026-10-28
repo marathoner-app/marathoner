@@ -11,11 +11,16 @@ import {
   type MaterialCommandCommittedResult,
   type PlanApprovalReceiptResult,
   type ProofMaterialCommandEnvelope,
+  type RecommendationDecisionReceiptResult,
   type RunCompletionReceiptResult,
   type RunDeletionReceiptResult,
   type RunUpdateReceiptResult,
 } from '../../src/domain/materialCommands/contract.js'
-import { createRecommendationId } from '../../src/domain/recommendations/recommendationEvidence.js'
+import {
+  createRecommendationId,
+  type ActivationDecision,
+  type RecommendationEvidenceV2,
+} from '../../src/domain/recommendations/recommendationEvidence.js'
 import { createIanaTimeZone, createUtcDateTime } from '../../src/domain/training/dates.js'
 import { createCompletedRunId } from '../../src/domain/training/identifiers.js'
 import {
@@ -32,6 +37,9 @@ import {
   type PlanApprovalHandlerDependencies,
   type PlanApprovalStore,
   type MaterialCommandStore,
+  type RecommendationDecisionHandlerDependencies,
+  type RecommendationDecisionStore,
+  type RecommendationEvidenceReader,
   type RunCompletionStore,
   type RunDeletionStore,
   type RunUpdateStore,
@@ -113,6 +121,7 @@ class InMemoryMaterialCommandStore implements MaterialCommandStore {
     | RunCompletionReceiptResult
     | RunUpdateReceiptResult
     | RunDeletionReceiptResult
+    | RecommendationDecisionReceiptResult
   >()
   failure: unknown = null
 
@@ -198,6 +207,39 @@ class InMemoryRunUpdateStore implements RunUpdateStore {
   commit = vi.fn(async () => ({ kind: 'updated' as const, result: this.result }))
 }
 
+const stableAdaptationArtifactVersion = 'fixture-adaptation-policy@1.0.0'
+const recommendationReceipt: RecommendationDecisionReceiptResult = {
+  status: 'recommendation_decided',
+  commandId: recommendationDecisionCommand.commandId,
+  recommendationId:
+    recommendationDecisionCommand.command.recommendationId,
+  decision: recommendationDecisionCommand.command.decision,
+  evaluatedPlanRevision:
+    recommendationDecisionCommand.command.expectedEvaluatedPlanRevision,
+  resultingPlanRevision: 5,
+  decidedAt: createUtcDateTime('2026-10-27T18:05:00.000Z'),
+}
+
+class InMemoryRecommendationEvidenceReader
+  implements RecommendationEvidenceReader
+{
+  read = vi.fn(async () => ({
+    evaluationInput: {
+      adaptationArtifactVersion: stableAdaptationArtifactVersion,
+    },
+  }) as RecommendationEvidenceV2)
+}
+
+class InMemoryRecommendationDecisionStore
+  implements RecommendationDecisionStore
+{
+  resolveExisting = vi.fn(async () => ({ kind: 'missing' as const }))
+  commit = vi.fn(async () => ({
+    kind: 'decided' as const,
+    result: recommendationReceipt,
+  }))
+}
+
 function approvedPolicyRecord(): PlanApprovalArtifactPolicyRecord {
   return {
     supportedScopeId,
@@ -223,6 +265,7 @@ function dependencies(
   runCompletion?: { store: RunCompletionStore },
   runDeletion?: { store: RunDeletionStore },
   runUpdate?: { store: RunUpdateStore },
+  recommendationDecision?: RecommendationDecisionHandlerDependencies,
 ) {
   return {
     store,
@@ -230,6 +273,7 @@ function dependencies(
     runCompletion,
     runDeletion,
     runUpdate,
+    recommendationDecision,
     log: vi.fn(),
   }
 }
@@ -619,6 +663,289 @@ describe('material-command handler', () => {
       recommendationDecisionCommand.command.decision,
     )
     expect(serializedLogs).not.toContain('evaluatedPlanRevision')
+  })
+
+  it('requires App Check before reading recommendation evidence', async () => {
+    const evidence = new InMemoryRecommendationEvidenceReader()
+    const decisionStore = new InMemoryRecommendationDecisionStore()
+    const activationGate = allowingActivationGate()
+    const boundary = dependencies(
+      new InMemoryMaterialCommandStore(),
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      { activationGate, evidence, store: decisionStore },
+    )
+
+    await expect(
+      executeMaterialCommand(
+        {
+          authenticatedUserId: ownerId,
+          data: recommendationDecisionCommand,
+        },
+        boundary,
+      ),
+    ).resolves.toEqual(
+      expect.objectContaining({
+        status: 'authorization_error',
+        code: 'app-check-required',
+      }),
+    )
+    expect(evidence.read).not.toHaveBeenCalled()
+    expect(activationGate.evaluate).not.toHaveBeenCalled()
+    expect(decisionStore.commit).not.toHaveBeenCalled()
+  })
+
+  it.each<ActivationDecision['reason']>([
+    'invalid_control',
+    'invalid_request',
+    'capability_disabled',
+    'stale_app_protocol',
+    'stale_command_protocol',
+    'draft_artifact',
+    'artifact_not_approved',
+  ])('keeps a %s adaptation decision out of persistence', async (reason) => {
+    const evidence = new InMemoryRecommendationEvidenceReader()
+    const decisionStore = new InMemoryRecommendationDecisionStore()
+    const activationGate = {
+      evaluate: vi.fn(async (): Promise<ActivationDecision> => ({
+        allowed: false,
+        reason,
+      })),
+    }
+    const boundary = dependencies(
+      new InMemoryMaterialCommandStore(),
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      { activationGate, evidence, store: decisionStore },
+    )
+
+    await expect(
+      executeMaterialCommand(
+        {
+          appCheckVerified: true,
+          authenticatedUserId: ownerId,
+          data: recommendationDecisionCommand,
+        },
+        boundary,
+      ),
+    ).resolves.toEqual({
+      status: 'authorization_error',
+      commandId: recommendationDecisionCommand.commandId,
+      code: 'recommendation-decisions-not-enabled',
+      message:
+        'Recommendation decisions are not enabled in this environment. No training plan was changed.',
+    })
+    expect(decisionStore.commit).not.toHaveBeenCalled()
+    expect(JSON.stringify(boundary.log.mock.calls)).not.toContain(reason)
+  })
+
+  it('returns an existing receipt or conflict before reevaluating activation', async () => {
+    const evidence = new InMemoryRecommendationEvidenceReader()
+    const decisionStore = new InMemoryRecommendationDecisionStore()
+    const activationGate = {
+      evaluate: vi.fn(async (): Promise<ActivationDecision> => ({
+        allowed: false,
+        reason: 'capability_disabled',
+      })),
+    }
+    const boundary = dependencies(
+      new InMemoryMaterialCommandStore(),
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      { activationGate, evidence, store: decisionStore },
+    )
+    const invoke = () =>
+      executeMaterialCommand(
+        {
+          appCheckVerified: true,
+          authenticatedUserId: ownerId,
+          data: recommendationDecisionCommand,
+        },
+        boundary,
+      )
+
+    decisionStore.resolveExisting.mockResolvedValueOnce({
+      kind: 'decided',
+      result: recommendationReceipt,
+    })
+    await expect(invoke()).resolves.toEqual(recommendationReceipt)
+
+    decisionStore.resolveExisting.mockResolvedValueOnce({ kind: 'conflict' })
+    await expect(invoke()).resolves.toEqual(
+      expect.objectContaining({
+        status: 'conflict',
+        code: 'command-id-reused',
+      }),
+    )
+    expect(evidence.read).not.toHaveBeenCalled()
+    expect(activationGate.evaluate).not.toHaveBeenCalled()
+    expect(decisionStore.commit).not.toHaveBeenCalled()
+  })
+
+  it('derives activation from server evidence and commits an allowed decision', async () => {
+    const materialStore = new InMemoryMaterialCommandStore()
+    const evidence = new InMemoryRecommendationEvidenceReader()
+    const decisionStore = new InMemoryRecommendationDecisionStore()
+    const activationGate = allowingActivationGate()
+    const boundary = dependencies(
+      materialStore,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      { activationGate, evidence, store: decisionStore },
+    )
+
+    await expect(
+      executeMaterialCommand(
+        {
+          appCheckVerified: true,
+          authenticatedUserId: ownerId,
+          data: recommendationDecisionCommand,
+        },
+        boundary,
+      ),
+    ).resolves.toEqual(recommendationReceipt)
+    expect(evidence.read).toHaveBeenCalledWith({
+      ownerId,
+      recommendationId:
+        recommendationDecisionCommand.command.recommendationId,
+    })
+    expect(activationGate.evaluate).toHaveBeenCalledWith({
+      capability: 'adaptation',
+      artifactVersion: stableAdaptationArtifactVersion,
+      appProtocolVersion: recommendationDecisionCommand.appProtocolVersion,
+      commandProtocolVersion: recommendationDecisionCommand.envelopeVersion,
+    })
+    expect(decisionStore.commit).toHaveBeenCalledWith({
+      authorizedAdaptationArtifactVersion: stableAdaptationArtifactVersion,
+      envelope: recommendationDecisionCommand,
+      ownerId,
+    })
+    expect(JSON.stringify(boundary.log.mock.calls)).not.toContain(ownerId)
+    expect(JSON.stringify(boundary.log.mock.calls)).not.toContain(
+      stableAdaptationArtifactVersion,
+    )
+
+    materialStore.resolutionResults.set(
+      `${ownerId}:${recommendationReceipt.commandId}`,
+      recommendationReceipt,
+    )
+    await expect(
+      resolveMaterialCommand(
+        {
+          authenticatedUserId: ownerId,
+          data: { commandId: recommendationReceipt.commandId },
+        },
+        boundary,
+      ),
+    ).resolves.toEqual(recommendationReceipt)
+    expect(boundary.log).toHaveBeenLastCalledWith({
+      event: 'material-command-resolution',
+      commandType: 'recommendation.decide',
+      status: 'recommendation_decided',
+    })
+  })
+
+  it('fails closed when recommendation evidence cannot be read', async () => {
+    const evidence: RecommendationEvidenceReader = {
+      read: vi.fn().mockRejectedValue(new Error('private evidence failure')),
+    }
+    const decisionStore = new InMemoryRecommendationDecisionStore()
+    const activationGate = allowingActivationGate()
+    const boundary = dependencies(
+      new InMemoryMaterialCommandStore(),
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      { activationGate, evidence, store: decisionStore },
+    )
+
+    await expect(
+      executeMaterialCommand(
+        {
+          appCheckVerified: true,
+          authenticatedUserId: ownerId,
+          data: recommendationDecisionCommand,
+        },
+        boundary,
+      ),
+    ).resolves.toEqual(
+      expect.objectContaining({
+        status: 'authorization_error',
+        code: 'recommendation-decisions-not-enabled',
+      }),
+    )
+    expect(activationGate.evaluate).not.toHaveBeenCalled()
+    expect(decisionStore.commit).not.toHaveBeenCalled()
+    expect(JSON.stringify(boundary.log.mock.calls)).not.toContain(
+      'private evidence failure',
+    )
+  })
+
+  it('maps stale, conflict, and retryable recommendation store outcomes', async () => {
+    const evidence = new InMemoryRecommendationEvidenceReader()
+    const activationGate = allowingActivationGate()
+    const decisionStore = new InMemoryRecommendationDecisionStore()
+    const boundary = dependencies(
+      new InMemoryMaterialCommandStore(),
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      { activationGate, evidence, store: decisionStore },
+    )
+    const invoke = () =>
+      executeMaterialCommand(
+        {
+          appCheckVerified: true,
+          authenticatedUserId: ownerId,
+          data: recommendationDecisionCommand,
+        },
+        boundary,
+      )
+
+    decisionStore.commit.mockResolvedValueOnce({
+      kind: 'stale',
+      result: {
+        status: 'stale_revision',
+        commandId: recommendationDecisionCommand.commandId,
+        code: 'active-plan-revision-changed',
+        message:
+          'The active training plan changed before this approval was committed.',
+        expectedActivePlanRevision: 4,
+        actualActivePlanRevision: 5,
+      },
+    })
+    await expect(invoke()).resolves.toEqual(
+      expect.objectContaining({ status: 'stale_revision' }),
+    )
+
+    decisionStore.commit.mockResolvedValueOnce({ kind: 'conflict' })
+    await expect(invoke()).resolves.toEqual(
+      expect.objectContaining({ status: 'conflict' }),
+    )
+
+    decisionStore.commit.mockRejectedValueOnce({
+      code: 'unavailable',
+      message: 'private recommendation persistence failure',
+    })
+    await expect(invoke()).resolves.toEqual(
+      expect.objectContaining({
+        status: 'retryable_error',
+        code: 'temporarily-unavailable',
+      }),
+    )
+    expect(JSON.stringify(boundary.log.mock.calls)).not.toContain(
+      'private recommendation persistence failure',
+    )
   })
 
   it('passes run completion to persistence with authenticated ownership and redacted logs', async () => {

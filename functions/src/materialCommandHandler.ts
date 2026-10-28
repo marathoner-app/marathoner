@@ -15,6 +15,7 @@ import {
   type PlanApprovalReceiptResult,
   type PlanApprovalStaleRevisionResult,
   type ProofMaterialCommandEnvelope,
+  type RecommendationDecisionCommandEnvelope,
   type RecommendationDecisionReceiptResult,
   type RunCompletionCommandEnvelope,
   type RunCompletionReceiptResult,
@@ -23,6 +24,10 @@ import {
   type RunUpdateCommandEnvelope,
   type RunUpdateReceiptResult,
 } from '../../src/domain/materialCommands/contract.js'
+import type {
+  RecommendationEvidenceV2,
+  RecommendationId,
+} from '../../src/domain/recommendations/recommendationEvidence.js'
 import type { RunCommandProjectionFailureResult } from './completedRunCommandProjection.js'
 import {
   evaluatePlanApprovalArtifactPolicy,
@@ -123,9 +128,43 @@ export interface PlanApprovalHandlerDependencies {
   supportedScopeId: string | null
 }
 
+export interface RecommendationEvidenceReader {
+  read(options: {
+    ownerId: string
+    recommendationId: RecommendationId
+  }): Promise<RecommendationEvidenceV2>
+}
+
+export interface RecommendationDecisionStore {
+  resolveExisting(options: {
+    envelope: RecommendationDecisionCommandEnvelope
+    ownerId: string
+  }): Promise<
+    | { kind: 'decided'; result: RecommendationDecisionReceiptResult }
+    | { kind: 'conflict' }
+    | { kind: 'missing' }
+  >
+  commit(options: {
+    authorizedAdaptationArtifactVersion: string
+    envelope: RecommendationDecisionCommandEnvelope
+    ownerId: string
+  }): Promise<
+    | { kind: 'decided'; result: RecommendationDecisionReceiptResult }
+    | { kind: 'stale'; result: PlanApprovalStaleRevisionResult }
+    | { kind: 'conflict' }
+  >
+}
+
+export interface RecommendationDecisionHandlerDependencies {
+  activationGate: Pick<OperatorActivationGate, 'evaluate'>
+  evidence: RecommendationEvidenceReader
+  store: RecommendationDecisionStore
+}
+
 export interface HandlerDependencies {
   log: (entry: MaterialCommandLogEntry) => void
   planApproval?: PlanApprovalHandlerDependencies
+  recommendationDecision?: RecommendationDecisionHandlerDependencies
   runCompletion?: { store: RunCompletionStore }
   runDeletion?: { store: RunDeletionStore }
   runUpdate?: { store: RunUpdateStore }
@@ -527,16 +566,127 @@ export async function executeMaterialCommand(
     }
   }
   if (isRecommendationDecisionCommandEnvelope(parsed.envelope)) {
-    const result = recommendationDecisionNotEnabledResult(
-      parsed.envelope.commandId,
-    )
-    logResult(
-      dependencies,
-      'material-command-result',
-      result,
-      parsed.envelope.command.type,
-    )
-    return result
+    const recommendationDecision = dependencies.recommendationDecision
+    if (!recommendationDecision) {
+      const result = recommendationDecisionNotEnabledResult(
+        parsed.envelope.commandId,
+      )
+      logResult(
+        dependencies,
+        'material-command-result',
+        result,
+        parsed.envelope.command.type,
+      )
+      return result
+    }
+    if (options.appCheckVerified !== true) {
+      const result = runCommandAppCheckRequiredResult(
+        parsed.envelope.commandId,
+      )
+      logResult(
+        dependencies,
+        'material-command-result',
+        result,
+        parsed.envelope.command.type,
+      )
+      return result
+    }
+
+    try {
+      const existing = await recommendationDecision.store.resolveExisting({
+        envelope: parsed.envelope,
+        ownerId: options.authenticatedUserId,
+      })
+      if (existing.kind !== 'missing') {
+        const result =
+          existing.kind === 'conflict'
+            ? conflictResult(parsed.envelope.commandId)
+            : existing.result
+        logResult(
+          dependencies,
+          'material-command-result',
+          result,
+          parsed.envelope.command.type,
+        )
+        return result
+      }
+    } catch (error) {
+      const result = failureFor(error, parsed.envelope.commandId)
+      logResult(
+        dependencies,
+        'material-command-result',
+        result,
+        parsed.envelope.command.type,
+      )
+      return result
+    }
+
+    let authorizedAdaptationArtifactVersion: string
+    try {
+      const evidence = await recommendationDecision.evidence.read({
+        ownerId: options.authenticatedUserId,
+        recommendationId: parsed.envelope.command.recommendationId,
+      })
+      authorizedAdaptationArtifactVersion =
+        evidence.evaluationInput.adaptationArtifactVersion
+      const activationDecision = await recommendationDecision.activationGate.evaluate({
+        capability: 'adaptation',
+        artifactVersion: authorizedAdaptationArtifactVersion,
+        appProtocolVersion: parsed.envelope.appProtocolVersion,
+        commandProtocolVersion: parsed.envelope.envelopeVersion,
+      })
+      if (!activationDecision.allowed) {
+        const result = recommendationDecisionNotEnabledResult(
+          parsed.envelope.commandId,
+        )
+        logResult(
+          dependencies,
+          'material-command-result',
+          result,
+          parsed.envelope.command.type,
+        )
+        return result
+      }
+    } catch {
+      const result = recommendationDecisionNotEnabledResult(
+        parsed.envelope.commandId,
+      )
+      logResult(
+        dependencies,
+        'material-command-result',
+        result,
+        parsed.envelope.command.type,
+      )
+      return result
+    }
+
+    try {
+      const stored = await recommendationDecision.store.commit({
+        authorizedAdaptationArtifactVersion,
+        envelope: parsed.envelope,
+        ownerId: options.authenticatedUserId,
+      })
+      const result =
+        stored.kind === 'conflict'
+          ? conflictResult(parsed.envelope.commandId)
+          : stored.result
+      logResult(
+        dependencies,
+        'material-command-result',
+        result,
+        parsed.envelope.command.type,
+      )
+      return result
+    } catch (error) {
+      const result = failureFor(error, parsed.envelope.commandId)
+      logResult(
+        dependencies,
+        'material-command-result',
+        result,
+        parsed.envelope.command.type,
+      )
+      return result
+    }
   }
   if (!isProofMaterialCommandEnvelope(parsed.envelope)) {
     const result: MaterialCommandResult = {

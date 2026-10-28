@@ -62,6 +62,7 @@ interface StoredActivePlanState {
 export type RecommendationDecisionStoreErrorCode =
   | 'evidence-conflict'
   | 'invalid-active-plan'
+  | 'artifact-version-changed'
   | 'invalid-projection'
   | 'invalid-workout-transition'
 
@@ -301,7 +302,35 @@ export class FirestoreRecommendationDecisionStore {
     this.now = options.now ?? (() => new Date())
   }
 
+  async resolveExisting(options: {
+    envelope: RecommendationDecisionCommandEnvelope
+    ownerId: string
+  }): Promise<
+    | { kind: 'decided'; result: RecommendationDecisionReceiptResult }
+    | { kind: 'conflict' }
+    | { kind: 'missing' }
+  > {
+    const ownerId = createUserId(options.ownerId)
+    const snapshot = await this.database
+      .doc(materialCommandReceiptPath(ownerId, options.envelope.commandId))
+      .get()
+    if (!snapshot.exists) return { kind: 'missing' }
+
+    const receipt = snapshot.data()
+    if (
+      !receipt ||
+      receipt.signature !== materialCommandSignature(options.envelope)
+    ) {
+      return { kind: 'conflict' }
+    }
+    return {
+      kind: 'decided',
+      result: storedDecisionResult(receipt.result),
+    }
+  }
+
   async commit(options: {
+    authorizedAdaptationArtifactVersion: string
     envelope: RecommendationDecisionCommandEnvelope
     ownerId: string
   }): Promise<
@@ -347,6 +376,14 @@ export class FirestoreRecommendationDecisionStore {
       const evidence = recommendationEvidenceFromDocument(
         evidenceSnapshot.data(),
       )
+      if (
+        evidence.evaluationInput.adaptationArtifactVersion !==
+        options.authorizedAdaptationArtifactVersion
+      ) {
+        throw new RecommendationDecisionStoreError(
+          'artifact-version-changed',
+        )
+      }
       if (
         evidence.decision !== 'pending' ||
         evidence.recommendationId !== options.envelope.command.recommendationId
