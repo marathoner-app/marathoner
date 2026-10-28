@@ -55,6 +55,7 @@ export default function InternalSafetyEscalationRehearsal({
 
   return (
     <section
+      id="internal-safety-review"
       className="internal-safety-rehearsal"
       aria-labelledby="internal-safety-rehearsal-title"
     >

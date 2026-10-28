@@ -105,6 +105,7 @@ export default function InternalAdaptationScenarioRehearsal({
 
   return (
     <section
+      id="internal-adaptation-scenarios"
       className="internal-adaptation-rehearsal"
       aria-labelledby="internal-adaptation-rehearsal-title"
     >

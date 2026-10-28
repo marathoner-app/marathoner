@@ -176,6 +176,7 @@ export default function InternalAdaptationHistoryInspector({
 
   return (
     <section
+      id="internal-adaptation-history"
       className="internal-adaptation-history"
       aria-labelledby="internal-adaptation-history-title"
     >

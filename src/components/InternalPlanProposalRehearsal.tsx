@@ -131,6 +131,7 @@ export default function InternalPlanProposalRehearsal({
 
   return (
     <section
+      id="internal-plan-proposal"
       className="internal-plan-rehearsal"
       aria-labelledby="internal-plan-rehearsal-title"
     >
