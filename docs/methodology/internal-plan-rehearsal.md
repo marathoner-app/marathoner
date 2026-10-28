@@ -45,6 +45,21 @@ association, classify completion, change a run, or turn the session projection
 into authoritative adaptation evidence. The owner-only journey keeps the draft
 projection and synchronized data lanes visibly separate.
 
+The separate **Session-draft feedback rehearsal** lets the owner explicitly
+confirm a transient history instead of inferring one from that home comparison.
+The owner can add multiple same-date draft workout and synchronized-run pairs,
+mark draft workouts as skipped, remove either kind of confirmation, and rerun
+the production evaluator. A workout cannot be both completed and skipped, and
+one synchronized run cannot support more than one completed workout. The latest
+dated confirmed workout becomes the deterministic trigger; all confirmed
+completed runs form the bounded recent-run window.
+
+A skipped workout contributes no invented run. Skip-only history therefore
+remains not ready until the production normalizer also has sufficient completed
+run evidence. Every pairing, skip, and evaluator result stays in memory. This
+feedback rehearsal does not associate or change a synchronized run, save a
+workout status, write Firestore, or approve the draft methodology.
+
 The same mode also shows **Internal draft adaptation rehearsal**. This second
 tool requires the owner to choose one frozen scenario from the pinned adaptation
 fixture packet. It runs the normalized synthetic evidence through the production
@@ -78,7 +93,8 @@ through the normal Plan calendar. Any changed history or supplied fact clears
 that result. No recommendation, decision, plan revision, or calendar change is
 saved, and the synchronized plan remains authoritative. This live path uses
 only the synchronized active plan; it does not treat the session-only initial
-plan projection or the home same-date comparison as persisted evidence.
+plan projection, the home same-date comparison, or owner-confirmed session-draft
+feedback as persisted evidence.
 
 None of these surfaces can approve or persist a plan or recommendation, and
 rehearsal activation cannot escape the current page session. Ordinary
