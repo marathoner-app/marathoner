@@ -368,8 +368,14 @@ activation gate are documented in
 
 The tested rules and index configuration were deployed to the Marathoner
 development Firebase project during the Foundation closeout and again for the
-exact issue #87 proof path on October 2, 2026. Repeat this explicit production
-operation whenever either file changes:
+exact issue #87 proof path on October 2, 2026. Issue #597 then deployed the
+current tracked development candidate on October 28, 2026 as ruleset
+`c62cace2-c495-4876-8ee9-6ddf72eedff4`. Its live source hash matches the
+reviewed repository candidate, and the owner smoke passed authentication,
+profile/training-data reads, the legacy `consistentRunningWeeks` update, and
+reload persistence. The previous ruleset
+`65d26383-3b4d-4edf-bd5a-656af4f45013` is the recorded rollback target. Repeat
+this explicit production operation whenever either file changes:
 
 ```bash
 npx firebase deploy --project marathoner-d9bf9 --only firestore

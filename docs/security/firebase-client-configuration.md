@@ -1,11 +1,12 @@
 # Firebase client configuration audit
 
 - **Status:** Verified browser, selected iOS, and registered App Check environment boundaries
-- **Audit dates:** 2026-09-30 browser audit; 2026-10-05 development and beta iOS audits; 2026-10-06 App Check registration audit; 2026-10-21 custom-domain audit
+- **Audit dates:** 2026-09-30 browser audit; 2026-10-05 development and beta iOS audits; 2026-10-06 App Check registration audit; 2026-10-21 custom-domain audit; 2026-10-28 development Firestore rules deployment
 - **Owner:** Kevin Tulloch
 - **Tracking issues:** [#22](https://github.com/marathoner-app/marathoner/issues/22),
   [#178](https://github.com/marathoner-app/marathoner/issues/178),
-  [#125](https://github.com/marathoner-app/marathoner/issues/125)
+  [#125](https://github.com/marathoner-app/marathoner/issues/125),
+  [#597](https://github.com/marathoner-app/marathoner/issues/597)
 - **Current projects:** `marathoner-d9bf9` development and `marathonerapp-beta` beta
 
 ## Purpose and boundary
@@ -39,7 +40,7 @@ would not turn them into secrets.
 | iOS application restriction | The iOS shell currently uses the Firebase JavaScript SDK inside a Capacitor WebView, so the key cannot use an iOS bundle restriction and has no application restriction. | The narrow API allowlist limits the key's reach. Issue #161 must complete live token proof, observation, and staged App Check enforcement before external invitations. |
 | Sign-in providers | Email/Password is enabled and Google is disabled. The application implements only Email/Password, and the five visible legacy accounts all use the Email provider. | Keep Email/Password until the beta identity decision changes it. Do not migrate the legacy account list wholesale into beta. |
 | Authorized domains | `localhost`, the two Firebase default hosts, `marathoner-app.github.io`, `marathonerapp.com`, and `www.marathonerapp.com` are authorized in development. | The active Pages build remains pinned to development. Beta authorization remains a separate activation decision rather than an effect of publishing the domain. |
-| Cloud Firestore | The default `nam5` database is active. The development rules were live-verified at the recorded audit point, and the beta membership boundary was deployed and verified separately. Later tracked exact-shape changes are not claimed as live until another reviewed deployment records that evidence. | The tracked development and beta rules enforce the boundary summarized in the [Firestore rules acceptance record](firestore-rules-acceptance.md). #72 and #115 still own removal of transitional material client writes. |
+| Cloud Firestore | The default `nam5` database is active. The current tracked development rules were deployed and live-verified on October 28, 2026. The beta membership boundary was deployed and verified separately, but later beta exact-shape changes are not claimed as live until another reviewed beta deployment records that evidence. | The tracked development and beta rules enforce the boundary summarized in the [Firestore rules acceptance record](firestore-rules-acceptance.md). #72 and #115 still own removal of transitional material client writes. |
 | Realtime Database | The console offers **Create Database**; no database exists. | Remain disabled. |
 | Cloud Storage | Storage is not configured and the Spark project cannot enable it without billing. | Remain disabled unless a future approved feature and ruleset require it. |
 | App Check | Development and beta each have a distinct Fraud Defense web registration and App Attest iOS registration. One owner-only development iPhone debug token exists for local dogfooding; its value remains outside Git, and no beta, production, or CI debug token exists. The #204 fail-closed initialization and supported development proof are complete; paid-team beta App Attest evidence and API enforcement remain pending. | The [registration record](app-check-provider-registration.md) is the authority for provider identity, native configuration selection, debug-token custody, and the #204–#206 rollout; the [initialization record](app-check-client-initialization.md) separates completed development behavior from the #281/#205 beta proof. |
@@ -50,6 +51,25 @@ would not turn them into secrets.
 No secret value, participant identifier, or account email belongs in this
 record. Console screenshots and logs used as evidence must be redacted before
 they are linked publicly.
+
+## October 28 development Firestore deployment
+
+Issue [#597](https://github.com/marathoner-app/marathoner/issues/597) closed a
+live-development drift discovered during the owner dogfood journey. The prior
+deployment was traced to ruleset
+`65d26383-3b4d-4edf-bd5a-656af4f45013` and repository commit
+`c659435258ffe7cfa28f3559445d5fe6cc6dd3ff`; that ruleset remains the precise
+rollback target. The exact current candidate passed the required
+[`Firestore emulator tests` job](https://github.com/marathoner-app/marathoner/actions/runs/40766903512/job/123093360618)
+before the guarded development-only deployment.
+
+The released development ruleset is
+`c62cace2-c495-4876-8ee9-6ddf72eedff4`. Its retrieved source SHA-256
+`0668ba5bd897631b2ceeb1c15dc752518ee3baa445e9eb234b0b4b912374095c`
+matches the tracked candidate. The post-deployment smoke passed owner
+authentication, owner-scoped reads, the newly required legacy-profile update,
+and reload persistence. Reopening setup hydrated the saved consistency-duration
+answer and every prior answer. No beta resource or rule release changed.
 
 ## Applied current-project hardening
 
