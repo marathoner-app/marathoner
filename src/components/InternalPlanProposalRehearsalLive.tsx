@@ -1,5 +1,6 @@
 import internalRulesText from "virtual:internal-plan-rehearsal-rules";
 import internalAdaptationPacketText from "virtual:internal-adaptation-rehearsal-packet";
+import internalSafetyPacketText from "virtual:internal-safety-escalation-packet";
 import {
   createIanaTimeZone,
   type ActivePlanState,
@@ -13,8 +14,10 @@ import InternalAdaptationHistoryInspector from "./InternalAdaptationHistoryInspe
 import InternalAdaptationScenarioRehearsal from "./InternalAdaptationScenarioRehearsal";
 import InternalGuidanceReviewGallery from "./InternalGuidanceReviewGallery";
 import InternalPlanProposalRehearsal from "./InternalPlanProposalRehearsal";
+import InternalSafetyEscalationRehearsal from "./InternalSafetyEscalationRehearsal";
 import { createInternalAdaptationScenarioPacket } from "./internalAdaptationScenarioPacket";
 import { createInternalPlanProposalRehearsalRuleSet } from "./internalPlanProposalRehearsalRules";
+import { createInternalSafetyEscalationPacket } from "./internalSafetyEscalationPacket";
 
 interface InternalPlanProposalRehearsalLiveProps {
   readonly ownerId: UserId;
@@ -38,6 +41,13 @@ const adaptationPacket =
         internalAdaptationPacketText.rulesText,
         internalAdaptationPacketText.fixturesText,
       );
+const safetyPacket =
+  internalSafetyPacketText === null
+    ? null
+    : createInternalSafetyEscalationPacket(
+        internalSafetyPacketText.rulesText,
+        internalSafetyPacketText.fixturesText,
+      );
 
 export default function InternalPlanProposalRehearsalLive({
   ownerId,
@@ -47,7 +57,9 @@ export default function InternalPlanProposalRehearsalLive({
   workouts,
   runs,
 }: InternalPlanProposalRehearsalLiveProps) {
-  if (ruleSet === null || adaptationPacket === null) return null;
+  if (ruleSet === null || adaptationPacket === null || safetyPacket === null) {
+    return null;
+  }
 
   return (
     <>
@@ -64,6 +76,7 @@ export default function InternalPlanProposalRehearsalLive({
       />
       <InternalAdaptationScenarioRehearsal packet={adaptationPacket} />
       <InternalGuidanceReviewGallery />
+      <InternalSafetyEscalationRehearsal packet={safetyPacket} />
     </>
   );
 }
