@@ -29,6 +29,9 @@ interface InternalSessionDraftFeedbackRehearsalProps {
   readonly distanceUnit: DistanceUnit;
   readonly draftPacket: InternalAdaptationScenarioPacket;
   readonly planRuleSet: InternalPlanProposalRehearsalRuleSet;
+  readonly onSessionProjectionChange?: (
+    projection: GeneratedPlanEntityProjection | null,
+  ) => void;
 }
 
 interface ConfirmedPair {
@@ -80,6 +83,7 @@ export default function InternalSessionDraftFeedbackRehearsal({
   distanceUnit,
   draftPacket,
   planRuleSet,
+  onSessionProjectionChange,
 }: InternalSessionDraftFeedbackRehearsalProps) {
   const [selectedWorkoutId, setSelectedWorkoutId] = useState("");
   const [selectedRunId, setSelectedRunId] = useState("");
@@ -288,7 +292,7 @@ export default function InternalSessionDraftFeedbackRehearsal({
         <p>
           Build a deliberate history of completed and skipped draft workouts,
           then pass transient copies through the existing adaptation rehearsal.
-          Nothing here changes the saved runs or plan.
+          Nothing here changes the saved runs or synchronized plan.
         </p>
       </header>
 
@@ -521,6 +525,7 @@ export default function InternalSessionDraftFeedbackRehearsal({
               sessionRescheduleCandidates={
                 sessionRescheduleCandidates ?? []
               }
+              onSessionProjectionChange={onSessionProjectionChange}
             />
           )}
         </section>
@@ -529,7 +534,9 @@ export default function InternalSessionDraftFeedbackRehearsal({
       <aside className="internal-adaptation-history-boundary">
         Session-only and unapproved for participants. These confirmations do not
         write Firestore, associate real runs, save completed or skipped workout
-        statuses, save a recommendation, or change the draft plan.
+        statuses, or save a recommendation. An explicitly accepted projection
+        can replace the unsaved session plan shown elsewhere until the evidence
+        or choice changes.
       </aside>
     </section>
   );

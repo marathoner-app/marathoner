@@ -71,6 +71,15 @@ and consecutive run spacing are locked schedule facts. Runner availability
 remains an explicit owner confirmation, and the owner can still choose that no
 candidate is available.
 
+Accepting a ready material change replaces the unsaved session projection shown
+by the signed-in Home summary, normal Plan calendar, and internal session
+schedule. The evaluator continues to use the original activated draft as its
+evidence source, so the displayed adjustment cannot recursively rewrite the
+facts that produced it. Keeping the current plan, reviewing the choice again,
+changing the evaluation evidence or supplied facts, replacing or clearing the
+activated draft, or reloading restores the base session projection. This
+cross-surface preview remains in memory and sends no command.
+
 The same mode also shows **Internal draft adaptation rehearsal**. This second
 tool requires the owner to choose one frozen scenario from the pinned adaptation
 fixture packet. It runs the normalized synthetic evidence through the production

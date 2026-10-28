@@ -27,6 +27,7 @@ import InternalSessionPlanSchedule from "./InternalSessionPlanSchedule";
 import { createInternalAdaptationScenarioPacket } from "./internalAdaptationScenarioPacket";
 import { createInternalPlanProposalRehearsalRuleSet } from "./internalPlanProposalRehearsalRules";
 import { createInternalSafetyEscalationPacket } from "./internalSafetyEscalationPacket";
+import { useInternalSessionPlanProjection } from "./useInternalSessionPlanProjection";
 
 interface InternalPlanProposalRehearsalLiveProps {
   readonly ownerId: UserId;
@@ -76,7 +77,7 @@ export default function InternalPlanProposalRehearsalLive({
   onSessionDraftPlanChange,
   onSessionPlanProjectionChange,
 }: InternalPlanProposalRehearsalLiveProps) {
-  const sessionPlanProjection = useMemo(
+  const baseSessionPlanProjection = useMemo(
     () =>
       sessionDraftPlan === null
         ? null
@@ -88,6 +89,13 @@ export default function InternalPlanProposalRehearsalLive({
             status: "active",
           }),
     [ownerId, sessionDraftPlan],
+  );
+  const {
+    sessionPlanProjection,
+    handleSessionAdaptationProjectionChange,
+  } = useInternalSessionPlanProjection(
+    sessionDraftPlan,
+    baseSessionPlanProjection,
   );
 
   useEffect(() => {
@@ -119,11 +127,12 @@ export default function InternalPlanProposalRehearsalLive({
         distanceUnit={profile?.preferredDistanceUnit ?? "mile"}
       />
       <InternalSessionDraftFeedbackRehearsal
-        projection={sessionPlanProjection}
+        projection={baseSessionPlanProjection}
         runs={runs}
         distanceUnit={profile?.preferredDistanceUnit ?? "mile"}
         draftPacket={adaptationPacket}
         planRuleSet={ruleSet}
+        onSessionProjectionChange={handleSessionAdaptationProjectionChange}
       />
       <InternalAdaptationHistoryInspector
         ownerId={ownerId}

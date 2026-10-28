@@ -1,6 +1,9 @@
+import { readFileSync } from "node:fs";
+import path from "node:path";
+
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
   createCompletedRunId,
   createDateOnly,
@@ -15,7 +18,7 @@ import {
   type GeneratedPlanEntityProjection,
 } from "../domain/training";
 import InternalSessionDraftFeedbackRehearsal from "./InternalSessionDraftFeedbackRehearsal";
-import type { InternalAdaptationScenarioPacket } from "./internalAdaptationScenarioPacket";
+import { createInternalAdaptationScenarioPacket } from "./internalAdaptationScenarioPacket";
 import type { InternalPlanProposalRehearsalRuleSet } from "./internalPlanProposalRehearsalRules";
 
 const ownerId = createUserId("owner-1");
@@ -23,6 +26,7 @@ const planId = createTrainingPlanId("session-plan-1");
 const firstWorkoutId = createPlannedWorkoutId("session-workout-1");
 const secondWorkoutId = createPlannedWorkoutId("session-workout-2");
 const skippedEasyWorkoutId = createPlannedWorkoutId("session-workout-3");
+const fourthWorkoutId = createPlannedWorkoutId("session-workout-4");
 const createdAt = createUtcDateTime("2030-01-07T12:00:00.000Z");
 const timeZone = createIanaTimeZone("UTC");
 const projection: GeneratedPlanEntityProjection = {
@@ -86,16 +90,17 @@ const alternateFirstRun: CompletedRun = {
   id: createCompletedRunId("run-1-alternate"),
   startedAt: createUtcDateTime("2030-01-08T18:00:00.000Z"),
 };
-const draftPacket = {
-  rules: {
-    basePlanArtifactVersion: "test-base-plan-draft",
-    adaptationArtifactVersion: "test-adaptation-draft",
-    allowedReschedulePurposes: ["easy", "recovery"],
-    maximumRescheduleDelayDays: 2,
-    maximumConsecutiveRunDatesAfterReschedule: 2,
-    supportedCoreWeeks: { minimum: 1, maximum: 14 },
-  },
-} as unknown as InternalAdaptationScenarioPacket;
+const adaptationArtifactDirectory = path.join(
+  process.cwd(),
+  "docs/methodology/artifacts/beta-adaptation/0.1.0-draft",
+);
+const draftPacket = createInternalAdaptationScenarioPacket(
+  readFileSync(
+    `${adaptationArtifactDirectory}/beta-adaptation.json`,
+    "utf8",
+  ),
+  readFileSync(`${adaptationArtifactDirectory}/fixtures.json`, "utf8"),
+);
 const planRuleSet = {
   coreWeekKinds: Array.from({ length: 15 }, () => "load"),
   rules: {
@@ -122,6 +127,9 @@ const planRuleSet = {
 function renderRehearsal(
   projectionOverride: GeneratedPlanEntityProjection | null = projection,
   runs: readonly CompletedRun[] = [firstRun, alternateFirstRun, secondRun],
+  onSessionProjectionChange?: (
+    value: GeneratedPlanEntityProjection | null,
+  ) => void,
 ) {
   return render(
     <InternalSessionDraftFeedbackRehearsal
@@ -130,6 +138,7 @@ function renderRehearsal(
       distanceUnit="mile"
       draftPacket={draftPacket}
       planRuleSet={planRuleSet}
+      onSessionProjectionChange={onSessionProjectionChange}
     />,
   );
 }
@@ -311,8 +320,9 @@ describe("InternalSessionDraftFeedbackRehearsal", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("shows plan-derived candidate dates and asks only for availability", async () => {
+  it("lifts an accepted plan-derived reschedule and restores the base choice", async () => {
     const user = userEvent.setup();
+    const onSessionProjectionChange = vi.fn();
     const projectionWithSkippedEasyWorkout: GeneratedPlanEntityProjection = {
       ...projection,
       workouts: [
@@ -330,9 +340,26 @@ describe("InternalSessionDraftFeedbackRehearsal", () => {
           createdAt,
           updatedAt: createdAt,
         },
+        {
+          id: fourthWorkoutId,
+          userId: ownerId,
+          planId,
+          scheduledDate: createDateOnly("2030-01-13"),
+          phase: "base_building",
+          status: "planned",
+          kind: "run",
+          purpose: "long",
+          targetDistance: createDistanceMeters(10_000),
+          createdAt,
+          updatedAt: createdAt,
+        },
       ],
     };
-    renderRehearsal(projectionWithSkippedEasyWorkout, [firstRun]);
+    renderRehearsal(
+      projectionWithSkippedEasyWorkout,
+      [firstRun],
+      onSessionProjectionChange,
+    );
 
     await user.selectOptions(
       screen.getByLabelText("Draft workout"),
@@ -392,6 +419,33 @@ describe("InternalSessionDraftFeedbackRehearsal", () => {
     expect(
       screen.getByRole("button", { name: "Evaluate live draft evidence" }),
     ).toBeEnabled();
+
+    await user.click(
+      screen.getByRole("button", { name: "Evaluate live draft evidence" }),
+    );
+    expect(
+      screen.getByRole("button", { name: "Apply in rehearsal" }),
+    ).toBeEnabled();
+
+    await user.click(
+      screen.getByRole("button", { name: "Apply in rehearsal" }),
+    );
+    expect(onSessionProjectionChange).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        plan: projectionWithSkippedEasyWorkout.plan,
+        workouts: expect.arrayContaining([
+          expect.objectContaining({
+            id: skippedEasyWorkoutId,
+            scheduledDate: "2030-01-11",
+          }),
+        ]),
+      }),
+    );
+
+    await user.click(
+      screen.getByRole("button", { name: "Review the choice again" }),
+    );
+    expect(onSessionProjectionChange).toHaveBeenLastCalledWith(null);
   });
 
   it("explains unavailable evidence and stays hidden without a draft", () => {
