@@ -46,6 +46,12 @@ const journeySteps = [
       "Return to the signed-in home summary to compare the session draft's schedule with synchronized runs logged on the same date without creating a saved workout association.",
   },
   {
+    href: "#internal-session-draft-feedback",
+    title: "Rehearse session-draft feedback",
+    description:
+      "Explicitly pair a draft workout and same-date synchronized run in memory, then send that owner-confirmed evidence through the existing draft evaluator.",
+  },
+  {
     href: "#internal-adaptation-history",
     title: "Inspect synchronized history",
     description:
@@ -193,9 +199,10 @@ export default function InternalDogfoodJourneyOverview({
 
       <aside className="internal-dogfood-boundary" aria-label="Data boundary">
         <strong>Keep the two data lanes separate.</strong> Draft plan activation
-        lasts only for this rehearsal session and never writes Firestore. Live
-        adaptation history reads the synchronized owner plan, workouts, and
-        runs shown above.
+        lasts only for this rehearsal session and never writes Firestore. Its
+        feedback lane requires an explicit, transient workout/run pairing.
+        Saved-history inspection continues to read the synchronized owner plan,
+        workouts, and runs shown above.
       </aside>
 
       <nav aria-label="Internal dogfood journey">

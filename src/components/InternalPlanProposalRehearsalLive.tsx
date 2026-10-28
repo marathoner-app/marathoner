@@ -22,6 +22,7 @@ import InternalAdaptationScenarioRehearsal from "./InternalAdaptationScenarioReh
 import InternalGuidanceReviewGallery from "./InternalGuidanceReviewGallery";
 import InternalPlanProposalRehearsal from "./InternalPlanProposalRehearsal";
 import InternalSafetyEscalationRehearsal from "./InternalSafetyEscalationRehearsal";
+import InternalSessionDraftFeedbackRehearsal from "./InternalSessionDraftFeedbackRehearsal";
 import InternalSessionPlanSchedule from "./InternalSessionPlanSchedule";
 import { createInternalAdaptationScenarioPacket } from "./internalAdaptationScenarioPacket";
 import { createInternalPlanProposalRehearsalRuleSet } from "./internalPlanProposalRehearsalRules";
@@ -116,6 +117,12 @@ export default function InternalPlanProposalRehearsalLive({
       <InternalSessionPlanSchedule
         projection={sessionPlanProjection}
         distanceUnit={profile?.preferredDistanceUnit ?? "mile"}
+      />
+      <InternalSessionDraftFeedbackRehearsal
+        projection={sessionPlanProjection}
+        runs={runs}
+        distanceUnit={profile?.preferredDistanceUnit ?? "mile"}
+        draftPacket={adaptationPacket}
       />
       <InternalAdaptationHistoryInspector
         ownerId={ownerId}
