@@ -60,6 +60,7 @@ function Harness() {
         sessionDraftPlan={sessionDraftPlan}
         onSessionDraftPlanChange={setSessionDraftPlan}
         onSessionPlanProjectionChange={setProjection}
+        onSessionAdaptationStateChange={() => undefined}
       />
     </>
   );
@@ -70,6 +71,7 @@ function SessionProjectionHarness() {
     useState<GeneratedPlanResultV1 | null>(generatedFixture);
   const {
     sessionPlanProjection,
+    isSessionAdaptationActive,
     handleSessionAdaptationProjectionChange,
   } = useInternalSessionPlanProjection(
     sessionDraftPlan,
@@ -80,6 +82,9 @@ function SessionProjectionHarness() {
     <>
       <output aria-label="Effective session plan">
         {sessionPlanProjection?.plan.name ?? "No session projection"}
+      </output>
+      <output aria-label="Session adaptation state">
+        {isSessionAdaptationActive ? "Adjusted" : "Base"}
       </output>
       <button
         type="button"
@@ -158,6 +163,9 @@ describe("InternalPlanProposalRehearsalLive session projection", () => {
         screen.getByRole("status", { name: "Effective session plan" }),
       ).toHaveTextContent("Adapted session plan"),
     );
+    expect(
+      screen.getByRole("status", { name: "Session adaptation state" }),
+    ).toHaveTextContent("Adjusted");
 
     await user.click(
       screen.getByRole("button", {
@@ -169,6 +177,9 @@ describe("InternalPlanProposalRehearsalLive session projection", () => {
         screen.getByRole("status", { name: "Effective session plan" }),
       ).toHaveTextContent("Synthetic contract plan"),
     );
+    expect(
+      screen.getByRole("status", { name: "Session adaptation state" }),
+    ).toHaveTextContent("Base");
 
     await user.click(
       screen.getByRole("button", { name: "Apply lifted session projection" }),
@@ -179,6 +190,9 @@ describe("InternalPlanProposalRehearsalLive session projection", () => {
     expect(
       screen.getByRole("status", { name: "Effective session plan" }),
     ).toHaveTextContent("Synthetic contract plan");
+    expect(
+      screen.getByRole("status", { name: "Session adaptation state" }),
+    ).toHaveTextContent("Base");
 
     await user.click(
       screen.getByRole("button", { name: "Apply lifted session projection" }),
@@ -189,5 +203,8 @@ describe("InternalPlanProposalRehearsalLive session projection", () => {
     expect(
       screen.getByRole("status", { name: "Effective session plan" }),
     ).toHaveTextContent("No session projection");
+    expect(
+      screen.getByRole("status", { name: "Session adaptation state" }),
+    ).toHaveTextContent("Base");
   });
 });

@@ -78,7 +78,10 @@ evidence source, so the displayed adjustment cannot recursively rewrite the
 facts that produced it. Keeping the current plan, reviewing the choice again,
 changing the evaluation evidence or supplied facts, replacing or clearing the
 activated draft, or reloading restores the base session projection. This
-cross-surface preview remains in memory and sends no command.
+cross-surface preview remains in memory and sends no command. While it is
+active, Home, Plan, the session calendar, and the owner journey overview label
+the preview as an accepted rehearsal adjustment so the owner can verify the
+effective version without mistaking it for a saved or approved plan.
 
 The same mode also shows **Internal draft adaptation rehearsal**. This second
 tool requires the owner to choose one frozen scenario from the pinned adaptation

@@ -17,6 +17,7 @@ interface InternalDogfoodJourneyOverviewProps {
   readonly workouts: readonly PlannedWorkout[];
   readonly runs: readonly CompletedRun[];
   readonly sessionDraftPlan: GeneratedPlanResultV1 | null;
+  readonly isSessionAdaptationActive: boolean;
 }
 
 interface EvidenceStatus {
@@ -94,6 +95,7 @@ export default function InternalDogfoodJourneyOverview({
   workouts,
   runs,
   sessionDraftPlan,
+  isSessionAdaptationActive,
 }: InternalDogfoodJourneyOverviewProps) {
   const synchronizedPlanReady =
     activePlanState !== null &&
@@ -176,6 +178,14 @@ export default function InternalDogfoodJourneyOverview({
               Starts {formatDate(sessionDraftPlan.plan.startDate)} · Race day{" "}
               {formatDate(sessionDraftPlan.plan.targetRaceDate)}
             </p>
+            {isSessionAdaptationActive && (
+              <p>
+                <strong>Accepted rehearsal adjustment active.</strong> The
+                signed-in Home summary, normal Plan calendar, and session
+                calendar are previewing the adjusted version. It remains
+                unsaved and unapproved.
+              </p>
+            )}
           </>
         )}
       </section>

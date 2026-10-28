@@ -93,6 +93,7 @@ function renderOverview(
     workouts: readonly PlannedWorkout[];
     runs: readonly CompletedRun[];
     sessionDraftPlan: typeof generatedPlan | null;
+    isSessionAdaptationActive: boolean;
   }> = {},
 ) {
   return render(
@@ -108,6 +109,9 @@ function renderOverview(
       workouts={overrides.workouts ?? [workout]}
       runs={overrides.runs ?? [run]}
       sessionDraftPlan={overrides.sessionDraftPlan ?? null}
+      isSessionAdaptationActive={
+        overrides.isSessionAdaptationActive ?? false
+      }
     />,
   );
 }
@@ -227,6 +231,24 @@ describe("InternalDogfoodJourneyOverview", () => {
     expect(
       within(sessionDraft).getByText(/active only in this workspace session/iu),
     ).toBeVisible();
+  });
+
+  it("identifies an accepted rehearsal adjustment across the owner preview surfaces", () => {
+    renderOverview({
+      sessionDraftPlan: generatedPlan,
+      isSessionAdaptationActive: true,
+    });
+
+    const sessionDraft = screen.getByRole("region", {
+      name: "Session draft plan",
+    });
+    expect(sessionDraft).toHaveTextContent(
+      "Accepted rehearsal adjustment active.",
+    );
+    expect(sessionDraft).toHaveTextContent(
+      "The signed-in Home summary, normal Plan calendar, and session calendar are previewing the adjusted version.",
+    );
+    expect(sessionDraft).toHaveTextContent("It remains unsaved and unapproved.");
   });
 
   it("has no beta-blocking accessibility violations", async () => {
