@@ -18,6 +18,7 @@ interface InternalSessionTodayComparisonProps {
   readonly distanceUnit: DistanceUnit;
   readonly timeZone: IanaTimeZone;
   readonly today?: DateOnly;
+  readonly onOpenTrack: () => void;
 }
 
 const dateFormatter = new Intl.DateTimeFormat("en-US", {
@@ -126,6 +127,7 @@ export default function InternalSessionTodayComparison({
   distanceUnit,
   timeZone,
   today,
+  onOpenTrack,
 }: InternalSessionTodayComparisonProps) {
   if (projection === null) return null;
 
@@ -167,13 +169,16 @@ export default function InternalSessionTodayComparison({
         </p>
       </header>
 
-      <p
-        className="internal-session-today-comparison-status"
-        role="status"
-        aria-label="Daily comparison status"
-      >
-        <strong>Daily status:</strong> {dailyStatus}
-      </p>
+      <div className="internal-session-today-comparison-status">
+        <p role="status" aria-label="Daily comparison status">
+          <strong>Daily status:</strong> {dailyStatus}
+        </p>
+        <button type="button" onClick={onOpenTrack}>
+          {todaysRuns.length > 0
+            ? "Review runs in Track"
+            : "Open Track to log a run"}
+        </button>
+      </div>
 
       <div className="internal-session-today-comparison-columns">
         <section aria-labelledby="internal-session-today-workout-title">

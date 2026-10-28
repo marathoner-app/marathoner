@@ -1,5 +1,6 @@
 import { render, screen, within } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import userEvent from "@testing-library/user-event";
+import { describe, expect, it, vi } from "vitest";
 import {
   createCompletedRunId,
   createDateOnly,
@@ -61,6 +62,7 @@ describe("InternalSessionTodayComparison", () => {
         distanceUnit="mile"
         timeZone={timeZone}
         today={createDateOnly("2030-01-08")}
+        onOpenTrack={() => undefined}
       />,
     );
 
@@ -128,6 +130,7 @@ describe("InternalSessionTodayComparison", () => {
           distanceUnit="mile"
           timeZone={timeZone}
           today={today}
+          onOpenTrack={() => undefined}
         />,
       );
 
@@ -137,6 +140,42 @@ describe("InternalSessionTodayComparison", () => {
     },
   );
 
+  it("opens the existing Track workflow with run-aware action copy", async () => {
+    const user = userEvent.setup();
+    const onOpenTrack = vi.fn();
+    const { rerender } = render(
+      <InternalSessionTodayComparison
+        projection={projection}
+        runs={[]}
+        distanceUnit="mile"
+        timeZone={timeZone}
+        today={createDateOnly("2030-01-08")}
+        onOpenTrack={onOpenTrack}
+      />,
+    );
+
+    await user.click(
+      screen.getByRole("button", { name: "Open Track to log a run" }),
+    );
+    expect(onOpenTrack).toHaveBeenCalledTimes(1);
+
+    rerender(
+      <InternalSessionTodayComparison
+        projection={projection}
+        runs={[run]}
+        distanceUnit="mile"
+        timeZone={timeZone}
+        today={createDateOnly("2030-01-08")}
+        onOpenTrack={onOpenTrack}
+      />,
+    );
+
+    await user.click(
+      screen.getByRole("button", { name: "Review runs in Track" }),
+    );
+    expect(onOpenTrack).toHaveBeenCalledTimes(2);
+  });
+
   it("distinguishes rest, an empty schedule, and no synchronized run", () => {
     const { rerender } = render(
       <InternalSessionTodayComparison
@@ -145,6 +184,7 @@ describe("InternalSessionTodayComparison", () => {
         distanceUnit="mile"
         timeZone={timeZone}
         today={createDateOnly("2030-01-09")}
+        onOpenTrack={() => undefined}
       />,
     );
 
@@ -162,6 +202,7 @@ describe("InternalSessionTodayComparison", () => {
         distanceUnit="mile"
         timeZone={timeZone}
         today={createDateOnly("2030-01-10")}
+        onOpenTrack={() => undefined}
       />,
     );
 
@@ -180,6 +221,7 @@ describe("InternalSessionTodayComparison", () => {
         distanceUnit="kilometer"
         timeZone={timeZone}
         today={createDateOnly("2030-01-08")}
+        onOpenTrack={() => undefined}
       />,
     );
 
@@ -192,6 +234,7 @@ describe("InternalSessionTodayComparison", () => {
         distanceUnit="kilometer"
         timeZone={timeZone}
         today={createDateOnly("2030-01-08")}
+        onOpenTrack={() => undefined}
       />,
     );
 
@@ -208,6 +251,7 @@ describe("InternalSessionTodayComparison", () => {
         distanceUnit="mile"
         timeZone={timeZone}
         today={createDateOnly("2030-01-08")}
+        onOpenTrack={() => undefined}
       />,
     );
 
