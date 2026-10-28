@@ -157,7 +157,7 @@ describe("InternalSessionTodayComparison", () => {
     await user.click(
       screen.getByRole("button", { name: "Open Track to log a run" }),
     );
-    expect(onOpenTrack).toHaveBeenCalledTimes(1);
+    expect(onOpenTrack).toHaveBeenLastCalledWith(null);
 
     rerender(
       <InternalSessionTodayComparison
@@ -173,6 +173,7 @@ describe("InternalSessionTodayComparison", () => {
     await user.click(
       screen.getByRole("button", { name: "Review runs in Track" }),
     );
+    expect(onOpenTrack).toHaveBeenLastCalledWith(run.id);
     expect(onOpenTrack).toHaveBeenCalledTimes(2);
   });
 

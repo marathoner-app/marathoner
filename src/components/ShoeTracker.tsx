@@ -56,7 +56,12 @@ type ShoeTrackerProps = {
     changes: UpdateCompletedRunInput,
   ) => Promise<CompletedRun>;
   readonly onDeleteRun: (id: CompletedRunId) => Promise<void>;
+  readonly initialFocusTarget?: ShoeTrackerInitialFocusTarget | null;
 };
+
+export type ShoeTrackerInitialFocusTarget =
+  | { readonly kind: "log-run" }
+  | { readonly kind: "review-run"; readonly runId: CompletedRunId };
 
 type PendingAction =
   | "add-shoe"
@@ -295,6 +300,7 @@ export default function ShoeTracker({
   onCreateRun,
   onUpdateRun,
   onDeleteRun,
+  initialFocusTarget = null,
 }: ShoeTrackerProps) {
   const [newShoe, setNewShoe] = useState("");
   const [startingDistance, setStartingDistance] = useState("0");
@@ -306,6 +312,7 @@ export default function ShoeTracker({
   const [editingRunId, setEditingRunId] = useState<CompletedRunId | null>(null);
   const [runToDelete, setRunToDelete] = useState<CompletedRun | null>(null);
   const [shoeToRetire, setShoeToRetire] = useState<Shoe | null>(null);
+  const runDateInputRef = useRef<HTMLInputElement | null>(null);
   const loggedRunsHeadingRef = useRef<HTMLHeadingElement | null>(null);
   const shoeMileageHeadingRef = useRef<HTMLHeadingElement | null>(null);
   const editRunButtonRefs = useRef(
@@ -339,6 +346,17 @@ export default function ShoeTracker({
     editRunButtonRefs.current.get(runId)?.focus();
     editButtonToRestoreRef.current = null;
   }, [editingRunId]);
+
+  useEffect(() => {
+    if (initialFocusTarget?.kind === "log-run") {
+      runDateInputRef.current?.focus();
+      return;
+    }
+
+    if (initialFocusTarget?.kind === "review-run") {
+      editRunButtonRefs.current.get(initialFocusTarget.runId)?.focus();
+    }
+  }, [initialFocusTarget]);
 
   const closeRunEditor = (runId: CompletedRunId) => {
     editButtonToRestoreRef.current = runId;
@@ -488,6 +506,7 @@ export default function ShoeTracker({
           <label>
             Run date
             <input
+              ref={runDateInputRef}
               name="date"
               type="date"
               value={runDate}
