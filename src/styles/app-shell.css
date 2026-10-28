@@ -21,6 +21,13 @@
   overflow: visible;
 }
 
+.main.signed-in-home {
+  height: auto;
+  min-height: 100vh;
+  min-height: 100dvh;
+  overflow: visible;
+}
+
 .title {
   margin: 0;
   font-size: 4.5rem;
@@ -128,12 +135,7 @@
 @media (max-width: 768px) {
   .main.signed-in-home {
     justify-content: flex-start;
-    height: auto;
-    min-height: 100vh;
-    min-height: 100dvh;
     padding-bottom: 2rem;
-    overflow-x: hidden;
-    overflow-y: auto;
   }
 
   .section-navigation {

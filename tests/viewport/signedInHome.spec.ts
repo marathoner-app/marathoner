@@ -102,3 +102,28 @@ test("preserves the desktop signed-in header", async ({ page }) => {
   await expect(page.locator(".session-controls")).toHaveCSS("position", "absolute");
   await expectNoHorizontalOverflow(page, "signed-in home", "at desktop width");
 });
+
+test("keeps overflowing signed-in content reachable at desktop width", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1_440, height: 900 });
+  await page.goto("tests/viewport/signedInHome.html");
+
+  const finalAction = page.getByRole("button", {
+    name: "Final signed-in action",
+  });
+  const layout = await page.evaluate(() => ({
+    viewportHeight: window.innerHeight,
+    documentHeight: document.documentElement.scrollHeight,
+  }));
+
+  expect(layout.documentHeight).toBeGreaterThan(layout.viewportHeight);
+  await finalAction.scrollIntoViewIfNeeded();
+  await expect(finalAction).toBeInViewport();
+  expect(await page.evaluate(() => window.scrollY)).toBeGreaterThan(0);
+  await expectNoHorizontalOverflow(
+    page,
+    "overflowing signed-in home",
+    "after scrolling at desktop width",
+  );
+});
