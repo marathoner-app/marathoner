@@ -12,6 +12,7 @@ import {
 } from "../domain/training";
 import InternalLiveAdaptationRehearsal from "./InternalLiveAdaptationRehearsal";
 import "./InternalAdaptationHistoryInspector.css";
+import type { InternalEligiblePlanRehearsalRunFixture } from "./internalEligiblePlanRehearsalRun";
 import type { InternalAdaptationScenarioPacket } from "./internalAdaptationScenarioPacket";
 import type { InternalPlanProposalRehearsalRuleSet } from "./internalPlanProposalRehearsalRules";
 import {
@@ -26,6 +27,7 @@ import { deriveInternalSessionDraftRescheduleCandidates } from "./internalSessio
 interface InternalSessionDraftFeedbackRehearsalProps {
   readonly projection: GeneratedPlanEntityProjection | null;
   readonly runs: readonly CompletedRun[];
+  readonly syntheticRunFixture?: InternalEligiblePlanRehearsalRunFixture | null;
   readonly distanceUnit: DistanceUnit;
   readonly draftPacket: InternalAdaptationScenarioPacket;
   readonly planRuleSet: InternalPlanProposalRehearsalRuleSet;
@@ -80,6 +82,7 @@ function runLabel(run: CompletedRun, distanceUnit: DistanceUnit): string {
 export default function InternalSessionDraftFeedbackRehearsal({
   projection,
   runs,
+  syntheticRunFixture = null,
   distanceUnit,
   draftPacket,
   planRuleSet,
@@ -94,6 +97,13 @@ export default function InternalSessionDraftFeedbackRehearsal({
   const [confirmedSkippedWorkouts, setConfirmedSkippedWorkouts] = useState<
     readonly ConfirmedSkippedWorkout[]
   >([]);
+  const evidenceRuns = useMemo(
+    () =>
+      syntheticRunFixture === null
+        ? runs
+        : [...runs, syntheticRunFixture.run],
+    [runs, syntheticRunFixture],
+  );
 
   const confirmedWorkoutIds = useMemo(
     () =>
@@ -117,14 +127,14 @@ export default function InternalSessionDraftFeedbackRehearsal({
       ): workout is Exclude<PlannedWorkout, { readonly kind: "rest" }> =>
         workout.kind !== "rest" &&
         !confirmedWorkoutIds.has(workout.id) &&
-        runs.some(
+        evidenceRuns.some(
           (run) =>
             run.userId === projection.plan.userId &&
             !confirmedRunIds.has(run.id) &&
             getRunLocalDate(run) === workout.scheduledDate,
         ),
     );
-  }, [confirmedRunIds, confirmedWorkoutIds, projection, runs]);
+  }, [confirmedRunIds, confirmedWorkoutIds, evidenceRuns, projection]);
 
   const selectedWorkout = eligibleWorkouts.find(
     (workout) => workout.id === selectedWorkoutId,
@@ -132,13 +142,13 @@ export default function InternalSessionDraftFeedbackRehearsal({
   const eligibleRuns = useMemo(() => {
     if (projection === null || selectedWorkout === undefined) return [];
 
-    return runs.filter(
+    return evidenceRuns.filter(
       (run) =>
         run.userId === projection.plan.userId &&
         !confirmedRunIds.has(run.id) &&
         getRunLocalDate(run) === selectedWorkout.scheduledDate,
     );
-  }, [confirmedRunIds, projection, runs, selectedWorkout]);
+  }, [confirmedRunIds, evidenceRuns, projection, selectedWorkout]);
 
   const eligibleSkippedWorkouts = useMemo(() => {
     if (projection === null) return [];
@@ -157,15 +167,23 @@ export default function InternalSessionDraftFeedbackRehearsal({
         const workout = projection?.workouts.find(
           (candidate) => candidate.id === pair.workoutId,
         );
-        const run = runs.find((candidate) => candidate.id === pair.runId);
+        const run = evidenceRuns.find(
+          (candidate) => candidate.id === pair.runId,
+        );
         return workout === undefined ||
           workout.kind === "rest" ||
           run === undefined
           ? []
           : [{ ...pair, workout, run }];
       }),
-    [confirmedPairs, projection, runs],
+    [confirmedPairs, evidenceRuns, projection],
   );
+
+  const syntheticAlignedWorkout = projection?.workouts.find(
+    (workout) => workout.id === syntheticRunFixture?.alignedWorkoutId,
+  );
+  const isSyntheticRun = (run: CompletedRun): boolean =>
+    run.id === syntheticRunFixture?.run.id;
 
   const resolvedConfirmedSkippedWorkouts = useMemo(
     () =>
@@ -296,6 +314,21 @@ export default function InternalSessionDraftFeedbackRehearsal({
         </p>
       </header>
 
+      {syntheticRunFixture !== null &&
+        syntheticAlignedWorkout !== undefined &&
+        syntheticAlignedWorkout.kind !== "rest" && (
+          <aside
+            className="internal-adaptation-history-boundary"
+            aria-label="Frozen completed-run fixture"
+          >
+            <strong>Frozen completed-run evidence.</strong> Version{" "}
+            {syntheticRunFixture.version} provides one synthetic run aligned to{" "}
+            {workoutLabel(syntheticAlignedWorkout)}. It is available only for
+            this frozen-profile rehearsal, stays in memory, and is never read
+            from or written to Firebase.
+          </aside>
+        )}
+
       {confirmedEventCount > 0 && (
         <section
           className="internal-session-draft-feedback-confirmed"
@@ -318,6 +351,7 @@ export default function InternalSessionDraftFeedbackRehearsal({
                 <span>
                   <strong>{workoutLabel(workout)}</strong>
                   <br />
+                  {isSyntheticRun(run) ? "Frozen synthetic run · " : ""}
                   {runLabel(run, distanceUnit)}
                 </span>
                 <button
@@ -392,7 +426,11 @@ export default function InternalSessionDraftFeedbackRehearsal({
             ))}
           </select>
 
-          <label htmlFor="session-draft-feedback-run">Synchronized run</label>
+          <label htmlFor="session-draft-feedback-run">
+            {syntheticRunFixture === null
+              ? "Synchronized run"
+              : "Completed run evidence"}
+          </label>
           <select
             id="session-draft-feedback-run"
             required
@@ -407,6 +445,7 @@ export default function InternalSessionDraftFeedbackRehearsal({
             </option>
             {eligibleRuns.map((run) => (
               <option key={run.id} value={run.id}>
+                {isSyntheticRun(run) ? "Synthetic fixture · " : ""}
                 {runLabel(run, distanceUnit)}
               </option>
             ))}

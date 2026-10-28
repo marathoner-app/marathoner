@@ -10,6 +10,10 @@ import {
 export const INTERNAL_ELIGIBLE_PLAN_REHEARSAL_PROFILE_VERSION =
   "internal-eligible-profile@1.0.0";
 
+export type InternalPlanRehearsalProfileSource =
+  | "saved_profile"
+  | "frozen_eligible_profile";
+
 const fixtureTimestamp = createUtcDateTime("2029-12-01T12:00:00.000Z");
 
 export const internalEligiblePlanRehearsalProfile = {

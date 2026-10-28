@@ -67,11 +67,25 @@ one synchronized run cannot support more than one completed workout. The latest
 dated confirmed workout becomes the deterministic trigger; all confirmed
 completed runs form the bounded recent-run window.
 
+When the explicit frozen eligible profile is active, this feedback surface also
+offers one versioned `internal-eligible-run@1.0.0` synthetic run aligned to the
+final generated distance workout in the first plan week. That leaves a recent
+completion before the following week's first easy run, so the owner can exercise
+the actionable reschedule path without inventing a long disruption. Its label
+and provenance appear before the owner confirms a pair. It is never offered on
+the saved-owner-profile path and is passed through the same session-history
+assembler, strict normalizer, plan-context derivation, and production evaluator
+as a synchronized run. It has no saved workout association and exists only to
+complete the internal interface journey without fabricating or changing the
+owner's real history.
+
 A skipped workout contributes no invented run. Skip-only history therefore
 remains not ready until the production normalizer also has sufficient completed
-run evidence. Every pairing, skip, and evaluator result stays in memory. This
-feedback rehearsal does not associate or change a synchronized run, save a
-workout status, write Firestore, or approve the draft methodology.
+run evidence. Every pairing, skip, synthetic fixture, and evaluator result stays
+in memory. This feedback rehearsal does not associate or change a synchronized
+run, save a workout status, write Firestore, or approve the draft methodology.
+Changing profile source, changing or regenerating the proposal, or reloading
+clears all confirmed evidence and any downstream session adjustment.
 
 When that transient history is coherent, the rehearsal derives and locks the
 current core week, current and next week kinds, and next-week progression state

@@ -195,11 +195,13 @@ describe("InternalPlanProposalRehearsal", () => {
   it("completes the real session journey with the frozen eligible profile and resets on source change", async () => {
     const user = userEvent.setup();
     const onSessionActivationChange = vi.fn();
+    const onProfileSourceChange = vi.fn();
     render(
       <InternalPlanProposalRehearsal
         profile={null}
         ruleSet={ruleSet}
         onSessionActivationChange={onSessionActivationChange}
+        onProfileSourceChange={onProfileSourceChange}
       />,
     );
 
@@ -214,6 +216,9 @@ describe("InternalPlanProposalRehearsal", () => {
       screen.getByRole("radio", {
         name: /frozen eligible rehearsal profile/iu,
       }),
+    );
+    expect(onProfileSourceChange).toHaveBeenLastCalledWith(
+      "frozen_eligible_profile",
     );
 
     expect(
@@ -263,6 +268,7 @@ describe("InternalPlanProposalRehearsal", () => {
       screen.getByRole("radio", { name: /saved owner profile/iu }),
     );
 
+    expect(onProfileSourceChange).toHaveBeenLastCalledWith("saved_profile");
     expect(onSessionActivationChange).toHaveBeenLastCalledWith(null);
     expect(screen.getByLabelText("Plan start date")).toHaveValue("");
     expect(
