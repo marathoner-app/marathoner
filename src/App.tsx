@@ -388,7 +388,7 @@ function AuthenticatedExperience({
     training.staleReasons.some((reason) => reason !== "pending_writes");
   const showSynchronizationNotice = useDelayedStaleNotice(hasOtherStaleReason);
   const showOnboarding =
-    training.status === "current" &&
+    hasReadableTraining &&
     (isOnboardingOpen || (!onboardingComplete && !onboardingDeferred));
   const sectionTransitionDuration = reduceMotion ? 0 : 0.25;
 

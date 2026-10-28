@@ -242,6 +242,19 @@ describe("RunnerOnboarding", () => {
       screen.getByText(/Enter how many consecutive weeks/i),
     ).toBeInTheDocument();
     expect(onSave).not.toHaveBeenCalled();
+
+    await user.type(screen.getByLabelText(/How many consecutive weeks/i), "12");
+    await user.click(screen.getByRole("button", { name: "Complete setup" }));
+
+    await waitFor(() => expect(onSave).toHaveBeenCalledOnce());
+    expect(onSave).toHaveBeenCalledWith(
+      expect.objectContaining({
+        displayName: "Kevin",
+        consistentRunningWeeks: 12,
+        currentRunningFrequencyDaysPerWeek: 4,
+      }),
+    );
+    expect(onClose).toHaveBeenCalledOnce();
   });
 
   it("keeps optional performance data all-or-nothing and reports save failures", async () => {
