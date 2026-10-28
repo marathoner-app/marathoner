@@ -21,6 +21,7 @@ import {
   type InternalSessionDraftSkippedWorkout,
 } from "./internalSessionDraftAdaptation";
 import { deriveInternalSessionDraftPlanContext } from "./internalSessionDraftPlanContext";
+import { deriveInternalSessionDraftRescheduleCandidates } from "./internalSessionDraftRescheduleCandidates";
 
 interface InternalSessionDraftFeedbackRehearsalProps {
   readonly projection: GeneratedPlanEntityProjection | null;
@@ -220,6 +221,16 @@ export default function InternalSessionDraftFeedbackRehearsal({
       adaptationRules: draftPacket.rules,
     });
   }, [assembly, draftPacket.rules, planRuleSet]);
+  const sessionRescheduleCandidates = useMemo(() => {
+    if (assembly?.normalization.kind !== "ready") return null;
+
+    return deriveInternalSessionDraftRescheduleCandidates({
+      plan: assembly.plan,
+      workouts: assembly.workouts,
+      evidence: assembly.normalization.evidence,
+      rules: draftPacket.rules,
+    });
+  }, [assembly, draftPacket.rules]);
 
   if (projection === null) return null;
 
@@ -507,6 +518,9 @@ export default function InternalSessionDraftFeedbackRehearsal({
               workouts={assembly.workouts}
               distanceUnit={distanceUnit}
               planContext={planContextResult.context}
+              sessionRescheduleCandidates={
+                sessionRescheduleCandidates ?? []
+              }
             />
           )}
         </section>

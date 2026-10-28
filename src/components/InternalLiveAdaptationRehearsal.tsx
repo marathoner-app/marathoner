@@ -34,6 +34,7 @@ import {
   assembleInternalLiveRecommendationEvidence,
 } from "./internalLiveRecommendationEvidence";
 import type { InternalSessionDraftPlanContext } from "./internalSessionDraftPlanContext";
+import type { InternalSessionDraftRescheduleCandidate } from "./internalSessionDraftRescheduleCandidates";
 
 interface InternalLiveAdaptationRehearsalProps {
   readonly evidence: AdaptationHistoryEvidenceV1;
@@ -42,6 +43,7 @@ interface InternalLiveAdaptationRehearsalProps {
   readonly workouts: readonly PlannedWorkout[];
   readonly distanceUnit: DistanceUnit;
   readonly planContext?: InternalSessionDraftPlanContext;
+  readonly sessionRescheduleCandidates?: readonly InternalSessionDraftRescheduleCandidate[];
 }
 
 type BooleanChoice = "" | "yes" | "no";
@@ -67,6 +69,11 @@ const weekKinds: readonly AdaptationWeekKind[] = [
   "race",
 ];
 
+const candidateDateFormatter = new Intl.DateTimeFormat("en-US", {
+  dateStyle: "medium",
+  timeZone: "UTC",
+});
+
 function readableIdentifier(value: string): string {
   const words = value.replace(/[-_]/gu, " ");
   return `${words[0]?.toUpperCase() ?? ""}${words.slice(1)}`;
@@ -83,6 +90,7 @@ export default function InternalLiveAdaptationRehearsal({
   workouts,
   distanceUnit,
   planContext,
+  sessionRescheduleCandidates,
 }: InternalLiveAdaptationRehearsalProps) {
   const decisionContentRegistry = useMemo(
     () =>
@@ -117,6 +125,10 @@ export default function InternalLiveAdaptationRehearsal({
   const [candidateTargetDateEmpty, setCandidateTargetDateEmpty] =
     useState<BooleanChoice>("");
   const [candidateConsecutiveRuns, setCandidateConsecutiveRuns] = useState("");
+  const [selectedSessionCandidateDate, setSelectedSessionCandidateDate] =
+    useState("");
+  const [sessionCandidateRunnerAvailable, setSessionCandidateRunnerAvailable] =
+    useState(false);
   const [completenessConfirmed, setCompletenessConfirmed] = useState(false);
   const [outcome, setOutcome] = useState<LiveEvaluationOutcome>({
     kind: "not_run",
@@ -154,15 +166,22 @@ export default function InternalLiveAdaptationRehearsal({
     setOutcome({ kind: "not_run" });
     setProjectionOutcome(null);
   };
+  const selectedSessionCandidate = sessionRescheduleCandidates?.find(
+    ({ targetDate }) => targetDate === selectedSessionCandidateDate,
+  );
   const candidateIsComplete =
-    candidateChoice === "none" ||
-    (candidateChoice === "present" &&
-      candidatePurpose !== "" &&
-      candidateDelayDays !== "" &&
-      candidateSamePlanWeek !== "" &&
-      candidateRunnerAvailable !== "" &&
-      candidateTargetDateEmpty !== "" &&
-      candidateConsecutiveRuns !== "");
+    sessionRescheduleCandidates !== undefined
+      ? selectedSessionCandidateDate === "none" ||
+        (selectedSessionCandidate !== undefined &&
+          sessionCandidateRunnerAvailable)
+      : candidateChoice === "none" ||
+        (candidateChoice === "present" &&
+          candidatePurpose !== "" &&
+          candidateDelayDays !== "" &&
+          candidateSamePlanWeek !== "" &&
+          candidateRunnerAvailable !== "" &&
+          candidateTargetDateEmpty !== "" &&
+          candidateConsecutiveRuns !== "");
   const manualPlanContextIsComplete =
     currentCoreWeek !== "" &&
     currentWeekKind !== "" &&
@@ -170,11 +189,32 @@ export default function InternalLiveAdaptationRehearsal({
     nextWeekIntroducesProgression !== "";
   const formIsComplete =
     (planContext !== undefined || manualPlanContextIsComplete) &&
-    candidateChoice !== "" &&
+    (sessionRescheduleCandidates !== undefined
+      ? selectedSessionCandidateDate !== ""
+      : candidateChoice !== "") &&
     candidateIsComplete &&
     completenessConfirmed;
 
   const candidateForEvaluation = (): AdaptationRescheduleCandidateV1 => {
+    if (sessionRescheduleCandidates !== undefined) {
+      if (selectedSessionCandidate === undefined) {
+        return {
+          present: false,
+          workoutPurpose: null,
+          delayCalendarDays: null,
+          samePlanWeek: false,
+          runnerConfirmedAvailable: false,
+          targetDateEmpty: false,
+          consecutiveRunDatesAfterMove: 0,
+        };
+      }
+
+      return {
+        ...selectedSessionCandidate.candidate,
+        runnerConfirmedAvailable: sessionCandidateRunnerAvailable,
+      };
+    }
+
     if (candidateChoice !== "present") {
       return {
         present: false,
@@ -397,109 +437,207 @@ export default function InternalLiveAdaptationRehearsal({
           </section>
         )}
 
-        <fieldset>
-          <legend>Prevalidated reschedule candidate</legend>
-          <label htmlFor="live-adaptation-candidate-choice">
-            Candidate state
-          </label>
-          <select
-            id="live-adaptation-candidate-choice"
-            required
-            value={candidateChoice}
-            onChange={(event) => {
-              setCandidateChoice(event.target.value as CandidateChoice);
-              clearOutcome();
-            }}
-          >
-            <option value="">Choose a candidate state</option>
-            <option value="none">No candidate is available</option>
-            <option value="present">A candidate has been prevalidated</option>
-          </select>
+        {sessionRescheduleCandidates !== undefined ? (
+          <fieldset>
+            <legend>Plan-derived reschedule candidate</legend>
+            <label htmlFor="live-adaptation-session-candidate">
+              Reschedule choice
+            </label>
+            <select
+              id="live-adaptation-session-candidate"
+              required
+              value={selectedSessionCandidateDate}
+              onChange={(event) => {
+                setSelectedSessionCandidateDate(event.target.value);
+                setSessionCandidateRunnerAvailable(false);
+                clearOutcome();
+              }}
+            >
+              <option value="">Choose a reschedule outcome</option>
+              <option value="none">No candidate is available</option>
+              {sessionRescheduleCandidates.map(({ targetDate, candidate }) => (
+                <option key={targetDate} value={targetDate}>
+                  {candidateDateFormatter.format(
+                    new Date(`${targetDate}T00:00:00.000Z`),
+                  )}{" "}
+                  · {candidate.delayCalendarDays}{" "}
+                  {candidate.delayCalendarDays === 1 ? "day" : "days"} later
+                </option>
+              ))}
+            </select>
 
-          {candidateChoice === "present" && (
-            <div className="internal-live-adaptation-candidate">
-              <label htmlFor="live-adaptation-candidate-purpose">
-                Workout purpose
-              </label>
-              <select
-                id="live-adaptation-candidate-purpose"
-                required
-                value={candidatePurpose}
-                onChange={(event) => {
-                  setCandidatePurpose(event.target.value as RunPurpose | "");
-                  clearOutcome();
-                }}
+            {selectedSessionCandidate !== undefined && (
+              <div
+                className="internal-live-adaptation-candidate"
+                role="group"
+                aria-label="Derived reschedule facts"
               >
-                <option value="">Choose a purpose</option>
-                {packet.rules.allowedReschedulePurposes.map((purpose) => (
-                  <option key={purpose} value={purpose}>
-                    {readableIdentifier(purpose)}
-                  </option>
-                ))}
-              </select>
+                <dl className="internal-live-adaptation-plan-context-facts">
+                  <div>
+                    <dt>Workout purpose</dt>
+                    <dd>
+                      {selectedSessionCandidate.candidate.workoutPurpose === null
+                        ? "Unavailable"
+                        : readableIdentifier(
+                            selectedSessionCandidate.candidate.workoutPurpose,
+                          )}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt>Delay</dt>
+                    <dd>
+                      {selectedSessionCandidate.candidate.delayCalendarDays}{" "}
+                      calendar days
+                    </dd>
+                  </div>
+                  <div>
+                    <dt>Same plan week</dt>
+                    <dd>Yes</dd>
+                  </div>
+                  <div>
+                    <dt>Target date empty</dt>
+                    <dd>Yes</dd>
+                  </div>
+                  <div>
+                    <dt>Consecutive run dates after move</dt>
+                    <dd>
+                      {
+                        selectedSessionCandidate.candidate
+                          .consecutiveRunDatesAfterMove
+                      }
+                    </dd>
+                  </div>
+                </dl>
+                <label className="internal-live-adaptation-confirmation">
+                  <input
+                    type="checkbox"
+                    checked={sessionCandidateRunnerAvailable}
+                    onChange={(event) => {
+                      setSessionCandidateRunnerAvailable(event.target.checked);
+                      clearOutcome();
+                    }}
+                  />
+                  I confirm I am available on{" "}
+                  {candidateDateFormatter.format(
+                    new Date(
+                      `${selectedSessionCandidate.targetDate}T00:00:00.000Z`,
+                    ),
+                  )}
+                  .
+                </label>
+                <p className="internal-adaptation-history-help">
+                  Marathoner derived the purpose, delay, plan-week boundary,
+                  empty date, and run spacing from the activated session draft.
+                  Only runner availability needs human confirmation.
+                </p>
+              </div>
+            )}
+          </fieldset>
+        ) : (
+          <fieldset>
+            <legend>Prevalidated reschedule candidate</legend>
+            <label htmlFor="live-adaptation-candidate-choice">
+              Candidate state
+            </label>
+            <select
+              id="live-adaptation-candidate-choice"
+              required
+              value={candidateChoice}
+              onChange={(event) => {
+                setCandidateChoice(event.target.value as CandidateChoice);
+                clearOutcome();
+              }}
+            >
+              <option value="">Choose a candidate state</option>
+              <option value="none">No candidate is available</option>
+              <option value="present">A candidate has been prevalidated</option>
+            </select>
 
-              <label htmlFor="live-adaptation-candidate-delay">
-                Delay in calendar days
-              </label>
-              <input
-                id="live-adaptation-candidate-delay"
-                type="number"
-                min="0"
-                step="1"
-                required
-                value={candidateDelayDays}
-                onChange={(event) => {
-                  setCandidateDelayDays(event.target.value);
-                  clearOutcome();
-                }}
-              />
+            {candidateChoice === "present" && (
+              <div className="internal-live-adaptation-candidate">
+                <label htmlFor="live-adaptation-candidate-purpose">
+                  Workout purpose
+                </label>
+                <select
+                  id="live-adaptation-candidate-purpose"
+                  required
+                  value={candidatePurpose}
+                  onChange={(event) => {
+                    setCandidatePurpose(event.target.value as RunPurpose | "");
+                    clearOutcome();
+                  }}
+                >
+                  <option value="">Choose a purpose</option>
+                  {packet.rules.allowedReschedulePurposes.map((purpose) => (
+                    <option key={purpose} value={purpose}>
+                      {readableIdentifier(purpose)}
+                    </option>
+                  ))}
+                </select>
 
-              <BooleanSelect
-                id="live-adaptation-candidate-same-week"
-                label="Candidate remains in the same plan week"
-                value={candidateSamePlanWeek}
-                onChange={(value) => {
-                  setCandidateSamePlanWeek(value);
-                  clearOutcome();
-                }}
-              />
-              <BooleanSelect
-                id="live-adaptation-candidate-available"
-                label="Runner confirmed the candidate date is available"
-                value={candidateRunnerAvailable}
-                onChange={(value) => {
-                  setCandidateRunnerAvailable(value);
-                  clearOutcome();
-                }}
-              />
-              <BooleanSelect
-                id="live-adaptation-candidate-empty"
-                label="Candidate date has no other workout"
-                value={candidateTargetDateEmpty}
-                onChange={(value) => {
-                  setCandidateTargetDateEmpty(value);
-                  clearOutcome();
-                }}
-              />
+                <label htmlFor="live-adaptation-candidate-delay">
+                  Delay in calendar days
+                </label>
+                <input
+                  id="live-adaptation-candidate-delay"
+                  type="number"
+                  min="0"
+                  step="1"
+                  required
+                  value={candidateDelayDays}
+                  onChange={(event) => {
+                    setCandidateDelayDays(event.target.value);
+                    clearOutcome();
+                  }}
+                />
 
-              <label htmlFor="live-adaptation-candidate-consecutive">
-                Consecutive run dates after the move
-              </label>
-              <input
-                id="live-adaptation-candidate-consecutive"
-                type="number"
-                min="0"
-                step="1"
-                required
-                value={candidateConsecutiveRuns}
-                onChange={(event) => {
-                  setCandidateConsecutiveRuns(event.target.value);
-                  clearOutcome();
-                }}
-              />
-            </div>
-          )}
-        </fieldset>
+                <BooleanSelect
+                  id="live-adaptation-candidate-same-week"
+                  label="Candidate remains in the same plan week"
+                  value={candidateSamePlanWeek}
+                  onChange={(value) => {
+                    setCandidateSamePlanWeek(value);
+                    clearOutcome();
+                  }}
+                />
+                <BooleanSelect
+                  id="live-adaptation-candidate-available"
+                  label="Runner confirmed the candidate date is available"
+                  value={candidateRunnerAvailable}
+                  onChange={(value) => {
+                    setCandidateRunnerAvailable(value);
+                    clearOutcome();
+                  }}
+                />
+                <BooleanSelect
+                  id="live-adaptation-candidate-empty"
+                  label="Candidate date has no other workout"
+                  value={candidateTargetDateEmpty}
+                  onChange={(value) => {
+                    setCandidateTargetDateEmpty(value);
+                    clearOutcome();
+                  }}
+                />
+
+                <label htmlFor="live-adaptation-candidate-consecutive">
+                  Consecutive run dates after the move
+                </label>
+                <input
+                  id="live-adaptation-candidate-consecutive"
+                  type="number"
+                  min="0"
+                  step="1"
+                  required
+                  value={candidateConsecutiveRuns}
+                  onChange={(event) => {
+                    setCandidateConsecutiveRuns(event.target.value);
+                    clearOutcome();
+                  }}
+                />
+              </div>
+            )}
+          </fieldset>
+        )}
 
         <label className="internal-live-adaptation-confirmation">
           <input
