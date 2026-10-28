@@ -190,6 +190,88 @@ describe("Calendar", () => {
     ).toBeInTheDocument();
   });
 
+  it("shows post-race recovery weeks through the plan end date", async () => {
+    const user = userEvent.setup();
+    const recoveryWorkout: PlannedWorkout = {
+      id: createPlannedWorkoutId("workout-recovery"),
+      userId,
+      planId,
+      scheduledDate: createDateOnly("2026-08-17"),
+      phase: "recovery",
+      status: "planned",
+      kind: "run",
+      purpose: "recovery",
+      targetDistance: createDistanceMeters(3_000),
+      createdAt: timestamp,
+      updatedAt: timestamp,
+    };
+
+    renderCalendar({
+      plan: {
+        ...plan,
+        endDate: createDateOnly("2026-08-23"),
+      },
+      workouts: [...workouts, recoveryWorkout],
+    });
+
+    expect(
+      screen.getByRole("heading", { name: "Week 1 of 3" }),
+    ).toBeInTheDocument();
+    const nextWeek = screen.getByRole("button", { name: "Next week" });
+    const weekSelector = screen.getByRole("combobox", {
+      name: "Training week",
+    });
+
+    await user.click(nextWeek);
+    expect(
+      screen.getByRole("heading", { name: "Week 2 of 3" }),
+    ).toBeInTheDocument();
+
+    await user.click(nextWeek);
+
+    expect(
+      screen.getByRole("heading", { name: "Week 3 of 3" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", {
+        name: "Mon, Aug 17 Recovery run 1.9 mi Scheduled",
+      }),
+    ).toBeInTheDocument();
+    expect(nextWeek).toBeDisabled();
+
+    await user.selectOptions(weekSelector, "1");
+    await user.selectOptions(weekSelector, "3");
+
+    expect(
+      screen.getByRole("heading", { name: "Week 3 of 3" }),
+    ).toBeInTheDocument();
+  });
+
+  it("clamps the initial date to the recovery-aware plan range", () => {
+    renderCalendar({
+      plan: {
+        ...plan,
+        endDate: createDateOnly("2026-08-23"),
+      },
+      initialDate: createDateOnly("2026-08-30"),
+    });
+
+    expect(
+      screen.getByRole("heading", { name: "Week 3 of 3" }),
+    ).toBeInTheDocument();
+  });
+
+  it("falls back to the target race date when the plan has no end date", () => {
+    renderCalendar();
+
+    expect(
+      screen.getByRole("heading", { name: "Week 1 of 2" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("option", { name: "3" }),
+    ).not.toBeInTheDocument();
+  });
+
   it("explains a week without scheduled workouts", async () => {
     const user = userEvent.setup();
     renderCalendar({
