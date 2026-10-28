@@ -11,6 +11,7 @@ import {
 } from "../domain/training";
 import InternalAdaptationHistoryInspector from "./InternalAdaptationHistoryInspector";
 import InternalAdaptationScenarioRehearsal from "./InternalAdaptationScenarioRehearsal";
+import InternalGuidanceReviewGallery from "./InternalGuidanceReviewGallery";
 import InternalPlanProposalRehearsal from "./InternalPlanProposalRehearsal";
 import { createInternalAdaptationScenarioPacket } from "./internalAdaptationScenarioPacket";
 import { createInternalPlanProposalRehearsalRuleSet } from "./internalPlanProposalRehearsalRules";
@@ -62,6 +63,7 @@ export default function InternalPlanProposalRehearsalLive({
         draftPacket={adaptationPacket}
       />
       <InternalAdaptationScenarioRehearsal packet={adaptationPacket} />
+      <InternalGuidanceReviewGallery />
     </>
   );
 }

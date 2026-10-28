@@ -1,0 +1,51 @@
+.internal-guidance-gallery {
+  box-sizing: border-box;
+  width: min(100%, 72rem);
+  margin: 2rem auto 0;
+  padding: clamp(1.25rem, 3vw, 2rem);
+  border: 2px solid #315866;
+  border-radius: 1rem;
+  background: #eef7f8;
+  color: #17202a;
+  text-align: left;
+}
+
+.internal-guidance-gallery > header {
+  max-width: 52rem;
+}
+
+.internal-guidance-gallery h2,
+.internal-guidance-gallery p {
+  margin-top: 0;
+}
+
+.internal-guidance-gallery-eyebrow {
+  margin-bottom: 0.35rem;
+  color: #315866;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.internal-guidance-gallery > label {
+  display: block;
+  margin-top: 1.5rem;
+  font-weight: 750;
+}
+
+.internal-guidance-gallery > select {
+  width: min(100%, 24rem);
+  min-height: 2.75rem;
+  margin-top: 0.4rem;
+  padding: 0.55rem 0.7rem;
+  border: 1px solid #315866;
+  border-radius: 0.55rem;
+  background: #ffffff;
+  color: #17202a;
+  font: inherit;
+}
+
+.internal-guidance-gallery .reviewed-guidance-card {
+  margin-bottom: 0;
+}

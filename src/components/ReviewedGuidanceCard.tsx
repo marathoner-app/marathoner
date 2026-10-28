@@ -66,8 +66,8 @@ export default function ReviewedGuidanceCard({
         <div className="reviewed-guidance-preview" role="note">
           <strong>Internal preview</strong>
           <span>
-            This synthetic example is not approved training guidance and is not
-            shown to runners.
+            This draft is not approved training guidance and is not shown to
+            runners.
           </span>
         </div>
       )}
