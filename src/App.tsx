@@ -28,6 +28,11 @@ import {
 } from "./domain/training";
 import NextWorkoutSummary from "./components/NextWorkoutSummary";
 import RecommendationDecisionSurface from "./components/RecommendationDecisionSurface";
+import TrainingSectionNavigation from "./components/TrainingSectionNavigation";
+import {
+  trainingSections,
+  type TrainingSection,
+} from "./components/trainingSections";
 import { isBetaRunCommandRehearsalMode } from "./components/betaRunCommandRehearsalMode";
 import { isInternalPlanProposalRehearsalMode } from "./components/internalPlanProposalRehearsalMode";
 import { resolvePlanSurfaceData } from "./training/planSurfaceData";
@@ -51,13 +56,9 @@ const InternalSessionTodayComparison =
     ? lazy(() => import("./components/InternalSessionTodayComparison"))
     : null;
 
-const sections = [
-  { id: "plan", label: "Plan", title: "Plan Your Workouts" },
-  { id: "track", label: "Track", title: "Track Your Runs" },
-  { id: "analyze", label: "Analyze", title: "Analyze Your Progress" },
-] as const;
+const sections = trainingSections;
 
-type Section = (typeof sections)[number]["id"];
+type Section = TrainingSection;
 
 function App() {
   const auth = useAuth();
@@ -499,22 +500,12 @@ function AuthenticatedExperience({
               </Suspense>
             )}
           <RecommendationDecisionSurface />
-          <nav className="section-navigation" aria-label="Training sections">
-            {sections.map(({ id, label }) => (
-              <motion.button
-                key={id}
-                ref={(element) => onRegisterTrigger(id, element)}
-                type="button"
-                className="section-trigger"
-                onClick={() => onOpenSection(id)}
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: sectionTransitionDuration }}
-              >
-                {label}
-              </motion.button>
-            ))}
-          </nav>
+          <TrainingSectionNavigation
+            activeSection={null}
+            transitionDuration={sectionTransitionDuration}
+            onSelect={onOpenSection}
+            onRegisterTrigger={onRegisterTrigger}
+          />
           {InternalPlanProposalRehearsal && (
             <Suspense
               fallback={
@@ -579,6 +570,15 @@ function AuthenticatedExperience({
             onClose={onCloseSection}
           />
         </motion.section>
+      )}
+
+      {activeSection && hasReadableTraining && (
+        <TrainingSectionNavigation
+          activeSection={activeSection}
+          transitionDuration={sectionTransitionDuration}
+          onSelect={onOpenSection}
+          onRegisterTrigger={onRegisterTrigger}
+        />
       )}
     </>
   );

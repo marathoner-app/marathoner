@@ -1031,6 +1031,37 @@ describe('App training sections', () => {
     }
   )
 
+  it('keeps training navigation available and marks the active section', async () => {
+    const user = userEvent.setup()
+    renderSignedInApp()
+
+    await user.click(screen.getByRole('button', { name: 'Plan' }))
+
+    expect(screen.getByRole('button', { name: 'Plan' })).toHaveAttribute(
+      'aria-current',
+      'page'
+    )
+    expect(
+      screen.getByRole('region', { name: 'Plan Your Workouts' })
+    ).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'Track' }))
+
+    expect(screen.getByRole('button', { name: 'Plan' })).not.toHaveAttribute(
+      'aria-current'
+    )
+    expect(screen.getByRole('button', { name: 'Track' })).toHaveAttribute(
+      'aria-current',
+      'page'
+    )
+    expect(
+      screen.queryByRole('region', { name: 'Plan Your Workouts' })
+    ).not.toBeInTheDocument()
+    expect(
+      screen.getByRole('region', { name: 'Track Your Runs' })
+    ).toBeInTheDocument()
+  })
+
   it('opens and closes a section with the keyboard', async () => {
     const user = userEvent.setup()
     renderSignedInApp()
