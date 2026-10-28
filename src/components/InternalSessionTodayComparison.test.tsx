@@ -86,6 +86,11 @@ describe("InternalSessionTodayComparison", () => {
         name: "Comparison boundary",
       }),
     ).toHaveTextContent("not associated with the draft plan or workouts");
+    expect(
+      within(comparison).getByRole("link", {
+        name: "Rehearse feedback from today's run",
+      }),
+    ).toHaveAttribute("href", "#internal-session-draft-feedback");
   });
 
   it.each([
@@ -137,8 +142,40 @@ describe("InternalSessionTodayComparison", () => {
       expect(
         screen.getByRole("status", { name: "Daily comparison status" }),
       ).toHaveTextContent(message);
+      expect(
+        screen.queryByRole("link", {
+          name: "Rehearse feedback from today's run",
+        }),
+      ).not.toBeInTheDocument();
     },
   );
+
+  it("moves focus to the session-draft feedback section", async () => {
+    const user = userEvent.setup();
+    render(
+      <>
+        <InternalSessionTodayComparison
+          projection={projection}
+          runs={[run]}
+          distanceUnit="mile"
+          timeZone={timeZone}
+          today={createDateOnly("2030-01-08")}
+          onOpenTrack={() => undefined}
+        />
+        <section id="internal-session-draft-feedback" tabIndex={-1}>
+          Feedback target
+        </section>
+      </>,
+    );
+
+    await user.click(
+      screen.getByRole("link", {
+        name: "Rehearse feedback from today's run",
+      }),
+    );
+
+    expect(screen.getByText("Feedback target")).toHaveFocus();
+  });
 
   it("opens the existing Track workflow with run-aware action copy", async () => {
     const user = userEvent.setup();
