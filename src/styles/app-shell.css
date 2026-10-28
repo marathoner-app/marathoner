@@ -49,6 +49,10 @@
   padding: 0 1rem;
 }
 
+.main:not(.signed-in-home) .section-navigation {
+  display: none;
+}
+
 .section-trigger {
   position: relative;
   z-index: 1;
@@ -65,6 +69,14 @@
   color: black;
   font-weight: bold;
   text-align: center;
+}
+
+.section-trigger-icon {
+  display: none;
+}
+
+.section-trigger-label {
+  line-height: 1;
 }
 
 .section-panel {
@@ -135,22 +147,70 @@
 @media (max-width: 768px) {
   .main.signed-in-home {
     justify-content: flex-start;
-    padding-bottom: 2rem;
+    padding-bottom: calc(5.5rem + env(safe-area-inset-bottom));
   }
 
   .section-navigation {
-    flex-direction: column;
-    align-items: center;
+    position: fixed;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 4;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.25rem;
     width: 100%;
+    padding: 0.375rem max(0.75rem, env(safe-area-inset-right))
+      calc(0.375rem + env(safe-area-inset-bottom))
+      max(0.75rem, env(safe-area-inset-left));
+    border-top: 1px solid #dbe3ea;
+    background: rgb(255 255 255 / 96%);
+    box-shadow: 0 -0.35rem 1.25rem rgb(15 23 42 / 10%);
+    backdrop-filter: blur(12px);
+  }
+
+  .main:not(.signed-in-home) .section-navigation {
+    display: grid;
   }
 
   .section-trigger {
-    font-size: 1em;
-    line-height: 1.2em;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.2rem;
+    width: 100%;
+    min-width: 0;
+    min-height: 3.5rem;
+    padding: 0.375rem 0.25rem;
+    border: 0;
+    border-radius: 0.75rem;
+    background: transparent;
+    box-shadow: none;
+    color: #475569;
+    font-size: 0.75rem;
+    line-height: 1;
+    cursor: pointer;
+  }
+
+  .section-trigger[aria-current="page"] {
+    background: #eff6ff;
+    color: #1d4ed8;
+  }
+
+  .section-trigger-icon {
+    display: block;
+    width: 1.5rem;
+    height: 1.5rem;
+    fill: none;
+    stroke: currentcolor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
   }
 
   .section-panel-content {
-    padding: 4rem 0.75rem 1.5rem;
+    padding: 4rem 0.75rem calc(5.5rem + env(safe-area-inset-bottom));
   }
 
   .title {

@@ -12,9 +12,13 @@ touch targets, and overflow at phone width and 200% text. The landing
 fixture renders the signed-out production shell directly and covers both phone
 (`390 × 844`) and desktop (`1440 × 900`) layout plus the existing login dialog.
 The signed-in home fixture verifies that account controls, welcome content,
-runner setup, next workout, and section navigation remain in readable order on
-the phone while preserving the desktop header treatment and keeping content
-beyond one desktop viewport reachable through normal page scrolling. The
+runner setup, and next workout remain in readable order on the phone. It also
+verifies that the thumb-friendly training navigation stays fixed above the
+bottom edge, exposes equal touch targets and an active state, switches directly
+between sections, and leaves the final home and section actions unobscured. The
+fixture preserves the desktop header and non-fixed navigation treatment while
+keeping content beyond one desktop viewport reachable through normal page
+scrolling. The
 isolated recommendation-review fixture verifies that the internal preview notice,
 narrative sequence, and both decision actions remain visible and operable at
 phone width and 200% text without connecting the dormant component to the
@@ -37,7 +41,7 @@ npm run test:viewport
 The tests check for both document-level horizontal scrolling and individual
 visible elements whose bounds leave the viewport. Failure messages name the
 workflow stage and offending elements so a mobile regression can be found
-without first reproducing it manually. Landing and Track checks also enforce a
+without first reproducing it manually. Landing, signed-in navigation, and Track checks also enforce a
 `44 × 44` CSS-pixel minimum for the critical interactive targets they exercise.
 The 200% browser check does not replace the physical-iPhone Dynamic Type and
 VoiceOver verification tracked by issue `#140`.
