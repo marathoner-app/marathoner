@@ -24,6 +24,7 @@ describe("InternalPlanActivationRehearsal", () => {
       <InternalPlanActivationRehearsal
         result={generatedResult}
         onReviewInputs={vi.fn()}
+        onSessionActivationChange={vi.fn()}
       />,
     );
 
@@ -69,6 +70,7 @@ describe("InternalPlanActivationRehearsal", () => {
       <InternalPlanActivationRehearsal
         result={generatedResult}
         onReviewInputs={vi.fn()}
+        onSessionActivationChange={vi.fn()}
       />,
     );
 
@@ -92,6 +94,7 @@ describe("InternalPlanActivationRehearsal", () => {
       <InternalPlanActivationRehearsal
         result={generatedResult}
         onReviewInputs={onReviewInputs}
+        onSessionActivationChange={vi.fn()}
       />,
     );
 
@@ -117,6 +120,7 @@ describe("InternalPlanActivationRehearsal", () => {
       <InternalPlanActivationRehearsal
         result={generatedResult}
         onReviewInputs={vi.fn()}
+        onSessionActivationChange={vi.fn()}
       />,
     );
     expect(

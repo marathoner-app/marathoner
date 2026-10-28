@@ -1,7 +1,7 @@
 import draftRulesText from "../docs/methodology/artifacts/beta-rules/0.1.0-draft/beta-rules.json?raw";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
   createDateOnly,
   createDistanceMeters,
@@ -55,7 +55,11 @@ describe("InternalPlanProposalRehearsal", () => {
   it("offers draft-aligned dates without selecting or generating one", async () => {
     const user = userEvent.setup();
     render(
-      <InternalPlanProposalRehearsal profile={profile} ruleSet={ruleSet} />,
+      <InternalPlanProposalRehearsal
+        profile={profile}
+        ruleSet={ruleSet}
+        onSessionActivationChange={vi.fn()}
+      />,
     );
 
     const input = screen.getByLabelText("Plan start date");
@@ -81,6 +85,7 @@ describe("InternalPlanProposalRehearsal", () => {
       <InternalPlanProposalRehearsal
         profile={{ ...profile, preferredLongRunDay: "saturday" }}
         ruleSet={ruleSet}
+        onSessionActivationChange={vi.fn()}
       />,
     );
 
@@ -92,7 +97,11 @@ describe("InternalPlanProposalRehearsal", () => {
 
   it("renders the real generated proposal with explicit session-only review", async () => {
     render(
-      <InternalPlanProposalRehearsal profile={profile} ruleSet={ruleSet} />,
+      <InternalPlanProposalRehearsal
+        profile={profile}
+        ruleSet={ruleSet}
+        onSessionActivationChange={vi.fn()}
+      />,
     );
 
     await submitRehearsal({
@@ -119,8 +128,13 @@ describe("InternalPlanProposalRehearsal", () => {
 
   it("clears session activation when a proposal input changes", async () => {
     const user = userEvent.setup();
+    const onSessionActivationChange = vi.fn();
     render(
-      <InternalPlanProposalRehearsal profile={profile} ruleSet={ruleSet} />,
+      <InternalPlanProposalRehearsal
+        profile={profile}
+        ruleSet={ruleSet}
+        onSessionActivationChange={onSessionActivationChange}
+      />,
     );
 
     await user.type(screen.getByLabelText("Plan start date"), "2030-01-07");
@@ -153,11 +167,52 @@ describe("InternalPlanProposalRehearsal", () => {
     expect(
       screen.queryByRole("heading", { name: "Founding beta completion plan" }),
     ).not.toBeInTheDocument();
+    expect(onSessionActivationChange).toHaveBeenLastCalledWith(null);
+  });
+
+  it("clears and resets an active session draft when regenerated", async () => {
+    const user = userEvent.setup();
+    const onSessionActivationChange = vi.fn();
+    render(
+      <InternalPlanProposalRehearsal
+        profile={profile}
+        ruleSet={ruleSet}
+        onSessionActivationChange={onSessionActivationChange}
+      />,
+    );
+
+    await submitRehearsal({
+      confirmCohort: true,
+      confirmNoSymptoms: true,
+    });
+    await user.click(screen.getByRole("button", { name: "Continue review" }));
+    await user.click(
+      screen.getByRole("button", {
+        name: "Activate only in this rehearsal",
+      }),
+    );
+
+    expect(onSessionActivationChange).toHaveBeenLastCalledWith(
+      expect.objectContaining({ kind: "generated" }),
+    );
+
+    await user.click(
+      screen.getByRole("button", { name: "Generate read-only proposal" }),
+    );
+
+    expect(onSessionActivationChange).toHaveBeenLastCalledWith(null);
+    expect(
+      screen.getByText("Proposed plan — not active"),
+    ).toBeInTheDocument();
   });
 
   it("shows honest unsupported boundaries when cohort confirmation is absent", async () => {
     render(
-      <InternalPlanProposalRehearsal profile={profile} ruleSet={ruleSet} />,
+      <InternalPlanProposalRehearsal
+        profile={profile}
+        ruleSet={ruleSet}
+        onSessionActivationChange={vi.fn()}
+      />,
     );
 
     await submitRehearsal({ confirmNoSymptoms: true });
@@ -175,6 +230,7 @@ describe("InternalPlanProposalRehearsal", () => {
       <InternalPlanProposalRehearsal
         profile={{ ...profile, currentWeeklyDistance: undefined }}
         ruleSet={ruleSet}
+        onSessionActivationChange={vi.fn()}
       />,
     );
 
@@ -191,7 +247,11 @@ describe("InternalPlanProposalRehearsal", () => {
 
   it("requires a saved profile before enabling generation", () => {
     render(
-      <InternalPlanProposalRehearsal profile={null} ruleSet={ruleSet} />,
+      <InternalPlanProposalRehearsal
+        profile={null}
+        ruleSet={ruleSet}
+        onSessionActivationChange={vi.fn()}
+      />,
     );
 
     expect(
