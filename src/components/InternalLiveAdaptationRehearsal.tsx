@@ -1,9 +1,12 @@
 import { useMemo, useRef, useState, type FormEvent } from "react";
 import {
+  createUtcDateTime,
   evaluateAdaptation,
+  type AdaptationEvaluationInputV1,
   type AdaptationEvaluationResultV1,
   type AdaptationHistoryEvidenceV1,
   type AdaptationOutcomeRuleV1,
+  type AdaptationPlanAdjustmentV1,
   type AdaptationPlanWorkoutV1,
   type AdaptationRescheduleCandidateV1,
   type AdaptationWeekKind,
@@ -11,7 +14,12 @@ import {
   type PlannedWorkout,
   type RunPurpose,
   type TrainingPlan,
+  type UtcDateTime,
 } from "../domain/training";
+import {
+  createRecommendationId,
+  type RecommendationId,
+} from "../domain/recommendations";
 import Calendar from "./Calendar";
 import InternalAdaptationDecisionRehearsal from "./InternalAdaptationDecisionRehearsal";
 import type {
@@ -24,6 +32,9 @@ import {
   projectInternalLiveAdaptation,
   type InternalLiveAdaptationProjectionResult,
 } from "./internalLiveAdaptationProjection";
+import {
+  assembleInternalLiveRecommendationEvidence,
+} from "./internalLiveRecommendationEvidence";
 
 interface InternalLiveAdaptationRehearsalProps {
   readonly evidence: AdaptationHistoryEvidenceV1;
@@ -40,10 +51,13 @@ type LiveEvaluationOutcome =
   | { readonly kind: "not_run" }
   | {
       readonly kind: "evaluated";
+      readonly input: AdaptationEvaluationInputV1;
       readonly result: AdaptationEvaluationResultV1;
       readonly outcomeRule: AdaptationOutcomeRuleV1 | null;
       readonly outcomeDetail: DraftAdaptationOutcomeDetail | null;
       readonly evaluationId: number;
+      readonly recommendationId: RecommendationId;
+      readonly recommendedAt: UtcDateTime;
     };
 
 const weekKinds: readonly AdaptationWeekKind[] = [
@@ -107,6 +121,23 @@ export default function InternalLiveAdaptationRehearsal({
       projection: projectionOutcome.projection,
     });
   }, [activePlan, projectionOutcome, workouts]);
+  const recommendationEvidenceOutcome = useMemo(() => {
+    if (
+      outcome.kind !== "evaluated" ||
+      projectionOutcome?.kind !== "ready"
+    ) {
+      return null;
+    }
+    return assembleInternalLiveRecommendationEvidence({
+      recommendationId: outcome.recommendationId,
+      recommendedAt: outcome.recommendedAt,
+      activePlan,
+      evaluationInput: outcome.input,
+      evaluationResult: outcome.result,
+      adjustment: projectionOutcome.adjustment,
+      projection: projectionOutcome.projection,
+    });
+  }, [activePlan, outcome, projectionOutcome]);
 
   const clearOutcome = () => {
     setOutcome({ kind: "not_run" });
@@ -192,13 +223,19 @@ export default function InternalLiveAdaptationRehearsal({
             ({ reasonCode }) => reasonCode === result.reasonCode,
           ) ?? null);
     evaluationSequence.current += 1;
+    const evaluatedAt = Date.now();
     setProjectionOutcome(null);
     setOutcome({
       kind: "evaluated",
+      input,
       result,
       outcomeRule,
       outcomeDetail,
       evaluationId: evaluationSequence.current,
+      recommendationId: createRecommendationId(
+        `internal-${evaluatedAt}-${evaluationSequence.current}`,
+      ),
+      recommendedAt: createUtcDateTime(new Date(evaluatedAt).toISOString()),
     });
   };
 
@@ -534,7 +571,10 @@ export default function InternalLiveAdaptationRehearsal({
             )}
 
           {projectionOutcome?.kind === "not_ready" && (
-            <section className="internal-live-adaptation-projection" role="alert">
+            <section
+              className="internal-live-adaptation-projection"
+              role="alert"
+            >
               <p className="internal-adaptation-rehearsal-eyebrow">
                 Projection refused
               </p>
@@ -583,6 +623,80 @@ export default function InternalLiveAdaptationRehearsal({
               <p className="internal-adaptation-history-boundary">
                 This projection exists only in this page session. It was not
                 saved, no command was sent, and the real plan did not change.
+              </p>
+            </section>
+          )}
+
+          {recommendationEvidenceOutcome?.kind === "not_ready" && (
+            <section className="internal-live-adaptation-projection" role="alert">
+              <p className="internal-adaptation-rehearsal-eyebrow">
+                Evidence refused
+              </p>
+              <h4>Complete recommendation evidence could not be assembled</h4>
+              <p>{recommendationEvidenceOutcome.message}</p>
+              <p>
+                Internal code: <code>{recommendationEvidenceOutcome.code}</code>
+              </p>
+            </section>
+          )}
+
+          {recommendationEvidenceOutcome?.kind === "ready" && (
+            <section
+              className="internal-live-adaptation-projection"
+              aria-labelledby="internal-live-recommendation-evidence-title"
+            >
+              <p className="internal-adaptation-rehearsal-eyebrow">
+                Complete session evidence
+              </p>
+              <h4 id="internal-live-recommendation-evidence-title">
+                Pending recommendation evidence assembled
+              </h4>
+              <dl>
+                <div>
+                  <dt>Schema</dt>
+                  <dd>
+                    {recommendationEvidenceOutcome.evidence.schemaVersion}
+                  </dd>
+                </div>
+                <div>
+                  <dt>Evaluated plan</dt>
+                  <dd>{recommendationEvidenceOutcome.evidence.evaluatedPlanId}</dd>
+                </div>
+                <div>
+                  <dt>Evaluated revision</dt>
+                  <dd>
+                    {
+                      recommendationEvidenceOutcome.evidence.evaluationInput
+                        .evaluatedPlanRevision
+                    }
+                  </dd>
+                </div>
+                <div>
+                  <dt>Action</dt>
+                  <dd>
+                    {readableIdentifier(
+                      recommendationEvidenceOutcome.evidence.planAdjustment
+                        .action,
+                    )}
+                  </dd>
+                </div>
+                <div>
+                  <dt>Exact adjustment</dt>
+                  <dd>
+                    {describeAdjustment(
+                      recommendationEvidenceOutcome.evidence.planAdjustment,
+                    )}
+                  </dd>
+                </div>
+                <div>
+                  <dt>Decision state</dt>
+                  <dd>Pending</dd>
+                </div>
+              </dl>
+              <p className="internal-adaptation-history-boundary">
+                The exact input, result, provenance, and plan adjustment are
+                complete in memory. Nothing was saved, no command was sent, and
+                the real plan did not change.
               </p>
             </section>
           )}
@@ -643,6 +757,15 @@ function describeWorkout(workout: AdaptationPlanWorkoutV1): string {
       ? `${(workout.target.distance / 1_000).toLocaleString(undefined, { maximumFractionDigits: 2 })} km`
       : `${Math.round(workout.target.duration / 60)} min`;
   return `${workout.scheduledDate}, ${kind}, ${target}`;
+}
+
+function describeAdjustment(
+  adjustment: AdaptationPlanAdjustmentV1,
+): string {
+  if (adjustment.action === "reschedule") {
+    return `${adjustment.workoutId} to ${adjustment.targetDate}`;
+  }
+  return `Week ${adjustment.sourceWeekNumber} to week ${adjustment.targetWeekNumber}`;
 }
 
 interface BooleanSelectProps {
