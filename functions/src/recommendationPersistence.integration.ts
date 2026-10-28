@@ -18,7 +18,7 @@ import {
   RECOMMENDATION_EVIDENCE_SCHEMA_VERSION,
   createRecommendationId,
   type OperatorActivationControlV1,
-  type RecommendationEvidenceV1,
+  type RecommendationEvidenceV2,
 } from '../../src/domain/recommendations/recommendationEvidence.js'
 import {
   FirestoreOperatorActivationControlStore,
@@ -120,13 +120,18 @@ function evaluationResult(): DecidedAdaptationEvaluationResultV1 & {
   }
 }
 
-function pendingEvidence(): RecommendationEvidenceV1 {
+function pendingEvidence(): RecommendationEvidenceV2 {
   return {
     schemaVersion: RECOMMENDATION_EVIDENCE_SCHEMA_VERSION,
     recommendationId,
     evaluatedPlanId: createTrainingPlanId('plan-0001'),
     evaluationInput: evaluationInput(),
     evaluationResult: evaluationResult(),
+    planAdjustment: {
+      action: 'hold_progression',
+      sourceWeekNumber: 4,
+      targetWeekNumber: 5,
+    },
     decision: 'pending',
     recommendedAt: createUtcDateTime('2026-10-26T18:00:00.000Z'),
     decidedAt: null,
@@ -134,7 +139,7 @@ function pendingEvidence(): RecommendationEvidenceV1 {
   }
 }
 
-function acceptedEvidence(): RecommendationEvidenceV1 {
+function acceptedEvidence(): RecommendationEvidenceV2 {
   return {
     ...pendingEvidence(),
     decision: 'accepted',
@@ -143,7 +148,7 @@ function acceptedEvidence(): RecommendationEvidenceV1 {
   }
 }
 
-function declinedEvidence(): RecommendationEvidenceV1 {
+function declinedEvidence(): RecommendationEvidenceV2 {
   return {
     ...pendingEvidence(),
     decision: 'declined',
@@ -207,7 +212,7 @@ describe('Firestore recommendation evidence store', () => {
     await expect(
       evidenceStore.createPending({
         ownerId,
-        evidence: invalid as RecommendationEvidenceV1,
+        evidence: invalid as RecommendationEvidenceV2,
       }),
     ).rejects.toMatchObject({ code: 'invalid-evidence' })
 
@@ -244,6 +249,19 @@ describe('Firestore recommendation evidence store', () => {
         evidence: {
           ...accepted,
           evaluatedPlanId: createTrainingPlanId('plan-0002'),
+        },
+      }),
+    ).rejects.toMatchObject({ code: 'evidence-conflict' })
+    await expect(
+      evidenceStore.recordDecision({
+        ownerId,
+        evidence: {
+          ...accepted,
+          planAdjustment: {
+            action: 'hold_progression',
+            sourceWeekNumber: 5,
+            targetWeekNumber: 6,
+          },
         },
       }),
     ).rejects.toMatchObject({ code: 'evidence-conflict' })

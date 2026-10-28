@@ -11,9 +11,14 @@ import {
   isIdentifierValue,
   type TrainingPlanId,
 } from "../training/identifiers.js";
+import {
+  AdaptationPlanProjectionError,
+  parseAdaptationPlanAdjustment,
+  type AdaptationPlanAdjustmentV1,
+} from "../training/adaptationPlanProjection.js";
 
 export const RECOMMENDATION_EVIDENCE_SCHEMA_VERSION =
-  "recommendation-evidence@1" as const;
+  "recommendation-evidence@2" as const;
 export const OPERATOR_ACTIVATION_CONTROL_SCHEMA_VERSION =
   "operator-activation-control@1" as const;
 
@@ -54,7 +59,7 @@ export type ControlledCapability =
   (typeof CONTROLLED_CAPABILITIES)[number];
 export type RecommendationAction = (typeof RECOMMENDATION_ACTIONS)[number];
 
-export interface RecommendationEvidenceV1 {
+export interface RecommendationEvidenceV2 {
   readonly schemaVersion: typeof RECOMMENDATION_EVIDENCE_SCHEMA_VERSION;
   readonly recommendationId: RecommendationId;
   readonly evaluatedPlanId: TrainingPlanId;
@@ -64,6 +69,7 @@ export interface RecommendationEvidenceV1 {
     readonly action: RecommendationAction;
     readonly runnerApprovalRequired: true;
   };
+  readonly planAdjustment: AdaptationPlanAdjustmentV1;
   readonly decision: RecommendationDecision;
   readonly recommendedAt: UtcDateTime;
   readonly decidedAt: UtcDateTime | null;
@@ -450,6 +456,51 @@ function validateEvaluationResult(
   return issues;
 }
 
+function validatePlanAdjustment(
+  value: unknown,
+): RecommendationContractValidationIssue[] {
+  try {
+    const adjustment = parseAdaptationPlanAdjustment(value);
+    if (
+      adjustment.action !== "reschedule" &&
+      adjustment.targetWeekNumber !== adjustment.sourceWeekNumber + 1
+    ) {
+      return [
+        issue(
+          "invalid_value",
+          "planAdjustment",
+          "The target week must immediately follow the source week.",
+        ),
+      ];
+    }
+    if (
+      adjustment.action === "reschedule" &&
+      (adjustment.weekStartDate > adjustment.weekEndDate ||
+        adjustment.targetDate < adjustment.weekStartDate ||
+        adjustment.targetDate > adjustment.weekEndDate)
+    ) {
+      return [
+        issue(
+          "invalid_value",
+          "planAdjustment",
+          "The reschedule target must stay inside a valid supplied plan week.",
+        ),
+      ];
+    }
+    return [];
+  } catch (error) {
+    return [
+      issue(
+        "invalid_value",
+        "planAdjustment",
+        error instanceof AdaptationPlanProjectionError
+          ? error.message
+          : "Record the exact bounded plan adjustment.",
+      ),
+    ];
+  }
+}
+
 export function validateRecommendationEvidence(
   value: unknown,
 ): RecommendationContractValidationIssue[] {
@@ -471,6 +522,7 @@ export function validateRecommendationEvidence(
       "evaluatedPlanId",
       "evaluationInput",
       "evaluationResult",
+      "planAdjustment",
       "decision",
       "recommendedAt",
       "decidedAt",
@@ -512,6 +564,7 @@ export function validateRecommendationEvidence(
 
   issues.push(...validateEvaluationInput(value.evaluationInput));
   issues.push(...validateEvaluationResult(value.evaluationResult));
+  issues.push(...validatePlanAdjustment(value.planAdjustment));
 
   if (
     !RECOMMENDATION_DECISIONS.includes(value.decision as RecommendationDecision)
@@ -605,6 +658,18 @@ export function validateRecommendationEvidence(
           "inconsistent",
           "resultingPlanRevision",
           "An accepted recommendation must create a newer plan revision.",
+        ),
+      );
+    }
+  }
+
+  if (isRecord(value.evaluationResult) && isRecord(value.planAdjustment)) {
+    if (value.evaluationResult.action !== value.planAdjustment.action) {
+      issues.push(
+        issue(
+          "inconsistent",
+          "planAdjustment.action",
+          "The exact plan adjustment must match the recommended action.",
         ),
       );
     }

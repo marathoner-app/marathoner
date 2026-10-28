@@ -7,7 +7,7 @@ artifact.
 
 ## Recommendation evidence
 
-`RecommendationEvidenceV1` preserves one exact material recommendation as an
+`RecommendationEvidenceV2` preserves one exact material recommendation as an
 immutable record:
 
 - a server-safe recommendation identifier and evaluated plan identifier;
@@ -15,15 +15,28 @@ immutable record:
 - the active and evaluated plan revisions;
 - the stable action, reason code, explanation key, evaluator version, base-plan
   artifact version, and adaptation artifact version;
+- the exact bounded, server-owned plan adjustment that produced the proposed
+  repeat, hold, or reschedule projection;
 - the recommendation and decision times;
 - the runner decision; and
 - the resulting plan revision only when the recommendation was accepted.
 
 The validator rejects unknown fields, malformed nested input or result shapes,
-stale-plan recommendations, mismatched provenance, unsupported actions, and
-incoherent decision states. Pending records cannot claim a decision. Declined
-records cannot claim a resulting plan revision. Accepted records must identify a
-strictly newer plan revision.
+stale-plan recommendations, mismatched provenance, unsupported or malformed
+adjustments, adjustment actions that disagree with the recommendation, and
+incoherent decision states. Paired-week adjustments must name consecutive
+weeks. Reschedule adjustments must name one valid workout and a target date
+inside an exact valid plan-week range. Pending records cannot claim a decision.
+Declined records cannot claim a resulting plan revision. Accepted records must
+identify a strictly newer plan revision.
+
+The exact adjustment plus the authoritative plan snapshot at the recorded
+evaluated revision is sufficient to reproduce the bounded projection. The
+snapshot itself remains authoritative plan data rather than duplicated
+recommendation evidence. Version 2 intentionally replaces the incomplete
+version 1 shape before any participant-facing recommendation activation; the
+persistence boundary does not silently reinterpret a version 1 record as
+current evidence.
 
 The contract can validate internal evidence from a draft evaluator. Validation is
 not activation: a structurally correct draft record still cannot be presented to
@@ -66,9 +79,9 @@ Recommendation evidence is stored at
 `users/{uid}/recommendationEvidence/{recommendationId}`. The Admin SDK store
 accepts only a valid pending record at creation. It can then record one coherent
 accepted or declined decision while preserving the exact evaluated input,
-result, provenance, recommendation timestamp, plan identifier, and evidence
-identifier. Replaying the same record is idempotent; a conflicting rewrite is
-rejected.
+result, adjustment, provenance, recommendation timestamp, plan identifier, and
+evidence identifier. Replaying the same record is idempotent; a conflicting
+rewrite, including a changed plan adjustment, is rejected.
 
 The global activation record is stored at
 `operatorControls/recommendationActivation`. Its Admin SDK store accepts

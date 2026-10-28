@@ -90,7 +90,7 @@ async function seedOwnedData(
     [
       `users/${userId}/recommendationEvidence/recommendation-one`,
       {
-        schemaVersion: 'recommendation-evidence@1',
+        schemaVersion: 'recommendation-evidence@2',
         recommendationId: 'recommendation-one',
       },
     ],

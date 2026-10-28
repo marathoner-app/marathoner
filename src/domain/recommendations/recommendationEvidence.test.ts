@@ -20,7 +20,7 @@ import {
   validateOperatorActivationControl,
   validateRecommendationEvidence,
   type OperatorActivationControlV1,
-  type RecommendationEvidenceV1,
+  type RecommendationEvidenceV2,
 } from "./recommendationEvidence";
 
 const basePlanArtifactVersion = "beta-rules@0.1.0-draft";
@@ -95,13 +95,18 @@ function evaluationResult(): DecidedAdaptationEvaluationResultV1 & {
   };
 }
 
-function pendingEvidence(): RecommendationEvidenceV1 {
+function pendingEvidence(): RecommendationEvidenceV2 {
   return {
     schemaVersion: RECOMMENDATION_EVIDENCE_SCHEMA_VERSION,
     recommendationId: createRecommendationId("recommendation-0001"),
     evaluatedPlanId: createTrainingPlanId("plan-0001"),
     evaluationInput: evaluationInput(),
     evaluationResult: evaluationResult(),
+    planAdjustment: {
+      action: "hold_progression",
+      sourceWeekNumber: 4,
+      targetWeekNumber: 5,
+    },
     decision: "pending",
     recommendedAt: createUtcDateTime("2026-10-26T18:00:00.000Z"),
     decidedAt: null,
@@ -151,6 +156,93 @@ describe("recommendation evidence contract", () => {
     expect(validateRecommendationEvidence(pending)).toEqual([]);
     expect(validateRecommendationEvidence(accepted)).toEqual([]);
     expect(validateRecommendationEvidence(declined)).toEqual([]);
+  });
+
+  it.each([
+    {
+      action: "repeat_period",
+      sourceWeekNumber: 4,
+      targetWeekNumber: 5,
+    },
+    {
+      action: "hold_progression",
+      sourceWeekNumber: 4,
+      targetWeekNumber: 5,
+    },
+    {
+      action: "reschedule",
+      workoutId: "workout-0001",
+      weekNumber: 4,
+      weekStartDate: "2026-10-19",
+      weekEndDate: "2026-10-25",
+      targetDate: "2026-10-24",
+    },
+  ])("accepts an exact $action adjustment", (planAdjustment) => {
+    const action = planAdjustment.action;
+    const evidence = pendingEvidence();
+    expect(
+      validateRecommendationEvidence({
+        ...evidence,
+        evaluationResult: { ...evidence.evaluationResult, action },
+        planAdjustment,
+      }),
+    ).toEqual([]);
+  });
+
+  it.each([
+    ["missing adjustment", undefined],
+    [
+      "non-sequential paired weeks",
+      { action: "hold_progression", sourceWeekNumber: 4, targetWeekNumber: 6 },
+    ],
+    [
+      "an unknown adjustment field",
+      {
+        action: "hold_progression",
+        sourceWeekNumber: 4,
+        targetWeekNumber: 5,
+        explanation: "not evidence",
+      },
+    ],
+    [
+      "an out-of-week reschedule target",
+      {
+        action: "reschedule",
+        workoutId: "workout-0001",
+        weekNumber: 4,
+        weekStartDate: "2026-10-19",
+        weekEndDate: "2026-10-25",
+        targetDate: "2026-10-26",
+      },
+    ],
+  ])("rejects %s", (_name, planAdjustment) => {
+    expect(
+      validateRecommendationEvidence({ ...pendingEvidence(), planAdjustment }),
+    ).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ field: "planAdjustment" }),
+      ]),
+    );
+  });
+
+  it("rejects an adjustment action that does not match the recommendation", () => {
+    expect(
+      validateRecommendationEvidence({
+        ...pendingEvidence(),
+        planAdjustment: {
+          action: "repeat_period",
+          sourceWeekNumber: 4,
+          targetWeekNumber: 5,
+        },
+      }),
+    ).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          code: "inconsistent",
+          field: "planAdjustment.action",
+        }),
+      ]),
+    );
   });
 
   it.each([
@@ -259,7 +351,7 @@ describe("recommendation evidence contract", () => {
       },
     ],
     ["invalid timestamp", { recommendedAt: "tomorrow" }],
-    ["unknown schema", { schemaVersion: "recommendation-evidence@2" }],
+    ["prior schema", { schemaVersion: "recommendation-evidence@1" }],
   ])("rejects an %s", (_name, override) => {
     expect(
       validateRecommendationEvidence({ ...pendingEvidence(), ...override }),
