@@ -11,6 +11,49 @@ if (result?.kind !== "generated") {
 }
 
 describe("InternalPlanActivationRehearsal", () => {
+  it("explains the session preview boundary before and after activation", async () => {
+    const user = userEvent.setup();
+
+    render(
+      <InternalPlanActivationRehearsal
+        result={result}
+        onReviewInputs={vi.fn()}
+        onSessionActivationChange={vi.fn()}
+      />,
+    );
+
+    await user.click(screen.getByRole("button", { name: "Continue review" }));
+
+    expect(
+      screen.getByText(
+        /previews this draft in the home next-workout card and Plan calendar/iu,
+      ),
+    ).toHaveTextContent("It does not save or approve the plan");
+    expect(
+      screen.getByText(
+        /previews this draft in the home next-workout card and Plan calendar/iu,
+      ),
+    ).toHaveTextContent(
+      "Track continues to use synchronized training data.",
+    );
+
+    await user.click(
+      screen.getByRole("button", {
+        name: "Activate only in this rehearsal",
+      }),
+    );
+
+    expect(screen.getByRole("status")).toHaveTextContent(
+      `${result.plan.name} is active as a session-only preview in home and Plan.`,
+    );
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "It was not saved or approved.",
+    );
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "Track and synchronized training data remain unchanged.",
+    );
+  });
+
   it("reports activation and ending it to the surrounding workspace", async () => {
     const user = userEvent.setup();
     const onSessionActivationChange = vi.fn();

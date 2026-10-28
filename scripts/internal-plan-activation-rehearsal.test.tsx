@@ -39,7 +39,9 @@ describe("InternalPlanActivationRehearsal", () => {
         name: "Activate Synthetic contract plan in this session?",
       }),
     ).toBeInTheDocument();
-    expect(screen.getByText(/will not write Firestore/iu)).toBeInTheDocument();
+    expect(
+      screen.getByText(/write Firestore, or change synchronized training data/iu),
+    ).toBeInTheDocument();
     expect(
       screen.queryByRole("heading", { name: "Active only in this rehearsal" }),
     ).not.toBeInTheDocument();
@@ -54,7 +56,7 @@ describe("InternalPlanActivationRehearsal", () => {
       screen.getByRole("heading", { name: "Active only in this rehearsal" }),
     ).toBeInTheDocument();
     expect(screen.getByRole("status")).toHaveTextContent(
-      "real Plan and Track screens were not changed",
+      "Track and synchronized training data remain unchanged",
     );
     expect(
       screen.getByRole("heading", {
