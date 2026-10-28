@@ -138,6 +138,7 @@ export default function InternalSessionDraftFeedbackRehearsal({
       id="internal-session-draft-feedback"
       className="internal-adaptation-history internal-session-draft-feedback"
       aria-labelledby="internal-session-draft-feedback-title"
+      tabIndex={-1}
     >
       <header>
         <p className="internal-adaptation-history-eyebrow">

@@ -151,6 +151,14 @@ export default function InternalSessionTodayComparison({
     hasRestDay,
     hasRun: todaysRuns.length > 0,
   });
+  const feedbackIsAvailable =
+    trainingWorkouts.length > 0 && todaysRuns.length > 0;
+
+  const focusSessionDraftFeedback = () => {
+    document.getElementById("internal-session-draft-feedback")?.focus({
+      preventScroll: true,
+    });
+  };
 
   return (
     <section
@@ -174,14 +182,24 @@ export default function InternalSessionTodayComparison({
         <p role="status" aria-label="Daily comparison status">
           <strong>Daily status:</strong> {dailyStatus}
         </p>
-        <button
-          type="button"
-          onClick={() => onOpenTrack(todaysRuns[0]?.id ?? null)}
-        >
-          {todaysRuns.length > 0
-            ? "Review runs in Track"
-            : "Open Track to log a run"}
-        </button>
+        <div className="internal-session-today-comparison-actions">
+          <button
+            type="button"
+            onClick={() => onOpenTrack(todaysRuns[0]?.id ?? null)}
+          >
+            {todaysRuns.length > 0
+              ? "Review runs in Track"
+              : "Open Track to log a run"}
+          </button>
+          {feedbackIsAvailable && (
+            <a
+              href="#internal-session-draft-feedback"
+              onClick={focusSessionDraftFeedback}
+            >
+              Rehearse feedback from today's run
+            </a>
+          )}
+        </div>
       </div>
 
       <div className="internal-session-today-comparison-columns">
