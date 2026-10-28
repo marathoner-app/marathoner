@@ -76,13 +76,16 @@ export function resolveAppCheckDebugTokenForMode({
 
   if (!normalizedDebugToken) return undefined
 
+  const isSupportedLocalBrowserMode =
+    mode === 'development' || mode === 'internal-plan-rehearsal'
+
   if (
     !isViteServe ||
-    mode !== 'development' ||
+    !isSupportedLocalBrowserMode ||
     environmentName !== 'development'
   ) {
     throw new Error(
-      'An App Check debug token is allowed only while Vite serves the development Firebase environment locally. Build output must never contain one.',
+      'An App Check debug token is allowed only while Vite serves the development Firebase environment in an approved local browser mode. Build output must never contain one.',
     )
   }
 

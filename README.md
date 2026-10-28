@@ -296,8 +296,11 @@ engine warnings from development tools on unsupported non-LTS releases.
 The development reCAPTCHA Enterprise key intentionally does not authorize
 localhost. Firebase-backed local use therefore fails closed until an
 administrator registers one fixed development debug token and the operator
-stores it in ignored `.env.development.local`. That token is accepted only by
-`npm run dev`; every Vite build command rejects it before bundling. Follow the
+stores it in the ignored mode-specific file for the command being run:
+`.env.development.local` for `npm run dev`, or
+`.env.internal-plan-rehearsal.local` for `npm run dev:plan-rehearsal`. The token
+is accepted only while Vite serves one of those two local development modes;
+every Vite build command rejects it before bundling. Follow the
 [App Check client initialization record](docs/security/app-check-client-initialization.md#localhost-debug-token-workflow-external-evidence-pending)
 without copying the value into Git, logs, screenshots, issues, or pull
 requests.

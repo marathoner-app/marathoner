@@ -64,6 +64,13 @@ fallback. Development debug tokens may be created only under this policy:
 | Development local | One token per operator/device, named `development-local-<operator>-<device>`; value only in an ignored mode-`0600` `*.local` file | The named operator; console custody remains with the Marathoner administrator | Revoke immediately for suspected exposure, lost/retired device, or custody change; replace at least every 90 days while active |
 | Development CI | A future dedicated `development-ci-github-actions` token may be injected only into an ephemeral Vite **serve** process from a development GitHub environment secret; build and uploaded-artifact use is prohibited | Repository administrator | Rotate on runner/workflow trust changes and at least every 90 days; replace the secret, prove the new served session, then revoke the old token |
 
+The development web registration has one browser token named
+`development-local-kevin-mac`, owned by Kevin Tulloch and stored only in the
+ignored mode-`0600` owner-rehearsal environment file. It was created and last
+verified on October 28, 2026; its next required rotation date is January 26,
+2027. The localhost rehearsal passed App Check startup, Email/Password sign-in,
+and an owner-scoped Firestore read without recording the token value.
+
 The development iOS registration currently has one owner-only token named
 `owner-iphone-development`, created on October 21, 2026 for local physical-device
 dogfooding. Its value is held only in the ignored Xcode user scheme, is never

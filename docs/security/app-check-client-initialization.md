@@ -53,15 +53,16 @@ iOS uses the separately selected `GoogleService-Info.plist` identities described
 in the [provider registration record](app-check-provider-registration.md).
 
 Beta, production-web, and iOS Release builds never select a debug provider. A
-fixed browser debug token may be
-provided only through `VITE_FIREBASE_APP_CHECK_DEBUG_TOKEN` when all of these
-conditions are true:
+fixed browser debug token may be provided only through
+`VITE_FIREBASE_APP_CHECK_DEBUG_TOKEN` when all of these conditions are true:
 
-- Vite is serving the application (`npm run dev`), not building an artifact;
-- Vite mode is `development`;
+- Vite is serving the application (`npm run dev` or
+  `npm run dev:plan-rehearsal`), not building an artifact;
+- Vite mode is `development` or the owner-only `internal-plan-rehearsal`;
 - the selected Firebase environment is `development`;
 - the value is a fixed Firebase debug-token UUID stored only in an ignored
-  mode-`0600` `.env.development.local` file.
+  mode-`0600` `.env.development.local` or
+  `.env.internal-plan-rehearsal.local` file selected by the command.
 
 Boolean or generated-at-runtime debug mode is rejected because it can print a
 credential. Every build command rejects the variable before bundling, including
@@ -71,32 +72,43 @@ that does not match explicit local configuration. The served local client may
 contain the fixed token in memory because Firebase requires it for the debug
 provider; no committed or uploaded build artifact may contain it.
 
-### Localhost debug-token workflow (external evidence pending)
+### Localhost debug-token workflow and evidence
 
 The development Enterprise site key authorizes the supported GitHub Pages
 hosts, not localhost. Local Auth and Firestore use therefore require one
-separately registered development debug token. No such token has been created
-or verified for this implementation yet; the following workflow is the
-reviewed procedure, not a claim of console or traffic evidence:
+separately registered development debug token. The following workflow is the
+reviewed procedure used for the owner-only browser rehearsal:
 
 1. In the **development** Firebase project only, an administrator creates an App
    Check debug token named `development-local-<operator>-<device>` and records
    its owner, creation date, next rotation date, and later revocation date—not
    its value—in the private credential inventory.
-2. The named operator creates `.env.development.local`, limits it to mode
-   `0600`, and adds exactly
+2. The named operator creates the ignored mode-specific file for the intended
+   command—`.env.development.local` for `npm run dev`, or
+   `.env.internal-plan-rehearsal.local` for
+   `npm run dev:plan-rehearsal`—limits it to mode `0600`, and adds exactly
    `VITE_FIREBASE_APP_CHECK_DEBUG_TOKEN=<console-issued UUID>`. The file is
-   covered by `*.local` in `.gitignore`; `git check-ignore -v
-   .env.development.local` must identify that rule before the value is added.
-3. The operator runs `npm run dev`. Do not run or upload a build while the
-   variable is present; the repository policy rejects one rather than relying
-   on operator memory.
+   covered by `*.local` in `.gitignore`; run `git check-ignore -v` against the
+   exact selected filename and confirm that rule is reported before adding the
+   value.
+3. The operator runs the matching serve command. Do not run or upload a build
+   while the variable is present; the repository policy rejects one rather
+   than relying on operator memory.
 4. From localhost, prove the startup gate completes, Email/Password Auth works,
    and an owner-scoped Firestore read carries a valid App Check token. Record
    only pass/fail, origin, environment, date, and token display name.
 5. Remove the local file when it is not needed. Revoke immediately after
    suspected exposure or loss of custody, and at least every 90 days while the
    token remains active.
+
+On October 28, 2026, the development web registration received the owner-only
+token `development-local-kevin-mac`. From `http://127.0.0.1:5173/`, Vite mode
+`internal-plan-rehearsal` passed the App Check startup gate, completed
+Email/Password sign-in, and loaded the saved runner-setup state through an
+owner-scoped Firestore read. The token value remained only in the ignored
+mode-`0600` `.env.internal-plan-rehearsal.local` file and was not recorded in
+the repository, test output, screenshots, issues, or pull requests. The next
+required rotation date is January 26, 2027.
 
 Never use the development browser token for beta, iOS, production output, another
 operator/device, or CI artifacts. Never set the debug global manually.
