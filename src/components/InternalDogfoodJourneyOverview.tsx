@@ -34,6 +34,12 @@ const journeySteps = [
       "Use the saved runner setup to generate, inspect, and activate a draft only for this browser session.",
   },
   {
+    href: "#internal-session-plan-schedule",
+    title: "Inspect the session calendar",
+    description:
+      "After activation, move through the draft week by week in the same calendar used by Marathoner's Plan surface.",
+  },
+  {
     href: "#internal-adaptation-history",
     title: "Inspect synchronized history",
     description:

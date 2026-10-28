@@ -156,6 +156,11 @@ describe("InternalDogfoodJourneyOverview", () => {
     ).toHaveAttribute("href", "#internal-plan-proposal");
     expect(
       within(navigation).getByRole("link", {
+        name: "Inspect the session calendar",
+      }),
+    ).toHaveAttribute("href", "#internal-session-plan-schedule");
+    expect(
+      within(navigation).getByRole("link", {
         name: "Inspect synchronized history",
       }),
     ).toHaveAttribute("href", "#internal-adaptation-history");

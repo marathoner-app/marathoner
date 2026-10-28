@@ -4,6 +4,7 @@ export * from "./adaptationPlanProjection";
 export * from "./calculations";
 export * from "./dates";
 export * from "./deterministicPlanGenerator";
+export * from "./generatedPlanEntityProjection";
 export * from "./identifiers";
 export * from "./nextWorkout";
 export * from "./planGeneration";
