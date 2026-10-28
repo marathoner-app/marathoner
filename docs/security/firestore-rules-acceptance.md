@@ -1,7 +1,7 @@
 # Firestore rules acceptance record
 
-- **Status:** Current rules accepted; plan/write migration continuing through #472 and #115
-- **Last audited:** October 26, 2026
+- **Status:** Current development rules accepted and live; beta candidate remains separately gated; plan/write migration continuing through #472 and #115
+- **Last audited:** October 28, 2026
 - **Security gate:** [#121](https://github.com/marathoner-app/marathoner/issues/121)
 - **Final evidence issue:** [#470](https://github.com/marathoner-app/marathoner/issues/470)
 - **Invitation decision:** [#129](https://github.com/marathoner-app/marathoner/issues/129)
@@ -110,11 +110,38 @@ repository round trip. The separate `Material command emulators` job retains
 the duplicate, stale-revision, cross-owner, partial-failure, and two-client
 transaction evidence.
 
-The accepted baseline is the passing
-[#471 workflow run](https://github.com/marathoner-app/marathoner/actions/runs/40427922844),
-which issue #129 links as its Firestore-rule evidence. Later migrations must
-replace that link with their passing workflow before claiming the corresponding
-write boundary is complete.
+The current development deployment candidate is retained by the passing
+[#598 workflow run](https://github.com/marathoner-app/marathoner/actions/runs/40766903512),
+including its
+[`Firestore emulator tests` job](https://github.com/marathoner-app/marathoner/actions/runs/40766903512/job/123093360618).
+Later migrations must replace that link with their passing workflow before
+claiming the corresponding write boundary is complete.
 
 Neither workflow deploys Firebase rules or authorizes beta invitations. Live
 deployment remains an explicit reviewed operation with project-alias guards.
+
+## Live development deployment evidence
+
+Issue [#597](https://github.com/marathoner-app/marathoner/issues/597) records
+the October 28, 2026 deployment of the current tracked rules to development
+only. Before deployment, `cloud.firestore` pointed to ruleset
+`65d26383-3b4d-4edf-bd5a-656af4f45013`, whose source hash
+`8cfac2d94aa6e1cd931d71e85c2c601371e1286370ed0caa772073c7691bd64f`
+matched repository commit `c659435258ffe7cfa28f3559445d5fe6cc6dd3ff`. That
+ruleset remains the exact rollback target.
+
+The reviewed candidate source hash was
+`0668ba5bd897631b2ceeb1c15dc752518ee3baa445e9eb234b0b4b912374095c`.
+The exact candidate passed the linked Firestore emulator job before the
+project-guarded command deployed it to `marathoner-d9bf9`. The resulting live
+ruleset is `c62cace2-c495-4876-8ee9-6ddf72eedff4`, and its retrieved source
+hash matches the reviewed candidate exactly. The separate
+`marathonerapp-beta` project was not changed.
+
+The post-deployment owner smoke proved Email/Password authentication, the
+owner-scoped profile and training-data reads, the legacy profile update that
+adds `consistentRunningWeeks`, and a full reload. Reopening runner setup after
+reload hydrated the saved value and preserved every prior answer. A local
+emulator rerun was unavailable because this development machine has no Java
+runtime; the exact candidate's required CI emulator job is the retained test
+evidence rather than an unverified local substitute.
