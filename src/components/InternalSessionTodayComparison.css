@@ -25,6 +25,14 @@
   text-transform: uppercase;
 }
 
+.internal-session-today-comparison-status {
+  margin: 1rem 0 0;
+  padding: 0.8rem 1rem;
+  border-radius: 0.75rem;
+  background: #dcebe0;
+  color: #173425;
+}
+
 .internal-session-today-comparison-columns {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

@@ -94,6 +94,32 @@ function workoutTarget(
   return parts.length === 0 ? null : parts.join(" · ");
 }
 
+function dailyStatusMessage({
+  hasTrainingWorkout,
+  hasRestDay,
+  hasRun,
+}: {
+  readonly hasTrainingWorkout: boolean;
+  readonly hasRestDay: boolean;
+  readonly hasRun: boolean;
+}): string {
+  if (hasTrainingWorkout) {
+    return hasRun
+      ? "A run is logged on today's draft workout day."
+      : "Today's draft workout does not have a same-date run logged yet.";
+  }
+
+  if (hasRestDay) {
+    return hasRun
+      ? "A run is logged on today's draft rest day."
+      : "No run is logged on today's draft rest day.";
+  }
+
+  return hasRun
+    ? "A run is logged on a day with no draft workout."
+    : "No draft workout or synchronized run is logged for today.";
+}
+
 export default function InternalSessionTodayComparison({
   projection,
   runs,
@@ -117,6 +143,11 @@ export default function InternalSessionTodayComparison({
       run.userId === projection.plan.userId &&
       getRunLocalDate(run) === comparisonDate,
   );
+  const dailyStatus = dailyStatusMessage({
+    hasTrainingWorkout: trainingWorkouts.length > 0,
+    hasRestDay,
+    hasRun: todaysRuns.length > 0,
+  });
 
   return (
     <section
@@ -135,6 +166,14 @@ export default function InternalSessionTodayComparison({
           <time dateTime={comparisonDate}>{formatDate(comparisonDate)}</time>
         </p>
       </header>
+
+      <p
+        className="internal-session-today-comparison-status"
+        role="status"
+        aria-label="Daily comparison status"
+      >
+        <strong>Daily status:</strong> {dailyStatus}
+      </p>
 
       <div className="internal-session-today-comparison-columns">
         <section aria-labelledby="internal-session-today-workout-title">
