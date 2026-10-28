@@ -64,8 +64,12 @@ When that transient history is coherent, the rehearsal derives and locks the
 current core week, current and next week kinds, and next-week progression state
 from the activated draft and pinned base-plan packet. It refuses lead-in, race,
 recovery, or otherwise unsupported trigger weeks instead of asking the owner to
-guess. Availability and any reschedule candidate remain explicit owner inputs
-because the plan cannot determine those facts.
+guess. For an explicitly confirmed skipped workout, it also derives any
+structurally valid reschedule dates from the activated draft and pinned
+adaptation limits. Purpose, delay, plan-week boundaries, target-date occupancy,
+and consecutive run spacing are locked schedule facts. Runner availability
+remains an explicit owner confirmation, and the owner can still choose that no
+candidate is available.
 
 The same mode also shows **Internal draft adaptation rehearsal**. This second
 tool requires the owner to choose one frozen scenario from the pinned adaptation

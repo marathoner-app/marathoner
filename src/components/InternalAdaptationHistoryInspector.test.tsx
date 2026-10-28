@@ -145,7 +145,7 @@ describe("InternalAdaptationHistoryInspector", () => {
     renderInspector();
 
     expect(screen.getByText("2026-10-26 through 2026-11-01")).toBeVisible();
-    await inspect();
+    const user = await inspect();
 
     expect(
       screen.getByRole("heading", { name: "Objective history is coherent" }),
@@ -156,6 +156,13 @@ describe("InternalAdaptationHistoryInspector", () => {
       screen.getByText(/history-ready is not participant-ready/iu),
     ).toBeVisible();
     expect(screen.getByLabelText("Current core week")).toBeVisible();
+    expect(screen.getByLabelText("Candidate state")).toBeVisible();
+    await user.selectOptions(screen.getByLabelText("Candidate state"), "present");
+    expect(screen.getByLabelText("Workout purpose")).toBeVisible();
+    expect(screen.getByLabelText("Delay in calendar days")).toBeVisible();
+    expect(
+      screen.getByLabelText("Candidate remains in the same plan week"),
+    ).toBeVisible();
     expect(
       screen.queryByRole("button", { name: /recommend|apply|change plan/iu }),
     ).not.toBeInTheDocument();

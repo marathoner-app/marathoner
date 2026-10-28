@@ -22,6 +22,7 @@ const ownerId = createUserId("owner-1");
 const planId = createTrainingPlanId("session-plan-1");
 const firstWorkoutId = createPlannedWorkoutId("session-workout-1");
 const secondWorkoutId = createPlannedWorkoutId("session-workout-2");
+const skippedEasyWorkoutId = createPlannedWorkoutId("session-workout-3");
 const createdAt = createUtcDateTime("2030-01-07T12:00:00.000Z");
 const timeZone = createIanaTimeZone("UTC");
 const projection: GeneratedPlanEntityProjection = {
@@ -89,7 +90,9 @@ const draftPacket = {
   rules: {
     basePlanArtifactVersion: "test-base-plan-draft",
     adaptationArtifactVersion: "test-adaptation-draft",
-    allowedReschedulePurposes: [],
+    allowedReschedulePurposes: ["easy", "recovery"],
+    maximumRescheduleDelayDays: 2,
+    maximumConsecutiveRunDatesAfterReschedule: 2,
     supportedCoreWeeks: { minimum: 1, maximum: 14 },
   },
 } as unknown as InternalAdaptationScenarioPacket;
@@ -306,6 +309,89 @@ describe("InternalSessionDraftFeedbackRehearsal", () => {
     expect(
       screen.queryByRole("heading", { name: "Evaluate live draft evidence" }),
     ).not.toBeInTheDocument();
+  });
+
+  it("shows plan-derived candidate dates and asks only for availability", async () => {
+    const user = userEvent.setup();
+    const projectionWithSkippedEasyWorkout: GeneratedPlanEntityProjection = {
+      ...projection,
+      workouts: [
+        ...projection.workouts,
+        {
+          id: skippedEasyWorkoutId,
+          userId: ownerId,
+          planId,
+          scheduledDate: createDateOnly("2030-01-10"),
+          phase: "base_building",
+          status: "planned",
+          kind: "run",
+          purpose: "easy",
+          targetDistance: createDistanceMeters(5_000),
+          createdAt,
+          updatedAt: createdAt,
+        },
+      ],
+    };
+    renderRehearsal(projectionWithSkippedEasyWorkout, [firstRun]);
+
+    await user.selectOptions(
+      screen.getByLabelText("Draft workout"),
+      firstWorkoutId,
+    );
+    await user.selectOptions(
+      screen.getByLabelText("Synchronized run"),
+      firstRun.id,
+    );
+    await user.click(
+      screen.getByRole("button", { name: "Add pair to session rehearsal" }),
+    );
+    await user.selectOptions(
+      screen.getByLabelText("Draft workout to skip"),
+      skippedEasyWorkoutId,
+    );
+    await user.click(
+      screen.getByRole("button", { name: "Mark skipped for rehearsal" }),
+    );
+
+    const candidateSelect = screen.getByLabelText("Reschedule choice");
+    expect(
+      within(candidateSelect).getByRole("option", {
+        name: "Jan 11, 2030 · 1 day later",
+      }),
+    ).toBeVisible();
+    expect(
+      within(candidateSelect).getByRole("option", {
+        name: "Jan 12, 2030 · 2 days later",
+      }),
+    ).toBeVisible();
+    expect(screen.queryByLabelText("Workout purpose")).not.toBeInTheDocument();
+    expect(
+      screen.queryByLabelText("Delay in calendar days"),
+    ).not.toBeInTheDocument();
+
+    await user.selectOptions(candidateSelect, "2030-01-11");
+    const derivedFacts = screen.getByRole("group", {
+      name: "Derived reschedule facts",
+    });
+    expect(within(derivedFacts).getByText("Workout purpose")).toBeVisible();
+    expect(within(derivedFacts).getByText("Easy")).toBeVisible();
+    expect(within(derivedFacts).getByText("Same plan week")).toBeVisible();
+    expect(
+      screen.getByLabelText("I confirm I am available on Jan 11, 2030."),
+    ).not.toBeChecked();
+    expect(
+      screen.getByRole("button", { name: "Evaluate live draft evidence" }),
+    ).toBeDisabled();
+
+    await user.click(
+      screen.getByLabelText("I confirm I am available on Jan 11, 2030."),
+    );
+    await user.click(
+      screen.getByLabelText(/I inspected the live history above/iu),
+    );
+    expect(
+      screen.getByRole("button", { name: "Evaluate live draft evidence" }),
+    ).toBeEnabled();
   });
 
   it("explains unavailable evidence and stays hidden without a draft", () => {
