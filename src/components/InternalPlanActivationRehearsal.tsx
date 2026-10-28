@@ -128,9 +128,11 @@ export default function InternalPlanActivationRehearsal({
           Activate {result.plan.name} in this session?
         </h3>
         <p>
-          This changes only the owner-only rehearsal on this page. It will not
-          write Firestore, call the plan-approval command, or change the real
-          Plan screen.
+          Activating previews this draft in the home next-workout card and Plan
+          calendar for the current browser session. It does not save or approve
+          the plan, call the plan-approval command, write Firestore, or change
+          synchronized training data. Track continues to use synchronized
+          training data.
         </p>
         <dl aria-label="Draft plan activation summary">
           <div>
@@ -177,8 +179,9 @@ export default function InternalPlanActivationRehearsal({
         Active only in this rehearsal
       </h3>
       <p role="status">
-        {result.plan.name} is active for inspection on this page. It was not
-        saved, and the real Plan and Track screens were not changed.
+        {result.plan.name} is active as a session-only preview in home and Plan.
+        It was not saved or approved. Track and synchronized training data
+        remain unchanged.
       </p>
 
       <dl aria-label="Session-only active plan summary">
