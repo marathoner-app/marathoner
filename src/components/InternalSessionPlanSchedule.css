@@ -1,0 +1,27 @@
+.internal-session-plan-schedule {
+  width: min(100%, 72rem);
+  margin: 2rem auto 0;
+  padding: clamp(1.25rem, 3vw, 2rem);
+  border: 2px solid #315d7a;
+  border-radius: 1rem;
+  background: #f2f7fb;
+  color: #172b3a;
+}
+
+.internal-session-plan-schedule > header {
+  max-width: 52rem;
+  margin-bottom: 1.5rem;
+}
+
+.internal-session-plan-schedule-eyebrow {
+  margin: 0 0 0.35rem;
+  color: #315d7a;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.internal-session-plan-schedule h2 {
+  color: inherit;
+}

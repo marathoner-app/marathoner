@@ -20,6 +20,8 @@ const forbiddenBuildText = [
   'internal-plan-rehearsal',
   'Owner-only dogfood workspace',
   'Internal dogfood journey',
+  'Session-only plan calendar',
+  'Owner-only session projection',
 ]
 const textExtensions = new Set(['.css', '.html', '.js', '.json', '.map', '.txt'])
 

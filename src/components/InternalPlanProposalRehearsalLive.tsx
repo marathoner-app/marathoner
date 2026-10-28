@@ -1,9 +1,12 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import internalRulesText from "virtual:internal-plan-rehearsal-rules";
 import internalAdaptationPacketText from "virtual:internal-adaptation-rehearsal-packet";
 import internalSafetyPacketText from "virtual:internal-safety-escalation-packet";
 import {
   createIanaTimeZone,
+  createTrainingPlanId,
+  createUtcDateTime,
+  projectGeneratedPlanEntities,
   type ActivePlanState,
   type CompletedRun,
   type GeneratedPlanResultV1,
@@ -18,6 +21,7 @@ import InternalAdaptationScenarioRehearsal from "./InternalAdaptationScenarioReh
 import InternalGuidanceReviewGallery from "./InternalGuidanceReviewGallery";
 import InternalPlanProposalRehearsal from "./InternalPlanProposalRehearsal";
 import InternalSafetyEscalationRehearsal from "./InternalSafetyEscalationRehearsal";
+import InternalSessionPlanSchedule from "./InternalSessionPlanSchedule";
 import { createInternalAdaptationScenarioPacket } from "./internalAdaptationScenarioPacket";
 import { createInternalPlanProposalRehearsalRuleSet } from "./internalPlanProposalRehearsalRules";
 import { createInternalSafetyEscalationPacket } from "./internalSafetyEscalationPacket";
@@ -62,6 +66,19 @@ export default function InternalPlanProposalRehearsalLive({
 }: InternalPlanProposalRehearsalLiveProps) {
   const [sessionDraftPlan, setSessionDraftPlan] =
     useState<GeneratedPlanResultV1 | null>(null);
+  const sessionPlanProjection = useMemo(
+    () =>
+      sessionDraftPlan === null
+        ? null
+        : projectGeneratedPlanEntities({
+            proposal: sessionDraftPlan.plan,
+            ownerId,
+            planId: createTrainingPlanId("internal-session-draft"),
+            projectedAt: createUtcDateTime(new Date().toISOString()),
+            status: "active",
+          }),
+    [ownerId, sessionDraftPlan],
+  );
 
   if (ruleSet === null || adaptationPacket === null || safetyPacket === null) {
     return null;
@@ -82,6 +99,10 @@ export default function InternalPlanProposalRehearsalLive({
         profile={profile}
         ruleSet={ruleSet}
         onSessionActivationChange={setSessionDraftPlan}
+      />
+      <InternalSessionPlanSchedule
+        projection={sessionPlanProjection}
+        distanceUnit={profile?.preferredDistanceUnit ?? "mile"}
       />
       <InternalAdaptationHistoryInspector
         ownerId={ownerId}

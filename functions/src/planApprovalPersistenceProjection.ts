@@ -16,17 +16,16 @@ import {
   type UserId,
 } from '../../src/domain/training/identifiers.js'
 import {
+  GeneratedPlanEntityProjectionError,
+  projectGeneratedPlanEntities,
+  type GeneratedPlanEntityProjection,
+} from '../../src/domain/training/generatedPlanEntityProjection.js'
+import {
   PLAN_GENERATION_RESULT_SCHEMA_VERSION,
   validatePlanGenerationContract,
   type GeneratedPlanV1,
-  type GeneratedWorkoutV1,
   type PlanGenerationReasonCode,
 } from '../../src/domain/training/planGeneration.js'
-import {
-  validatePlannedWorkout,
-  validateTrainingPlan,
-  validateWorkoutForPlan,
-} from '../../src/domain/training/validation.js'
 import type {
   PlannedWorkout,
   TrainingPhase,
@@ -174,52 +173,6 @@ function requireApprovedAt(value: string): UtcDateTime {
   }
 }
 
-function projectWorkout(
-  generated: GeneratedWorkoutV1,
-  phase: TrainingPhase,
-  ownerId: UserId,
-  planId: TrainingPlanId,
-  approvedAt: UtcDateTime,
-): PlannedWorkout {
-  const base = {
-    id: generated.id,
-    userId: ownerId,
-    planId,
-    scheduledDate: generated.scheduledDate,
-    phase,
-    status: 'planned' as const,
-    createdAt: approvedAt,
-    updatedAt: approvedAt,
-  }
-
-  if (generated.kind === 'rest') return { ...base, kind: 'rest' }
-
-  const target =
-    generated.target.kind === 'distance'
-      ? { targetDistance: generated.target.distance }
-      : { targetDuration: generated.target.duration }
-
-  return generated.kind === 'run'
-    ? { ...base, ...target, kind: 'run', purpose: generated.purpose }
-    : { ...base, ...target, kind: 'walk_run' }
-}
-
-function validateProjection(
-  plan: TrainingPlan,
-  workouts: readonly PlannedWorkout[],
-): void {
-  const issues = [
-    ...validateTrainingPlan(plan),
-    ...workouts.flatMap((workout) => [
-      ...validatePlannedWorkout(workout),
-      ...validateWorkoutForPlan(workout, plan),
-    ]),
-  ]
-  if (issues.length > 0) {
-    invalidProjection('The projected plan or workout records are invalid.')
-  }
-}
-
 function projectProvenance(
   envelope: PlanApprovalCommandEnvelope,
   proposal: GeneratedPlanV1,
@@ -304,24 +257,22 @@ export function projectApprovedPlan(
   }
 
   const proposal = envelope.command.proposal
-  const plan: TrainingPlan = {
-    id: planId,
-    userId: ownerId,
-    name: proposal.name,
-    startDate: proposal.startDate,
-    targetRaceDate: proposal.targetRaceDate,
-    endDate: proposal.endDate,
-    completionGoal: proposal.completionGoal,
-    status: 'active',
-    createdAt: approvedAt,
-    updatedAt: approvedAt,
+  let entities: GeneratedPlanEntityProjection
+  try {
+    entities = projectGeneratedPlanEntities({
+      proposal,
+      ownerId,
+      planId,
+      projectedAt: approvedAt,
+      status: 'active',
+    })
+  } catch (error) {
+    if (error instanceof GeneratedPlanEntityProjectionError) {
+      return invalidProjection('The projected plan or workout records are invalid.')
+    }
+    throw error
   }
-  const workouts = proposal.weeks.flatMap((week) =>
-    week.workouts.map((workout) =>
-      projectWorkout(workout, week.phase, ownerId, planId, approvedAt),
-    ),
-  )
-  validateProjection(plan, workouts)
+  const { plan, workouts } = entities
 
   return {
     plan: {
