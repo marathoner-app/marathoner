@@ -28,6 +28,9 @@ const forbiddenBuildText = [
   'The Plan calendar is previewing this draft.',
   'Activating previews this draft in the home next-workout card',
   'session-only preview in home and Plan',
+  'Owner-only daily comparison',
+  'Today in the session draft',
+  'Same-date comparison only',
 ]
 const textExtensions = new Set(['.css', '.html', '.js', '.json', '.map', '.txt'])
 
