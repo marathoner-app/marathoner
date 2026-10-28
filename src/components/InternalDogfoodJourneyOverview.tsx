@@ -40,6 +40,12 @@ const journeySteps = [
       "After activation, move through the draft week by week in the same calendar used by Marathoner's Plan surface.",
   },
   {
+    href: "#internal-session-today-comparison",
+    title: "Compare today's real run",
+    description:
+      "Compare the session draft's schedule with synchronized runs logged on the same date without creating a saved workout association.",
+  },
+  {
     href: "#internal-adaptation-history",
     title: "Inspect synchronized history",
     description:
