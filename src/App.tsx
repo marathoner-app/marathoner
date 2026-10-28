@@ -10,6 +10,7 @@ import { useAuth } from "./auth/useAuth";
 import TrainingDataProvider from "./training/TrainingDataProvider";
 import { useTrainingData } from "./training/useTrainingData";
 import useDelayedStaleNotice from "./training/useDelayedStaleNotice";
+import RecommendationEvidenceProvider from "./recommendations/RecommendationEvidenceProvider";
 import RunnerOnboarding from "./onboarding/RunnerOnboarding";
 import { isRunnerProfileOnboardingComplete } from "./onboarding/runnerProfileDraft";
 import {
@@ -23,6 +24,7 @@ import {
   type UserId,
 } from "./domain/training";
 import NextWorkoutSummary from "./components/NextWorkoutSummary";
+import RecommendationDecisionSurface from "./components/RecommendationDecisionSurface";
 import { isBetaRunCommandRehearsalMode } from "./components/betaRunCommandRehearsalMode";
 import { isInternalPlanProposalRehearsalMode } from "./components/internalPlanProposalRehearsalMode";
 
@@ -258,17 +260,21 @@ function App() {
 
       {!deletionReceipt && !logoutPending && auth.status === "signedIn" && (
         <TrainingDataProvider key={auth.user.uid} userId={auth.user.uid}>
-          <AuthenticatedExperience
+          <RecommendationEvidenceProvider
             ownerId={createUserId(auth.user.uid)}
-            activeSection={activeSection}
-            activeSectionDetails={activeSectionDetails}
-            reduceMotion={Boolean(reduceMotion)}
-            onOpenSection={openSection}
-            onCloseSection={closeSection}
-            onRegisterTrigger={(section, element) => {
-              triggerRefs.current[section] = element;
-            }}
-          />
+          >
+            <AuthenticatedExperience
+              ownerId={createUserId(auth.user.uid)}
+              activeSection={activeSection}
+              activeSectionDetails={activeSectionDetails}
+              reduceMotion={Boolean(reduceMotion)}
+              onOpenSection={openSection}
+              onCloseSection={closeSection}
+              onRegisterTrigger={(section, element) => {
+                triggerRefs.current[section] = element;
+              }}
+            />
+          </RecommendationEvidenceProvider>
         </TrainingDataProvider>
       )}
 
@@ -413,6 +419,7 @@ function AuthenticatedExperience({
             distanceUnit={training.profile?.preferredDistanceUnit ?? "mile"}
             onOpenPlan={() => onOpenSection("plan")}
           />
+          <RecommendationDecisionSurface />
           <nav className="section-navigation" aria-label="Training sections">
             {sections.map(({ id, label }) => (
               <motion.button

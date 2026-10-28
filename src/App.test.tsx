@@ -2,7 +2,7 @@ import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { findBetaBlockingAccessibilityViolations } from './test/accessibility'
-import { useEffect, type HTMLAttributes, type ReactNode } from 'react'
+import { useEffect, useRef, type HTMLAttributes, type ReactNode } from 'react'
 import App from './App'
 import AuthProvider, { authSessionTimeoutMs } from './auth/AuthProvider'
 import { staleNoticeDelayMs } from './training/useDelayedStaleNotice'
@@ -102,6 +102,38 @@ vi.mock('./training/TrainingDataProvider', () => ({
     )
 
     return <div data-testid="training-data-provider">{children}</div>
+  }
+}))
+
+vi.mock('./recommendations/RecommendationEvidenceProvider', () => ({
+  default: function MockRecommendationEvidenceProvider({
+    ownerId,
+    children
+  }: {
+    ownerId: string
+    children: ReactNode
+  }) {
+    const instanceId = useRef(0)
+    if (instanceId.current === 0) {
+      recommendationProviderInstanceSequence += 1
+      instanceId.current = recommendationProviderInstanceSequence
+    }
+
+    return (
+      <div
+        data-testid="recommendation-evidence-provider"
+        data-owner-id={ownerId}
+        data-instance-id={instanceId.current}
+      >
+        {children}
+      </div>
+    )
+  }
+}))
+
+vi.mock('./components/RecommendationDecisionSurface', () => ({
+  default: function MockRecommendationDecisionSurface() {
+    return <div data-testid="recommendation-decision-surface" />
   }
 }))
 
@@ -209,6 +241,7 @@ type AuthSubscription = {
 }
 let authSubscriptions: AuthSubscription[]
 let sessionLifecycleEvents: string[]
+let recommendationProviderInstanceSequence: number
 
 const sectionTransitions = [
   ['Plan', 'Plan Your Workouts'],
@@ -238,6 +271,7 @@ beforeEach(() => {
   vi.clearAllMocks()
   authSubscriptions = []
   sessionLifecycleEvents = []
+  recommendationProviderInstanceSequence = 0
   trainingMock.status = 'current'
   trainingMock.staleReasons = []
   trainingMock.profile = completeRunnerProfile
@@ -334,6 +368,48 @@ describe('App authentication state', () => {
     ).toBeInTheDocument()
     expect(
       screen.queryByRole('button', { name: 'Log in' })
+    ).not.toBeInTheDocument()
+  })
+
+  it('scopes the recommendation path to the current signed-in owner', () => {
+    renderApp()
+
+    act(() => {
+      emitAuthState(null)
+    })
+    expect(
+      screen.queryByTestId('recommendation-evidence-provider')
+    ).not.toBeInTheDocument()
+
+    act(() => {
+      emitAuthState(signedInUser)
+    })
+    const firstProvider = screen.getByTestId(
+      'recommendation-evidence-provider'
+    )
+    expect(firstProvider).toHaveAttribute('data-owner-id', 'runner-1')
+    expect(firstProvider).toHaveAttribute('data-instance-id', '1')
+    expect(
+      screen.getByTestId('recommendation-decision-surface')
+    ).toBeInTheDocument()
+
+    act(() => {
+      emitAuthState({ uid: 'runner-2', email: 'second@example.com' })
+    })
+    const secondProvider = screen.getByTestId(
+      'recommendation-evidence-provider'
+    )
+    expect(secondProvider).toHaveAttribute('data-owner-id', 'runner-2')
+    expect(secondProvider).toHaveAttribute('data-instance-id', '2')
+
+    act(() => {
+      emitAuthState(null)
+    })
+    expect(
+      screen.queryByTestId('recommendation-evidence-provider')
+    ).not.toBeInTheDocument()
+    expect(
+      screen.queryByTestId('recommendation-decision-surface')
     ).not.toBeInTheDocument()
   })
 
