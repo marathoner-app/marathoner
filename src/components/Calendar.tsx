@@ -129,9 +129,10 @@ export default function Calendar({
   const workoutTriggerRef = useRef<HTMLButtonElement | null>(null);
   const weekCount = useMemo(() => {
     if (plan === null) return 0;
+    const calendarEndDate = plan.endDate ?? plan.targetRaceDate;
     return Math.max(
       1,
-      Math.ceil((daysBetween(plan.startDate, plan.targetRaceDate) + 1) / 7),
+      Math.ceil((daysBetween(plan.startDate, calendarEndDate) + 1) / 7),
     );
   }, [plan]);
   const initialWeek = useMemo(() => {
