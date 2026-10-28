@@ -35,6 +35,7 @@ const forbiddenBuildText = [
   'internal-eligible-run@1.0.0',
   'Frozen eligible rehearsal profile',
   'Frozen completed-run evidence',
+  'marathoner:internal-plan-rehearsal:frozen-activation:v1',
 ]
 const textExtensions = new Set(['.css', '.html', '.js', '.json', '.map', '.txt'])
 

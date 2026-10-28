@@ -1,4 +1,4 @@
-import { useRef, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import {
   createDateOnly,
   createPlanGenerationInputFromProfile,
@@ -21,6 +21,11 @@ import {
   formatInternalPlanStartDate,
   type InternalPlanStartDateCandidateResult,
 } from "./internalPlanStartDateCandidates";
+import {
+  clearInternalPlanRehearsalSession,
+  readInternalPlanRehearsalSession,
+  writeInternalPlanRehearsalSession,
+} from "./internalPlanRehearsalSession";
 import "./InternalPlanProposalRehearsal.css";
 
 interface InternalPlanProposalRehearsalProps {
@@ -49,6 +54,77 @@ type RehearsalOutcome =
       readonly result: PlanGenerationResultV1;
       readonly revision: number;
     };
+
+interface InitialRehearsalState {
+  readonly profileSource: InternalPlanRehearsalProfileSource;
+  readonly planStartDate: string;
+  readonly cohortConfirmed: boolean;
+  readonly noSymptomsReported: boolean;
+  readonly outcome: RehearsalOutcome;
+  readonly restoredResult: GeneratedPlanResultV1 | null;
+  readonly restoredRevision: number | null;
+}
+
+function defaultInitialRehearsalState(): InitialRehearsalState {
+  return {
+    profileSource: "saved_profile",
+    planStartDate: "",
+    cohortConfirmed: false,
+    noSymptomsReported: false,
+    outcome: { kind: "not_run" },
+    restoredResult: null,
+    restoredRevision: null,
+  };
+}
+
+function restoreFrozenRehearsalState(
+  ruleSet: InternalPlanProposalRehearsalRuleSet,
+): InitialRehearsalState {
+  const intent = readInternalPlanRehearsalSession({
+    rulesetVersion: ruleSet.rules.rulesetVersion,
+    generatorVersion: ruleSet.generatorVersion,
+  });
+  if (intent === null) return defaultInitialRehearsalState();
+
+  try {
+    const inputResult = createPlanGenerationInputFromProfile(
+      internalEligiblePlanRehearsalProfile,
+      {
+        planStartDate: createDateOnly(intent.planStartDate),
+        rulesetVersion: ruleSet.rules.rulesetVersion,
+        safetySignal: "none_reported",
+      },
+    );
+    if (inputResult.kind !== "ready") {
+      clearInternalPlanRehearsalSession();
+      return defaultInitialRehearsalState();
+    }
+
+    const result = generateDeterministicPlan({
+      input: inputResult.input,
+      cohortEligibilityConfirmed: true,
+      generatorVersion: ruleSet.generatorVersion,
+      rules: ruleSet.rules,
+    });
+    if (result.kind !== "generated") {
+      clearInternalPlanRehearsalSession();
+      return defaultInitialRehearsalState();
+    }
+
+    return {
+      profileSource: "frozen_eligible_profile",
+      planStartDate: intent.planStartDate,
+      cohortConfirmed: true,
+      noSymptomsReported: true,
+      outcome: { kind: "generation_result", result, revision: 1 },
+      restoredResult: result,
+      restoredRevision: 1,
+    };
+  } catch {
+    clearInternalPlanRehearsalSession();
+    return defaultInitialRehearsalState();
+  }
+}
 
 function readableIdentifier(value: string): string {
   const words = value
@@ -83,15 +159,23 @@ export default function InternalPlanProposalRehearsal({
   onSessionActivationChange,
   onProfileSourceChange,
 }: InternalPlanProposalRehearsalProps) {
-  const generationRevision = useRef(0);
+  const [initialState] = useState(() => restoreFrozenRehearsalState(ruleSet));
+  const generationRevision = useRef(initialState.restoredRevision ?? 0);
   const [profileSource, setProfileSource] =
-    useState<InternalPlanRehearsalProfileSource>("saved_profile");
-  const [planStartDate, setPlanStartDate] = useState("");
-  const [cohortConfirmed, setCohortConfirmed] = useState(false);
-  const [noSymptomsReported, setNoSymptomsReported] = useState(false);
-  const [outcome, setOutcome] = useState<RehearsalOutcome>({
-    kind: "not_run",
-  });
+    useState<InternalPlanRehearsalProfileSource>(initialState.profileSource);
+  const [planStartDate, setPlanStartDate] = useState(
+    initialState.planStartDate,
+  );
+  const [cohortConfirmed, setCohortConfirmed] = useState(
+    initialState.cohortConfirmed,
+  );
+  const [noSymptomsReported, setNoSymptomsReported] = useState(
+    initialState.noSymptomsReported,
+  );
+  const [outcome, setOutcome] = useState<RehearsalOutcome>(
+    initialState.outcome,
+  );
+  const restoredActivation = useRef(initialState.restoredResult);
   const activeProfile =
     profileSource === "saved_profile"
       ? profile
@@ -101,8 +185,35 @@ export default function InternalPlanProposalRehearsal({
     ruleSet.rules,
   );
 
+  const updateSessionActivation = (result: GeneratedPlanResultV1 | null) => {
+    if (
+      result !== null &&
+      profileSource === "frozen_eligible_profile" &&
+      cohortConfirmed &&
+      noSymptomsReported
+    ) {
+      writeInternalPlanRehearsalSession({
+        planStartDate,
+        rulesetVersion: ruleSet.rules.rulesetVersion,
+        generatorVersion: ruleSet.generatorVersion,
+      });
+    } else {
+      clearInternalPlanRehearsalSession();
+    }
+    onSessionActivationChange(result);
+  };
+
+  useEffect(() => {
+    const restoredResult = restoredActivation.current;
+    if (restoredResult === null) return;
+
+    restoredActivation.current = null;
+    onProfileSourceChange?.("frozen_eligible_profile");
+    onSessionActivationChange(restoredResult);
+  }, [onProfileSourceChange, onSessionActivationChange]);
+
   const updateProfileSource = (source: InternalPlanRehearsalProfileSource) => {
-    onSessionActivationChange(null);
+    updateSessionActivation(null);
     setProfileSource(source);
     onProfileSourceChange?.(source);
     setPlanStartDate("");
@@ -112,14 +223,14 @@ export default function InternalPlanProposalRehearsal({
   };
 
   const updatePlanStartDate = (value: string) => {
-    onSessionActivationChange(null);
+    updateSessionActivation(null);
     setPlanStartDate(value);
     setOutcome({ kind: "not_run" });
   };
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    onSessionActivationChange(null);
+    updateSessionActivation(null);
 
     if (activeProfile === null) {
       setOutcome({ kind: "incomplete_profile", missingFields: [] });
@@ -330,7 +441,7 @@ export default function InternalPlanProposalRehearsal({
             type="checkbox"
             checked={cohortConfirmed}
             onChange={(event) => {
-              onSessionActivationChange(null);
+              updateSessionActivation(null);
               setCohortConfirmed(event.target.checked);
               setOutcome({ kind: "not_run" });
             }}
@@ -346,7 +457,7 @@ export default function InternalPlanProposalRehearsal({
             type="checkbox"
             checked={noSymptomsReported}
             onChange={(event) => {
-              onSessionActivationChange(null);
+              updateSessionActivation(null);
               setNoSymptomsReported(event.target.checked);
               setOutcome({ kind: "not_run" });
             }}
@@ -423,7 +534,13 @@ export default function InternalPlanProposalRehearsal({
             key={outcome.revision}
             result={outcome.result}
             onReviewInputs={() => setOutcome({ kind: "not_run" })}
-            onSessionActivationChange={onSessionActivationChange}
+            initiallyActive={
+              outcome.revision === initialState.restoredRevision
+            }
+            restoresAfterRefresh={
+              profileSource === "frozen_eligible_profile"
+            }
+            onSessionActivationChange={updateSessionActivation}
           />
         )}
     </section>

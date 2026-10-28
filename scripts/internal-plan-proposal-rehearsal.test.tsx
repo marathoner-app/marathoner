@@ -1,7 +1,7 @@
 import draftRulesText from "../docs/methodology/artifacts/beta-rules/0.1.0-draft/beta-rules.json?raw";
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   createDateOnly,
   createDistanceMeters,
@@ -13,6 +13,7 @@ import {
 } from "../src/domain/training";
 import InternalPlanProposalRehearsal from "../src/components/InternalPlanProposalRehearsal";
 import { createInternalPlanProposalRehearsalRuleSet } from "../src/components/internalPlanProposalRehearsalRules";
+import { INTERNAL_PLAN_REHEARSAL_SESSION_STORAGE_KEY } from "../src/components/internalPlanRehearsalSession";
 
 const timestamp = createUtcDateTime("2029-12-01T12:00:00Z");
 const profile: UserProfile = {
@@ -53,6 +54,10 @@ async function submitRehearsal(options?: {
 }
 
 describe("InternalPlanProposalRehearsal", () => {
+  afterEach(() => {
+    window.sessionStorage.clear();
+  });
+
   it("offers draft-aligned dates without selecting or generating one", async () => {
     const user = userEvent.setup();
     render(
@@ -283,6 +288,119 @@ describe("InternalPlanProposalRehearsal", () => {
     expect(
       screen.getByRole("button", { name: "Generate read-only proposal" }),
     ).toBeDisabled();
+  });
+
+  it("regenerates an activated frozen-profile draft after refresh", async () => {
+    const user = userEvent.setup();
+    const firstActivation = vi.fn();
+    const firstRender = render(
+      <InternalPlanProposalRehearsal
+        profile={null}
+        ruleSet={ruleSet}
+        onSessionActivationChange={firstActivation}
+      />,
+    );
+
+    await user.click(
+      screen.getByRole("radio", {
+        name: /frozen eligible rehearsal profile/iu,
+      }),
+    );
+    await user.click(
+      screen.getByRole("button", {
+        name: "January 7, 2030 18 weeks to race",
+      }),
+    );
+    await user.click(
+      screen.getByLabelText(/confirmed the frozen eligible rehearsal profile/iu),
+    );
+    await user.click(screen.getByLabelText(/no pain or unusual symptoms/iu));
+    await user.click(
+      screen.getByRole("button", { name: "Generate read-only proposal" }),
+    );
+    await user.click(screen.getByRole("button", { name: "Continue review" }));
+    await user.click(
+      screen.getByRole("button", {
+        name: "Activate only in this rehearsal",
+      }),
+    );
+
+    expect(
+      window.sessionStorage.getItem(
+        INTERNAL_PLAN_REHEARSAL_SESSION_STORAGE_KEY,
+      ),
+    ).not.toBeNull();
+    firstRender.unmount();
+
+    const restoredActivation = vi.fn();
+    const restoredSource = vi.fn();
+    render(
+      <InternalPlanProposalRehearsal
+        profile={null}
+        ruleSet={ruleSet}
+        onSessionActivationChange={restoredActivation}
+        onProfileSourceChange={restoredSource}
+      />,
+    );
+
+    expect(
+      screen.getByRole("radio", {
+        name: /frozen eligible rehearsal profile/iu,
+      }),
+    ).toBeChecked();
+    expect(screen.getByLabelText("Plan start date")).toHaveValue("2030-01-07");
+    expect(
+      screen.getByRole("heading", { name: "Active only in this rehearsal" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/refreshing regenerates this frozen-profile draft/iu),
+    ).toBeInTheDocument();
+    await waitFor(() =>
+      expect(restoredActivation).toHaveBeenCalledWith(
+        expect.objectContaining({ kind: "generated" }),
+      ),
+    );
+    expect(restoredSource).toHaveBeenCalledWith("frozen_eligible_profile");
+
+    await user.click(
+      screen.getByRole("button", { name: "End rehearsal activation" }),
+    );
+    expect(
+      window.sessionStorage.getItem(
+        INTERNAL_PLAN_REHEARSAL_SESSION_STORAGE_KEY,
+      ),
+    ).toBeNull();
+  });
+
+  it("never retains a saved-owner-profile activation", async () => {
+    const user = userEvent.setup();
+    render(
+      <InternalPlanProposalRehearsal
+        profile={profile}
+        ruleSet={ruleSet}
+        onSessionActivationChange={vi.fn()}
+      />,
+    );
+
+    await submitRehearsal({
+      confirmCohort: true,
+      confirmNoSymptoms: true,
+    });
+    await user.click(screen.getByRole("button", { name: "Continue review" }));
+    await user.click(
+      screen.getByRole("button", {
+        name: "Activate only in this rehearsal",
+      }),
+    );
+
+    expect(
+      window.sessionStorage.getItem(
+        INTERNAL_PLAN_REHEARSAL_SESSION_STORAGE_KEY,
+      ),
+    ).toBeNull();
+    expect(
+      screen.getByText(/refreshing the page ends this saved-profile rehearsal/iu),
+    ).toBeInTheDocument();
   });
 
   it("clears session activation when a proposal input changes", async () => {

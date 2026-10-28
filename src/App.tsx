@@ -56,6 +56,15 @@ const InternalSessionTodayComparison =
     ? lazy(() => import("./components/InternalSessionTodayComparison"))
     : null;
 
+async function clearInternalPlanRehearsalSession(): Promise<void> {
+  if (InternalPlanProposalRehearsal === null) return;
+
+  const rehearsalSession = await import(
+    "./components/internalPlanRehearsalSession"
+  );
+  rehearsalSession.clearInternalPlanRehearsalSession();
+}
+
 const sections = trainingSections;
 
 type Section = TrainingSection;
@@ -63,6 +72,7 @@ type Section = TrainingSection;
 function App() {
   const auth = useAuth();
   const logout = auth.logout;
+  const signedInUserId = auth.status === "signedIn" ? auth.user.uid : null;
   const reduceMotion = useReducedMotion();
   const [activeSection, setActiveSection] = useState<Section | null>(null);
   const [trackInitialFocusTarget, setTrackInitialFocusTarget] =
@@ -81,6 +91,7 @@ function App() {
   const lastActiveSection = useRef<Section | null>(null);
   const accountSettingsTriggerRef = useRef<HTMLButtonElement | null>(null);
   const restoreAccountSettingsFocus = useRef(false);
+  const lastSignedInUserId = useRef<string | null>(null);
   const triggerRefs = useRef<Record<Section, HTMLButtonElement | null>>({
     plan: null,
     track: null,
@@ -104,6 +115,16 @@ function App() {
       if (deletionReceipt === null) setUnresolvedDeletionCommandId(null);
     }
   }, [auth.status, deletionReceipt]);
+
+  useEffect(() => {
+    if (
+      lastSignedInUserId.current !== null &&
+      lastSignedInUserId.current !== signedInUserId
+    ) {
+      void clearInternalPlanRehearsalSession();
+    }
+    lastSignedInUserId.current = signedInUserId;
+  }, [signedInUserId]);
 
   useEffect(() => {
     if (!logoutPending || deletionReceipt !== null) return;
@@ -138,6 +159,7 @@ function App() {
 
     let active = true;
     setDeletionSignOutError(null);
+    void clearInternalPlanRehearsalSession();
     void auth.logout().catch(() => {
       if (active) {
         setDeletionSignOutError(
@@ -169,6 +191,7 @@ function App() {
 
   const handleLogout = () => {
     setLogoutError(null);
+    void clearInternalPlanRehearsalSession();
     setLogoutPending(true);
   };
 

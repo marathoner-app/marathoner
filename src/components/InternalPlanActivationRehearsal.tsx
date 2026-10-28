@@ -11,6 +11,8 @@ import "./InternalPlanActivationRehearsal.css";
 interface InternalPlanActivationRehearsalProps {
   readonly result: GeneratedPlanResultV1;
   readonly onReviewInputs: () => void;
+  readonly initiallyActive?: boolean;
+  readonly restoresAfterRefresh?: boolean;
   readonly onSessionActivationChange: (
     result: GeneratedPlanResultV1 | null,
   ) => void;
@@ -79,9 +81,13 @@ function workoutCount(result: GeneratedPlanResultV1): number {
 export default function InternalPlanActivationRehearsal({
   result,
   onReviewInputs,
+  initiallyActive = false,
+  restoresAfterRefresh = false,
   onSessionActivationChange,
 }: InternalPlanActivationRehearsalProps) {
-  const [screen, setScreen] = useState<RehearsalScreen>("proposal");
+  const [screen, setScreen] = useState<RehearsalScreen>(
+    initiallyActive ? "active" : "proposal",
+  );
   const firstWorkout = firstTrainingWorkout(result);
 
   const reviewInputs = () => {
@@ -220,8 +226,10 @@ export default function InternalPlanActivationRehearsal({
       </section>
 
       <p className="internal-plan-activation-boundary">
-        Refreshing the page ends this rehearsal activation. No approval receipt,
-        plan record, or workout record was created.
+        {restoresAfterRefresh
+          ? "Refreshing regenerates this frozen-profile draft from its checked-in inputs. Ending the activation, switching sources, signing out, or closing the tab clears it."
+          : "Refreshing the page ends this saved-profile rehearsal activation."}{" "}
+        No approval receipt, plan record, or workout record was created.
       </p>
       <div className="internal-plan-activation-actions">
         <button type="button" className="secondary" onClick={reviewInputs}>
