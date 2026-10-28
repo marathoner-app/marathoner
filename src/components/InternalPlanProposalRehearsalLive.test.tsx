@@ -3,12 +3,16 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
 import {
+  createTrainingPlanId,
   createUserId,
+  createUtcDateTime,
   planGenerationContractFixtures,
+  projectGeneratedPlanEntities,
   type GeneratedPlanEntityProjection,
   type GeneratedPlanResultV1,
 } from "../domain/training";
 import InternalPlanProposalRehearsalLive from "./InternalPlanProposalRehearsalLive";
+import { useInternalSessionPlanProjection } from "./useInternalSessionPlanProjection";
 
 function generatedPlanFixture(): GeneratedPlanResultV1 {
   const fixture = planGenerationContractFixtures[0].result;
@@ -21,6 +25,13 @@ function generatedPlanFixture(): GeneratedPlanResultV1 {
 }
 
 const generatedFixture = generatedPlanFixture();
+const baseProjection = projectGeneratedPlanEntities({
+  proposal: generatedFixture.plan,
+  ownerId: createUserId("owner-1"),
+  planId: createTrainingPlanId("internal-session-draft"),
+  projectedAt: createUtcDateTime("2030-01-01T00:00:00.000Z"),
+  status: "active",
+});
 
 function Harness() {
   const [sessionDraftPlan, setSessionDraftPlan] =
@@ -50,6 +61,52 @@ function Harness() {
         onSessionDraftPlanChange={setSessionDraftPlan}
         onSessionPlanProjectionChange={setProjection}
       />
+    </>
+  );
+}
+
+function SessionProjectionHarness() {
+  const [sessionDraftPlan, setSessionDraftPlan] =
+    useState<GeneratedPlanResultV1 | null>(generatedFixture);
+  const {
+    sessionPlanProjection,
+    handleSessionAdaptationProjectionChange,
+  } = useInternalSessionPlanProjection(
+    sessionDraftPlan,
+    sessionDraftPlan === null ? null : baseProjection,
+  );
+
+  return (
+    <>
+      <output aria-label="Effective session plan">
+        {sessionPlanProjection?.plan.name ?? "No session projection"}
+      </output>
+      <button
+        type="button"
+        onClick={() =>
+          handleSessionAdaptationProjectionChange({
+            ...baseProjection,
+            plan: { ...baseProjection.plan, name: "Adapted session plan" },
+          })
+        }
+      >
+        Apply lifted session projection
+      </button>
+      <button
+        type="button"
+        onClick={() => handleSessionAdaptationProjectionChange(null)}
+      >
+        Restore base session projection
+      </button>
+      <button type="button" onClick={() => setSessionDraftPlan(null)}>
+        Clear source session draft
+      </button>
+      <button
+        type="button"
+        onClick={() => setSessionDraftPlan({ ...generatedFixture })}
+      >
+        Replace source session draft
+      </button>
     </>
   );
 }
@@ -85,5 +142,52 @@ describe("InternalPlanProposalRehearsalLive session projection", () => {
         screen.getByRole("status", { name: "Projected session plan" }),
       ).toHaveTextContent("No session projection"),
     );
+  });
+
+  it("reports an accepted adaptation until the rehearsal restores its base projection", async () => {
+    const user = userEvent.setup();
+    render(<SessionProjectionHarness />);
+    await user.click(
+      screen.getByRole("button", {
+        name: "Apply lifted session projection",
+      }),
+    );
+
+    await waitFor(() =>
+      expect(
+        screen.getByRole("status", { name: "Effective session plan" }),
+      ).toHaveTextContent("Adapted session plan"),
+    );
+
+    await user.click(
+      screen.getByRole("button", {
+        name: "Restore base session projection",
+      }),
+    );
+    await waitFor(() =>
+      expect(
+        screen.getByRole("status", { name: "Effective session plan" }),
+      ).toHaveTextContent("Synthetic contract plan"),
+    );
+
+    await user.click(
+      screen.getByRole("button", { name: "Apply lifted session projection" }),
+    );
+    await user.click(
+      screen.getByRole("button", { name: "Replace source session draft" }),
+    );
+    expect(
+      screen.getByRole("status", { name: "Effective session plan" }),
+    ).toHaveTextContent("Synthetic contract plan");
+
+    await user.click(
+      screen.getByRole("button", { name: "Apply lifted session projection" }),
+    );
+    await user.click(
+      screen.getByRole("button", { name: "Clear source session draft" }),
+    );
+    expect(
+      screen.getByRole("status", { name: "Effective session plan" }),
+    ).toHaveTextContent("No session projection");
   });
 });

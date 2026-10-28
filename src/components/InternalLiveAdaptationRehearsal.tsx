@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import {
   createUtcDateTime,
   evaluateAdaptation,
@@ -11,6 +11,7 @@ import {
   type AdaptationRescheduleCandidateV1,
   type AdaptationWeekKind,
   type DistanceUnit,
+  type GeneratedPlanEntityProjection,
   type PlannedWorkout,
   type RunPurpose,
   type TrainingPlan,
@@ -44,6 +45,9 @@ interface InternalLiveAdaptationRehearsalProps {
   readonly distanceUnit: DistanceUnit;
   readonly planContext?: InternalSessionDraftPlanContext;
   readonly sessionRescheduleCandidates?: readonly InternalSessionDraftRescheduleCandidate[];
+  readonly onSessionProjectionChange?: (
+    projection: GeneratedPlanEntityProjection | null,
+  ) => void;
 }
 
 type BooleanChoice = "" | "yes" | "no";
@@ -91,6 +95,7 @@ export default function InternalLiveAdaptationRehearsal({
   distanceUnit,
   planContext,
   sessionRescheduleCandidates,
+  onSessionProjectionChange,
 }: InternalLiveAdaptationRehearsalProps) {
   const decisionContentRegistry = useMemo(
     () =>
@@ -162,9 +167,15 @@ export default function InternalLiveAdaptationRehearsal({
     });
   }, [activePlan, outcome, projectionOutcome]);
 
+  useEffect(
+    () => () => onSessionProjectionChange?.(null),
+    [onSessionProjectionChange],
+  );
+
   const clearOutcome = () => {
     setOutcome({ kind: "not_run" });
     setProjectionOutcome(null);
+    onSessionProjectionChange?.(null);
   };
   const selectedSessionCandidate = sessionRescheduleCandidates?.find(
     ({ targetDate }) => targetDate === selectedSessionCandidateDate,
@@ -278,6 +289,7 @@ export default function InternalLiveAdaptationRehearsal({
     evaluationSequence.current += 1;
     const evaluatedAt = Date.now();
     setProjectionOutcome(null);
+    onSessionProjectionChange?.(null);
     setOutcome({
       kind: "evaluated",
       input,
@@ -306,7 +318,7 @@ export default function InternalLiveAdaptationRehearsal({
         <p>
           Add the facts that saved history cannot determine, then deliberately
           run the exact pinned draft evaluator. This cannot save a
-          recommendation or change a real plan.
+          recommendation or change a synchronized plan.
         </p>
       </header>
 
@@ -726,7 +738,7 @@ export default function InternalLiveAdaptationRehearsal({
 
           <p className="internal-adaptation-history-boundary">
             Unapproved session-only result. No recommendation was saved and no
-            real plan changed.
+            synchronized plan changed.
           </p>
 
           {outcome.result.kind === "recommendation" &&
@@ -738,25 +750,41 @@ export default function InternalLiveAdaptationRehearsal({
                 onSessionDecisionChange={(decision) => {
                   if (decision !== "apply") {
                     setProjectionOutcome(null);
+                    onSessionProjectionChange?.(null);
                     return;
                   }
                   if (!("action" in outcome.result)) {
                     setProjectionOutcome(null);
+                    onSessionProjectionChange?.(null);
                     return;
                   }
                   const action = outcome.result.action;
                   if (action === null || action === "no_change") {
                     setProjectionOutcome(null);
+                    onSessionProjectionChange?.(null);
                     return;
                   }
-                  setProjectionOutcome(
-                    projectInternalLiveAdaptation({
-                      evidence,
-                      activePlan,
-                      workouts,
-                      action,
-                      rescheduleCandidate: candidateForEvaluation(),
-                    }),
+                  const projected = projectInternalLiveAdaptation({
+                    evidence,
+                    activePlan,
+                    workouts,
+                    action,
+                    rescheduleCandidate: candidateForEvaluation(),
+                  });
+                  setProjectionOutcome(projected);
+                  if (projected.kind !== "ready") {
+                    onSessionProjectionChange?.(null);
+                    return;
+                  }
+                  const preview = previewWorkoutsForInternalLiveAdaptation({
+                    activePlan,
+                    workouts,
+                    projection: projected.projection,
+                  });
+                  onSessionProjectionChange?.(
+                    preview.kind === "ready"
+                      ? { plan: activePlan, workouts: preview.workouts }
+                      : null,
                   );
                 }}
               />
@@ -813,8 +841,9 @@ export default function InternalLiveAdaptationRehearsal({
                 ))}
               </ol>
               <p className="internal-adaptation-history-boundary">
-                This projection exists only in this page session. It was not
-                saved, no command was sent, and the real plan did not change.
+                This projection can replace the unsaved session plan shown on
+                the owner dogfood surfaces. It was not saved, no command was
+                sent, and the synchronized plan did not change.
               </p>
             </section>
           )}
@@ -888,7 +917,7 @@ export default function InternalLiveAdaptationRehearsal({
               <p className="internal-adaptation-history-boundary">
                 The exact input, result, provenance, and plan adjustment are
                 complete in memory. Nothing was saved, no command was sent, and
-                the real plan did not change.
+                the synchronized plan did not change.
               </p>
             </section>
           )}
