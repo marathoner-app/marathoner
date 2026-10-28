@@ -33,8 +33,79 @@
   gap: 0.75rem;
 }
 
-.internal-plan-rehearsal form > label:first-child {
+.internal-plan-rehearsal form > label[for="internal-plan-start-date"] {
   font-weight: 750;
+}
+
+.internal-plan-profile-source {
+  display: grid;
+  min-width: 0;
+  margin: 0 0 0.5rem;
+  padding: 1rem;
+  border: 1px solid #b99a5f;
+  border-radius: 0.75rem;
+  gap: 0.75rem;
+  text-align: left;
+}
+
+.internal-plan-profile-source legend {
+  padding: 0 0.35rem;
+  font-weight: 750;
+}
+
+.internal-plan-profile-source label {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.65rem;
+  align-items: start;
+}
+
+.internal-plan-profile-source input {
+  margin-top: 0.25rem;
+}
+
+.internal-plan-profile-source span {
+  display: grid;
+  gap: 0.15rem;
+}
+
+.internal-plan-profile-source small {
+  color: #594b32;
+  line-height: 1.4;
+}
+
+.internal-plan-profile-fixture {
+  padding: 1rem;
+  border-radius: 0.75rem;
+  background: #f4e5c3;
+  text-align: left;
+}
+
+.internal-plan-profile-fixture h3,
+.internal-plan-profile-fixture p {
+  margin-top: 0;
+}
+
+.internal-plan-profile-fixture dl {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 11rem), 1fr));
+  margin-bottom: 0;
+  gap: 0.75rem 1rem;
+}
+
+.internal-plan-profile-fixture dl > div {
+  min-width: 0;
+}
+
+.internal-plan-profile-fixture dt {
+  color: #594b32;
+  font-size: 0.82rem;
+  font-weight: 750;
+  text-transform: uppercase;
+}
+
+.internal-plan-profile-fixture dd {
+  margin: 0.15rem 0 0;
 }
 
 .internal-plan-rehearsal input[type="date"] {

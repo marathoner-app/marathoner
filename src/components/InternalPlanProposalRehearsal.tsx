@@ -10,6 +10,10 @@ import {
   type UserProfile,
 } from "../domain/training";
 import InternalPlanActivationRehearsal from "./InternalPlanActivationRehearsal";
+import {
+  INTERNAL_ELIGIBLE_PLAN_REHEARSAL_PROFILE_VERSION,
+  internalEligiblePlanRehearsalProfile,
+} from "./internalEligiblePlanRehearsalProfile";
 import type { InternalPlanProposalRehearsalRuleSet } from "./internalPlanProposalRehearsalRules";
 import {
   createInternalPlanStartDateCandidates,
@@ -41,6 +45,8 @@ type RehearsalOutcome =
       readonly result: PlanGenerationResultV1;
       readonly revision: number;
     };
+
+type RehearsalProfileSource = "saved_profile" | "frozen_eligible_profile";
 
 function readableIdentifier(value: string): string {
   const words = value
@@ -75,16 +81,31 @@ export default function InternalPlanProposalRehearsal({
   onSessionActivationChange,
 }: InternalPlanProposalRehearsalProps) {
   const generationRevision = useRef(0);
+  const [profileSource, setProfileSource] =
+    useState<RehearsalProfileSource>("saved_profile");
   const [planStartDate, setPlanStartDate] = useState("");
   const [cohortConfirmed, setCohortConfirmed] = useState(false);
   const [noSymptomsReported, setNoSymptomsReported] = useState(false);
   const [outcome, setOutcome] = useState<RehearsalOutcome>({
     kind: "not_run",
   });
+  const activeProfile =
+    profileSource === "saved_profile"
+      ? profile
+      : internalEligiblePlanRehearsalProfile;
   const candidateResult = createInternalPlanStartDateCandidates(
-    profile,
+    activeProfile,
     ruleSet.rules,
   );
+
+  const updateProfileSource = (source: RehearsalProfileSource) => {
+    onSessionActivationChange(null);
+    setProfileSource(source);
+    setPlanStartDate("");
+    setCohortConfirmed(false);
+    setNoSymptomsReported(false);
+    setOutcome({ kind: "not_run" });
+  };
 
   const updatePlanStartDate = (value: string) => {
     onSessionActivationChange(null);
@@ -96,7 +117,7 @@ export default function InternalPlanProposalRehearsal({
     event.preventDefault();
     onSessionActivationChange(null);
 
-    if (profile === null) {
+    if (activeProfile === null) {
       setOutcome({ kind: "incomplete_profile", missingFields: [] });
       return;
     }
@@ -118,7 +139,7 @@ export default function InternalPlanProposalRehearsal({
       return;
     }
 
-    const inputResult = createPlanGenerationInputFromProfile(profile, {
+    const inputResult = createPlanGenerationInputFromProfile(activeProfile, {
       planStartDate: normalizedPlanStartDate,
       rulesetVersion: ruleSet.rules.rulesetVersion,
       safetySignal: noSymptomsReported ? "none_reported" : "not_answered",
@@ -162,6 +183,103 @@ export default function InternalPlanProposalRehearsal({
       </header>
 
       <form onSubmit={handleSubmit}>
+        <fieldset className="internal-plan-profile-source">
+          <legend>Runner profile source</legend>
+          <label>
+            <input
+              type="radio"
+              name="internal-plan-profile-source"
+              value="saved_profile"
+              checked={profileSource === "saved_profile"}
+              onChange={() => updateProfileSource("saved_profile")}
+            />
+            <span>
+              <strong>Saved owner profile</strong>
+              <small>
+                The default path. Uses the current profile synchronized from
+                Firebase without changing it.
+              </small>
+            </span>
+          </label>
+          <label>
+            <input
+              type="radio"
+              name="internal-plan-profile-source"
+              value="frozen_eligible_profile"
+              checked={profileSource === "frozen_eligible_profile"}
+              onChange={() => updateProfileSource("frozen_eligible_profile")}
+            />
+            <span>
+              <strong>Frozen eligible rehearsal profile</strong>
+              <small>
+                Checked-in synthetic inputs for completing the owner-only plan
+                journey without rewriting the saved profile.
+              </small>
+            </span>
+          </label>
+        </fieldset>
+
+        {profileSource === "frozen_eligible_profile" && (
+          <aside
+            className="internal-plan-profile-fixture"
+            aria-label="Frozen rehearsal profile details"
+          >
+            <h3>Frozen eligible profile</h3>
+            <p>
+              Version {INTERNAL_ELIGIBLE_PLAN_REHEARSAL_PROFILE_VERSION}. These
+              synthetic values live only in the internal rehearsal source and
+              are never read from or written to Firebase.
+            </p>
+            <dl>
+              <div>
+                <dt>Race date</dt>
+                <dd>
+                  {formatInternalPlanStartDate(
+                    internalEligiblePlanRehearsalProfile.targetRace.date,
+                  )}
+                </dd>
+              </div>
+              <div>
+                <dt>Consistent running</dt>
+                <dd>
+                  {internalEligiblePlanRehearsalProfile.consistentRunningWeeks}{" "}
+                  weeks
+                </dd>
+              </div>
+              <div>
+                <dt>Weekly distance</dt>
+                <dd>
+                  {Number(
+                    internalEligiblePlanRehearsalProfile.currentWeeklyDistance,
+                  ) / 1_000}{" "}
+                  km
+                </dd>
+              </div>
+              <div>
+                <dt>Runs per week</dt>
+                <dd>
+                  {
+                    internalEligiblePlanRehearsalProfile.currentRunningFrequencyDaysPerWeek
+                  }
+                </dd>
+              </div>
+              <div>
+                <dt>Longest recent run</dt>
+                <dd>
+                  {Number(
+                    internalEligiblePlanRehearsalProfile.longestRecentRunDistance,
+                  ) / 1_000}{" "}
+                  km
+                </dd>
+              </div>
+              <div>
+                <dt>Training days</dt>
+                <dd>Tuesday, Thursday, Saturday, Sunday</dd>
+              </div>
+            </dl>
+          </aside>
+        )}
+
         <label htmlFor="internal-plan-start-date">Plan start date</label>
         <input
           id="internal-plan-start-date"
@@ -179,8 +297,8 @@ export default function InternalPlanProposalRehearsal({
           <fieldset className="internal-plan-start-candidates">
             <legend>Draft-aligned choices</legend>
             <p>
-              Derived from the saved race date and this draft's supported
-              horizon. Nothing is selected automatically.
+              Derived from the selected profile's race date and this draft's
+              supported horizon. Nothing is selected automatically.
             </p>
             <div>
               {candidateResult.candidates.map((candidate) => (
@@ -213,8 +331,11 @@ export default function InternalPlanProposalRehearsal({
               setOutcome({ kind: "not_run" });
             }}
           />
-          For this rehearsal, I have confirmed the saved profile represents the
-          intended founding cohort.
+          For this rehearsal, I have confirmed the {profileSource ===
+          "saved_profile"
+            ? "saved profile"
+            : "frozen eligible rehearsal profile"} represents the intended
+          founding cohort.
         </label>
         <label className="internal-plan-rehearsal-confirmation">
           <input
@@ -229,18 +350,19 @@ export default function InternalPlanProposalRehearsal({
           For this rehearsal, no pain or unusual symptoms have been reported.
         </label>
 
-        <button type="submit" disabled={profile === null}>
+        <button type="submit" disabled={activeProfile === null}>
           Generate read-only proposal
         </button>
       </form>
 
-      {profile === null && (
+      {activeProfile === null && (
         <p className="internal-plan-rehearsal-result" role="status">
-          Finish and save the runner profile before rehearsing a proposal.
+          Finish and save the runner profile, or choose the frozen eligible
+          profile to rehearse the complete session-only journey.
         </p>
       )}
 
-      {outcome.kind === "incomplete_profile" && profile !== null && (
+      {outcome.kind === "incomplete_profile" && activeProfile !== null && (
         <div className="internal-plan-rehearsal-result" role="status">
           <h3>Runner setup is incomplete</h3>
           <p>Finish these saved profile fields before generating a proposal:</p>
@@ -266,7 +388,7 @@ export default function InternalPlanProposalRehearsal({
       {outcome.kind === "generation_result" &&
         outcome.result.kind === "unsupported" && (
           <div className="internal-plan-rehearsal-result" role="status">
-            <h3>The saved starting point is outside this draft</h3>
+            <h3>The selected starting point is outside this draft</h3>
             <p>
               The generator correctly declined to invent a plan. Review these
               draft boundary results:
