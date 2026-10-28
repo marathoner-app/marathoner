@@ -55,31 +55,36 @@ describe('Firebase environment selection', () => {
     })
   })
 
-  it('allows only a fixed debug token in local development', () => {
-    const debugToken = '11111111-1111-4111-8111-111111111111'
+  it.each(['development', 'internal-plan-rehearsal'] as const)(
+    'allows only a fixed debug token while serving local %s mode',
+    (mode) => {
+      const debugToken = '11111111-1111-4111-8111-111111111111'
 
-    expect(
-      resolveAppCheckDebugTokenForMode({
-        mode: 'development',
-        environmentName: 'development',
-        debugToken: ` ${debugToken} `,
-        isViteServe: true,
-      }),
-    ).toBe(debugToken)
-    expect(
-      resolveAppCheckDebugTokenForMode({
-        mode: 'development',
-        environmentName: 'development',
-        debugToken: undefined,
-        isViteServe: true,
-      }),
-    ).toBeUndefined()
-  })
+      expect(
+        resolveAppCheckDebugTokenForMode({
+          mode,
+          environmentName: 'development',
+          debugToken: ` ${debugToken} `,
+          isViteServe: true,
+        }),
+      ).toBe(debugToken)
+      expect(
+        resolveAppCheckDebugTokenForMode({
+          mode,
+          environmentName: 'development',
+          debugToken: undefined,
+          isViteServe: true,
+        }),
+      ).toBeUndefined()
+    },
+  )
 
   it.each([
     ['production', 'beta', false],
     ['production', 'development', false],
     ['development', 'development', false],
+    ['internal-plan-rehearsal', 'development', false],
+    ['internal-plan-rehearsal', 'beta', true],
     ['ios-development', 'development', false],
     ['ios-beta', 'beta', false],
   ] as const)(
@@ -92,7 +97,9 @@ describe('Firebase environment selection', () => {
           debugToken: '11111111-1111-4111-8111-111111111111',
           isViteServe,
         }),
-      ).toThrow('allowed only while Vite serves the development Firebase environment locally')
+      ).toThrow(
+        'allowed only while Vite serves the development Firebase environment in an approved local browser mode',
+      )
     },
   )
 

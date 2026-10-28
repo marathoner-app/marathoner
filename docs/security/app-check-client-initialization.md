@@ -53,15 +53,16 @@ iOS uses the separately selected `GoogleService-Info.plist` identities described
 in the [provider registration record](app-check-provider-registration.md).
 
 Beta, production-web, and iOS Release builds never select a debug provider. A
-fixed browser debug token may be
-provided only through `VITE_FIREBASE_APP_CHECK_DEBUG_TOKEN` when all of these
-conditions are true:
+fixed browser debug token may be provided only through
+`VITE_FIREBASE_APP_CHECK_DEBUG_TOKEN` when all of these conditions are true:
 
-- Vite is serving the application (`npm run dev`), not building an artifact;
-- Vite mode is `development`;
+- Vite is serving the application (`npm run dev` or
+  `npm run dev:plan-rehearsal`), not building an artifact;
+- Vite mode is `development` or the owner-only `internal-plan-rehearsal`;
 - the selected Firebase environment is `development`;
 - the value is a fixed Firebase debug-token UUID stored only in an ignored
-  mode-`0600` `.env.development.local` file.
+  mode-`0600` `.env.development.local` or
+  `.env.internal-plan-rehearsal.local` file selected by the command.
 
 Boolean or generated-at-runtime debug mode is rejected because it can print a
 credential. Every build command rejects the variable before bundling, including
@@ -83,14 +84,17 @@ reviewed procedure, not a claim of console or traffic evidence:
    Check debug token named `development-local-<operator>-<device>` and records
    its owner, creation date, next rotation date, and later revocation date—not
    its value—in the private credential inventory.
-2. The named operator creates `.env.development.local`, limits it to mode
-   `0600`, and adds exactly
+2. The named operator creates the ignored mode-specific file for the intended
+   command—`.env.development.local` for `npm run dev`, or
+   `.env.internal-plan-rehearsal.local` for
+   `npm run dev:plan-rehearsal`—limits it to mode `0600`, and adds exactly
    `VITE_FIREBASE_APP_CHECK_DEBUG_TOKEN=<console-issued UUID>`. The file is
-   covered by `*.local` in `.gitignore`; `git check-ignore -v
-   .env.development.local` must identify that rule before the value is added.
-3. The operator runs `npm run dev`. Do not run or upload a build while the
-   variable is present; the repository policy rejects one rather than relying
-   on operator memory.
+   covered by `*.local` in `.gitignore`; run `git check-ignore -v` against the
+   exact selected filename and confirm that rule is reported before adding the
+   value.
+3. The operator runs the matching serve command. Do not run or upload a build
+   while the variable is present; the repository policy rejects one rather
+   than relying on operator memory.
 4. From localhost, prove the startup gate completes, Email/Password Auth works,
    and an owner-scoped Firestore read carries a valid App Check token. Record
    only pass/fail, origin, environment, date, and token display name.
