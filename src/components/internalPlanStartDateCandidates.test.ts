@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
   createDateOnly,
+  createDistanceMeters,
+  createDurationSeconds,
   createIanaTimeZone,
   createUserId,
   createUtcDateTime,
@@ -52,6 +54,48 @@ describe("createInternalPlanStartDateCandidates", () => {
     expect(result).toEqual({
       kind: "available",
       candidates: [{ date: "2032-03-01", wholeWeeksToRace: 18 }],
+    });
+  });
+
+  it("removes choices that predate the saved recent effort", () => {
+    const result = createInternalPlanStartDateCandidates(
+      {
+        ...profile,
+        recentPerformance: {
+          completedOn: createDateOnly("2029-12-24"),
+          distance: createDistanceMeters(10_000),
+          duration: createDurationSeconds(3_600),
+        },
+      },
+      rules,
+    );
+
+    expect(result).toEqual({
+      kind: "available",
+      candidates: [
+        { date: "2029-12-24", wholeWeeksToRace: 20 },
+        { date: "2029-12-31", wholeWeeksToRace: 19 },
+        { date: "2030-01-07", wholeWeeksToRace: 18 },
+      ],
+    });
+  });
+
+  it("explains when the recent effort follows every supported start date", () => {
+    expect(
+      createInternalPlanStartDateCandidates(
+        {
+          ...profile,
+          recentPerformance: {
+            completedOn: createDateOnly("2030-01-08"),
+            distance: createDistanceMeters(10_000),
+            duration: createDurationSeconds(3_600),
+          },
+        },
+        rules,
+      ),
+    ).toEqual({
+      kind: "unavailable",
+      reason: "recent_effort_after_supported_start_window",
     });
   });
 

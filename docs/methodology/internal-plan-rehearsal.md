@@ -15,11 +15,13 @@ After signing into the development environment, finish and save the runner
 profile. The signed-in home then shows **Internal draft plan rehearsal**. For an
 exact race date that falls on the saved preferred long-run day, the tool offers
 one explicit start-date choice for every whole-week horizon allowed by the
-pinned draft. It never selects a date automatically, and the date field remains
-editable so invalid and unsupported boundaries can still be rehearsed. Choose a
-date and truthfully answer the two rehearsal-only confirmations. The selection,
-confirmations, and generated proposal stay in memory; they are not written to
-Firebase.
+pinned draft that does not predate the saved recent effort. When that chronology
+removes every aligned choice, the tool explains the conflict instead of
+offering a date that generation must reject. It never selects a date
+automatically, and the date field remains editable so invalid and unsupported
+boundaries can still be rehearsed. Choose a date and truthfully answer the two
+rehearsal-only confirmations. The selection, confirmations, and generated
+proposal stay in memory; they are not written to Firebase.
 
 The surface can:
 

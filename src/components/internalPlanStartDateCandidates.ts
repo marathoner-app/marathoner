@@ -31,7 +31,8 @@ export type InternalPlanStartDateCandidateResult =
       readonly reason:
         | "profile_incomplete"
         | "race_window"
-        | "race_weekday_mismatch";
+        | "race_weekday_mismatch"
+        | "recent_effort_after_supported_start_window";
     };
 
 function utcDate(value: DateOnly): Date {
@@ -86,13 +87,26 @@ export function createInternalPlanStartDateCandidates(
 
   const candidates: InternalPlanStartDateCandidate[] = [];
   for (let wholeWeeks = maximum; wholeWeeks >= minimum; wholeWeeks -= 1) {
-    candidates.push({
+    const candidate = {
       date: subtractDays(
         profile.targetRace.date,
         wholeWeeks * 7 - 1,
       ),
       wholeWeeksToRace: wholeWeeks,
-    });
+    };
+    if (
+      profile.recentPerformance === undefined ||
+      candidate.date >= profile.recentPerformance.completedOn
+    ) {
+      candidates.push(candidate);
+    }
+  }
+
+  if (candidates.length === 0 && profile.recentPerformance !== undefined) {
+    return {
+      kind: "unavailable",
+      reason: "recent_effort_after_supported_start_window",
+    };
   }
 
   return { kind: "available", candidates };

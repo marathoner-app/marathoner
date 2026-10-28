@@ -5,6 +5,7 @@ import { describe, expect, it, vi } from "vitest";
 import {
   createDateOnly,
   createDistanceMeters,
+  createDurationSeconds,
   createIanaTimeZone,
   createUserId,
   createUtcDateTime,
@@ -93,6 +94,71 @@ describe("InternalPlanProposalRehearsal", () => {
       screen.getByText(/does not fall on the preferred long-run day/iu),
     ).toBeInTheDocument();
     expect(screen.getByLabelText("Plan start date")).toBeEnabled();
+  });
+
+  it("offers only aligned choices that do not predate the saved recent effort", () => {
+    render(
+      <InternalPlanProposalRehearsal
+        profile={{
+          ...profile,
+          recentPerformance: {
+            completedOn: createDateOnly("2029-12-24"),
+            distance: createDistanceMeters(10_000),
+            duration: createDurationSeconds(3_600),
+          },
+        }}
+        ruleSet={ruleSet}
+        onSessionActivationChange={vi.fn()}
+      />,
+    );
+
+    expect(
+      screen.queryByRole("button", {
+        name: "December 10, 2029 22 weeks to race",
+      }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", {
+        name: "December 17, 2029 21 weeks to race",
+      }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("button", {
+        name: "December 24, 2029 20 weeks to race",
+      }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", {
+        name: "January 7, 2030 18 weeks to race",
+      }),
+    ).toBeInTheDocument();
+  });
+
+  it("explains when the saved effort follows every aligned choice", () => {
+    render(
+      <InternalPlanProposalRehearsal
+        profile={{
+          ...profile,
+          recentPerformance: {
+            completedOn: createDateOnly("2030-01-08"),
+            distance: createDistanceMeters(10_000),
+            duration: createDurationSeconds(3_600),
+          },
+        }}
+        ruleSet={ruleSet}
+        onSessionActivationChange={vi.fn()}
+      />,
+    );
+
+    expect(
+      screen.getByText(/recent effort occurs after every start date/iu),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/enter a date manually to rehearse the unsupported/iu),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("group", { name: "Draft-aligned choices" }),
+    ).not.toBeInTheDocument();
   });
 
   it("renders the real generated proposal with explicit session-only review", async () => {
