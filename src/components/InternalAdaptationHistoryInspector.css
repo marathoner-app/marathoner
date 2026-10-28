@@ -75,6 +75,14 @@
   margin-top: 0.5rem;
 }
 
+.internal-session-draft-feedback-empty {
+  margin-top: 1.5rem;
+  padding: 1rem;
+  border-radius: 0.65rem;
+  background: #dceee7;
+  font-weight: 700;
+}
+
 .internal-adaptation-history-result {
   margin-top: 1.5rem;
   padding: 1rem;
