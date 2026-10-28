@@ -45,6 +45,10 @@ const InternalSessionPlanNotice =
   isInternalPlanProposalRehearsalMode(import.meta.env.MODE)
     ? lazy(() => import("./components/InternalSessionPlanNotice"))
     : null;
+const InternalSessionTodayComparison =
+  isInternalPlanProposalRehearsalMode(import.meta.env.MODE)
+    ? lazy(() => import("./components/InternalSessionTodayComparison"))
+    : null;
 
 const sections = [
   { id: "plan", label: "Plan", title: "Plan Your Workouts" },
@@ -451,6 +455,18 @@ function AuthenticatedExperience({
             distanceUnit={training.profile?.preferredDistanceUnit ?? "mile"}
             onOpenPlan={() => onOpenSection("plan")}
           />
+          {InternalSessionTodayComparison &&
+            sessionPlanProjection &&
+            training.profile && (
+              <Suspense fallback={null}>
+                <InternalSessionTodayComparison
+                  projection={sessionPlanProjection}
+                  runs={training.runs}
+                  distanceUnit={training.profile.preferredDistanceUnit}
+                  timeZone={training.profile.timeZone}
+                />
+              </Suspense>
+            )}
           <RecommendationDecisionSurface />
           <nav className="section-navigation" aria-label="Training sections">
             {sections.map(({ id, label }) => (

@@ -43,7 +43,7 @@ const journeySteps = [
     href: "#internal-session-today-comparison",
     title: "Compare today's real run",
     description:
-      "Compare the session draft's schedule with synchronized runs logged on the same date without creating a saved workout association.",
+      "Return to the signed-in home summary to compare the session draft's schedule with synchronized runs logged on the same date without creating a saved workout association.",
   },
   {
     href: "#internal-adaptation-history",

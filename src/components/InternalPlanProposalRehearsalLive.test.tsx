@@ -72,6 +72,9 @@ describe("InternalPlanProposalRehearsalLive session projection", () => {
         screen.getByRole("status", { name: "Projected session plan" }),
       ).toHaveTextContent("Synthetic contract plan"),
     );
+    expect(
+      screen.queryByRole("region", { name: "Today in the session draft" }),
+    ).not.toBeInTheDocument();
 
     await user.click(
       screen.getByRole("button", { name: "Clear session draft" }),
