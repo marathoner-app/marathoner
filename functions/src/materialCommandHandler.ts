@@ -123,6 +123,7 @@ export interface PlanApprovalStore {
 
 export interface PlanApprovalHandlerDependencies {
   activationGate: Pick<OperatorActivationGate, 'evaluate'>
+  allowProvisionalDogfood?: boolean
   policyRecords: readonly PlanApprovalArtifactPolicyRecord[]
   store: PlanApprovalStore
   supportedScopeId: string | null
@@ -327,6 +328,8 @@ export async function executeMaterialCommand(
   if (isPlanApprovalCommandEnvelope(parsed.envelope)) {
     const planApproval = dependencies.planApproval
     const policyDecision = evaluatePlanApprovalArtifactPolicy(parsed.envelope, {
+      allowProvisionalDogfood:
+        planApproval?.allowProvisionalDogfood ?? false,
       supportedScopeId: planApproval?.supportedScopeId ?? null,
       records:
         planApproval?.policyRecords ??
@@ -343,14 +346,27 @@ export async function executeMaterialCommand(
       return result
     }
 
-    try {
-      const activationDecision = await planApproval.activationGate.evaluate({
-        capability: 'generation',
-        artifactVersion: parsed.envelope.command.input.rulesetVersion,
-        appProtocolVersion: parsed.envelope.appProtocolVersion,
-        commandProtocolVersion: parsed.envelope.envelopeVersion,
-      })
-      if (!activationDecision.allowed) {
+    if (policyDecision.record.reviewState === 'approved') {
+      try {
+        const activationDecision = await planApproval.activationGate.evaluate({
+          capability: 'generation',
+          artifactVersion: parsed.envelope.command.input.rulesetVersion,
+          appProtocolVersion: parsed.envelope.appProtocolVersion,
+          commandProtocolVersion: parsed.envelope.envelopeVersion,
+        })
+        if (!activationDecision.allowed) {
+          const result = planActivationNotAvailableResult(
+            parsed.envelope.commandId,
+          )
+          logResult(
+            dependencies,
+            'material-command-result',
+            result,
+            parsed.envelope.command.type,
+          )
+          return result
+        }
+      } catch {
         const result = planActivationNotAvailableResult(
           parsed.envelope.commandId,
         )
@@ -362,17 +378,6 @@ export async function executeMaterialCommand(
         )
         return result
       }
-    } catch {
-      const result = planActivationNotAvailableResult(
-        parsed.envelope.commandId,
-      )
-      logResult(
-        dependencies,
-        'material-command-result',
-        result,
-        parsed.envelope.command.type,
-      )
-      return result
     }
 
     try {

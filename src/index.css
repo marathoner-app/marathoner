@@ -14,6 +14,7 @@
 @import "./components/NextWorkoutSummary.css";
 @import "./components/PlanApprovalReview.css";
 @import "./components/PlanGenerationResultView.css";
+@import "./components/PlanProposalBuilder.css";
 @import "./components/ProposedPlanSummary.css";
 @import "./components/ShoeTracker.css";
 @import "./components/Analyze.css";

@@ -6,16 +6,19 @@ import type {
 } from "../domain/training";
 import type { PlanApprovalClient } from "../services/planApprovalClient";
 import PlanApprovalReview from "./PlanApprovalReview";
+import ProposedPlanSummary from "./ProposedPlanSummary";
 
 type PlanGenerationResultViewProps = {
   readonly result: PlanGenerationResultV1;
   readonly input: PlanGenerationInputV1;
-  readonly expectedActivePlanRevision: number | null;
-  readonly approvalClient: PlanApprovalClient;
-  readonly reloadTrainingData: () => Promise<void>;
   readonly onReviewInputs: () => void;
-  readonly onApproved: (receipt: PlanApprovalReceiptResult) => void;
-  readonly createCommandId?: () => string;
+  readonly approval?: {
+    readonly expectedActivePlanRevision: number | null;
+    readonly client: PlanApprovalClient;
+    readonly reloadTrainingData: () => Promise<void>;
+    readonly onApproved: (receipt: PlanApprovalReceiptResult) => void;
+    readonly createCommandId?: () => string;
+  };
 };
 
 type NoPlanStateProps = {
@@ -60,16 +63,26 @@ export default function PlanGenerationResultView(
   const { result, onReviewInputs } = props;
   switch (result.kind) {
     case "generated":
+      if (props.approval === undefined) {
+        return (
+          <ProposedPlanSummary
+            result={result}
+            onReviewInputs={onReviewInputs}
+          />
+        );
+      }
       return (
         <PlanApprovalReview
           input={props.input}
           result={result}
-          expectedActivePlanRevision={props.expectedActivePlanRevision}
-          approvalClient={props.approvalClient}
-          reloadTrainingData={props.reloadTrainingData}
+          expectedActivePlanRevision={
+            props.approval.expectedActivePlanRevision
+          }
+          approvalClient={props.approval.client}
+          reloadTrainingData={props.approval.reloadTrainingData}
           onReviewInputs={onReviewInputs}
-          onApproved={props.onApproved}
-          createCommandId={props.createCommandId}
+          onApproved={props.approval.onApproved}
+          createCommandId={props.approval.createCommandId}
         />
       );
     case "unsupported":

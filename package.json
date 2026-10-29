@@ -9,8 +9,10 @@
   "homepage": "https://github.com/marathoner-app/marathoner",
   "scripts": {
     "dev": "vite",
+    "dev:dogfood": "vite --mode dogfood",
     "dev:plan-rehearsal": "vite --mode internal-plan-rehearsal",
     "build": "npm run check:server-boundary && npm run check:creator-radar-infrastructure && npm run check:training-cache-policy && npm run build:functions && tsc -b && vite build && npm run check:internal-plan-rehearsal-boundary -- dist",
+    "build:dogfood": "npm run check:server-boundary && npm run check:creator-radar-infrastructure && npm run check:training-cache-policy && npm run build:functions && tsc -b && vite build --mode dogfood && npm run check:internal-plan-rehearsal-boundary -- dist --allow-provisional-plan-dogfood",
     "build:ios": "npm run check:server-boundary && npm run check:creator-radar-infrastructure && tsc -b && vite build --mode ios-development --outDir dist-ios --emptyOutDir && npm run check:internal-plan-rehearsal-boundary -- dist-ios && node scripts/select-ios-firebase-config.mjs --environment development",
     "build:ios:beta": "npm run check:server-boundary && npm run check:creator-radar-infrastructure && tsc -b && vite build --mode ios-beta --outDir dist-ios --emptyOutDir && npm run check:internal-plan-rehearsal-boundary -- dist-ios && node scripts/select-ios-firebase-config.mjs --environment beta",
     "check:server-boundary": "node scripts/check-server-boundary.mjs",

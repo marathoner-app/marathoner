@@ -10,6 +10,7 @@ export * from "./nextWorkout";
 export * from "./planGeneration";
 export * from "./planGenerationFixtures";
 export * from "./planGenerationInput";
+export * from "./planStartDateCandidates";
 export * from "./planSupportEvaluation";
 export * from "./types";
 export * from "./units";

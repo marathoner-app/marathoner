@@ -55,6 +55,11 @@ const InternalSessionTodayComparison =
   isInternalPlanProposalRehearsalMode(import.meta.env.MODE)
     ? lazy(() => import("./components/InternalSessionTodayComparison"))
     : null;
+const PlanProposalBuilder =
+  import.meta.env.VITE_FIREBASE_ENVIRONMENT === "development" &&
+  import.meta.env.VITE_PROVISIONAL_PLAN_DOGFOOD === "true"
+    ? lazy(() => import("./components/PlanProposalBuilderLive"))
+    : null;
 
 async function clearInternalPlanRehearsalSession(): Promise<void> {
   if (InternalPlanProposalRehearsal === null) return;
@@ -422,6 +427,11 @@ function AuthenticatedExperience({
     setOnboardingDeferred(true);
   };
 
+  const editRunnerProfile = () => {
+    setOnboardingDeferred(false);
+    setIsOnboardingOpen(true);
+  };
+
   useEffect(() => {
     if (showOnboarding || !restoreRunnerProfileFocus.current) return;
 
@@ -478,7 +488,7 @@ function AuthenticatedExperience({
               ref={runnerProfileTriggerRef}
               type="button"
               disabled={!training.canWrite}
-              onClick={() => setIsOnboardingOpen(true)}
+              onClick={editRunnerProfile}
             >
               {onboardingComplete ? "Edit runner profile" : "Resume runner setup"}
             </button>
@@ -590,6 +600,7 @@ function AuthenticatedExperience({
             sessionPlanProjection={sessionPlanProjection}
             isSessionAdaptationActive={isSessionAdaptationActive}
             trackInitialFocusTarget={trackInitialFocusTarget}
+            onEditRunnerProfile={editRunnerProfile}
             onClose={onCloseSection}
           />
         </motion.section>
@@ -615,6 +626,7 @@ type SectionContentProps = {
   sessionPlanProjection: GeneratedPlanEntityProjection | null;
   isSessionAdaptationActive: boolean;
   trackInitialFocusTarget: ShoeTrackerInitialFocusTarget | null;
+  onEditRunnerProfile: () => void;
   onClose: () => void;
 };
 
@@ -626,6 +638,7 @@ function SectionContent({
   sessionPlanProjection,
   isSessionAdaptationActive,
   trackInitialFocusTarget,
+  onEditRunnerProfile,
   onClose,
 }: SectionContentProps) {
   const training = useTrainingData();
@@ -698,12 +711,33 @@ function SectionContent({
               />
             </Suspense>
           )}
-          <Calendar
-            plan={planSurfaceData.activePlan}
-            workouts={planSurfaceData.workouts}
-            distanceUnit={training.profile?.preferredDistanceUnit ?? "mile"}
-            initialDate={nextPlanWorkout?.scheduledDate}
-          />
+          {planSurfaceData.activePlan === null && PlanProposalBuilder ? (
+            <Suspense
+              fallback={
+                <p className="training-status" role="status">
+                  Loading plan builder...
+                </p>
+              }
+            >
+              <PlanProposalBuilder
+                key={training.profile?.updatedAt ?? "no-profile"}
+                profile={training.profile}
+                onEditProfile={onEditRunnerProfile}
+                expectedActivePlanRevision={
+                  training.activePlanState?.activePlanRevision ?? null
+                }
+                reloadTrainingData={training.reload}
+                onApproved={() => undefined}
+              />
+            </Suspense>
+          ) : (
+            <Calendar
+              plan={planSurfaceData.activePlan}
+              workouts={planSurfaceData.workouts}
+              distanceUnit={training.profile?.preferredDistanceUnit ?? "mile"}
+              initialDate={nextPlanWorkout?.scheduledDate}
+            />
+          )}
         </>
       )}
       {hasReadableTraining && section === "track" && (

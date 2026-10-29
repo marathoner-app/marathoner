@@ -154,25 +154,33 @@ following values together:
 - generated-plan schema version; and
 - plan-generation result schema version.
 
-Only one unambiguous record with review state `approved` can pass. Missing,
-draft, ready-for-review, conditional, rejected, retired, unknown, malformed,
-mismatched, and duplicate records all produce the same typed
-`plan-artifact-not-approved` authorization result before a plan store is
-called. A `-draft` generator or ruleset remains blocked even if a malformed
-record labels it approved. Application logs record only the fixed command type
-and outcome status; they never record the scope, versions, command ID, input,
-proposal, authenticated owner, or policy record.
+The normal release path permits only one unambiguous, non-draft record with
+review state `approved`. Missing, draft, ready-for-review, conditional,
+rejected, retired, unknown, malformed, mismatched, and duplicate records all
+produce the same typed `plan-artifact-not-approved` authorization result before
+a plan store is called. A `-draft` generator or ruleset remains blocked even if
+a malformed record labels it approved. Application logs record only the fixed
+command type and outcome status; they never record the scope, versions, command
+ID, input, proposal, authenticated owner, or policy record.
 
 `PRODUCTION_PLAN_APPROVAL_ARTIFACT_POLICY` is intentionally an empty frozen
 registry. Unit tests inject one synthetic, non-draft approved tuple and a fake
 plan store to prove the positive wiring without approving any real methodology.
 The Functions emulator enables only that exact synthetic fixture tuple so the
-transaction can be exercised end to end; deployed environments always select
-the empty production registry. The supported scope is injected from the server
-boundary rather than accepted in the command payload. Ownership is always the
-verified Authentication UID passed separately to the store.
+transaction can be exercised end to end. The closed development project has
+one separately labelled `provisional_dogfood` exception for the exact pinned
+`beta-rules@0.1.0-draft` tuple. The exception is installed only when both the
+deployed project is `marathoner-d9bf9` and the operator-controlled
+`MARATHONER_PROVISIONAL_PLAN_DOGFOOD_ENABLED` parameter is true. It is never
+installed in the beta project, does not represent external methodology review,
+and persists `provisional_dogfood` in generation provenance. Removing the
+parameter or exact policy record disables activation without changing client
+code. The supported scope is injected from the server boundary rather than
+accepted in the command payload. Ownership is always the verified
+Authentication UID passed separately to the store.
 
-Activating a real tuple requires a later reviewed issue and pull request that:
+Activating a reviewed tuple for external participant use still requires a later
+reviewed issue and pull request that:
 
 1. cites the attributable approval record and exact non-draft artifact hashes;
 2. adds one exact `approved` registry record for the reviewed scope;

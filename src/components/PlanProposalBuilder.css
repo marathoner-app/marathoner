@@ -1,0 +1,170 @@
+.plan-proposal-builder {
+  box-sizing: border-box;
+  width: min(100%, 54rem);
+  margin: 0 auto;
+  color: #17202a;
+  line-height: 1.5;
+  text-align: left;
+}
+
+.plan-proposal-header {
+  max-width: 42rem;
+  margin: 0 auto 1.25rem;
+  text-align: center;
+}
+
+.plan-proposal-header h2,
+.plan-proposal-unavailable h2 {
+  margin: 0.35rem 0 0.65rem;
+  line-height: 1.15;
+}
+
+.plan-proposal-eyebrow {
+  margin: 0;
+  color: #475569;
+  font-size: 0.82rem;
+  font-weight: 750;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.plan-proposal-boundary {
+  margin: 1rem 0 1.5rem;
+  padding: 0.8rem 1rem;
+  border: 1px solid #a8b9ca;
+  border-radius: 0.65rem;
+  background: #f2f6fa;
+  color: #334155;
+  font-size: 0.92rem;
+}
+
+.plan-proposal-form,
+.plan-proposal-start-dates,
+.plan-proposal-safety {
+  display: grid;
+  gap: 1rem;
+}
+
+.plan-proposal-start-dates,
+.plan-proposal-safety {
+  margin: 0;
+  padding: clamp(1rem, 3vw, 1.5rem);
+  border: 1px solid #d7dde4;
+  border-radius: 0.85rem;
+  background: #ffffff;
+}
+
+.plan-proposal-start-dates legend,
+.plan-proposal-safety legend {
+  padding: 0 0.3rem;
+  font-size: 1.05rem;
+  font-weight: 750;
+}
+
+.plan-proposal-start-dates p,
+.plan-proposal-safety p {
+  margin: 0;
+  color: #475569;
+}
+
+.plan-proposal-choice-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 13rem), 1fr));
+  gap: 0.75rem;
+}
+
+.plan-proposal-choice-grid label {
+  display: flex;
+  gap: 0.7rem;
+  align-items: flex-start;
+  min-width: 0;
+  padding: 0.85rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 0.7rem;
+  cursor: pointer;
+}
+
+.plan-proposal-choice-grid label:has(input:checked) {
+  border-color: #1d5f9f;
+  background: #edf6ff;
+  box-shadow: 0 0 0 1px #1d5f9f;
+}
+
+.plan-proposal-choice-grid input {
+  flex: 0 0 auto;
+  margin-top: 0.25rem;
+}
+
+.plan-proposal-choice-grid span {
+  display: grid;
+  min-width: 0;
+  gap: 0.15rem;
+}
+
+.plan-proposal-choice-grid small {
+  color: #475569;
+}
+
+.plan-proposal-safety-choices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.5rem;
+}
+
+.plan-proposal-safety-choices label {
+  display: inline-flex;
+  gap: 0.45rem;
+  align-items: center;
+  min-height: 2.75rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.plan-proposal-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.75rem;
+}
+
+.plan-proposal-actions button,
+.plan-proposal-unavailable button {
+  min-height: 2.75rem;
+  padding: 0.65rem 1rem;
+}
+
+.plan-proposal-actions .secondary {
+  border: 1px solid #17202a;
+  background: #ffffff;
+  color: #17202a;
+}
+
+.plan-proposal-unavailable {
+  padding: clamp(1.25rem, 4vw, 2rem);
+  border: 1px solid #d7dde4;
+  border-radius: 0.85rem;
+  background: #f8fafc;
+  text-align: center;
+}
+
+.plan-proposal-unavailable p:not(.plan-proposal-eyebrow) {
+  max-width: 38rem;
+  margin-right: auto;
+  margin-left: auto;
+}
+
+.plan-proposal-result .proposed-plan,
+.plan-proposal-result .plan-result-state {
+  margin-top: 1.25rem;
+}
+
+@media (max-width: 600px) {
+  .plan-proposal-actions {
+    flex-direction: column-reverse;
+  }
+
+  .plan-proposal-actions button,
+  .plan-proposal-unavailable button {
+    width: 100%;
+  }
+}

@@ -40,6 +40,32 @@ interface NativeAppCheckDebugForModeOptions {
   nativeDebugRequested: string | undefined
 }
 
+interface ProvisionalPlanDogfoodForModeOptions {
+  mode: string
+  environmentName: FirebaseEnvironmentName
+  requested: string | undefined
+}
+
+export function resolveProvisionalPlanDogfoodForMode({
+  mode,
+  environmentName,
+  requested,
+}: ProvisionalPlanDogfoodForModeOptions): boolean {
+  const normalizedRequest = requested?.trim().toLowerCase()
+  if (!normalizedRequest || normalizedRequest === 'false') return false
+  if (normalizedRequest !== 'true') {
+    throw new Error(
+      'VITE_PROVISIONAL_PLAN_DOGFOOD must be either "true" or "false".',
+    )
+  }
+  if (mode !== 'dogfood' || environmentName !== 'development') {
+    throw new Error(
+      'Provisional plan dogfood is allowed only in the explicit dogfood build for the development Firebase environment.',
+    )
+  }
+  return true
+}
+
 export function assertFirebaseEnvironmentForMode(
   mode: string,
   environmentName: FirebaseEnvironmentName,
@@ -77,7 +103,9 @@ export function resolveAppCheckDebugTokenForMode({
   if (!normalizedDebugToken) return undefined
 
   const isSupportedLocalBrowserMode =
-    mode === 'development' || mode === 'internal-plan-rehearsal'
+    mode === 'development' ||
+    mode === 'dogfood' ||
+    mode === 'internal-plan-rehearsal'
 
   if (
     !isViteServe ||

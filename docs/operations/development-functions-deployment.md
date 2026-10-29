@@ -63,9 +63,15 @@ cp functions/.env.marathoner-d9bf9.example \
 chmod 600 functions/.env.marathoner-d9bf9
 ```
 
-Change its one Boolean value to `true` for the smoke window. Do not add a
+Change the completed-run Boolean to `true` for the smoke window. Do not add a
 Firebase token, App Check debug token, participant identifier, payment detail,
 or other credential. Confirm the file is ignored with `git status --short`.
+
+The same ignored file also contains
+`MARATHONER_PROVISIONAL_PLAN_DOGFOOD_ENABLED`. Set it to `true` only when the
+two existing development accounts should be able to activate the exact pinned
+provisional plan. This does not approve the methodology and does not enable the
+policy in the beta project.
 
 ## Predeployment checklist
 

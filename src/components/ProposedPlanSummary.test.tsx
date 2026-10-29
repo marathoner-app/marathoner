@@ -26,6 +26,7 @@ describe("ProposedPlanSummary", () => {
         result={generatedResult("generated-exact-date-distance-target")}
         onReviewInputs={() => undefined}
         onContinueReview={() => undefined}
+        showProvenance
       />,
     );
 
@@ -94,5 +95,6 @@ describe("ProposedPlanSummary", () => {
     );
 
     expect(screen.queryByRole("button")).not.toBeInTheDocument();
+    expect(screen.queryByText("fixture-rules@1.0.0")).not.toBeInTheDocument();
   });
 });
