@@ -116,6 +116,7 @@ export default function InternalPlanActivationRehearsal({
           result={result}
           onReviewInputs={reviewInputs}
           onContinueReview={() => setScreen("confirmation")}
+          showProvenance
         />
       </div>
     );

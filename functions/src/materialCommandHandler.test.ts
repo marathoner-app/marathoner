@@ -25,6 +25,7 @@ import { createIanaTimeZone, createUtcDateTime } from '../../src/domain/training
 import { createCompletedRunId } from '../../src/domain/training/identifiers.js'
 import {
   PLAN_GENERATION_RESULT_SCHEMA_VERSION,
+  createPlanGenerationArtifactVersion,
   planGenerationContractFixtures,
 } from '../../src/domain/training/index.js'
 import {
@@ -73,6 +74,26 @@ const planApprovalCommand = createPlanApprovalCommand(planApprovalCommandId, {
   input: generatedFixture.input,
   proposal: generatedFixture.result.plan,
 })
+const provisionalRulesetVersion = createPlanGenerationArtifactVersion(
+  'fixture-rules@1.0.0-draft',
+)
+const provisionalPlanApprovalCommand = createPlanApprovalCommand(
+  'approve-provisional-plan-command-0001',
+  {
+    expectedActivePlanRevision: null,
+    input: {
+      ...generatedFixture.input,
+      rulesetVersion: provisionalRulesetVersion,
+    },
+    proposal: {
+      ...generatedFixture.result.plan,
+      provenance: {
+        ...generatedFixture.result.plan.provenance,
+        rulesetVersion: provisionalRulesetVersion,
+      },
+    },
+  },
+)
 const runCompletionCommand = createRunCompletionCommand(
   'complete-run-command-0001',
   {
@@ -549,6 +570,7 @@ describe('material-command handler', () => {
     'draft',
     'ready_for_review',
     'conditional',
+    'provisional_dogfood',
     'rejected',
     'retired',
   ])('returns a typed rejection before storage for a %s tuple', async (reviewState) => {
@@ -572,6 +594,36 @@ describe('material-command handler', () => {
       }),
     )
     expect(planStore.commit).not.toHaveBeenCalled()
+  })
+
+  it('persists an exact provisional draft only when development dogfood is enabled', async () => {
+    const planStore = new InMemoryPlanApprovalStore()
+    const activationGate = allowingActivationGate()
+    const provisionalRecord: PlanApprovalArtifactPolicyRecord = {
+      ...approvedPolicyRecord(),
+      rulesetVersion: provisionalRulesetVersion,
+      reviewState: 'provisional_dogfood',
+    }
+    const boundary = dependencies(new InMemoryMaterialCommandStore(), {
+      activationGate,
+      allowProvisionalDogfood: true,
+      policyRecords: [provisionalRecord],
+      store: planStore,
+      supportedScopeId,
+    })
+
+    await expect(
+      executeMaterialCommand(
+        { authenticatedUserId: ownerId, data: provisionalPlanApprovalCommand },
+        boundary,
+      ),
+    ).resolves.toEqual(planStore.result)
+    expect(planStore.commit).toHaveBeenCalledWith({
+      artifactPolicyRecord: provisionalRecord,
+      envelope: provisionalPlanApprovalCommand,
+      ownerId,
+    })
+    expect(activationGate.evaluate).not.toHaveBeenCalled()
   })
 
   it('rejects a mismatched policy before the plan store and redacts policy data from logs', async () => {

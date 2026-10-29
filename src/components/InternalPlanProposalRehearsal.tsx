@@ -150,6 +150,8 @@ function unavailableCandidateMessage(
       return "The saved race date does not fall on the preferred long-run day, so this draft has no aligned start-date choices.";
     case "recent_effort_after_supported_start_window":
       return "The saved recent effort occurs after every start date allowed by this draft, so no aligned choice is valid for the saved profile.";
+    case "supported_start_window_has_passed":
+      return "Every start date allowed by this draft has already passed.";
   }
 }
 

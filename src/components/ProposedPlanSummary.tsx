@@ -10,6 +10,7 @@ type ProposedPlanSummaryProps = {
   readonly result: GeneratedPlanResultV1;
   readonly onReviewInputs?: () => void;
   readonly onContinueReview?: () => void;
+  readonly showProvenance?: boolean;
 };
 
 const dateFormatter = new Intl.DateTimeFormat("en-US", {
@@ -63,6 +64,7 @@ export default function ProposedPlanSummary({
   result,
   onReviewInputs,
   onContinueReview,
+  showProvenance = false,
 }: ProposedPlanSummaryProps) {
   const { plan } = result;
   const idPrefix = useId();
@@ -160,35 +162,41 @@ export default function ProposedPlanSummary({
         </div>
       </section>
 
-      <section
-        className="proposed-plan-provenance"
-        aria-labelledby={detailsId}
-      >
-        <h3 id={detailsId}>Proposal details</h3>
-        <dl>
-          <div>
-            <dt>Ruleset</dt>
-            <dd>{plan.provenance.rulesetVersion}</dd>
-          </div>
-          <div>
-            <dt>Generator</dt>
-            <dd>{plan.provenance.generatorVersion}</dd>
-          </div>
-          <div>
-            <dt>Plan format</dt>
-            <dd>{plan.schemaVersion}</dd>
-          </div>
-        </dl>
-      </section>
+      {showProvenance && (
+        <section
+          className="proposed-plan-provenance"
+          aria-labelledby={detailsId}
+        >
+          <h3 id={detailsId}>Proposal details</h3>
+          <dl>
+            <div>
+              <dt>Ruleset</dt>
+              <dd>{plan.provenance.rulesetVersion}</dd>
+            </div>
+            <div>
+              <dt>Generator</dt>
+              <dd>{plan.provenance.generatorVersion}</dd>
+            </div>
+            <div>
+              <dt>Plan format</dt>
+              <dd>{plan.schemaVersion}</dd>
+            </div>
+          </dl>
+        </section>
+      )}
 
-      {onReviewInputs && onContinueReview && (
+      {(onReviewInputs || onContinueReview) && (
         <div className="proposed-plan-actions">
-          <button type="button" className="secondary" onClick={onReviewInputs}>
-            Review inputs
-          </button>
-          <button type="button" onClick={onContinueReview}>
-            Continue review
-          </button>
+          {onReviewInputs && (
+            <button type="button" className="secondary" onClick={onReviewInputs}>
+              Review inputs
+            </button>
+          )}
+          {onContinueReview && (
+            <button type="button" onClick={onContinueReview}>
+              Continue review
+            </button>
+          )}
         </div>
       )}
     </article>

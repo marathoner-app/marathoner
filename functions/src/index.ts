@@ -35,7 +35,7 @@ import {
   type MaterialCommandLogEntry,
 } from './materialCommandHandler.js'
 import {
-  PRODUCTION_PLAN_APPROVAL_ARTIFACT_POLICY,
+  selectLivePlanApprovalArtifactPolicy,
   type PlanApprovalArtifactPolicyRecord,
 } from './planApprovalArtifactPolicy.js'
 import { OperatorActivationGate } from './operatorActivationGate.js'
@@ -65,6 +65,19 @@ const emulatorPlanApprovalPolicy: readonly PlanApprovalArtifactPolicyRecord[] = 
 ]
 const functionsEmulator = process.env.FUNCTIONS_EMULATOR === 'true'
 const useEmulatorPlanApprovalPolicy = functionsEmulator
+const provisionalPlanDogfoodEnabled = defineBoolean(
+  'MARATHONER_PROVISIONAL_PLAN_DOGFOOD_ENABLED',
+  {
+    default: false,
+    description:
+      'Allows one pinned provisional plan artifact only in the closed development dogfood project.',
+  },
+)
+const livePlanApprovalPolicy = selectLivePlanApprovalArtifactPolicy({
+  projectId: gcloudProject.value(),
+  provisionalDogfoodEnabled:
+    !functionsEmulator && provisionalPlanDogfoodEnabled.value(),
+})
 const completedRunCommandsEnabled = defineBoolean(
   COMPLETED_RUN_COMMANDS_ENABLED_PARAM,
   {
@@ -86,13 +99,16 @@ const dependencies = {
   store: new FirestoreMaterialCommandStore(database),
   planApproval: {
     activationGate: operatorActivationGate,
+    allowProvisionalDogfood: useEmulatorPlanApprovalPolicy
+      ? false
+      : livePlanApprovalPolicy.allowProvisionalDogfood,
     policyRecords: useEmulatorPlanApprovalPolicy
       ? emulatorPlanApprovalPolicy
-      : PRODUCTION_PLAN_APPROVAL_ARTIFACT_POLICY,
+      : livePlanApprovalPolicy.records,
     store: new FirestorePlanApprovalStore(database),
     supportedScopeId: useEmulatorPlanApprovalPolicy
       ? emulatorPlanApprovalScopeId
-      : null,
+      : livePlanApprovalPolicy.supportedScopeId,
   },
   recommendationDecision: {
     activationGate: operatorActivationGate,

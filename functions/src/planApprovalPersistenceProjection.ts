@@ -91,7 +91,7 @@ export interface PlanGenerationProvenanceRecordV1 {
   readonly generatedPlanSchemaVersion: string
   readonly resultSchemaVersion: string
   readonly supportedScopeId: string
-  readonly artifactReviewState: 'approved'
+  readonly artifactReviewState: 'approved' | 'provisional_dogfood'
   readonly expectedActivePlanRevision: number | null
   readonly planReasonCodes: readonly PlanGenerationReasonCode[]
   readonly phases: readonly PersistedPhaseReasonCodesV1[]
@@ -196,7 +196,10 @@ function projectProvenance(
     generatedPlanSchemaVersion: proposal.schemaVersion,
     resultSchemaVersion: PLAN_GENERATION_RESULT_SCHEMA_VERSION,
     supportedScopeId: policyRecord.supportedScopeId,
-    artifactReviewState: 'approved',
+    artifactReviewState:
+      policyRecord.reviewState === 'provisional_dogfood'
+        ? 'provisional_dogfood'
+        : 'approved',
     expectedActivePlanRevision: envelope.command.expectedActivePlanRevision,
     planReasonCodes: [...proposal.reasonCodes],
     phases: proposal.phases.map((phase) => ({
@@ -237,6 +240,8 @@ export function projectApprovedPlan(
   }
 
   const policyDecision = evaluatePlanApprovalArtifactPolicy(envelope, {
+    allowProvisionalDogfood:
+      options.artifactPolicyRecord.reviewState === 'provisional_dogfood',
     records: [options.artifactPolicyRecord],
     supportedScopeId: options.artifactPolicyRecord.supportedScopeId,
   })

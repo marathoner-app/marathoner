@@ -200,8 +200,10 @@ The support-evaluator tests additionally load the exact pinned draft packet,
 translate its fixture inputs into real date and availability values, verify
 every frozen supported and unsupported case, and cover upper boundaries that
 the packet's minimum fixture set does not repeat. This is implementation
-evidence only; it is not approval evidence and it does not enable runtime use
-of the draft.
+evidence only; it is not approval evidence. The closed development dogfood
+build may exercise the exact draft through the separately guarded provisional
+server policy, but that does not make the artifact eligible for external
+participant use.
 
 The deterministic-generator tests reuse that packet adapter. They verify all
 frozen result summaries, the complete lead-in and core distance table, weekday
@@ -210,13 +212,14 @@ ordered unsupported results, provenance, and contract validity.
 
 ## Downstream gates
 
-- **#70:** the internal deterministic core now exists behind injected rules;
-  keep participant use blocked until the exact artifact is approved and a
-  trusted caller verifies and supplies that approved version.
-- **#71:** render a proposal and map reason codes to approved explanations
-  without treating it as active.
-- **#72:** atomically persist an approved proposal with command, generator,
-  ruleset, and schema versions intact.
+- **#70:** the deterministic core exists behind injected rules. The closed
+  development dogfood build may use the pinned provisional artifact; external
+  participant use remains blocked until the exact artifact is approved.
+- **#71:** the normal Plan surface renders and reviews a proposal without
+  exposing technical artifact metadata as runner-facing content.
+- **#72:** the material-command boundary atomically persists an approved or
+  explicitly provisional-dogfood proposal with command, generator, ruleset,
+  schema versions, and honest review-state provenance intact.
 - **#119/#120:** approve and activate exact non-draft methodology artifacts;
   structural conformance is not approval.
 

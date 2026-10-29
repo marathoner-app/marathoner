@@ -6,6 +6,7 @@ import {
 } from '../../src/domain/materialCommands/contract.js'
 import {
   createDateOnly,
+  createPlanGenerationArtifactVersion,
   createPlannedWorkoutId,
   createUtcDateTime,
   planGenerationContractFixtures,
@@ -117,6 +118,36 @@ function options(
 }
 
 describe('plan-approval persistence projection', () => {
+  it('records development dogfood activation as provisional rather than approved', () => {
+    const rulesetVersion = createPlanGenerationArtifactVersion(
+      'fixture-rules@1.0.0-draft',
+    )
+    const command = approvalCommand(
+      'approve-provisional-projection-0001',
+      {
+        ...distanceFixture.result.plan,
+        provenance: {
+          ...distanceFixture.result.plan.provenance,
+          rulesetVersion,
+        },
+      },
+      { ...distanceFixture.input, rulesetVersion },
+    )
+    const projectionOptions = options(command)
+
+    const projected = projectApprovedPlan({
+      ...projectionOptions,
+      artifactPolicyRecord: {
+        ...projectionOptions.artifactPolicyRecord,
+        reviewState: 'provisional_dogfood',
+      },
+    })
+
+    expect(projected.provenance.record.artifactReviewState).toBe(
+      'provisional_dogfood',
+    )
+  })
+
   it('projects one active plan and exact planned workouts beneath the authenticated owner', () => {
     const command = approvalCommand('approve-plan-projection-0001')
     const before = JSON.parse(JSON.stringify(command))

@@ -264,7 +264,7 @@ describe('founding-beta rules review packet', () => {
     }
   })
 
-  it('pins packet hashes and remains absent from runtime source graphs', async () => {
+  it('pins packet hashes and limits the provisional runtime reference to the dogfood server policy', async () => {
     const checksumLines = (await readFile(join(packetDirectory, 'SHA256SUMS'), 'utf8'))
       .trim()
       .split('\n')
@@ -290,9 +290,24 @@ describe('founding-beta rules review packet', () => {
       )
     ).flat()
 
+    const dogfoodPolicyFile = join(
+      repositoryRoot,
+      'functions/src/planApprovalArtifactPolicy.ts',
+    )
+
     for (const file of runtimeFiles) {
       const contents = await readFile(file, 'utf8')
-      expect(contents, file).not.toContain('beta-rules@0.1.0-draft')
+      if (file === dogfoodPolicyFile) {
+        expect(
+          contents.match(/beta-rules@0\.1\.0-draft/g),
+          file,
+        ).toHaveLength(1)
+        expect(contents, file).toContain(
+          "reviewState: 'provisional_dogfood'",
+        )
+      } else {
+        expect(contents, file).not.toContain('beta-rules@0.1.0-draft')
+      }
       expect(contents, file).not.toContain('methodology/artifacts/beta-rules')
     }
   })

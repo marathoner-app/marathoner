@@ -10,6 +10,7 @@ import {
   resolveFirebaseEnvironment as resolveFirebaseEnvironmentWithRegistry,
   resolveFirebaseEnvironmentForMode as resolveFirebaseEnvironmentForModeWithRegistry,
   resolveNativeAppCheckDebugForMode,
+  resolveProvisionalPlanDogfoodForMode,
 } from './firebaseEnvironment'
 
 type ModeOptions = Parameters<
@@ -55,7 +56,7 @@ describe('Firebase environment selection', () => {
     })
   })
 
-  it.each(['development', 'internal-plan-rehearsal'] as const)(
+  it.each(['development', 'dogfood', 'internal-plan-rehearsal'] as const)(
     'allows only a fixed debug token while serving local %s mode',
     (mode) => {
       const debugToken = '11111111-1111-4111-8111-111111111111'
@@ -126,6 +127,40 @@ describe('Firebase environment selection', () => {
       }),
     ).toBe(true)
   })
+
+  it('allows provisional plans only in the explicit development dogfood build', () => {
+    expect(
+      resolveProvisionalPlanDogfoodForMode({
+        mode: 'dogfood',
+        environmentName: 'development',
+        requested: 'true',
+      }),
+    ).toBe(true)
+    expect(
+      resolveProvisionalPlanDogfoodForMode({
+        mode: 'production',
+        environmentName: 'development',
+        requested: undefined,
+      }),
+    ).toBe(false)
+  })
+
+  it.each([
+    ['production', 'development'],
+    ['dogfood', 'beta'],
+    ['ios-development', 'development'],
+  ] as const)(
+    'rejects provisional plans for %s/%s',
+    (mode, environmentName) => {
+      expect(() =>
+        resolveProvisionalPlanDogfoodForMode({
+          mode,
+          environmentName,
+          requested: 'true',
+        }),
+      ).toThrow('only in the explicit dogfood build')
+    },
+  )
 
   it.each([
     ['production', 'development'],

@@ -8,12 +8,17 @@ import {
   assertFunctionsEmulatorForMode,
   resolveAppCheckDebugTokenForMode,
   resolveFirebaseEnvironmentForMode,
+  resolveProvisionalPlanDogfoodForMode,
 } from './src/firebaseEnvironment'
 import { firebaseProjectConfigurations } from './src/firebaseConfig'
 
 const repositoryRoot = path.dirname(fileURLToPath(import.meta.url))
 const internalPlanRulesModuleId = 'virtual:internal-plan-rehearsal-rules'
 const resolvedInternalPlanRulesModuleId = `\0${internalPlanRulesModuleId}`
+const provisionalPlanDogfoodRulesModuleId =
+  'virtual:provisional-plan-dogfood-rules'
+const resolvedProvisionalPlanDogfoodRulesModuleId =
+  `\0${provisionalPlanDogfoodRulesModuleId}`
 const internalAdaptationPacketModuleId =
   'virtual:internal-adaptation-rehearsal-packet'
 const resolvedInternalAdaptationPacketModuleId =
@@ -23,12 +28,18 @@ const internalSafetyPacketModuleId =
 const resolvedInternalSafetyPacketModuleId =
   `\0${internalSafetyPacketModuleId}`
 
-function internalRehearsalArtifactsPlugin(mode: string) {
+function internalRehearsalArtifactsPlugin(
+  mode: string,
+  provisionalPlanDogfoodEnabled: boolean,
+) {
   return {
     name: 'internal-rehearsal-artifacts',
     resolveId(id: string) {
       if (id === internalPlanRulesModuleId) {
         return resolvedInternalPlanRulesModuleId
+      }
+      if (id === provisionalPlanDogfoodRulesModuleId) {
+        return resolvedProvisionalPlanDogfoodRulesModuleId
       }
       if (id === internalAdaptationPacketModuleId) {
         return resolvedInternalAdaptationPacketModuleId
@@ -41,16 +52,29 @@ function internalRehearsalArtifactsPlugin(mode: string) {
     load(id: string) {
       if (
         id !== resolvedInternalPlanRulesModuleId &&
+        id !== resolvedProvisionalPlanDogfoodRulesModuleId &&
         id !== resolvedInternalAdaptationPacketModuleId &&
         id !== resolvedInternalSafetyPacketModuleId
       ) {
         return null
       }
-      if (mode !== 'internal-plan-rehearsal') {
+      if (
+        id === resolvedProvisionalPlanDogfoodRulesModuleId &&
+        !provisionalPlanDogfoodEnabled
+      ) {
+        return 'export default null'
+      }
+      if (
+        id !== resolvedProvisionalPlanDogfoodRulesModuleId &&
+        mode !== 'internal-plan-rehearsal'
+      ) {
         return 'export default null'
       }
 
-      if (id === resolvedInternalPlanRulesModuleId) {
+      if (
+        id === resolvedInternalPlanRulesModuleId ||
+        id === resolvedProvisionalPlanDogfoodRulesModuleId
+      ) {
         const rulesText = readFileSync(
           path.join(
             repositoryRoot,
@@ -118,10 +142,18 @@ export default defineConfig(({ command, mode }) => {
     debugToken: environment.VITE_FIREBASE_APP_CHECK_DEBUG_TOKEN,
     isViteServe: command === 'serve',
   })
+  const provisionalPlanDogfoodEnabled = resolveProvisionalPlanDogfoodForMode({
+    mode,
+    environmentName: selectedFirebaseEnvironment.name,
+    requested: environment.VITE_PROVISIONAL_PLAN_DOGFOOD,
+  })
 
   return {
     base: isIosBuild ? './' : '/',
-    plugins: [internalRehearsalArtifactsPlugin(mode), react()],
+    plugins: [
+      internalRehearsalArtifactsPlugin(mode, provisionalPlanDogfoodEnabled),
+      react(),
+    ],
     optimizeDeps: {
       entries: ['index.html'],
     },

@@ -7,8 +7,11 @@ import {
   planGenerationContractFixtures,
 } from '../../src/domain/training/index.js'
 import {
+  DEVELOPMENT_DOGFOOD_PLAN_APPROVAL_ARTIFACT_POLICY,
+  DEVELOPMENT_DOGFOOD_PLAN_SCOPE_ID,
   evaluatePlanApprovalArtifactPolicy,
   PRODUCTION_PLAN_APPROVAL_ARTIFACT_POLICY,
+  selectLivePlanApprovalArtifactPolicy,
   type PlanApprovalArtifactPolicyRecord,
   type PlanApprovalArtifactReviewState,
 } from './planApprovalArtifactPolicy.js'
@@ -45,14 +48,58 @@ function policyRecord(
 function evaluate(
   records: readonly PlanApprovalArtifactPolicyRecord[],
   scopeId: string | null = supportedScopeId,
+  allowProvisionalDogfood = false,
 ) {
   return evaluatePlanApprovalArtifactPolicy(command, {
+    allowProvisionalDogfood,
     records,
     supportedScopeId: scopeId,
   })
 }
 
 describe('plan-approval artifact policy', () => {
+  it('pins one provisional tuple for the closed development dogfood scope', () => {
+    expect(DEVELOPMENT_DOGFOOD_PLAN_APPROVAL_ARTIFACT_POLICY).toEqual([
+      expect.objectContaining({
+        supportedScopeId: DEVELOPMENT_DOGFOOD_PLAN_SCOPE_ID,
+        generatorVersion: 'deterministic-plan-generator@1.0.0',
+        rulesetVersion: 'beta-rules@0.1.0-draft',
+        reviewState: 'provisional_dogfood',
+      }),
+    ])
+  })
+
+  it('installs provisional rules only for the enabled development Functions project', () => {
+    expect(
+      selectLivePlanApprovalArtifactPolicy({
+        projectId: 'marathoner-d9bf9',
+        provisionalDogfoodEnabled: true,
+      }),
+    ).toEqual({
+      allowProvisionalDogfood: true,
+      records: DEVELOPMENT_DOGFOOD_PLAN_APPROVAL_ARTIFACT_POLICY,
+      supportedScopeId: DEVELOPMENT_DOGFOOD_PLAN_SCOPE_ID,
+    })
+
+    for (const options of [
+      {
+        projectId: 'marathoner-d9bf9',
+        provisionalDogfoodEnabled: false,
+      },
+      {
+        projectId: 'marathonerapp-beta',
+        provisionalDogfoodEnabled: true,
+      },
+      { projectId: 'unknown-project', provisionalDogfoodEnabled: true },
+    ]) {
+      expect(selectLivePlanApprovalArtifactPolicy(options)).toEqual({
+        allowProvisionalDogfood: false,
+        records: PRODUCTION_PLAN_APPROVAL_ARTIFACT_POLICY,
+        supportedScopeId: null,
+      })
+    }
+  })
+
   it('allows one exact approved tuple for one exact server-provided scope', () => {
     const record = policyRecord()
 
@@ -71,6 +118,7 @@ describe('plan-approval artifact policy', () => {
     'draft',
     'ready_for_review',
     'conditional',
+    'provisional_dogfood',
     'rejected',
     'retired',
   ])('rejects an exact tuple in the %s review state', (reviewState) => {
@@ -143,5 +191,46 @@ describe('plan-approval artifact policy', () => {
         supportedScopeId,
       }),
     ).toEqual({ allowed: false })
+  })
+
+  it('allows one exact draft only when the server installs the provisional dogfood policy', () => {
+    const draftRulesetVersion = createPlanGenerationArtifactVersion(
+      'fixture-rules@1.0.0-draft',
+    )
+    const draftCommand = createPlanApprovalCommand(
+      'approve-provisional-dogfood-0001',
+      {
+        expectedActivePlanRevision: null,
+        input: {
+          ...command.command.input,
+          rulesetVersion: draftRulesetVersion,
+        },
+        proposal: {
+          ...command.command.proposal,
+          provenance: {
+            ...command.command.proposal.provenance,
+            rulesetVersion: draftRulesetVersion,
+          },
+        },
+      },
+    )
+    const record: PlanApprovalArtifactPolicyRecord = {
+      ...policyRecord('provisional_dogfood'),
+      rulesetVersion: draftRulesetVersion,
+    }
+
+    expect(
+      evaluatePlanApprovalArtifactPolicy(draftCommand, {
+        records: [record],
+        supportedScopeId,
+      }),
+    ).toEqual({ allowed: false })
+    expect(
+      evaluatePlanApprovalArtifactPolicy(draftCommand, {
+        allowProvisionalDogfood: true,
+        records: [record],
+        supportedScopeId,
+      }),
+    ).toEqual({ allowed: true, record })
   })
 })

@@ -7,6 +7,7 @@ interface ImportMetaEnv {
   readonly VITE_FIREBASE_APP_CHECK_DEBUG_TOKEN?: string
   readonly VITE_FIREBASE_NATIVE_APP_CHECK_DEBUG?: 'true' | 'false'
   readonly VITE_COMPLETED_RUN_COMMANDS_ENABLED?: 'true' | 'false'
+  readonly VITE_PROVISIONAL_PLAN_DOGFOOD?: 'true' | 'false'
 }
 
 interface ImportMeta {
@@ -14,6 +15,11 @@ interface ImportMeta {
 }
 
 declare module "virtual:internal-plan-rehearsal-rules" {
+  const rulesText: string | null;
+  export default rulesText;
+}
+
+declare module "virtual:provisional-plan-dogfood-rules" {
   const rulesText: string | null;
   export default rulesText;
 }

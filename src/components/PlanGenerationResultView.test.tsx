@@ -62,14 +62,17 @@ function approvalClient(): PlanApprovalClient {
 }
 
 function commonProps() {
+  const client = approvalClient();
   return {
     input: generatedFixture.input,
-    expectedActivePlanRevision: null,
-    approvalClient: approvalClient(),
-    reloadTrainingData: vi.fn().mockResolvedValue(undefined),
     onReviewInputs: vi.fn(),
-    onApproved: vi.fn(),
-    createCommandId: () => approved.commandId,
+    approval: {
+      expectedActivePlanRevision: null,
+      client,
+      reloadTrainingData: vi.fn().mockResolvedValue(undefined),
+      onApproved: vi.fn(),
+      createCommandId: () => approved.commandId,
+    },
   };
 }
 
@@ -93,7 +96,30 @@ describe("PlanGenerationResultView", () => {
     expect(
       screen.getByRole("heading", { name: "Activate Synthetic contract plan?" }),
     ).toHaveFocus();
-    expect(props.approvalClient.submit).not.toHaveBeenCalled();
+    expect(props.approval.client.submit).not.toHaveBeenCalled();
+  });
+
+  it("presents a generated proposal without activation controls when approval is unavailable", async () => {
+    const user = userEvent.setup();
+    const onReviewInputs = vi.fn();
+
+    render(
+      <PlanGenerationResultView
+        input={generatedFixture.input}
+        result={generatedFixture.result}
+        onReviewInputs={onReviewInputs}
+      />,
+    );
+
+    expect(
+      screen.getByRole("heading", { name: "Synthetic contract plan" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Continue review" }),
+    ).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Review inputs" }));
+    expect(onReviewInputs).toHaveBeenCalledOnce();
   });
 
   it("renders an honest unsupported state without internal reason codes", async () => {

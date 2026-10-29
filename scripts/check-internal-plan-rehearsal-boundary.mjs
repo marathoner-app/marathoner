@@ -1,8 +1,8 @@
 import { readFile, readdir } from 'node:fs/promises'
 import path from 'node:path'
 
+const provisionalPlanDogfoodArtifact = 'beta-rules@0.1.0-draft'
 const forbiddenBuildText = [
-  'beta-rules@0.1.0-draft',
   'beta-adaptation@0.1.0-draft',
   'beta-safety@0.1.0-draft',
   'Internal draft plan rehearsal',
@@ -55,13 +55,19 @@ async function collectTextFiles(directory) {
   return files
 }
 
-export async function findInternalPlanRehearsalLeaks(directory) {
+export async function findInternalPlanRehearsalLeaks(
+  directory,
+  { allowProvisionalPlanDogfood = false } = {},
+) {
   const leaks = []
   const files = await collectTextFiles(directory)
+  const forbiddenValues = allowProvisionalPlanDogfood
+    ? forbiddenBuildText
+    : [provisionalPlanDogfoodArtifact, ...forbiddenBuildText]
 
   for (const file of files) {
     const contents = await readFile(file, 'utf8')
-    for (const forbiddenText of forbiddenBuildText) {
+    for (const forbiddenText of forbiddenValues) {
       if (contents.includes(forbiddenText)) {
         leaks.push({ file, forbiddenText })
       }
@@ -79,7 +85,11 @@ if (!outputDirectory) {
 }
 
 const resolvedOutputDirectory = path.resolve(outputDirectory)
-const leaks = await findInternalPlanRehearsalLeaks(resolvedOutputDirectory)
+const allowProvisionalPlanDogfood =
+  process.argv[3] === '--allow-provisional-plan-dogfood'
+const leaks = await findInternalPlanRehearsalLeaks(resolvedOutputDirectory, {
+  allowProvisionalPlanDogfood,
+})
 
 if (leaks.length > 0) {
   const details = leaks
