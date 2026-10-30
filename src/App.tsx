@@ -533,12 +533,14 @@ function AuthenticatedExperience({
               </Suspense>
             )}
           <RecommendationDecisionSurface />
-          <TrainingSectionNavigation
-            activeSection={null}
-            transitionDuration={sectionTransitionDuration}
-            onSelect={onOpenSection}
-            onRegisterTrigger={onRegisterTrigger}
-          />
+          {onboardingComplete && (
+            <TrainingSectionNavigation
+              activeSection={null}
+              transitionDuration={sectionTransitionDuration}
+              onSelect={onOpenSection}
+              onRegisterTrigger={onRegisterTrigger}
+            />
+          )}
           {InternalPlanProposalRehearsal && (
             <Suspense
               fallback={
@@ -606,7 +608,7 @@ function AuthenticatedExperience({
         </motion.section>
       )}
 
-      {activeSection && hasReadableTraining && (
+      {activeSection && hasReadableTraining && onboardingComplete && (
         <TrainingSectionNavigation
           activeSection={activeSection}
           transitionDuration={sectionTransitionDuration}

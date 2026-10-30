@@ -70,7 +70,7 @@ async function expectHomeVisible(page: Page) {
   await expect(page.getByText("Signed in as runner@example.com")).toBeVisible();
   await expect(page.getByRole("heading", { level: 1, name: "Marathoner." })).toBeVisible();
   await expect(page.getByText("Welcome to your training companion")).toBeVisible();
-  await expect(page.getByRole("button", { name: "Resume runner setup" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Edit runner profile" })).toBeVisible();
   await expect(page.getByRole("heading", { level: 2, name: "No active plan yet" })).toBeVisible();
   await expect(page.getByRole("navigation", { name: "Training sections" })).toBeVisible();
 }
@@ -96,7 +96,7 @@ test("keeps the signed-in home in normal flow at phone width", async ({ page }) 
   for (const name of [
     "Account settings",
     "Log out",
-    "Resume runner setup",
+    "Edit runner profile",
     "Open Plan",
     "Plan",
     "Track",
@@ -152,6 +152,30 @@ test("keeps the signed-in home usable with 200% text", async ({ page }) => {
     page,
     "signed-in home",
     "at phone width with 200% text",
+  );
+});
+
+test("hides training destinations until runner setup is complete", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("tests/viewport/signedInHome.html?setup=incomplete");
+
+  await expect(
+    page.getByRole("button", { name: "Resume runner setup" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("navigation", { name: "Training sections" }),
+  ).toHaveCount(0);
+  for (const name of ["Plan", "Track", "Analyze"]) {
+    await expect(
+      page.getByRole("button", { name, exact: true }),
+    ).toHaveCount(0);
+  }
+  await expectNoHorizontalOverflow(
+    page,
+    "incomplete runner setup home",
+    "at phone width",
   );
 });
 

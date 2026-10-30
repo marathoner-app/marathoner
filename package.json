@@ -78,6 +78,9 @@
     "vitest": "^4.1.11"
   },
   "overrides": {
+    "@google-cloud/firestore-api": {
+      "google-gax": "6.14.0"
+    },
     "@grpc/grpc-js": "1.14.6",
     "@modelcontextprotocol/sdk": "1.32.0",
     "compression": "1.8.2",

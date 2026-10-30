@@ -1,4 +1,10 @@
-import { useEffect, useId, useState, type FormEvent } from "react";
+import {
+  useEffect,
+  useId,
+  useRef,
+  useState,
+  type FormEvent,
+} from "react";
 import type { PlanApprovalReceiptResult } from "../domain/materialCommands/contract";
 import {
   createDateOnly,
@@ -35,6 +41,16 @@ interface PlanProposalBuilderProps {
 }
 
 type SafetyAnswer = "" | PlanGenerationSafetySignal;
+
+interface BuilderValidationErrors {
+  readonly planStartDate: boolean;
+  readonly safetyAnswer: boolean;
+}
+
+const noValidationErrors: BuilderValidationErrors = {
+  planStartDate: false,
+  safetyAnswer: false,
+};
 
 type BuilderOutcome =
   | { readonly kind: "form" }
@@ -91,11 +107,16 @@ export default function PlanProposalBuilder({
   const idPrefix = useId();
   const [planStartDate, setPlanStartDate] = useState<DateOnly | "">("");
   const [safetyAnswer, setSafetyAnswer] = useState<SafetyAnswer>("");
+  const [validationErrors, setValidationErrors] =
+    useState<BuilderValidationErrors>(noValidationErrors);
   const [outcome, setOutcome] = useState<BuilderOutcome>({ kind: "form" });
+  const firstPlanStartInput = useRef<HTMLInputElement>(null);
+  const firstSafetyInput = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     setPlanStartDate("");
     setSafetyAnswer("");
+    setValidationErrors(noValidationErrors);
     setOutcome({ kind: "form" });
   }, [profile?.updatedAt]);
 
@@ -110,11 +131,21 @@ export default function PlanProposalBuilder({
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (
-      profile === null ||
-      planStartDate === "" ||
-      safetyAnswer === ""
-    ) {
+    const nextValidationErrors = {
+      planStartDate: planStartDate === "",
+      safetyAnswer: safetyAnswer === "",
+    };
+    setValidationErrors(nextValidationErrors);
+
+    if (nextValidationErrors.planStartDate) {
+      firstPlanStartInput.current?.focus();
+      return;
+    }
+    if (nextValidationErrors.safetyAnswer) {
+      firstSafetyInput.current?.focus();
+      return;
+    }
+    if (profile === null || planStartDate === "" || safetyAnswer === "") {
       return;
     }
 
@@ -152,6 +183,7 @@ export default function PlanProposalBuilder({
           distanceUnit={outcome.distanceUnit}
           supportRules={rules}
           onReviewInputs={reviewInputs}
+          onReviewRunnerProfile={onEditProfile}
           approval={approval}
         />
       </div>
@@ -213,22 +245,35 @@ export default function PlanProposalBuilder({
       </p>
 
       <form className="plan-proposal-form" onSubmit={handleSubmit}>
-        <fieldset className="plan-proposal-start-dates">
+        <fieldset
+          className="plan-proposal-start-dates"
+          aria-describedby={
+            validationErrors.planStartDate
+              ? `${idPrefix}-plan-start-help ${idPrefix}-plan-start-error`
+              : `${idPrefix}-plan-start-help`
+          }
+        >
           <legend>When should this plan start?</legend>
-          <p>
+          <p id={`${idPrefix}-plan-start-help`}>
             These dates align with your marathon date and preferred long-run
             day.
           </p>
           <div className="plan-proposal-choice-grid">
-            {candidates.candidates.map((candidate) => (
+            {candidates.candidates.map((candidate, index) => (
               <label key={candidate.date}>
                 <input
+                  ref={index === 0 ? firstPlanStartInput : undefined}
                   type="radio"
                   name={`${idPrefix}-plan-start`}
                   value={candidate.date}
                   checked={planStartDate === candidate.date}
+                  aria-invalid={validationErrors.planStartDate}
                   onChange={() => {
                     setPlanStartDate(candidate.date);
+                    setValidationErrors((current) => ({
+                      ...current,
+                      planStartDate: false,
+                    }));
                     setOutcome({ kind: "form" });
                   }}
                 />
@@ -239,24 +284,48 @@ export default function PlanProposalBuilder({
               </label>
             ))}
           </div>
+          {validationErrors.planStartDate && (
+            <p
+              id={`${idPrefix}-plan-start-error`}
+              className="plan-proposal-field-error"
+              role="alert"
+            >
+              Choose when this plan should start.
+            </p>
+          )}
         </fieldset>
 
-        <fieldset className="plan-proposal-safety">
+        <fieldset
+          className="plan-proposal-safety"
+          aria-describedby={
+            validationErrors.safetyAnswer
+              ? `${idPrefix}-safety-help ${idPrefix}-safety-error`
+              : `${idPrefix}-safety-help`
+          }
+        >
           <legend>
             Are pain or unusual symptoms currently affecting your running?
           </legend>
-          <p>
+          <p id={`${idPrefix}-safety-help`}>
             This helps Marathoner avoid creating a plan when a training plan is
             not the right next step.
           </p>
           <div className="plan-proposal-safety-choices">
             <label>
               <input
+                ref={firstSafetyInput}
                 type="radio"
                 name={`${idPrefix}-safety`}
                 value="none_reported"
                 checked={safetyAnswer === "none_reported"}
-                onChange={() => setSafetyAnswer("none_reported")}
+                aria-invalid={validationErrors.safetyAnswer}
+                onChange={() => {
+                  setSafetyAnswer("none_reported");
+                  setValidationErrors((current) => ({
+                    ...current,
+                    safetyAnswer: false,
+                  }));
+                }}
               />
               No
             </label>
@@ -268,23 +337,34 @@ export default function PlanProposalBuilder({
                 checked={
                   safetyAnswer === "pain_or_unusual_symptoms_reported"
                 }
-                onChange={() =>
-                  setSafetyAnswer("pain_or_unusual_symptoms_reported")
-                }
+                aria-invalid={validationErrors.safetyAnswer}
+                onChange={() => {
+                  setSafetyAnswer("pain_or_unusual_symptoms_reported");
+                  setValidationErrors((current) => ({
+                    ...current,
+                    safetyAnswer: false,
+                  }));
+                }}
               />
               Yes
             </label>
           </div>
+          {validationErrors.safetyAnswer && (
+            <p
+              id={`${idPrefix}-safety-error`}
+              className="plan-proposal-field-error"
+              role="alert"
+            >
+              Choose Yes or No before creating a plan proposal.
+            </p>
+          )}
         </fieldset>
 
         <div className="plan-proposal-actions">
           <button type="button" className="secondary" onClick={onEditProfile}>
             Review runner setup
           </button>
-          <button
-            type="submit"
-            disabled={planStartDate === "" || safetyAnswer === ""}
-          >
+          <button type="submit">
             Create plan proposal
           </button>
         </div>
