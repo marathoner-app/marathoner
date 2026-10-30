@@ -94,6 +94,7 @@ function commonProps() {
     distanceUnit: "mile" as const,
     supportRules,
     onReviewInputs: vi.fn(),
+    onReviewRunnerProfile: vi.fn(),
     approval: {
       expectedActivePlanRevision: null,
       client,
@@ -175,7 +176,8 @@ describe("PlanGenerationResultView", () => {
     ).not.toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "Review inputs" }));
-    expect(props.onReviewInputs).toHaveBeenCalledOnce();
+    expect(props.onReviewRunnerProfile).toHaveBeenCalledOnce();
+    expect(props.onReviewInputs).not.toHaveBeenCalled();
   });
 
   it("explains every recognized unsupported input in the runner's unit", () => {
@@ -256,7 +258,23 @@ describe("PlanGenerationResultView", () => {
     ).toBeInTheDocument();
   });
 
-  it("renders an invalid-input state without internal fields or messages", () => {
+  it("routes plan-setting failures back to plan settings", async () => {
+    const user = userEvent.setup();
+    const props = commonProps();
+    const result: UnsupportedPlanGenerationResultV1 = {
+      ...unsupportedResult(),
+      reasonCodes: [supportReasonCodes.raceHorizon],
+    };
+
+    render(<PlanGenerationResultView {...props} result={result} />);
+
+    await user.click(screen.getByRole("button", { name: "Review inputs" }));
+    expect(props.onReviewInputs).toHaveBeenCalledOnce();
+    expect(props.onReviewRunnerProfile).not.toHaveBeenCalled();
+  });
+
+  it("renders an invalid-input state without internal fields or messages", async () => {
+    const user = userEvent.setup();
     const props = commonProps();
     render(<PlanGenerationResultView {...props} result={invalidResult} />);
 
@@ -271,5 +289,9 @@ describe("PlanGenerationResultView", () => {
       screen.queryByText("Internal fixture detail that must stay hidden."),
     ).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Review inputs" })).toBeEnabled();
+
+    await user.click(screen.getByRole("button", { name: "Review inputs" }));
+    expect(props.onReviewRunnerProfile).toHaveBeenCalledOnce();
+    expect(props.onReviewInputs).not.toHaveBeenCalled();
   });
 });

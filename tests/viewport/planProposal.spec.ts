@@ -19,6 +19,17 @@ async function exerciseProposal(page: Page, textSizeLabel: string) {
   await expectNoHorizontalOverflow(page, "Plan proposal", textSizeLabel);
 
   await start.click();
+  await create.click();
+  await expect(
+    page.getByText("Choose Yes or No before creating a plan proposal."),
+  ).toBeVisible();
+  await expect(noSymptoms).toBeFocused();
+  await expectNoHorizontalOverflow(
+    page,
+    "Plan proposal validation",
+    textSizeLabel,
+  );
+
   await noSymptoms.click();
   await create.click();
 

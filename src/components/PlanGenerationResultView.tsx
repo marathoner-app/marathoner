@@ -33,6 +33,7 @@ type PlanGenerationResultViewProps = {
     | "reasonCodes"
   >;
   readonly onReviewInputs: () => void;
+  readonly onReviewRunnerProfile?: () => void;
   readonly approval?: {
     readonly expectedActivePlanRevision: number | null;
     readonly client: PlanApprovalClient;
@@ -210,10 +211,35 @@ function assertNever(result: never): never {
   throw new Error(`Unhandled plan-generation result: ${String(result)}`);
 }
 
+function unsupportedResultNeedsRunnerProfile(
+  result: UnsupportedPlanGenerationResultV1,
+  rules: PlanGenerationResultViewProps["supportRules"],
+): boolean {
+  const planSettingReasons = new Set<PlanGenerationReasonCode>([
+    rules.reasonCodes.raceHorizon,
+    rules.reasonCodes.raceAlignment,
+  ]);
+
+  return result.reasonCodes.some(
+    (reasonCode) => !planSettingReasons.has(reasonCode),
+  );
+}
+
+function invalidResultNeedsRunnerProfile(
+  result: Extract<PlanGenerationResultV1, { readonly kind: "invalid_input" }>,
+): boolean {
+  return result.issues.some(
+    (issue) =>
+      issue.field.startsWith("runner.") || issue.field.includes(".runner."),
+  );
+}
+
 export default function PlanGenerationResultView(
   props: PlanGenerationResultViewProps,
 ) {
   const { result, onReviewInputs } = props;
+  const onReviewRunnerProfile =
+    props.onReviewRunnerProfile ?? onReviewInputs;
   switch (result.kind) {
     case "generated":
       if (props.approval === undefined) {
@@ -250,7 +276,11 @@ export default function PlanGenerationResultView(
             props.supportRules,
             props.distanceUnit,
           )}
-          onReviewInputs={onReviewInputs}
+          onReviewInputs={
+            unsupportedResultNeedsRunnerProfile(result, props.supportRules)
+              ? onReviewRunnerProfile
+              : onReviewInputs
+          }
         />
       );
     case "invalid_input":
@@ -259,7 +289,11 @@ export default function PlanGenerationResultView(
           kind="invalid-input"
           title="Review your running details"
           message="Some details need attention before Marathoner can create a proposal. Review your inputs and try again."
-          onReviewInputs={onReviewInputs}
+          onReviewInputs={
+            invalidResultNeedsRunnerProfile(result)
+              ? onReviewRunnerProfile
+              : onReviewInputs
+          }
         />
       );
     default:
