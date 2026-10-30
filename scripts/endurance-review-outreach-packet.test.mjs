@@ -47,7 +47,7 @@ describe('endurance-methodology review outreach packet', () => {
         reviewRole: 'EMR',
         protocolVersion: 'methodology-review@0.1.0',
         pinnedRepositoryCommit:
-          '682db3271006ea884f6b5bdd707cf5d050d8cf91',
+          '4501497ddcd31f77f029723e97a737c6a85c865d',
         bundles: [
           {
             name: 'beta-rules',

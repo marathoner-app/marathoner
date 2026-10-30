@@ -68,7 +68,7 @@ review decision does not transfer to another commit or artifact version.
 ## Pinned combined review target
 
 - Repository commit:
-  [`682db3271006ea884f6b5bdd707cf5d050d8cf91`](https://github.com/marathoner-app/marathoner/tree/682db3271006ea884f6b5bdd707cf5d050d8cf91)
+  [`4501497ddcd31f77f029723e97a737c6a85c865d`](https://github.com/marathoner-app/marathoner/tree/4501497ddcd31f77f029723e97a737c6a85c865d)
 - Review protocol: `methodology-review@0.1.0`
 - Base-plan bundle: `beta-rules@0.2.0-draft`
 - Adaptation bundle: `beta-adaptation@0.2.0-draft`
