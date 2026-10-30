@@ -67,6 +67,12 @@
   color: #475569;
 }
 
+.plan-proposal-start-dates .plan-proposal-field-error,
+.plan-proposal-safety .plan-proposal-field-error {
+  color: #9f1239;
+  font-weight: 700;
+}
+
 .plan-proposal-choice-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 13rem), 1fr));
