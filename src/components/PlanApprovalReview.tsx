@@ -132,9 +132,12 @@ function outcomePresentation(result: NonApprovedResult): OutcomePresentation {
 function unresolvedResult(
   commandId: string,
   result?: PlanApprovalClientResult,
+  canRetryOriginalApproval = false,
 ): NonApprovedResult {
   const message =
-    result?.status === "retryable_error"
+    canRetryOriginalApproval
+      ? "Marathoner could not find a completed activation for this request. Check again, or safely retry the same request without creating a second plan."
+      : result?.status === "retryable_error"
       ? "Marathoner could not reach the original approval yet. No new approval was sent. Reconnect and check again."
       : result?.status === "authentication_error"
         ? "Sign in again, then check the original approval. No new approval was sent."
@@ -165,6 +168,7 @@ export default function PlanApprovalReview({
   const approvedHeadingRef = useRef<HTMLHeadingElement>(null);
   const outcomeRef = useRef<HTMLDivElement>(null);
   const commandIdRef = useRef<string | null>(null);
+  const submissionRef = useRef<PlanApprovalSubmission | null>(null);
   const operationRef = useRef(false);
   const [screen, setScreen] = useState<ReviewScreen>("proposal");
   const [operation, setOperation] = useState<ApprovalOperation>("idle");
@@ -174,6 +178,8 @@ export default function PlanApprovalReview({
     useState<PlanApprovalReceiptResult | null>(null);
   const [reloadFailed, setReloadFailed] = useState(false);
   const [resolutionRequired, setResolutionRequired] = useState(false);
+  const [canRetryOriginalApproval, setCanRetryOriginalApproval] =
+    useState(false);
   const pending = operation !== "idle";
 
   useEffect(() => {
@@ -209,18 +215,22 @@ export default function PlanApprovalReview({
   const applySubmissionResult = async (approvalResult: PlanApprovalClientResult) => {
     if (approvalResult.status === "plan_approved") {
       setResolutionRequired(false);
+      setCanRetryOriginalApproval(false);
       await finishApproval(approvalResult);
       return;
     }
 
     if (approvalResult.status === "outcome_unknown") {
       setResolutionRequired(true);
+      setCanRetryOriginalApproval(false);
       const originalCommandId = commandIdRef.current;
       if (originalCommandId !== null) {
         setOutcome(unresolvedResult(originalCommandId));
       }
       return;
     }
+    setResolutionRequired(false);
+    setCanRetryOriginalApproval(false);
     setOutcome(approvalResult);
   };
 
@@ -239,12 +249,15 @@ export default function PlanApprovalReview({
     setReloadFailed(false);
     const commandId = commandIdRef.current ?? createCommandId();
     commandIdRef.current = commandId;
-    const submission: PlanApprovalSubmission = {
-      commandId,
-      expectedActivePlanRevision,
-      input: reviewedPlan.input,
-      proposal: reviewedPlan.proposal,
-    };
+    const submission =
+      submissionRef.current ??
+      ({
+        commandId,
+        expectedActivePlanRevision,
+        input: reviewedPlan.input,
+        proposal: reviewedPlan.proposal,
+      } satisfies PlanApprovalSubmission);
+    submissionRef.current = submission;
 
     try {
       await applySubmissionResult(await approvalClient.submit(submission));
@@ -269,14 +282,37 @@ export default function PlanApprovalReview({
       const resolved = await approvalClient.resolve(commandId);
       if (resolved.status === "plan_approved") {
         setResolutionRequired(false);
+        setCanRetryOriginalApproval(false);
         await finishApproval(resolved);
       } else {
         setResolutionRequired(true);
-        setOutcome(unresolvedResult(commandId, resolved));
+        const canRetryOriginal = resolved.status === "outcome_unknown";
+        setCanRetryOriginalApproval(canRetryOriginal);
+        setOutcome(unresolvedResult(commandId, resolved, canRetryOriginal));
       }
     } catch {
       setResolutionRequired(true);
       setOutcome(unresolvedResult(commandId));
+    } finally {
+      operationRef.current = false;
+      setOperation("idle");
+    }
+  };
+
+  const retryOriginalApproval = async () => {
+    const submission = submissionRef.current;
+    if (operationRef.current || submission === null) return;
+
+    operationRef.current = true;
+    setOperation("submitting");
+    setOutcome(null);
+    setCanRetryOriginalApproval(false);
+
+    try {
+      await applySubmissionResult(await approvalClient.submit(submission));
+    } catch {
+      setResolutionRequired(true);
+      setOutcome(unresolvedResult(submission.commandId));
     } finally {
       operationRef.current = false;
       setOperation("idle");
@@ -444,13 +480,25 @@ export default function PlanApprovalReview({
         )}
 
         {resolutionRequired && (
-          <button
-            type="button"
-            disabled={pending}
-            onClick={() => void resolveApproval()}
-          >
-            Check original approval
-          </button>
+          <>
+            <button
+              type="button"
+              className="secondary"
+              disabled={pending}
+              onClick={() => void resolveApproval()}
+            >
+              Check approval again
+            </button>
+            {canRetryOriginalApproval && (
+              <button
+                type="button"
+                disabled={pending}
+                onClick={() => void retryOriginalApproval()}
+              >
+                Retry approval safely
+              </button>
+            )}
+          </>
         )}
 
         {reloadFailed && (
