@@ -47,16 +47,16 @@ describe('endurance-methodology review outreach packet', () => {
         reviewRole: 'EMR',
         protocolVersion: 'methodology-review@0.1.0',
         pinnedRepositoryCommit:
-          '682db3271006ea884f6b5bdd707cf5d050d8cf91',
+          '4501497ddcd31f77f029723e97a737c6a85c865d',
         bundles: [
           {
             name: 'beta-rules',
-            version: 'beta-rules@0.1.0-draft',
+            version: 'beta-rules@0.2.0-draft',
             state: 'draft-not-approved-not-runtime-eligible',
           },
           {
             name: 'beta-adaptation',
-            version: 'beta-adaptation@0.1.0-draft',
+            version: 'beta-adaptation@0.2.0-draft',
             state: 'draft-not-approved-not-runtime-eligible',
           },
         ],
@@ -205,7 +205,7 @@ describe('endurance-methodology review outreach packet', () => {
     );
     const rules = JSON.parse(
       await read(
-        'docs/methodology/artifacts/beta-rules/0.1.0-draft/beta-rules.json',
+        'docs/methodology/artifacts/beta-rules/0.2.0-draft/beta-rules.json',
       ),
     );
     const phaseLabel = (week) => {
@@ -217,8 +217,8 @@ describe('endurance-methodology review outreach packet', () => {
     };
 
     for (const week of rules.planFamily.coreWeeks) {
-      const distances = week.distancesMetersByPosition.map(
-        (distance) => distance / 1000,
+      const distances = week.distancesMetersByPosition.map((distance) =>
+        Number((distance / 1609.344).toFixed(1)),
       );
       const finalDistance = week.kind === 'race'
         ? `${distances[3]} race`

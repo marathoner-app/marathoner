@@ -74,8 +74,8 @@ function recommendationEvidence(
     evaluatedPlanId: createTrainingPlanId("plan-0001"),
     evaluationInput: {
       schemaVersion: ADAPTATION_EVALUATION_INPUT_SCHEMA_VERSION,
-      basePlanArtifactVersion: "beta-rules@0.1.0-draft",
-      adaptationArtifactVersion: "beta-adaptation@0.1.0-draft",
+      basePlanArtifactVersion: "beta-rules@0.2.0-draft",
+      adaptationArtifactVersion: "beta-adaptation@0.2.0-draft",
       activePlanStatus: "active",
       activePlanRevision: 3,
       evaluatedPlanRevision: 3,
@@ -126,10 +126,10 @@ function recommendationEvidence(
           "adaptation-evaluator@0.1.0-draft",
         ),
         basePlanArtifactVersion: createAdaptationArtifactVersion(
-          "beta-rules@0.1.0-draft",
+          "beta-rules@0.2.0-draft",
         ),
         adaptationArtifactVersion: createAdaptationArtifactVersion(
-          "beta-adaptation@0.1.0-draft",
+          "beta-adaptation@0.2.0-draft",
         ),
       },
     },

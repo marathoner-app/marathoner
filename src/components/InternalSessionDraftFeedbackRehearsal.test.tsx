@@ -96,7 +96,7 @@ const alternateFirstRun: CompletedRun = {
 };
 const adaptationArtifactDirectory = path.join(
   process.cwd(),
-  "docs/methodology/artifacts/beta-adaptation/0.1.0-draft",
+  "docs/methodology/artifacts/beta-adaptation/0.2.0-draft",
 );
 const draftPacket = createInternalAdaptationScenarioPacket(
   readFileSync(

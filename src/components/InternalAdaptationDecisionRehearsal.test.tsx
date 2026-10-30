@@ -15,8 +15,8 @@ import { createDraftRecommendationDecisionContent } from "../recommendations/rec
 import InternalAdaptationDecisionRehearsal from "./InternalAdaptationDecisionRehearsal";
 
 const contentRegistry = createDraftRecommendationDecisionContent({
-  basePlanArtifactVersion: "beta-rules@0.1.0-draft",
-  adaptationArtifactVersion: "beta-adaptation@0.1.0-draft",
+  basePlanArtifactVersion: "beta-rules@0.2.0-draft",
+  adaptationArtifactVersion: "beta-adaptation@0.2.0-draft",
 });
 
 const cases = [
@@ -58,10 +58,10 @@ function resultFor({
         "deterministic-adaptation-evaluator@1.0.0",
       ),
       basePlanArtifactVersion: createAdaptationArtifactVersion(
-        "beta-rules@0.1.0-draft",
+        "beta-rules@0.2.0-draft",
       ),
       adaptationArtifactVersion: createAdaptationArtifactVersion(
-        "beta-adaptation@0.1.0-draft",
+        "beta-adaptation@0.2.0-draft",
       ),
     },
   };
@@ -155,7 +155,7 @@ describe("InternalAdaptationDecisionRehearsal", () => {
           provenance: {
             ...mismatched.provenance,
             adaptationArtifactVersion: createAdaptationArtifactVersion(
-              "beta-adaptation@0.2.0-draft",
+              "beta-adaptation@0.1.0-draft",
             ),
           },
         }}

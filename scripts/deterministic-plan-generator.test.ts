@@ -3,6 +3,8 @@ import {
   createDistanceMeters,
   createPlanGenerationArtifactVersion,
   generateDeterministicPlan,
+  metersToMiles,
+  milesToMeters,
   validatePlanGenerationContract,
   type DeterministicPlanRulesV1,
   type GeneratedPlanV1,
@@ -204,6 +206,41 @@ describe("deterministic plan generator", () => {
     expect(
       recoveryWeek?.workouts.every((workout) => workout.kind === "rest"),
     ).toBe(true);
+  });
+
+  it("stores whole-mile training targets and preserves the exact marathon distance", () => {
+    const plan = generatedPlanFor("supported-upper-boundary");
+    const runs = plan.weeks.flatMap((week) =>
+      week.workouts.filter((workout) => workout.kind === "run"),
+    );
+    const trainingRuns = runs.filter(
+      (workout) => workout.kind === "run" && workout.purpose !== "race",
+    );
+    const raceRun = runs.find(
+      (workout) => workout.kind === "run" && workout.purpose === "race",
+    );
+
+    expect(trainingRuns.length).toBeGreaterThan(0);
+    for (const workout of trainingRuns) {
+      if (workout.kind !== "run" || workout.target.kind !== "distance") {
+        throw new Error("Expected every training run to have a distance target.");
+      }
+      const miles = Math.round(metersToMiles(workout.target.distance));
+      expect(workout.target.distance).toBe(milesToMeters(miles));
+    }
+
+    expect(raceRun).toMatchObject({
+      kind: "run",
+      purpose: "race",
+      target: {
+        kind: "distance",
+        distance: createDistanceMeters(42_195),
+      },
+    });
+    if (raceRun?.kind !== "run" || raceRun.target.kind !== "distance") {
+      throw new Error("Expected the generated race workout.");
+    }
+    expect(Number(metersToMiles(raceRun.target.distance).toFixed(1))).toBe(26.2);
   });
 
   it("uses the exact injected weekday rhythm for every training week", () => {

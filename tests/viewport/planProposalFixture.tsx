@@ -1,4 +1,4 @@
-import draftRulesText from "../../docs/methodology/artifacts/beta-rules/0.1.0-draft/beta-rules.json?raw";
+import draftRulesText from "../../docs/methodology/artifacts/beta-rules/0.2.0-draft/beta-rules.json?raw";
 import { createRoot } from "react-dom/client";
 import "../../src/index.css";
 import PlanProposalBuilder from "../../src/components/PlanProposalBuilder";

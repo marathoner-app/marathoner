@@ -97,7 +97,7 @@ records that independent endurance-methodology review is required before
 prescriptive participant use. Its prepared outreach remains deferred until the
 internally testable product is close enough for review to become a real release
 blocker. The
-[founding-beta endurance-rules draft](docs/methodology/artifacts/beta-rules/0.1.0-draft/README.md)
+[founding-beta endurance-rules draft](docs/methodology/artifacts/beta-rules/0.2.0-draft/README.md)
 is the exact unapproved packet awaiting independent endurance-methodology
 review. Participant production builds cannot import it; the owner-only
 [internal plan rehearsal](docs/methodology/internal-plan-rehearsal.md) loads it

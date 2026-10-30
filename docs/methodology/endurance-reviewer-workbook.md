@@ -219,7 +219,7 @@ The proposal supports an exact race date 18–22 whole weeks after the plan
 begins. A race outside that range, an approximate race window, or a missing
 date would produce an unsupported result rather than a shortened, extended, or
 improvised plan. A race 19–22 weeks away receives one to four repeated
-40-kilometer (about 25-mile) lead-in weeks before the 18-week schedule begins.
+25-mile lead-in weeks before the 18-week schedule begins.
 
 ### Your assessment
 
@@ -242,38 +242,40 @@ long-run day using the same weekly rhythm throughout the plan. For example, if
 the long run is Sunday, the other runs fall on Tuesday, Thursday, and Saturday;
 Saturday is the shortest recovery run.
 
-Distances in the schedule are shown in kilometers because those are the exact
-proposed values. Key conversions are shown below for convenient review.
+Distances in the schedule are shown in miles because the founding-beta product
+is US and mile oriented. The machine-readable artifact stores the same targets
+as canonical whole meters. The marathon remains the exact 42,195-meter race
+distance rather than being rounded to a whole training mile.
 
-| Distance | Approximate miles |
+| Plan anchor | Exact miles |
 | ---: | ---: |
-| 2 km progression increment | 1.25 miles |
-| 14 km starting long run | 8.7 miles |
-| 28 km peak long run | 17.4 miles |
-| 40 km starting week | 24.9 miles |
-| 54 km peak week | 33.6 miles |
+| Maximum new-high progression increment | 2 miles |
+| Starting long run | 9 miles |
+| Peak long run | 17 miles |
+| Starting week | 25 miles |
+| Peak week | 33 miles |
 
 | Week | Phase | Run 1 | Run 2 | Recovery run | Long run or race | Total before race |
 | ---: | --- | ---: | ---: | ---: | ---: | ---: |
-| Lead-in | Base | 10 | 9 | 7 | 14 | 40 |
-| 1 | Base | 10 | 9 | 7 | 14 | 40 |
-| 2 | Base | 10 | 9 | 7 | 16 | 42 |
-| 3 | Base | 10 | 10 | 6 | 18 | 44 |
-| 4 | Cutback | 8 | 8 | 6 | 14 | 36 |
-| 5 | Build | 10 | 9 | 7 | 18 | 44 |
-| 6 | Build | 10 | 9 | 7 | 20 | 46 |
-| 7 | Build | 10 | 9 | 7 | 22 | 48 |
-| 8 | Cutback | 9 | 8 | 7 | 16 | 40 |
-| 9 | Build | 10 | 9 | 7 | 22 | 48 |
-| 10 | Build | 10 | 9 | 7 | 24 | 50 |
-| 11 | Build | 10 | 9 | 7 | 26 | 52 |
-| 12 | Cutback | 9 | 8 | 7 | 18 | 42 |
-| 13 | Build | 10 | 9 | 7 | 26 | 52 |
-| 14 | Peak | 10 | 9 | 7 | 28 | 54 |
-| 15 | Taper | 9 | 8 | 7 | 24 | 48 |
-| 16 | Taper | 8 | 8 | 6 | 18 | 40 |
-| 17 | Taper | 6 | 6 | 6 | 10 | 28 |
-| 18 | Race | 4 | 3 | 2 | 42.195 race | 9 plus race |
+| Lead-in | Base | 6 | 6 | 4 | 9 | 25 |
+| 1 | Base | 6 | 6 | 4 | 9 | 25 |
+| 2 | Base | 6 | 6 | 4 | 10 | 26 |
+| 3 | Base | 6 | 6 | 4 | 11 | 27 |
+| 4 | Cutback | 5 | 5 | 4 | 9 | 23 |
+| 5 | Build | 6 | 6 | 4 | 11 | 27 |
+| 6 | Build | 6 | 6 | 4 | 12 | 28 |
+| 7 | Build | 6 | 6 | 4 | 14 | 30 |
+| 8 | Cutback | 6 | 5 | 4 | 10 | 25 |
+| 9 | Build | 6 | 6 | 4 | 14 | 30 |
+| 10 | Build | 6 | 6 | 4 | 15 | 31 |
+| 11 | Build | 6 | 6 | 4 | 16 | 32 |
+| 12 | Cutback | 6 | 5 | 4 | 11 | 26 |
+| 13 | Build | 6 | 6 | 4 | 16 | 32 |
+| 14 | Peak | 6 | 6 | 4 | 17 | 33 |
+| 15 | Taper | 6 | 5 | 4 | 15 | 30 |
+| 16 | Taper | 5 | 5 | 4 | 11 | 25 |
+| 17 | Taper | 4 | 4 | 4 | 6 | 18 |
+| 18 | Race | 3 | 2 | 1 | 26.2 race | 6 plus race |
 
 The proposal ends with seven rest days after the race and provides no running
 prescription during that period.
@@ -283,9 +285,9 @@ prescription during that period.
 1. Is four conversational-effort runs per week an appropriate structure for
    this intended runner?
 2. Are the starting load, weekly distribution, recovery run placement, and
-   peak of 54 km (about 33.5 miles) appropriate?
+   peak of 33 miles appropriate?
 3. Are the cutbacks in weeks 4, 8, and 12 appropriate?
-4. Is the 28 km (about 17.5-mile) peak long run appropriate?
+4. Is the 17-mile peak long run appropriate?
 5. Is the three-week taper appropriate?
 6. Are race week and the seven post-race rest days represented responsibly?
 
@@ -301,9 +303,9 @@ The plan follows these proposed limits:
 
 - A build week may return to a previously completed high after a cutback.
 - A new pre-race weekly-distance high may exceed the previous high by no more
-  than 2 km (about 1.25 miles).
+  than 2 miles.
 - A new pre-race long-run high may exceed the previous high by no more than
-  2 km.
+  2 miles.
 - The marathon itself is not treated as a training-load increase that could
   justify later progression.
 - The application never adds intensity, a fifth run, or distance beyond the
@@ -311,7 +313,7 @@ The plan follows these proposed limits:
 
 ### Your assessment
 
-1. Are the post-cutback returns and 2 km new-high limits appropriate?
+1. Are the post-cutback returns and two-mile new-high limits appropriate?
 2. If not, what deterministic replacement would you recommend?
 3. What further evidence or testing would you require before use?
 

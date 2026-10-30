@@ -1,5 +1,5 @@
-import draftFixturesText from "../docs/methodology/artifacts/beta-adaptation/0.1.0-draft/fixtures.json?raw";
-import draftRulesText from "../docs/methodology/artifacts/beta-adaptation/0.1.0-draft/beta-adaptation.json?raw";
+import draftFixturesText from "../docs/methodology/artifacts/beta-adaptation/0.2.0-draft/fixtures.json?raw";
+import draftRulesText from "../docs/methodology/artifacts/beta-adaptation/0.2.0-draft/beta-adaptation.json?raw";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";

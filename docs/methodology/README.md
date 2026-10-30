@@ -131,7 +131,8 @@ changes. The current planned bundles are:
 
 | Bundle | Planned version | Contents | Current state |
 | --- | --- | --- | --- |
-| `beta-rules` | `0.1.0-draft` | Eligibility, feasibility, plan construction, and progression rules | [Draft packet authored](artifacts/beta-rules/0.1.0-draft/README.md); not submitted or approved |
+| `beta-rules` | `0.2.0-draft` | Eligibility, feasibility, plan construction, and progression rules | [Draft packet authored](artifacts/beta-rules/0.2.0-draft/README.md); not submitted or approved |
+| `beta-adaptation` | `0.2.0-draft` | Missed-workout and repeated-effort adaptation rules | [Draft packet authored](artifacts/beta-adaptation/0.2.0-draft/README.md); not submitted or approved |
 | `beta-safety` | `0.1.0-draft` | Pain and unusual-symptom decisions, escalation language, and safety fixtures | Not authored or approved |
 | `beta-guidance` | `0.1.0-draft` | Easy effort, shoes, fueling, hydration, sleep, recovery, change explanations, and limitations | Not authored or approved |
 

@@ -68,10 +68,10 @@ review decision does not transfer to another commit or artifact version.
 ## Pinned combined review target
 
 - Repository commit:
-  [`682db3271006ea884f6b5bdd707cf5d050d8cf91`](https://github.com/marathoner-app/marathoner/tree/682db3271006ea884f6b5bdd707cf5d050d8cf91)
+  [`4501497ddcd31f77f029723e97a737c6a85c865d`](https://github.com/marathoner-app/marathoner/tree/4501497ddcd31f77f029723e97a737c6a85c865d)
 - Review protocol: `methodology-review@0.1.0`
-- Base-plan bundle: `beta-rules@0.1.0-draft`
-- Adaptation bundle: `beta-adaptation@0.1.0-draft`
+- Base-plan bundle: `beta-rules@0.2.0-draft`
+- Adaptation bundle: `beta-adaptation@0.2.0-draft`
 - Bundle state: draft, unapproved, and runtime-ineligible
 - Proposed inventory IDs: `ELIG-001`, `ELIG-002`, `FEAS-001`, `PLAN-001`,
   `PROG-001`, `UNSUP-001`, `UNSUP-002`, `ADAPT-001`, `ADAPT-002`,
@@ -174,10 +174,10 @@ The reviewer must answer every question or mark it outside their competence.
    supported horizon, and are earlier, later, windowed, or missing dates
    rejected correctly?
 3. Are four conversational-effort runs per week, their distribution, the
-   cutback placement, the 28 km peak long run, the 54 km peak week, and the
+   cutback placement, the 17-mile peak long run, the 33-mile peak week, and the
    three-week taper appropriate for the supported segment?
 4. Is returning to the previous high after a cutback and limiting new weekly
-   highs to two-kilometer increments acceptable? If not, what deterministic
+   highs to no more than two-mile increments acceptable? If not, what deterministic
    replacement and evidence should be reviewed?
 5. Are race week and seven post-race rest assignments represented correctly
    without creating an unsupported recovery prescription?
@@ -288,7 +288,7 @@ represents their written decisions.
 | Compensation | `[Blank: unpaid / paid for time, never contingent on outcome]` |
 | Review completed | `[Blank: YYYY-MM-DD]` |
 | Repository commit | `[Blank: assigned by #231 before sending]` |
-| Bundles | `beta-rules@0.1.0-draft`; `beta-adaptation@0.1.0-draft` |
+| Bundles | `beta-rules@0.2.0-draft`; `beta-adaptation@0.2.0-draft` |
 
 ### Inventory decisions
 

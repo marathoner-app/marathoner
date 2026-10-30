@@ -67,7 +67,7 @@ mutation, performs no write, and cannot change a plan autonomously.
 ## Internal draft evidence
 
 Tests and the owner-only `internal-plan-rehearsal` mode load the exact pinned
-`beta-adaptation@0.1.0-draft` packet, adapt its values into the injected rule
+`beta-adaptation@0.2.0-draft` packet, adapt its values into the injected rule
 contract, and run frozen fixtures through the production evaluator. Tests prove
 every fixture plus deterministic output, one-hard-effort protection, exact and
 just-outside boundaries, malformed input rejection, provenance, and approval
