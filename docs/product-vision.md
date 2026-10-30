@@ -2,7 +2,7 @@
 
 **Status:** Active direction
 
-**Last updated:** October 23, 2026
+**Last updated:** October 30, 2026
 
 **Product owner:** Kevin Tulloch
 
@@ -186,8 +186,10 @@ achievement, but Marathoner will not build a social graph.
 
 ### Device independence
 
-A runner can use Marathoner without owning a particular watch. Manual activity
-logging remains a supported baseline even after integrations exist.
+A runner can use Marathoner without owning a particular watch. Automatic
+completed-run import is the expected founding-beta workflow for supported
+device ecosystems; manual activity logging remains a supported fallback for
+missing, unsupported, or corrected activities.
 
 ### Mobile usability from the beginning
 
@@ -374,11 +376,11 @@ iOS beta and is not a beta gate.
 
 An iOS application is required for the founding beta and becomes the daily
 companion for today's workout, logging, feedback, guidance, and adjustment
-approval. The architecture decision must prefer the least duplicated candidate
-that proves session recovery, shared records, accessibility, online-write
-boundaries, clean builds, signing, and an external TestFlight path. Android
-external distribution has no committed beta date and cannot delay the iOS
-cohort.
+approval. HealthKit is its first native completed-run import path. The accepted
+architecture remains the thin Capacitor shell that shares the root application;
+HealthKit stays behind a small native adapter rather than creating a second
+feature application. Android external distribution has no committed beta date
+and cannot delay the iOS cohort.
 
 ### Shared backend
 
@@ -388,13 +390,22 @@ synchronization, and integrations remain shared services.
 
 ### Integrations
 
-Manual logging is the reliable baseline. Garmin is the first intended major
-integration for receiving completed activities and eventually delivering
-structured workouts. Apple Health and Android Health Connect are later
-priorities.
+Every invited beta participant must have a verified automatic completed-run
+path for the device ecosystem they will use. Manual logging remains a reliable
+fallback and internal-testing tool, but it is not the intended daily workflow
+for outside participants.
 
-No beta or release date should depend on approval from an external integration
-provider.
+HealthKit is the first iOS path for Apple Watch and compatible Apple Health
+workout sources. Garmin Connect Starter Activity API access is requested in
+parallel, and direct Garmin ingestion uses the same provider-neutral import and
+duplicate boundary. A specifically verified Garmin-to-Apple-Health summary
+path may support a bounded early iPhone case while direct access is pending; it
+is not represented as equivalent to direct Garmin activity data.
+
+An external-provider delay triggers an explicit cohort-scope or invitation-date
+decision. It does not silently convert the founding beta back into a
+manual-logging study. The accepted provider sequence and data boundary are in
+the [automatic completed-run import decision](architecture/automatic-run-import.md).
 
 ## Directional roadmap
 
@@ -448,11 +459,12 @@ bounded adaptation engine depends on qualified review and product evidence.
 - an installable internal or TestFlight candidate.
 
 The exact wave contract and evidence gates are maintained in the
-[zero-to-beta plan](zero-to-beta-plan.md). The
-[capacity forecast](capacity-forecast.md) is the scheduling source of truth;
-its October 8 product-first recalibration places the January invitation floor
-after the optimistic product-readiness estimate and before the likely
-invitation scenario.
+[zero-to-beta plan](zero-to-beta-plan.md). The October 8
+[capacity forecast](capacity-forecast.md) is the last calibrated scheduling
+snapshot, but it predates the automatic-import scope accepted in #616. Issue
+[#625](https://github.com/marathoner-app/marathoner/issues/625) tracks the
+required reforecast; until it is complete, the old dates are planning history,
+not a claim that the new scope fits without moving them.
 
 ### Invite-only external beta: after the invitation gates pass
 
@@ -476,9 +488,10 @@ remain separate from founding-beta invitations.
 
 The beta requires iOS and preserves the responsive web application. Material
 writes require a network connection, and adaptation is limited to reviewed
-reschedule, hold, repeat, or no-change outcomes. The beta does not promise
-Android external distribution, Garmin integration, advanced analytics, or
-broad public availability.
+reschedule, hold, repeat, or no-change outcomes. It also requires a verified
+automatic completed-run path for every invited participant's actual device
+ecosystem. The beta does not promise Android external distribution, advanced
+analytics, or broad public availability.
 
 The New Year period may be used for targeted recruitment and learning. Major
 paid acquisition should wait until onboarding, comprehension, retention, and
@@ -491,9 +504,9 @@ using evidence from real participants.
 
 ### Multi-platform expansion: after beta validation
 
-Evaluate Android external distribution, pursue Garmin and health-platform
-integrations, expand analytics, and prepare the public marketing experience
-when the core journey is dependable.
+Evaluate Android external distribution and Health Connect, expand provider
+coverage and structured-workout delivery, improve analytics, and prepare the
+public marketing experience when the core journey is dependable.
 
 ### Public launch: evidence-driven
 
@@ -511,7 +524,8 @@ The initial external beta includes:
 - intake for adults already running consistently;
 - eligibility and race-date feasibility with honest unsupported results;
 - one reviewed deterministic plan family or a small set of approved variants;
-- manual run logging;
+- automatic completed-run import through a verified HealthKit or Garmin path;
+- manual run logging for missing, unsupported, or corrected activities;
 - perceived-effort feedback;
 - reschedule, hold, repeat, or no-change recommendations and approvals;
 - shoe-mileage tracking;
@@ -523,7 +537,7 @@ The beta does not require:
 
 - an Android external release or public App Store release;
 - couch-to-5K, return-to-running, or inconsistent-base plans;
-- Garmin or health-platform integrations;
+- Android Health Connect, live GPS recording, or all-day health ingestion;
 - a generative planning system;
 - autonomous load or intensity increases, injury diagnosis, or finish-time
   prediction;
@@ -576,7 +590,8 @@ payments remain out of beta scope, and automatic renewal remains off.
   before invitations; new segments require additional review.
 - Health, privacy, accessibility, and consumer-protection requirements require
   deliberate review before public launch.
-- Garmin and other integrations depend on external approval and platform terms.
+- Garmin and other provider integrations depend on external approval and
+  platform terms; delay requires an explicit cohort-scope or date decision.
 - The founding-beta schedule is aggressive for one owner-developer working around
   a full-time job and personal commitments.
 - Training guidance must remain understandable and testable as personalization

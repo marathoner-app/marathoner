@@ -1,12 +1,13 @@
 # Marathoner zero-to-beta plan
 
 - **Status:** Active delivery plan
-- **Last updated:** October 26, 2026
+- **Last updated:** October 30, 2026
 - **Product owner and current implementer:** Kevin Tulloch
 - **Decision checkpoint:** January 15, 2027; it is the optimistic invitation floor, precedes the likely forecast, and is not a delivery promise
 - **Master tracker:** [GitHub issue #104](https://github.com/marathoner-app/marathoner/issues/104)
 - **Active remediation:** [Committee remediation sprint](committee-remediation-sprint.md)
 - **Founding-beta contract:** [GitHub issue #117](https://github.com/marathoner-app/marathoner/issues/117)
+- **Automatic completed-run import:** [Accepted boundary and delivery order](architecture/automatic-run-import.md)
 - **Capacity forecast:** [Owner-session and gate forecast](capacity-forecast.md)
 - **Legal entity and Apple enrollment:** [Decision and execution path](operations/legal-entity-and-apple-enrollment.md)
 - **Product strategy:** [Product-first free-beta decision](product-first-beta-decision.md)
@@ -20,18 +21,22 @@
 
 Marathoner may invite a small, allowlisted founding cohort only after the
 evidence gates in this plan pass. The beta supports a bounded first-marathon
-loop: intake, a reviewed plan family, daily use, completed-run feedback,
-deterministic hold/repeat/reschedule recommendations, timely reviewed guidance,
-and informed approval of material plan changes.
+loop: intake, a reviewed plan family, daily use, automatic completed-run import
+with manual fallback, completed-run feedback, deterministic
+hold/repeat/reschedule recommendations, timely reviewed guidance, and informed
+approval of material plan changes.
 
 January 15, 2027 remains the contractual invitation floor and scope-or-date
 checkpoint. The October 8 [capacity recalibration](capacity-forecast.md)
-places product readiness at December 6, 2026 optimistic, February 21, 2027
+placed product readiness at December 6, 2026 optimistic, February 21, 2027
 likely, and August 22, 2027 conservative after removing optional commercial
-research from the critical path. The optimistic capacity date does not permit
-invitations before January 15 without a separate contract change. None of
-these dates promises beta access, public launch, completed cohort validation,
-or an Android external release.
+research from the critical path. Those dates predate the October 30 automatic-
+import scope amendment and do not include #618–#624. Issue
+[#625](https://github.com/marathoner-app/marathoner/issues/625) tracks the
+required reforecast. The optimistic capacity date does not permit invitations
+before January 15 without a separate contract change. None of these dates
+promises beta access, public launch, completed cohort validation, or an Android
+external release.
 
 The September 2026 committee review found that the target remains conditional
 on methodology authority, executable issue decomposition, client data
@@ -119,7 +124,8 @@ recorded activation decision; they do not convert the beta into a paid launch.
 | Account creation, recovery, consent, and intake | Primary | Sign-in and session recovery |
 | Plan generation result, review, and approval | Primary | Read approved plan and next workout |
 | Configuration, history, and detailed analysis | Primary | Compact daily context |
-| Today's workout and manual completion | Supported | Primary |
+| Today's workout and automatic completed-run import | Review imported records | Primary through HealthKit and verified provider paths |
+| Manual completion and correction | Supported fallback | Supported fallback |
 | Effort, optional notes, and shoe capture | Supported | Primary |
 | Reviewed guidance and bounded adjustment decision | Supported | Primary |
 | Support, withdrawal, and deletion initiation | Supported | Required in app |
@@ -136,8 +142,12 @@ a first-class product surface and is not replaced by the iOS work.
   but it must say when reconnecting is required to save or change data.
 - iOS is required for the founding beta. External TestFlight is the intended
   distribution path unless a later recorded decision changes it.
-- Android external distribution, integrations, payments, AI planning, GPS,
-  push notifications, and health-platform data are excluded.
+- Every invited participant must have a verified automatic completed-run path
+  for the device ecosystem they use. HealthKit is first on iOS; direct Garmin
+  Activity API ingestion is delivered through the shared import boundary.
+- Android external distribution, payments, AI planning, live GPS recording,
+  push notifications, Android Health Connect, and all-day health data are
+  excluded.
 - No technical delivery commitment assumes another maintainer joins. The
   operating partner's field work is tracked separately from engineering
   throughput.
@@ -196,8 +206,9 @@ separate Android evidence.
 Each wave ends in observable evidence, not only merged code. Work may overlap
 when it does not weaken the preceding gate. The targets below are the original
 evidence checkpoints. The [capacity forecast](capacity-forecast.md) records
-the current optimistic, likely, and conservative dates and must be updated when
-scope or measured throughput changes.
+the October 8 optimistic, likely, and conservative snapshot. Automatic import
+changed critical-path scope on October 30, so #625 must recalibrate those dates
+before they are treated as current planning output.
 
 | Wave | Target | Tracker | Required outcome |
 | --- | --- | --- | --- |
@@ -412,15 +423,17 @@ beta contract -> iOS/shared foundation -> bounded intake and initial plan
                                         |                         v
                                         +-> qualified review -----+
                                                                   v
-                         tracking and bounded adaptation -> iOS daily companion
+                         tracking and bounded adaptation
+                         -> provider-neutral import -> iOS/HealthKit daily companion
+                         -> direct Garmin and cross-provider proof
                          -> trust/readiness -> invitations
                          -> four/eight-week reviews
 ```
 
-Android external distribution, generative AI, Garmin, payments, social
-features, GPS recording, advanced analytics, multiple race distances, and a
-broad public launch are outside that path. They may not displace work required
-by an evidence gate without a recorded product decision.
+Android external distribution, generative AI, payments, social features, live
+GPS recording, all-day health data, advanced analytics, multiple race
+distances, and a broad public launch are outside that path. Automatic
+completed-run import is now inside the path through #616 and #617.
 
 When a gate is missed, choose explicitly among reducing nonessential scope,
 moving the cohort date, or changing the product commitment. Do not silently

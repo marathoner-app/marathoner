@@ -202,6 +202,9 @@ Cross-feature behavior is documented in
 The accepted live-read, online-write, conflict, and local-cache contract is
 documented in
 [`docs/architecture/training-data-synchronization.md`](docs/architecture/training-data-synchronization.md).
+The accepted founding-beta automatic completed-run import sequence, provider
+boundaries, duplicate rules, and invitation gate are documented in
+[`docs/architecture/automatic-run-import.md`](docs/architecture/automatic-run-import.md).
 The approved account and training-data deletion boundary, complete data
 inventory, failure-recovery model, and implementation split are documented in
 [`docs/architecture/account-deletion.md`](docs/architecture/account-deletion.md).

@@ -1,13 +1,14 @@
 # Founding cohort recruitment and validation plan
 
 - **Status:** Active founding-beta plan
-- **Last updated:** October 23, 2026
+- **Last updated:** October 30, 2026
 - **Product owner:** Kevin Tulloch
 - **Related issue:** [#35](https://github.com/marathoner-app/marathoner/issues/35)
 - **Invitation milestone:** [06A Founding Cohort Invitations](https://github.com/marathoner-app/marathoner/milestone/2)
 - **Four-week milestone:** [06B Founding Cohort Four-Week Review](https://github.com/marathoner-app/marathoner/milestone/10)
 - **Eight-week milestone:** [06C Founding Cohort Eight-Week Review](https://github.com/marathoner-app/marathoner/milestone/11)
 - **Delivery plan:** [Marathoner zero-to-beta plan](zero-to-beta-plan.md)
+- **Automatic completed-run import:** [Accepted boundary and delivery order](architecture/automatic-run-import.md)
 - **Capacity forecast:** [Owner-session and gate forecast](capacity-forecast.md)
 - **Product strategy:** [Product-first free-beta decision](product-first-beta-decision.md)
 - **Data-integrity evidence:**
@@ -27,10 +28,12 @@ issues and milestones define scheduled work. Recruitment channels, targets,
 and timing should change when participant evidence shows that a different
 approach would be more responsible or effective.
 
-January 15, 2027 remains the invitation floor and scope-or-date checkpoint. It
-falls after the December 6 optimistic product-readiness estimate and before
-the February 21 likely invitation forecast; cohort timing follows the product
-and responsibility gates rather than the historical milestone alone.
+January 15, 2027 remains the invitation floor and scope-or-date checkpoint. The
+December 6 optimistic and February 21 likely dates are October 8 forecast
+outputs that predate the automatic-import scope amendment. Issue
+[#625](https://github.com/marathoner-app/marathoner/issues/625) tracks the
+reforecast; cohort timing follows the product and responsibility gates rather
+than the historical milestone or superseded estimate alone.
 
 ## Objective
 
@@ -142,7 +145,8 @@ Participant invitations should not begin until Marathoner can:
 
 - explain exactly what the beta includes and excludes;
 - provide a usable mobile experience for the supported beta platforms;
-- complete onboarding, plan acceptance, activity logging, and feedback flows;
+- complete onboarding, plan acceptance, automatic completed-run import, manual
+  fallback, and feedback flows;
 - support account and data deletion requests;
 - collect consent for the information required by the beta;
 - respond to participant questions and product failures;
@@ -170,8 +174,13 @@ recommendations.
   intake, plan result/review/approval, configuration, history, and detailed
   analysis.
 - The iOS application is primary for session recovery, today's workout, manual
-  completion, perceived effort, optional notes, shoes, reviewed guidance,
-  bounded recommendation decisions, support, and deletion initiation.
+  fallback, automatic completed-run import, perceived effort, optional notes,
+  shoes, reviewed guidance, bounded recommendation decisions, support, and
+  deletion initiation.
+- Every participant's actual device ecosystem must have a verified automatic
+  import path before invitation. HealthKit and direct Garmin are the intended
+  paths; a Garmin-to-Apple-Health summary bridge may cover only a specifically
+  verified bounded iPhone case while direct access is pending.
 - Both clients may expose support, withdrawal, deletion initiation, the daily
   loop, and approved-plan context when doing so does not create conflicting
   records.
@@ -190,8 +199,9 @@ recommendations.
 - Do not autonomously increase intensity or training load, change the race or
   goal, predict a finish time, diagnose injury, or improvise outside the
   reviewed rules.
-- Defer Android external distribution, integrations, payments, AI planning,
-  GPS, push notifications, and health-platform data.
+- Deliver automatic completed-run import through #617. Defer Android external
+  distribution, payments, AI planning, live GPS recording, push notifications,
+  Android Health Connect, and all-day health data.
 
 ## Recruitment sequence
 

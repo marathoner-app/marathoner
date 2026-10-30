@@ -1,7 +1,7 @@
 # Operating partner start-here guide
 
 - **Status:** Active orientation guide
-- **Last reviewed:** October 28, 2026
+- **Last reviewed:** October 30, 2026
 - **Audience:** Marathoner's operating partner and other first-time strategic
   reviewers
 - **Tracking issue:**
@@ -68,9 +68,10 @@ conflict.
 5. **Read dates as forecasts, not promises.** Read the summary and gate table
    in the [capacity forecast](capacity-forecast.md). January 15, 2027 is an
    invitation floor and scope-or-date checkpoint. The October 8 model estimated
-   February 21, 2027 as likely and August 22, 2027 as conservative. Those dates
-   remain the recorded planning model until a formal reforecast; live issues
-   show work completed since that calibration.
+   February 21, 2027 as likely and August 22, 2027 as conservative, but it
+   predates the automatic-import scope amendment. Issue
+   [#625](https://github.com/marathoner-app/marathoner/issues/625) tracks the
+   formal reforecast; live issues show work completed since that calibration.
 
 6. **Understand how people will be found and supported.** Read the
    [founding cohort plan](founding-cohort-plan.md). Focus on personal
@@ -124,7 +125,7 @@ conflict.
 
 ## Current snapshot
 
-As of October 28, 2026:
+As of October 30, 2026:
 
 - Marathoner is a deployed, responsive pre-beta web application with a
   production-shaped Capacitor iOS shell. It is not open for public signup or
@@ -144,9 +145,12 @@ As of October 28, 2026:
 - Waves 00 and 01 are recorded as passed. Intake/initial-plan, adaptation,
   iOS-daily-companion, and trust/readiness work remain open in their live
   milestones.
-- The initial cohort remains five to eight allowlisted participants. Android,
-  payments, AI planning, Garmin, GPS, broad public signup, and large-scale paid
-  acquisition are outside the beta critical path.
+- The initial cohort remains five to eight allowlisted participants. Automatic
+  completed-run import is now on the beta critical path through
+  [#617](https://github.com/marathoner-app/marathoner/issues/617); each intended
+  tester's watch and recording ecosystem must have a verified path before an
+  invitation. Android, payments, AI planning, live GPS recording, broad public
+  signup, and large-scale paid acquisition remain outside that path.
 - Important external or authority-dependent gates include qualified methodology
   review
   ([#191](https://github.com/marathoner-app/marathoner/issues/191)), entity and
@@ -168,6 +172,9 @@ The operating partner's current lane is to:
   programs, stores, race organizers, and other local connectors;
 - find potential users who fit, nearly fit, or clearly do not fit the proposed
   founding segment;
+- record privacy-safe aggregate counts of the watches, recording apps, and
+  phone ecosystems potential testers already use so import coverage can be
+  verified without collecting their workout or health data;
 - conduct face-to-face problem, expectation, prototype, and product-feedback
   conversations;
 - test whether Marathoner's language and value proposition are understandable;

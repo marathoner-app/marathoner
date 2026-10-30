@@ -3,7 +3,7 @@
 - **Status:** Active
 - **Started:** September 22, 2026
 - **Owner:** Kevin Tulloch
-- **Current-state header reviewed:** October 23, 2026
+- **Current-state header reviewed:** October 30, 2026
 - **Review scope:** The Marathoner product repository, excluding Creator Radar
 - **Parent tracker:** [GitHub issue #104](https://github.com/marathoner-app/marathoner/issues/104)
 - **Current trust slice:** [GitHub issue #205](https://github.com/marathoner-app/marathoner/issues/205)
@@ -42,6 +42,17 @@ conflict. The conflict must stay visible in the backlog until then.
 
 ## Committee decision
 
+### Subsequent automatic-import amendment
+
+Issue [#616](https://github.com/marathoner-app/marathoner/issues/616), recorded
+on October 30, 2026, supersedes only this document's broad exclusion of
+integrations and health-platform data. Automatic completed-run import is now a
+founding-beta experience requirement tracked by
+[#617](https://github.com/marathoner-app/marathoner/issues/617). Manual entry
+remains a fallback. References below to deferring integrations describe the
+earlier committee posture and are retained as historical decision evidence;
+they do not override #616.
+
 The current investment and release posture is:
 
 - Marathoner is suitable for continued thesis-stage development and
@@ -53,8 +64,8 @@ The current investment and release posture is:
   recovery guidance require qualified review for the exact supported beta
   slice before invitations open.
 - The first beta should prove one narrow first-marathon workflow before adding
-  more starting segments, broad adaptation, native depth, integrations, or
-  acquisition scale.
+  more starting segments, broad adaptation, native depth beyond the accepted
+  automatic-import paths, additional provider breadth, or acquisition scale.
 - A functional, responsibly testable free beta is now the critical path.
   Commercial proof remains an unresolved investment risk but no longer
   precedes bounded product delivery or invitations. Product payments remain
