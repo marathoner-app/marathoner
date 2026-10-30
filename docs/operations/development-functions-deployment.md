@@ -1,7 +1,7 @@
 # Owner-development Functions activation and rollback
 
-- **Status:** Repository path prepared and disabled by default; no billing or
-  remote deployment is authorized by this document
+- **Status:** Owner-development material-command exports deployed and verified
+  for the closed internal accounts on October 30, 2026
 - **Tracking issue:**
   [#347](https://github.com/marathoner-app/marathoner/issues/347)
 - **Provider migration:**
@@ -9,19 +9,23 @@
 - **External beta path:**
   [Founding-beta Functions deployment](beta-functions-deployment.md)
 
-This path lets the owner finish and internally exercise the completed-run
-command integration without waiting for Apple organization enrollment. It is
-not an external-beta deployment, an App Attest proof, or permission to invite
-participants.
+This path lets the owner and operating partner internally exercise plan and
+completed-run commands without waiting for Apple organization enrollment. The
+development billing link, budget notifications, callable transport, runtime
+Firestore role, and one authenticated plan-approval receipt were verified on
+October 30, 2026. Billing identifiers, runtime principals, participant
+identifiers, and receipt contents remain private.
+
+It is not an external-beta deployment, an App Attest proof, or permission to
+invite participants.
 
 ## What remains unapproved
 
-`marathoner-d9bf9` is currently on Firebase's Spark plan with no billing
-account attached. Callable Functions require the Blaze plan. Preparing this
-repository path does not attach billing, accept charges, create a remote
-Function, or change a Firebase console setting.
+The development project is now billable and the two material-command exports
+are live. This does not authorize additional exports, a broader deployment,
+new runtime roles, a higher instance ceiling, or use by external participants.
 
-Before any live command, the owner must separately approve:
+Before any later deployment, the owner must separately approve:
 
 1. attaching the exact development project to the intended billing account;
 2. a development-project budget and notifications;
@@ -90,6 +94,9 @@ policy in the beta project.
 - [ ] The ignored parameter file contains only the reviewed true activation
       value.
 - [ ] The rollback owner is present for the full smoke window.
+- [ ] The runtime service identity for each reviewed Cloud Run service has
+      exactly the project access it needs, including `roles/datastore.user`;
+      build-service-account permissions are not treated as runtime access.
 
 If any item is false or uncertain, stop.
 
@@ -115,6 +122,27 @@ MARATHONER_DEVELOPMENT_FUNCTIONS_DEPLOY_CONFIRMATION=DEPLOY-DEVELOPMENT-FUNCTION
 Immediately list the remote inventory again and require exactly the reviewed
 exports in `us-central1`. Do not replace the scoped filter with
 `--only functions`.
+
+## Runtime prerequisites and post-deploy verification
+
+A successful Firebase deployment does not prove callable reachability or
+runtime Firestore access. Follow the shared
+[material-command post-deploy verification](material-command-postdeploy-verification.md)
+after every deployment. The development project inherits Domain Restricted
+Sharing: keep the organization policy intact, do not add an `allUsers` binding,
+and scope the invoker-IAM-disabled annotation only to
+`submitmaterialcommand` and `resolvematerialcommand`.
+
+After one real authenticated owner command has produced a privately confirmed
+receipt, run:
+
+```sh
+npm run verify:functions-postdeploy -- development \
+  --receipt-status plan_approved
+```
+
+Any transport, IAM, or receipt failure blocks further client testing. Do not
+convert a platform failure into a client retry loop.
 
 ## Reversible owner smoke
 
@@ -159,6 +187,7 @@ billing; that is a separate console decision with separate consequences.
 ## Evidence boundary
 
 The GitHub record may retain dates, commit hashes, export names, regions,
-redacted result statuses, elapsed times, and pass/fail outcomes. Keep billing
-identifiers, payment details, UIDs, emails, command IDs, debug tokens, request
-bodies, raw participant records, and raw logs private.
+redacted result statuses, safe persistence-failure classifications, elapsed
+times, and pass/fail outcomes. Keep billing identifiers, payment details, UIDs,
+emails, command IDs, debug tokens, request bodies, raw participant records, raw
+provider codes and messages, and raw logs private.
