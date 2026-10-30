@@ -136,8 +136,11 @@ const accountDeletionDependencies = {
   },
 }
 
+// Cloud Run must admit the HTTPS request before Firebase can populate
+// request.auth and request.app. The handlers below still enforce Marathoner's
+// signed-in account, membership, artifact-policy, and App Check boundaries.
 export const submitMaterialCommand = onCall(
-  { enforceAppCheck: false },
+  { enforceAppCheck: false, invoker: 'public' },
   (request) =>
     executeMaterialCommand(
       {
@@ -149,14 +152,16 @@ export const submitMaterialCommand = onCall(
     ),
 )
 
-export const resolveMaterialCommand = onCall((request) =>
-  resolveMaterialCommandRequest(
-    {
-      authenticatedUserId: request.auth?.uid ?? null,
-      data: request.data,
-    },
-    dependencies,
-  ),
+export const resolveMaterialCommand = onCall(
+  { invoker: 'public' },
+  (request) =>
+    resolveMaterialCommandRequest(
+      {
+        authenticatedUserId: request.auth?.uid ?? null,
+        data: request.data,
+      },
+      dependencies,
+    ),
 )
 
 // The verified request.app value is enforced inside the handler so unsupported

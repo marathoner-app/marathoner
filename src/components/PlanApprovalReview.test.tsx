@@ -293,7 +293,7 @@ describe("PlanApprovalReview", () => {
     expect(
       screen.queryByRole("button", { name: /approve/i }),
     ).not.toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: "Check original approval" }));
+    await user.click(screen.getByRole("button", { name: "Check approval again" }));
 
     await screen.findByRole("heading", { name: "Synthetic contract plan is active" });
     expect(approvalClient.submit).toHaveBeenCalledOnce();
@@ -321,17 +321,59 @@ describe("PlanApprovalReview", () => {
     await continueToConfirmation(user);
     await user.click(screen.getByRole("button", { name: "Approve and activate" }));
     await user.click(
-      await screen.findByRole("button", { name: "Check original approval" }),
+      await screen.findByRole("button", { name: "Check approval again" }),
     );
 
     expect(await screen.findByRole("alert")).toHaveTextContent(
       "could not reach the original approval",
     );
     expect(
-      screen.getByRole("button", { name: "Check original approval" }),
+      screen.getByRole("button", { name: "Check approval again" }),
     ).toBeEnabled();
     expect(screen.queryByRole("button", { name: /approve/i })).not.toBeInTheDocument();
     expect(approvalClient.submit).toHaveBeenCalledOnce();
+  });
+
+  it("safely retries an unresolved approval with the exact original submission", async () => {
+    const user = userEvent.setup();
+    const unknown: PlanApprovalClientResult = {
+      status: "outcome_unknown",
+      commandId,
+      code: "resolve-by-command-id",
+      message: "Resolve the original command.",
+    };
+    const approvalClient = client(unknown, unknown);
+    vi.mocked(approvalClient.submit)
+      .mockResolvedValueOnce(unknown)
+      .mockResolvedValueOnce(approved());
+    const createCommandId = vi.fn(() => commandId);
+    const props = { ...baseProps(approvalClient), createCommandId };
+    render(<PlanApprovalReview {...props} />);
+
+    await continueToConfirmation(user);
+    await user.click(screen.getByRole("button", { name: "Approve and activate" }));
+    await user.click(
+      await screen.findByRole("button", { name: "Check approval again" }),
+    );
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "safely retry the same request without creating a second plan",
+    );
+    await user.click(
+      await screen.findByRole("button", { name: "Retry approval safely" }),
+    );
+
+    await screen.findByRole("heading", { name: "Synthetic contract plan is active" });
+    expect(createCommandId).toHaveBeenCalledOnce();
+    expect(approvalClient.submit).toHaveBeenCalledTimes(2);
+    const [firstSubmission] = vi.mocked(approvalClient.submit).mock.calls[0] ?? [];
+    const [retriedSubmission] = vi.mocked(approvalClient.submit).mock.calls[1] ?? [];
+    expect(retriedSubmission).toBe(firstSubmission);
+    expect(retriedSubmission).toEqual({
+      commandId,
+      expectedActivePlanRevision: null,
+      input: reviewedFixture.input,
+      proposal: reviewedFixture.result.plan,
+    });
   });
 
   it("retries only the data reload after an approval receipt", async () => {
