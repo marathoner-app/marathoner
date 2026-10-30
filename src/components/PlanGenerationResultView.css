@@ -33,6 +33,22 @@
   text-transform: uppercase;
 }
 
+.plan-result-reasons-heading {
+  margin: 1rem 0 0.25rem;
+  font-weight: 700;
+  text-align: left;
+}
+
+.plan-result-reasons {
+  margin: 0;
+  padding-left: 1.25rem;
+  text-align: left;
+}
+
+.plan-result-reasons li + li {
+  margin-top: 0.5rem;
+}
+
 .plan-result-state button {
   min-height: 2.75rem;
   margin-top: 0.75rem;

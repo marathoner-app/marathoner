@@ -4,6 +4,8 @@ import { describe, expect, it, vi } from "vitest";
 import type { PlanApprovalReceiptResult } from "../domain/materialCommands/contract";
 import {
   PLAN_GENERATION_RESULT_SCHEMA_VERSION,
+  createDistanceMeters,
+  createPlanGenerationReasonCode,
   planGenerationContractFixtures,
   type PlanGenerationContractFixtureV1,
   type InvalidPlanGenerationResultV1,
@@ -46,6 +48,30 @@ const invalidResult: InvalidPlanGenerationResultV1 = {
   ],
 };
 
+const supportReasonCodes = {
+  cohortGate: createPlanGenerationReasonCode("TEST-COHORT-GATE"),
+  experience: createPlanGenerationReasonCode("TEST-EXPERIENCE"),
+  consistencyDuration: createPlanGenerationReasonCode("TEST-CONSISTENCY"),
+  weeklyDistance: createPlanGenerationReasonCode("TEST-WEEKLY-DISTANCE"),
+  runFrequency: createPlanGenerationReasonCode("TEST-RUN-FREQUENCY"),
+  longestRun: createPlanGenerationReasonCode("TEST-LONGEST-RUN"),
+  raceDateRequired: createPlanGenerationReasonCode("TEST-RACE-DATE"),
+  raceHorizon: createPlanGenerationReasonCode("TEST-RACE-HORIZON"),
+  raceAlignment: createPlanGenerationReasonCode("TEST-RACE-ALIGNMENT"),
+  availability: createPlanGenerationReasonCode("TEST-AVAILABILITY"),
+  scheduleConstraint: createPlanGenerationReasonCode("TEST-SCHEDULE-CONSTRAINT"),
+};
+
+const supportRules = {
+  minimumConsistentRunningWeeks: 8,
+  currentWeeklyDistanceMeters: { minimum: 40_000, maximum: 45_000 },
+  currentRunningFrequencyDaysPerWeek: { minimum: 4, maximum: 5 },
+  longestRecentRunDistanceMeters: { minimum: 14_000, maximum: 20_000 },
+  minimumAvailableTrainingDays: 4,
+  wholeWeeksFromPlanStartToRace: { minimum: 18, maximum: 22 },
+  reasonCodes: supportReasonCodes,
+};
+
 const approved: PlanApprovalReceiptResult = {
   status: "plan_approved",
   commandId: "approve-plan-command-0001",
@@ -65,6 +91,8 @@ function commonProps() {
   const client = approvalClient();
   return {
     input: generatedFixture.input,
+    distanceUnit: "mile" as const,
+    supportRules,
     onReviewInputs: vi.fn(),
     approval: {
       expectedActivePlanRevision: null,
@@ -107,6 +135,8 @@ describe("PlanGenerationResultView", () => {
       <PlanGenerationResultView
         input={generatedFixture.input}
         result={generatedFixture.result}
+        distanceUnit="mile"
+        supportRules={supportRules}
         onReviewInputs={onReviewInputs}
       />,
     );
@@ -136,11 +166,94 @@ describe("PlanGenerationResultView", () => {
     expect(screen.getByRole("status")).toHaveTextContent("No plan created");
     expect(screen.queryByText(/FIXTURE-UNSUPPORTED/)).not.toBeInTheDocument();
     expect(
+      screen.getByText(
+        "At least one saved detail is outside this plan’s supported boundary.",
+      ),
+    ).toBeInTheDocument();
+    expect(
       screen.queryByRole("button", { name: "Continue review" }),
     ).not.toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "Review inputs" }));
     expect(props.onReviewInputs).toHaveBeenCalledOnce();
+  });
+
+  it("explains every recognized unsupported input in the runner's unit", () => {
+    const props = commonProps();
+    const result: UnsupportedPlanGenerationResultV1 = {
+      ...unsupportedResult(),
+      reasonCodes: [
+        supportReasonCodes.weeklyDistance,
+        supportReasonCodes.runFrequency,
+        supportReasonCodes.longestRun,
+      ],
+    };
+    const input = {
+      ...generatedFixture.input,
+      runner: {
+        ...generatedFixture.input.runner,
+        currentWeeklyDistance: createDistanceMeters(64_374),
+        currentRunningFrequencyDaysPerWeek: 7,
+        longestRecentRunDistance: createDistanceMeters(25_750),
+      },
+    };
+
+    render(
+      <PlanGenerationResultView
+        {...props}
+        input={input}
+        result={result}
+      />,
+    );
+
+    expect(screen.getByText("What needs review:")).toBeInTheDocument();
+    expect(screen.getAllByRole("listitem")).toHaveLength(3);
+    expect(
+      screen.getByText(
+        "Your saved weekly distance is 40 miles; this plan supports 24.9–28 miles per week.",
+      ),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "Your saved running frequency is 7 days per week; this plan supports 4–5.",
+      ),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "Your saved longest recent run is 16 miles; this plan supports 8.7–12.4 miles.",
+      ),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/TEST-WEEKLY-DISTANCE/)).not.toBeInTheDocument();
+  });
+
+  it("formats supported distance ranges in kilometers", () => {
+    const props = commonProps();
+    const result: UnsupportedPlanGenerationResultV1 = {
+      ...unsupportedResult(),
+      reasonCodes: [supportReasonCodes.weeklyDistance],
+    };
+    const input = {
+      ...generatedFixture.input,
+      runner: {
+        ...generatedFixture.input.runner,
+        currentWeeklyDistance: createDistanceMeters(50_000),
+      },
+    };
+
+    render(
+      <PlanGenerationResultView
+        {...props}
+        input={input}
+        result={result}
+        distanceUnit="kilometer"
+      />,
+    );
+
+    expect(
+      screen.getByText(
+        "Your saved weekly distance is 50 kilometers; this plan supports 40–45 kilometers per week.",
+      ),
+    ).toBeInTheDocument();
   });
 
   it("renders an invalid-input state without internal fields or messages", () => {

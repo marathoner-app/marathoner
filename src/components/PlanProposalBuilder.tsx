@@ -42,6 +42,7 @@ type BuilderOutcome =
       readonly kind: "result";
       readonly input: PlanGenerationInputV1;
       readonly result: PlanGenerationResultV1;
+      readonly distanceUnit: UserProfile["preferredDistanceUnit"];
     };
 
 function dateOnlyInTimeZone(timeZone: IanaTimeZone, instant = new Date()): DateOnly {
@@ -127,6 +128,7 @@ export default function PlanProposalBuilder({
     setOutcome({
       kind: "result",
       input: inputResult.input,
+      distanceUnit: profile.preferredDistanceUnit,
       result: generateDeterministicPlan({
         input: inputResult.input,
         cohortEligibilityConfirmed:
@@ -147,6 +149,8 @@ export default function PlanProposalBuilder({
         <PlanGenerationResultView
           input={outcome.input}
           result={outcome.result}
+          distanceUnit={outcome.distanceUnit}
+          supportRules={rules}
           onReviewInputs={reviewInputs}
           approval={approval}
         />
