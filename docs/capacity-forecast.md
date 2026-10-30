@@ -1,7 +1,7 @@
 # Capacity-based founding-beta forecast
 
-- **Status:** Active product-first forecast; calibrated snapshot, not a live
-  issue inventory
+- **Status:** Historical calibrated snapshot pending the automatic-import
+  reforecast in #625; not a live issue inventory
 - **As of:** October 8, 2026
 - **Owner:** Kevin Tulloch
 - **Baseline issue:** [#116](https://github.com/marathoner-app/marathoner/issues/116)
@@ -9,6 +9,10 @@
 - **Strategy realignment:** [#223](https://github.com/marathoner-app/marathoner/issues/223)
 - **Entity-path update:** October 21, 2026; [#280](https://github.com/marathoner-app/marathoner/issues/280)
 - **Resource-sequencing update:** October 26, 2026; [#439](https://github.com/marathoner-app/marathoner/issues/439)
+- **Automatic-import scope update:** October 30, 2026;
+  [#616](https://github.com/marathoner-app/marathoner/issues/616),
+  [#617](https://github.com/marathoner-app/marathoner/issues/617), and
+  reforecast [#625](https://github.com/marathoner-app/marathoner/issues/625)
 - **Master tracker:** [#104](https://github.com/marathoner-app/marathoner/issues/104)
 - **Scope:** Marathoner beta critical path; Creator Radar is excluded
 
@@ -18,9 +22,14 @@ This forecast preserves the October 8 scope, estimates, and measured-velocity
 calibration. Work merged after that date—including live-read synchronization,
 additional iOS and accessibility evidence, and later trust slices—appears in
 live issues and milestones but has not been silently subtracted from the tables
-below. February 21, 2027 remains the recorded likely invitation forecast until
-the next formal reforecast; it is not a claim that the October 8 issue inventory
-is still current line by line.
+below.
+
+The October 30 decision in #616 added automatic completed-run import to the beta
+critical path. The HealthKit, Garmin, trusted-import, enrichment, and cross-
+provider proof work in #618–#624 is not estimated in this snapshot. February
+21, 2027 therefore remains the recorded October 8 likely scenario, not the
+current invitation forecast for the expanded scope. Issue #625 must publish a
+new forecast before these dates are used for current scheduling decisions.
 
 The operating partner added in October contributes relationship development,
 participant discovery, channel learning, interviews, and feedback. That work
@@ -77,10 +86,11 @@ the invitation floor. It does not authorize invitations before January 15 in
 #104. Opening earlier would require an explicit founding-beta contract change;
 this forecast changes planning evidence, not the participant promise.
 
-The recommended planning expectation is February 21, 2027 while preserving
-every ratified safety, integrity, privacy, and review gate. If the product work
-finishes before qualified approval, use the approved non-prescriptive fallback
-or wait rather than silently weakening those gates.
+The October 8 model's recommended planning expectation was February 21, 2027
+while preserving every ratified safety, integrity, privacy, and review gate.
+It remains a historical baseline until #625 incorporates the expanded scope.
+If the product work finishes before qualified approval, use the approved non-
+prescriptive fallback or wait rather than silently weakening those gates.
 
 ## Recalibrated capacity model
 
@@ -402,13 +412,13 @@ The recommended response is therefore:
 1. keep all invitation gates in force;
 2. treat January 15 as a decision checkpoint rather than an invitation
    expectation;
-3. use February 21, 2027 as the current likely forecast and August 22, 2027 as
-   the conservative bound;
+3. retain February 21, 2027 and August 22, 2027 as the October 8 likely and
+   conservative references, not current expanded-scope forecasts;
 4. prioritize the product waves while #191, #281/#205, and #122 advance when
    their trust and external dependencies permit;
 5. keep product payments outside beta and condition bounded adaptation on
    qualified review rather than payment evidence; and
-6. reforecast after Wave 02 or four additional delivery weeks.
+6. complete #625 now that #616 has changed critical-path scope.
 
 Moving #8, #9, #76, and #77 out of beta milestones would remove only 13 likely
 units, less than one likely delivery week. It does not make January the likely
