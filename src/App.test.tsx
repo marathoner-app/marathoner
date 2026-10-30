@@ -763,14 +763,22 @@ describe('App training sections', () => {
     })
     await waitFor(() => expect(resumeSetup).toHaveFocus())
     expect(
-      screen.getByRole('navigation', { name: 'Training sections' })
-    ).toBeInTheDocument()
+      screen.queryByRole('navigation', { name: 'Training sections' })
+    ).not.toBeInTheDocument()
+    for (const sectionName of ['Plan', 'Track', 'Analyze']) {
+      expect(
+        screen.queryByRole('button', { name: sectionName })
+      ).not.toBeInTheDocument()
+    }
 
     await user.click(resumeSetup)
 
     expect(
       screen.getByRole('dialog', { name: 'Tell us where you are starting' })
     ).toBeInTheDocument()
+    expect(
+      screen.queryByRole('navigation', { name: 'Training sections' })
+    ).not.toBeInTheDocument()
   })
 
   it('keeps a legacy runner setup draft mounted while its profile write converges', async () => {
@@ -831,6 +839,9 @@ describe('App training sections', () => {
     )
     expect(
       screen.getByRole('button', { name: 'Edit runner profile' })
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole('navigation', { name: 'Training sections' })
     ).toBeInTheDocument()
   })
 

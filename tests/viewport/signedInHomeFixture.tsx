@@ -18,6 +18,8 @@ if (root === null) {
 export function SignedInHomeFixture() {
   const [activeSection, setActiveSection] = useState<TrainingSection | null>(null);
   const activeDetails = trainingSections.find(({ id }) => id === activeSection);
+  const setupComplete =
+    new URLSearchParams(window.location.search).get("setup") !== "incomplete";
 
   return (
     <main className={`main${activeSection === null ? " signed-in-home" : ""}`}>
@@ -35,10 +37,13 @@ export function SignedInHomeFixture() {
           <Title />
           <Subtitle />
           <div className="runner-profile-entry">
-            <button type="button">Resume runner setup</button>
+            <button type="button">
+              {setupComplete ? "Edit runner profile" : "Resume runner setup"}
+            </button>
             <p>
-              Your saved progress is safe; finish setup before a plan can be
-              evaluated.
+              {setupComplete
+                ? "Your first-marathon starting point is saved."
+                : "Your saved progress is safe; finish setup before a plan can be evaluated."}
             </p>
           </div>
           <NextWorkoutSummary
@@ -47,11 +52,13 @@ export function SignedInHomeFixture() {
             distanceUnit="mile"
             onOpenPlan={() => setActiveSection("plan")}
           />
-          <TrainingSectionNavigation
-            activeSection={null}
-            transitionDuration={0}
-            onSelect={setActiveSection}
-          />
+          {setupComplete && (
+            <TrainingSectionNavigation
+              activeSection={null}
+              transitionDuration={0}
+              onSelect={setActiveSection}
+            />
+          )}
           <section
             aria-label="Additional signed-in content"
             style={{
@@ -99,7 +106,7 @@ export function SignedInHomeFixture() {
         </section>
       )}
 
-      {activeSection !== null && (
+      {activeSection !== null && setupComplete && (
         <TrainingSectionNavigation
           activeSection={activeSection}
           transitionDuration={0}
