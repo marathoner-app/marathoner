@@ -1,9 +1,9 @@
 import { readFile, readdir } from 'node:fs/promises'
 import path from 'node:path'
 
-const provisionalPlanDogfoodArtifact = 'beta-rules@0.1.0-draft'
+const provisionalPlanDogfoodArtifact = 'beta-rules@0.2.0-draft'
 const forbiddenBuildText = [
-  'beta-adaptation@0.1.0-draft',
+  'beta-adaptation@0.2.0-draft',
   'beta-safety@0.1.0-draft',
   'Internal draft plan rehearsal',
   'Internal draft adaptation rehearsal',

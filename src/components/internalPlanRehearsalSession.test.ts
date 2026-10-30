@@ -17,7 +17,7 @@ function createStorage() {
 }
 
 const artifactVersions = {
-  rulesetVersion: "beta-rules@0.1.0-draft",
+  rulesetVersion: "beta-rules@0.2.0-draft",
   generatorVersion: "deterministic-plan-generator@0.1.0-draft",
 };
 

@@ -29,8 +29,8 @@ describe("plan-generation contract", () => {
       "beta-rules@1.0.0",
     );
     expect(
-      createPlanGenerationArtifactVersion("beta-rules@0.1.0-draft"),
-    ).toBe("beta-rules@0.1.0-draft");
+      createPlanGenerationArtifactVersion("beta-rules@0.2.0-draft"),
+    ).toBe("beta-rules@0.2.0-draft");
     expect(() => createPlanGenerationArtifactVersion("latest")).toThrow(
       /semantic version/i,
     );

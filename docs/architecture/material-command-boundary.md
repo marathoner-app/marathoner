@@ -169,7 +169,7 @@ plan store to prove the positive wiring without approving any real methodology.
 The Functions emulator enables only that exact synthetic fixture tuple so the
 transaction can be exercised end to end. The closed development project has
 one separately labelled `provisional_dogfood` exception for the exact pinned
-`beta-rules@0.1.0-draft` tuple. The exception is installed only when both the
+`beta-rules@0.2.0-draft` tuple. The exception is installed only when both the
 deployed project is `marathoner-d9bf9` and the operator-controlled
 `MARATHONER_PROVISIONAL_PLAN_DOGFOOD_ENABLED` parameter is true. It is never
 installed in the beta project, does not represent external methodology review,

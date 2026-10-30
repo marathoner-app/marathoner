@@ -22,8 +22,8 @@ const basePlanArtifactVersion = "beta-rules@1.0.0";
 const adaptationArtifactVersion = "beta-adaptation@1.0.0";
 const draftRecommendationDecisionContent =
   createDraftRecommendationDecisionContent({
-    basePlanArtifactVersion: "beta-rules@0.1.0-draft",
-    adaptationArtifactVersion: "beta-adaptation@0.1.0-draft",
+    basePlanArtifactVersion: "beta-rules@0.2.0-draft",
+    adaptationArtifactVersion: "beta-adaptation@0.2.0-draft",
   });
 
 const evidence = {

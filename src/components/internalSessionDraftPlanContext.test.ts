@@ -16,11 +16,11 @@ import { deriveInternalSessionDraftPlanContext } from "./internalSessionDraftPla
 const timestamp = createUtcDateTime("2030-01-01T00:00:00.000Z");
 const planArtifactDirectory = path.join(
   process.cwd(),
-  "docs/methodology/artifacts/beta-rules/0.1.0-draft",
+  "docs/methodology/artifacts/beta-rules/0.2.0-draft",
 );
 const adaptationArtifactDirectory = path.join(
   process.cwd(),
-  "docs/methodology/artifacts/beta-adaptation/0.1.0-draft",
+  "docs/methodology/artifacts/beta-adaptation/0.2.0-draft",
 );
 const basePlanRules = createInternalPlanProposalRehearsalRuleSet(
   readFileSync(`${planArtifactDirectory}/beta-rules.json`, "utf8"),

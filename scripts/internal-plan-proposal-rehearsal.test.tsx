@@ -1,4 +1,4 @@
-import draftRulesText from "../docs/methodology/artifacts/beta-rules/0.1.0-draft/beta-rules.json?raw";
+import draftRulesText from "../docs/methodology/artifacts/beta-rules/0.2.0-draft/beta-rules.json?raw";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";

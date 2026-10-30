@@ -8,7 +8,7 @@ import { describe, expect, it } from 'vitest';
 const repositoryRoot = join(dirname(fileURLToPath(import.meta.url)), '..');
 const packetDirectory = join(
   repositoryRoot,
-  'docs/methodology/artifacts/beta-adaptation/0.1.0-draft',
+  'docs/methodology/artifacts/beta-adaptation/0.2.0-draft',
 );
 
 async function readJson(fileName) {
@@ -177,11 +177,11 @@ describe('founding-beta adaptation review packet', () => {
 
     expect(rules).toMatchObject({
       schemaVersion: 'beta-adaptation-review-packet@1',
-      artifactVersion: 'beta-adaptation@0.1.0-draft',
+      artifactVersion: 'beta-adaptation@0.2.0-draft',
       status: 'draft_not_approved',
       runtimeUseAllowed: false,
       requiredReviewerRole: 'EMR',
-      basePlanArtifactVersion: 'beta-rules@0.1.0-draft',
+      basePlanArtifactVersion: 'beta-rules@0.2.0-draft',
       reviewState: {
         submitted: false,
         decision: 'pending',
@@ -320,7 +320,7 @@ describe('founding-beta adaptation review packet', () => {
 
     for (const path of sourceFiles) {
       const source = await readFile(path, 'utf8');
-      expect(source, path).not.toContain('beta-adaptation@0.1.0-draft');
+      expect(source, path).not.toContain('beta-adaptation@0.2.0-draft');
       expect(source, path).not.toContain(
         'docs/methodology/artifacts/beta-adaptation',
       );

@@ -1,5 +1,5 @@
-import draftFixturesText from "../docs/methodology/artifacts/beta-rules/0.1.0-draft/fixtures.json?raw";
-import draftRulesText from "../docs/methodology/artifacts/beta-rules/0.1.0-draft/beta-rules.json?raw";
+import draftFixturesText from "../docs/methodology/artifacts/beta-rules/0.2.0-draft/fixtures.json?raw";
+import draftRulesText from "../docs/methodology/artifacts/beta-rules/0.2.0-draft/beta-rules.json?raw";
 import {
   PLAN_GENERATION_INPUT_SCHEMA_VERSION,
   createDateOnly,

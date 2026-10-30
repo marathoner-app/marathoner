@@ -1,5 +1,5 @@
-import draftFixturesText from "../docs/methodology/artifacts/beta-adaptation/0.1.0-draft/fixtures.json?raw";
-import draftRulesText from "../docs/methodology/artifacts/beta-adaptation/0.1.0-draft/beta-adaptation.json?raw";
+import draftFixturesText from "../docs/methodology/artifacts/beta-adaptation/0.2.0-draft/fixtures.json?raw";
+import draftRulesText from "../docs/methodology/artifacts/beta-adaptation/0.2.0-draft/beta-adaptation.json?raw";
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
@@ -182,8 +182,8 @@ describe("InternalLiveAdaptationRehearsal", () => {
       />,
     );
 
-    expect(screen.getByText("beta-rules@0.1.0-draft")).toBeVisible();
-    expect(screen.getByText("beta-adaptation@0.1.0-draft")).toBeVisible();
+    expect(screen.getByText("beta-rules@0.2.0-draft")).toBeVisible();
+    expect(screen.getByText("beta-adaptation@0.2.0-draft")).toBeVisible();
     expect(
       screen.getByRole("button", { name: "Evaluate live draft evidence" }),
     ).toBeDisabled();
@@ -404,8 +404,8 @@ describe("InternalLiveAdaptationRehearsal", () => {
     });
 
     expect(input).toMatchObject({
-      basePlanArtifactVersion: "beta-rules@0.1.0-draft",
-      adaptationArtifactVersion: "beta-adaptation@0.1.0-draft",
+      basePlanArtifactVersion: "beta-rules@0.2.0-draft",
+      adaptationArtifactVersion: "beta-adaptation@0.2.0-draft",
       activePlanRevision: evidence.activePlanRevision,
       evaluatedPlanRevision: evidence.evaluatedPlanRevision,
       currentWeek: evidence.currentWeek,

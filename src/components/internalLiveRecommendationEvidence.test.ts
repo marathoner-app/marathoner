@@ -44,7 +44,7 @@ const plan: TrainingPlan = {
 const evaluationInput: AdaptationEvaluationInputV1 = {
   schemaVersion: ADAPTATION_EVALUATION_INPUT_SCHEMA_VERSION,
   basePlanArtifactVersion: "beta-plan@0.1.0-draft",
-  adaptationArtifactVersion: "beta-adaptation@0.1.0-draft",
+  adaptationArtifactVersion: "beta-adaptation@0.2.0-draft",
   activePlanStatus: "active",
   activePlanRevision: 7,
   evaluatedPlanRevision: 7,

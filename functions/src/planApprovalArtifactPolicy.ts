@@ -11,7 +11,7 @@ export const DEVELOPMENT_DOGFOOD_PLAN_SCOPE_ID =
 export const DEVELOPMENT_DOGFOOD_GENERATOR_VERSION =
   'deterministic-plan-generator@1.0.0'
 export const DEVELOPMENT_DOGFOOD_RULESET_VERSION =
-  'beta-rules@0.1.0-draft'
+  'beta-rules@0.2.0-draft'
 
 export const PLAN_APPROVAL_ARTIFACT_REVIEW_STATES = [
   'missing',

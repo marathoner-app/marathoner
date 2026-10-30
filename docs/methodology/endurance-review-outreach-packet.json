@@ -8,12 +8,12 @@
   "bundles": [
     {
       "name": "beta-rules",
-      "version": "beta-rules@0.1.0-draft",
+      "version": "beta-rules@0.2.0-draft",
       "state": "draft-not-approved-not-runtime-eligible"
     },
     {
       "name": "beta-adaptation",
-      "version": "beta-adaptation@0.1.0-draft",
+      "version": "beta-adaptation@0.2.0-draft",
       "state": "draft-not-approved-not-runtime-eligible"
     }
   ],
@@ -21,12 +21,12 @@
     {
       "path": "docs/methodology/README.md",
       "version": "methodology-review@0.1.0",
-      "sha256": "2e644e24f009bdb4f5573ea3fdc7ee9172b5de1b54f95dfcdddd10eabaffd1b4"
+      "sha256": "9c42cafcfdd0e6e7d1ab4711bd89e596627919a6ae719ef4687af6800f143993"
     },
     {
       "path": "docs/methodology/beta-review-inventory.md",
       "version": "founding-beta-inventory@2026-10-25",
-      "sha256": "90859bcae851e445368c887d1a3f94d473bd43e682adfd8cf859c073872e4621"
+      "sha256": "c1b88a1f1b05434b7725d7e36bd9370cb72e3897bc83d2fc2a921cda251d7ce3"
     },
     {
       "path": "docs/methodology/approval-record-template.md",
@@ -34,49 +34,49 @@
       "sha256": "8ecc59f8f881ef6fc0bc7d29a693ae00860bd60927b85021d7c23ae28a1fa3b6"
     },
     {
-      "path": "docs/methodology/artifacts/beta-rules/0.1.0-draft/README.md",
-      "version": "beta-rules@0.1.0-draft",
-      "sha256": "477fd2474d3a6eab06b4a75f32119d1027ab43715b571bb726abe8396f26bb5f"
+      "path": "docs/methodology/artifacts/beta-rules/0.2.0-draft/README.md",
+      "version": "beta-rules@0.2.0-draft",
+      "sha256": "4865e658e3fe1f46f7e97ea6614ecd1f11ae1903686689be4d3252d0a002ab41"
     },
     {
-      "path": "docs/methodology/artifacts/beta-rules/0.1.0-draft/beta-rules.json",
-      "version": "beta-rules@0.1.0-draft",
-      "sha256": "dd5f7a00a9bcfae7c833a6ebd869e43c96dee91c2884603286bf3f14512b2657"
+      "path": "docs/methodology/artifacts/beta-rules/0.2.0-draft/beta-rules.json",
+      "version": "beta-rules@0.2.0-draft",
+      "sha256": "53a8555b59976ecc7d3d290e2c5088bda58cb475de66b5669a27fbd2a6739630"
     },
     {
-      "path": "docs/methodology/artifacts/beta-rules/0.1.0-draft/fixtures.json",
-      "version": "beta-rules@0.1.0-draft",
-      "sha256": "c54c5ca4a06fdcf8f675da93c368186645c39005739815bcaf9dffb116a64f49"
+      "path": "docs/methodology/artifacts/beta-rules/0.2.0-draft/fixtures.json",
+      "version": "beta-rules@0.2.0-draft",
+      "sha256": "00f9e7e642df3cb3630e711edcecb71e29d6cd431f7e1492635ff33c46507285"
     },
     {
-      "path": "docs/methodology/artifacts/beta-rules/0.1.0-draft/SHA256SUMS",
-      "version": "beta-rules@0.1.0-draft-manifest",
-      "sha256": "26c48038d075febe24045f5fea39ad4816c7f97fa33132284c82d9ae5a040b69"
+      "path": "docs/methodology/artifacts/beta-rules/0.2.0-draft/SHA256SUMS",
+      "version": "beta-rules@0.2.0-draft-manifest",
+      "sha256": "a0327bb5569afb4cc555362a638070ee7743f7c3976a74d56c2dfd435afc5452"
     },
     {
-      "path": "docs/methodology/artifacts/beta-adaptation/0.1.0-draft/README.md",
-      "version": "beta-adaptation@0.1.0-draft",
-      "sha256": "489ea6d0d301c5d60c5349321bf324b6ef2b02de9f2254e3b1f2594d0e4352ce"
+      "path": "docs/methodology/artifacts/beta-adaptation/0.2.0-draft/README.md",
+      "version": "beta-adaptation@0.2.0-draft",
+      "sha256": "6275f5c17588f55c1651f1f4280189470dd17036418702c19904420e19918bf4"
     },
     {
-      "path": "docs/methodology/artifacts/beta-adaptation/0.1.0-draft/beta-adaptation.json",
-      "version": "beta-adaptation@0.1.0-draft",
-      "sha256": "49f8cc09ba85b737633a788e12699bd788aeb9323e28ceb919c196a9a3ac7869"
+      "path": "docs/methodology/artifacts/beta-adaptation/0.2.0-draft/beta-adaptation.json",
+      "version": "beta-adaptation@0.2.0-draft",
+      "sha256": "5f5d651a527359a847d555478e8f564cece2622935aefb7564437b9ec6c8a6b1"
     },
     {
-      "path": "docs/methodology/artifacts/beta-adaptation/0.1.0-draft/fixtures.json",
-      "version": "beta-adaptation@0.1.0-draft",
-      "sha256": "23874a488b243be719c3f56430696f4b6a55c9267cfc072d5490da06e5848335"
+      "path": "docs/methodology/artifacts/beta-adaptation/0.2.0-draft/fixtures.json",
+      "version": "beta-adaptation@0.2.0-draft",
+      "sha256": "ddfef5c5c08037ffb00c498ba8d288f5fb71bba048bc03ec13ec9f1eb73a5c1c"
     },
     {
-      "path": "docs/methodology/artifacts/beta-adaptation/0.1.0-draft/SHA256SUMS",
-      "version": "beta-adaptation@0.1.0-draft-manifest",
-      "sha256": "eafa215d6be71e129ff4fe36ec9f4582e6bfe5bf7d58dc9506aa4bd8a0274191"
+      "path": "docs/methodology/artifacts/beta-adaptation/0.2.0-draft/SHA256SUMS",
+      "version": "beta-adaptation@0.2.0-draft-manifest",
+      "sha256": "112d8270419ba199a15dbbc88ba3b034285e9da8ee5428aa27bbcdb68d88efc7"
     },
     {
       "path": "docs/methodology/endurance-reviewer-workbook.md",
       "version": "endurance-reviewer-workbook@2026-10-25-draft",
-      "sha256": "032d21ed8f87d374e4e6b9e786ef52153955a9ae020e2ddcd6a028d18e2decfe"
+      "sha256": "db320083051a7532b2496fece20422d2001b2d2a6dc959faeb1a5f2a90327190"
     }
   ],
   "inventoryIds": [

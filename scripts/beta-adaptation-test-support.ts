@@ -1,5 +1,5 @@
-import draftFixturesText from "../docs/methodology/artifacts/beta-adaptation/0.1.0-draft/fixtures.json?raw";
-import draftRulesText from "../docs/methodology/artifacts/beta-adaptation/0.1.0-draft/beta-adaptation.json?raw";
+import draftFixturesText from "../docs/methodology/artifacts/beta-adaptation/0.2.0-draft/fixtures.json?raw";
+import draftRulesText from "../docs/methodology/artifacts/beta-adaptation/0.2.0-draft/beta-adaptation.json?raw";
 import {
   createInternalAdaptationScenarioPacket,
   inputForInternalAdaptationScenario,

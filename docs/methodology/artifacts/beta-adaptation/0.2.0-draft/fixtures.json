@@ -1,0 +1,151 @@
+{
+  "schemaVersion": "beta-adaptation-fixtures@1",
+  "artifactVersion": "beta-adaptation@0.2.0-draft",
+  "status": "draft_not_approved",
+  "defaults": {
+    "basePlanArtifactVersion": "beta-rules@0.2.0-draft",
+    "adaptationArtifactVersion": "beta-adaptation@0.2.0-draft",
+    "activePlanStatus": "active",
+    "activePlanRevision": 12,
+    "evaluatedPlanRevision": 12,
+    "safetyGateState": "none_reported",
+    "inputCompletenessConfirmed": true,
+    "triggerKind": "planned_run_completed",
+    "currentCoreWeek": 6,
+    "currentWeekKind": "load",
+    "nextWeekKind": "load",
+    "nextWeekIntroducesProgression": true,
+    "daysUntilRace": 84,
+    "currentWeek": {
+      "plannedRunCount": 4,
+      "completedRunCount": 4,
+      "skippedRunCount": 0,
+      "pendingRunCount": 0
+    },
+    "daysSinceLastCompletedPlannedRun": 1,
+    "recentEfforts": [
+      "about_right",
+      "about_right",
+      "about_right",
+      "about_right"
+    ],
+    "rescheduleCandidate": {
+      "present": false,
+      "workoutPurpose": null,
+      "delayCalendarDays": null,
+      "samePlanWeek": false,
+      "runnerConfirmedAvailable": false,
+      "targetDateEmpty": false,
+      "consecutiveRunDatesAfterMove": 0
+    }
+  },
+  "cases": [
+    {
+      "id": "no-change-on-track",
+      "changes": {},
+      "expected": {"kind": "no_change", "action": "no_change", "reasonCode": "ADAPT-NO-CHANGE-ON-TRACK", "runnerApprovalRequired": false}
+    },
+    {
+      "id": "no-change-single-hard-effort",
+      "changes": {"recentEfforts": ["about_right", "harder_than_expected", "about_right", "about_right"]},
+      "expected": {"kind": "no_change", "action": "no_change", "reasonCode": "ADAPT-NO-CHANGE-SINGLE-HARD-EFFORT", "runnerApprovalRequired": false}
+    },
+    {
+      "id": "hold-at-two-hard-effort-boundary",
+      "changes": {"recentEfforts": ["harder_than_expected", "about_right", "much_harder_than_expected", "about_right"]},
+      "expected": {"kind": "recommendation", "action": "hold_progression", "reasonCode": "ADAPT-HOLD-REPEATED-HARD-EFFORT", "runnerApprovalRequired": true}
+    },
+    {
+      "id": "no-change-when-cutback-already-follows-hard-pattern",
+      "changes": {"nextWeekKind": "cutback", "nextWeekIntroducesProgression": false, "recentEfforts": ["harder_than_expected", "about_right", "much_harder_than_expected", "about_right"]},
+      "expected": {"kind": "no_change", "action": "no_change", "reasonCode": "ADAPT-NO-CHANGE-RECOVERY-ALREADY-SCHEDULED", "runnerApprovalRequired": false}
+    },
+    {
+      "id": "no-change-with-fewer-than-four-effort-records",
+      "changes": {"recentEfforts": ["about_right", "harder_than_expected", "about_right"]},
+      "expected": {"kind": "no_change", "action": "no_change", "reasonCode": "ADAPT-NO-CHANGE-INSUFFICIENT-PATTERN", "runnerApprovalRequired": false}
+    },
+    {
+      "id": "repeat-after-exactly-two-missed-load-week-runs",
+      "changes": {"triggerKind": "planned_run_skipped", "currentWeek": {"completedRunCount": 2, "skippedRunCount": 2, "pendingRunCount": 0}},
+      "expected": {"kind": "recommendation", "action": "repeat_period", "reasonCode": "ADAPT-REPEAT-MISSED-WEEK", "runnerApprovalRequired": true}
+    },
+    {
+      "id": "no-change-wait-for-week-completion-after-two-early-misses",
+      "changes": {"triggerKind": "planned_run_skipped", "currentWeek": {"completedRunCount": 1, "skippedRunCount": 2, "pendingRunCount": 1}},
+      "expected": {"kind": "no_change", "action": "no_change", "reasonCode": "ADAPT-NO-CHANGE-WAIT-FOR-WEEK-COMPLETION", "runnerApprovalRequired": false}
+    },
+    {
+      "id": "refuse-two-misses-inside-six-week-boundary",
+      "changes": {"triggerKind": "planned_run_skipped", "daysUntilRace": 41, "currentWeek": {"completedRunCount": 2, "skippedRunCount": 2, "pendingRunCount": 0}},
+      "expected": {"kind": "refused", "action": null, "reasonCode": "ADAPT-REFUSE-LATE-DISRUPTION", "runnerApprovalRequired": false}
+    },
+    {
+      "id": "refuse-three-missed-runs",
+      "changes": {"triggerKind": "planned_run_skipped", "currentWeek": {"completedRunCount": 1, "skippedRunCount": 3, "pendingRunCount": 0}},
+      "expected": {"kind": "refused", "action": null, "reasonCode": "ADAPT-REFUSE-EXCESSIVE-DISRUPTION", "runnerApprovalRequired": false}
+    },
+    {
+      "id": "refuse-seven-day-training-disruption",
+      "changes": {"daysSinceLastCompletedPlannedRun": 7},
+      "expected": {"kind": "refused", "action": null, "reasonCode": "ADAPT-REFUSE-LONG-DISRUPTION", "runnerApprovalRequired": false}
+    },
+    {
+      "id": "reschedule-one-easy-run",
+      "changes": {
+        "triggerKind": "planned_run_skipped",
+        "currentWeek": {"completedRunCount": 1, "skippedRunCount": 1, "pendingRunCount": 2},
+        "rescheduleCandidate": {"present": true, "workoutPurpose": "easy", "delayCalendarDays": 1, "samePlanWeek": true, "runnerConfirmedAvailable": true, "targetDateEmpty": true, "consecutiveRunDatesAfterMove": 2}
+      },
+      "expected": {"kind": "recommendation", "action": "reschedule", "reasonCode": "ADAPT-RESCHEDULE-SINGLE-MISS", "runnerApprovalRequired": true}
+    },
+    {
+      "id": "no-change-when-reschedule-would-create-three-consecutive-run-days",
+      "changes": {
+        "triggerKind": "planned_run_skipped",
+        "currentWeek": {"completedRunCount": 3, "skippedRunCount": 1},
+        "rescheduleCandidate": {"present": true, "workoutPurpose": "easy", "delayCalendarDays": 1, "samePlanWeek": true, "runnerConfirmedAvailable": true, "targetDateEmpty": true, "consecutiveRunDatesAfterMove": 3}
+      },
+      "expected": {"kind": "no_change", "action": "no_change", "reasonCode": "ADAPT-NO-CHANGE-DO-NOT-STACK", "runnerApprovalRequired": false}
+    },
+    {
+      "id": "no-change-do-not-make-up-long-run",
+      "changes": {
+        "triggerKind": "planned_run_skipped",
+        "currentWeek": {"completedRunCount": 3, "skippedRunCount": 1},
+        "rescheduleCandidate": {"present": true, "workoutPurpose": "long", "delayCalendarDays": 1, "samePlanWeek": true, "runnerConfirmedAvailable": true, "targetDateEmpty": true, "consecutiveRunDatesAfterMove": 2}
+      },
+      "expected": {"kind": "no_change", "action": "no_change", "reasonCode": "ADAPT-NO-CHANGE-DO-NOT-STACK", "runnerApprovalRequired": false}
+    },
+    {
+      "id": "no-change-protect-taper-after-one-miss",
+      "changes": {"triggerKind": "planned_run_skipped", "currentCoreWeek": 15, "currentWeekKind": "taper", "nextWeekKind": "taper", "nextWeekIntroducesProgression": false, "daysUntilRace": 20, "currentWeek": {"completedRunCount": 3, "skippedRunCount": 1}},
+      "expected": {"kind": "no_change", "action": "no_change", "reasonCode": "ADAPT-NO-CHANGE-RECOVERY-ALREADY-SCHEDULED", "runnerApprovalRequired": false}
+    },
+    {
+      "id": "refuse-and-delegate-safety-signal",
+      "changes": {"safetyGateState": "requires_review"},
+      "expected": {"kind": "refused", "action": null, "reasonCode": "ADAPT-REFUSE-SAFETY-GATE", "runnerApprovalRequired": false}
+    },
+    {
+      "id": "refuse-stale-plan-revision",
+      "changes": {"evaluatedPlanRevision": 11},
+      "expected": {"kind": "refused", "action": null, "reasonCode": "ADAPT-REFUSE-STALE-PLAN", "runnerApprovalRequired": false}
+    },
+    {
+      "id": "refuse-unknown-adaptation-version",
+      "changes": {"adaptationArtifactVersion": "beta-adaptation@unknown"},
+      "expected": {"kind": "refused", "action": null, "reasonCode": "ADAPT-REFUSE-UNSUPPORTED-RULESET", "runnerApprovalRequired": false}
+    },
+    {
+      "id": "refuse-incomplete-evidence",
+      "changes": {"inputCompletenessConfirmed": false},
+      "expected": {"kind": "refused", "action": null, "reasonCode": "ADAPT-REFUSE-INCOMPLETE-EVIDENCE", "runnerApprovalRequired": false}
+    },
+    {
+      "id": "refuse-conflicting-hard-and-missed-signals",
+      "changes": {"triggerKind": "planned_run_skipped", "currentWeek": {"completedRunCount": 3, "skippedRunCount": 1}, "recentEfforts": ["harder_than_expected", "about_right", "much_harder_than_expected", "about_right"]},
+      "expected": {"kind": "refused", "action": null, "reasonCode": "ADAPT-REFUSE-CONFLICTING-SIGNALS", "runnerApprovalRequired": false}
+    }
+  ]
+}

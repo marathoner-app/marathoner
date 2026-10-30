@@ -1,4 +1,4 @@
-import draftRulesText from "../docs/methodology/artifacts/beta-rules/0.1.0-draft/beta-rules.json?raw";
+import draftRulesText from "../docs/methodology/artifacts/beta-rules/0.2.0-draft/beta-rules.json?raw";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
@@ -92,7 +92,7 @@ describe("PlanProposalBuilder", () => {
     expect(
       screen.getByRole("heading", { name: "Founding beta completion plan" }),
     ).toBeInTheDocument();
-    expect(screen.queryByText("beta-rules@0.1.0-draft")).not.toBeInTheDocument();
+    expect(screen.queryByText("beta-rules@0.2.0-draft")).not.toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "Continue review" }));
     await user.click(

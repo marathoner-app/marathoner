@@ -78,7 +78,7 @@ function internalRehearsalArtifactsPlugin(
         const rulesText = readFileSync(
           path.join(
             repositoryRoot,
-            'docs/methodology/artifacts/beta-rules/0.1.0-draft/beta-rules.json',
+            'docs/methodology/artifacts/beta-rules/0.2.0-draft/beta-rules.json',
           ),
           'utf8',
         )
@@ -106,14 +106,14 @@ function internalRehearsalArtifactsPlugin(
       const rulesText = readFileSync(
         path.join(
           repositoryRoot,
-          'docs/methodology/artifacts/beta-adaptation/0.1.0-draft/beta-adaptation.json',
+          'docs/methodology/artifacts/beta-adaptation/0.2.0-draft/beta-adaptation.json',
         ),
         'utf8',
       )
       const fixturesText = readFileSync(
         path.join(
           repositoryRoot,
-          'docs/methodology/artifacts/beta-adaptation/0.1.0-draft/fixtures.json',
+          'docs/methodology/artifacts/beta-adaptation/0.2.0-draft/fixtures.json',
         ),
         'utf8',
       )
