@@ -142,9 +142,12 @@ section, its reviewer must confirm all of the following:
    `roles/cloudbuild.builds.builder`. This role lets the build read its uploaded
    source, publish its Artifact Registry image, and write build logs; it does
    not authorize a human or any development-project resource.
-8. The beta App Check observation plan remains unenforced, and #205 has an
+8. The runtime service identity used by each material-command Cloud Run service
+   has `roles/datastore.user` in `marathonerapp-beta`. Build permissions do not
+   substitute for this runtime role; do not grant Owner or Editor.
+9. The beta App Check observation plan remains unenforced, and #205 has an
    active rollback owner and observation window.
-9. The ignored beta parameter file contains only the reviewed completed-run
+10. The ignored beta parameter file contains only the reviewed completed-run
    activation value, and the fictional rehearsal account has an exact approved
    beta membership.
 
@@ -236,6 +239,10 @@ is empty, and recreate them from the same clean reviewed commit using the
 guarded scoped command. Do not change Firestore rules, Authentication users,
 or beta fixtures as part of that recovery.
 
+The complete shared transport, runtime-IAM, receipt, and safe-diagnostics
+procedure is in
+[Material-command post-deploy verification](material-command-postdeploy-verification.md).
+
 ## Deployment-artifact retention
 
 After the first successful create, set the reviewed seven-day cleanup policy
@@ -275,6 +282,15 @@ Do not place command IDs, UIDs, emails, notes, request bodies, or raw records in
 GitHub. An unexpected result, listener timeout, or unexplained legitimate
 rejection blocks #346 and begins rollback.
 
+After the authenticated command produces a privately confirmed receipt, run:
+
+```sh
+npm run verify:functions-postdeploy -- beta \
+  --receipt-status run_completed
+```
+
+Do not begin invitations while that command fails.
+
 ## Log review
 
 Read only the bounded exports and keep the result in the private operating log:
@@ -286,9 +302,10 @@ npx firebase functions:log \
   --lines 100
 ```
 
-Application log entries are designed to contain only fixed event, command-type,
-and result-status fields. Stop the rehearsal and open a security issue if a UID,
-email, command ID, payload, note, participant record, or error object appears.
+Application log entries contain only fixed event, command-type, result-status,
+and optional safe persistence-failure-class fields. Stop the rehearsal and open
+a security issue if a UID, email, command ID, payload, note, participant record,
+raw provider code, error message, or error object appears.
 
 ## Rollback
 

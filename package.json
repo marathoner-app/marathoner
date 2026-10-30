@@ -35,6 +35,7 @@
     "test:material-commands": "npm run build:functions && firebase emulators:exec --project demo-marathoner --only auth,functions,firestore \"vitest run --config vitest.material-commands.config.ts\"",
     "test:viewport": "playwright test --config playwright.config.ts",
     "verify:beta-boundary": "node scripts/verify-live-beta-boundary.mjs",
+    "verify:functions-postdeploy": "node scripts/verify-material-command-postdeploy.mjs",
     "test:watch": "vitest",
     "sync:ios": "cap sync ios",
     "open:ios": "cap open ios",

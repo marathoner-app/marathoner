@@ -418,6 +418,53 @@ describe('material-command handler', () => {
     ).resolves.toEqual(expect.objectContaining({ status: 'outcome_unknown' }))
   })
 
+  it('classifies Firestore permission failures without logging sensitive details', async () => {
+    const boundary = dependencies()
+    const sensitiveError = {
+      code: 'permission-denied',
+      message: 'private Firestore permission detail',
+      ownerId,
+      commandId,
+      payload: createProofMaterialCommand(commandId),
+    }
+    boundary.store.failure = sensitiveError
+
+    await expect(
+      executeMaterialCommand(
+        {
+          authenticatedUserId: ownerId,
+          data: createProofMaterialCommand(commandId),
+        },
+        boundary,
+      ),
+    ).resolves.toEqual(
+      expect.objectContaining({
+        status: 'outcome_unknown',
+        code: 'resolve-by-command-id',
+      }),
+    )
+    expect(boundary.log).toHaveBeenLastCalledWith({
+      event: 'material-command-result',
+      commandType: 'proof.material-command',
+      status: 'outcome_unknown',
+      failureClass: 'persistence-permission-denied',
+    })
+
+    const serializedLogs = JSON.stringify(boundary.log.mock.calls)
+    for (const sensitiveValue of [
+      ownerId,
+      commandId,
+      sensitiveError.message,
+      sensitiveError,
+    ]) {
+      expect(serializedLogs).not.toContain(
+        typeof sensitiveValue === 'string'
+          ? sensitiveValue
+          : JSON.stringify(sensitiveValue),
+      )
+    }
+  })
+
   it('resolves a committed command by authenticated owner and keeps logs redacted', async () => {
     const boundary = dependencies()
     const command = createProofMaterialCommand(commandId)
@@ -1118,6 +1165,7 @@ describe('material-command handler', () => {
       event: 'material-command-result',
       commandType: 'run.complete',
       status: 'retryable_error',
+      failureClass: 'persistence-transient',
     })
     const serializedLogs = JSON.stringify(boundary.log.mock.calls)
     for (const sensitiveValue of [

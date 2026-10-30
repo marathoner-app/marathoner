@@ -36,6 +36,11 @@ import {
 } from './planApprovalArtifactPolicy.js'
 import type { OperatorActivationGate } from './operatorActivationGate.js'
 
+export type MaterialCommandFailureClass =
+  | 'persistence-permission-denied'
+  | 'persistence-transient'
+  | 'persistence-unclassified'
+
 export type MaterialCommandLogEntry = Readonly<{
   event: 'material-command-result' | 'material-command-resolution'
   commandType:
@@ -48,6 +53,7 @@ export type MaterialCommandLogEntry = Readonly<{
     | 'run.delete'
     | 'unknown'
   status: MaterialCommandResult['status']
+  failureClass?: MaterialCommandFailureClass
 }>
 
 export interface MaterialCommandStore {
@@ -281,8 +287,20 @@ function errorCode(error: unknown): string | number | null {
     : null
 }
 
-function failureFor(error: unknown, commandId: string | null) {
+function failureFor(
+  error: unknown,
+  commandId: string | null,
+): Readonly<{
+  result: MaterialCommandResult
+  failureClass: MaterialCommandFailureClass
+}> {
   const code = errorCode(error)
+  if (code === 'permission-denied' || code === 7) {
+    return {
+      result: outcomeUnknownResult(commandId),
+      failureClass: 'persistence-permission-denied',
+    }
+  }
   if (
     code === 'aborted' ||
     code === 10 ||
@@ -291,9 +309,15 @@ function failureFor(error: unknown, commandId: string | null) {
     code === 'resource-exhausted' ||
     code === 8
   ) {
-    return retryableResult(commandId)
+    return {
+      result: retryableResult(commandId),
+      failureClass: 'persistence-transient',
+    }
   }
-  return outcomeUnknownResult(commandId)
+  return {
+    result: outcomeUnknownResult(commandId),
+    failureClass: 'persistence-unclassified',
+  }
 }
 
 function logResult(
@@ -301,8 +325,29 @@ function logResult(
   event: MaterialCommandLogEntry['event'],
   result: MaterialCommandResult,
   commandType: MaterialCommandLogEntry['commandType'],
+  failureClass?: MaterialCommandFailureClass,
 ) {
-  dependencies.log({ event, commandType, status: result.status })
+  dependencies.log({
+    event,
+    commandType,
+    status: result.status,
+    ...(failureClass === undefined ? {} : { failureClass }),
+  })
+}
+
+function logFailureResult(
+  dependencies: HandlerDependencies,
+  event: MaterialCommandLogEntry['event'],
+  failure: ReturnType<typeof failureFor>,
+  commandType: MaterialCommandLogEntry['commandType'],
+) {
+  logResult(
+    dependencies,
+    event,
+    failure.result,
+    commandType,
+    failure.failureClass,
+  )
 }
 
 export async function executeMaterialCommand(
@@ -398,14 +443,14 @@ export async function executeMaterialCommand(
       )
       return result
     } catch (error) {
-      const result = failureFor(error, parsed.envelope.commandId)
-      logResult(
+      const failure = failureFor(error, parsed.envelope.commandId)
+      logFailureResult(
         dependencies,
         'material-command-result',
-        result,
+        failure,
         parsed.envelope.command.type,
       )
-      return result
+      return failure.result
     }
   }
   if (isRunCompletionCommandEnvelope(parsed.envelope)) {
@@ -452,14 +497,14 @@ export async function executeMaterialCommand(
       )
       return result
     } catch (error) {
-      const result = failureFor(error, parsed.envelope.commandId)
-      logResult(
+      const failure = failureFor(error, parsed.envelope.commandId)
+      logFailureResult(
         dependencies,
         'material-command-result',
-        result,
+        failure,
         parsed.envelope.command.type,
       )
-      return result
+      return failure.result
     }
   }
   if (isRunDeletionCommandEnvelope(parsed.envelope)) {
@@ -506,14 +551,14 @@ export async function executeMaterialCommand(
       )
       return result
     } catch (error) {
-      const result = failureFor(error, parsed.envelope.commandId)
-      logResult(
+      const failure = failureFor(error, parsed.envelope.commandId)
+      logFailureResult(
         dependencies,
         'material-command-result',
-        result,
+        failure,
         parsed.envelope.command.type,
       )
-      return result
+      return failure.result
     }
   }
   if (isRunUpdateCommandEnvelope(parsed.envelope)) {
@@ -560,14 +605,14 @@ export async function executeMaterialCommand(
       )
       return result
     } catch (error) {
-      const result = failureFor(error, parsed.envelope.commandId)
-      logResult(
+      const failure = failureFor(error, parsed.envelope.commandId)
+      logFailureResult(
         dependencies,
         'material-command-result',
-        result,
+        failure,
         parsed.envelope.command.type,
       )
-      return result
+      return failure.result
     }
   }
   if (isRecommendationDecisionCommandEnvelope(parsed.envelope)) {
@@ -616,14 +661,14 @@ export async function executeMaterialCommand(
         return result
       }
     } catch (error) {
-      const result = failureFor(error, parsed.envelope.commandId)
-      logResult(
+      const failure = failureFor(error, parsed.envelope.commandId)
+      logFailureResult(
         dependencies,
         'material-command-result',
-        result,
+        failure,
         parsed.envelope.command.type,
       )
-      return result
+      return failure.result
     }
 
     let authorizedAdaptationArtifactVersion: string
@@ -683,14 +728,14 @@ export async function executeMaterialCommand(
       )
       return result
     } catch (error) {
-      const result = failureFor(error, parsed.envelope.commandId)
-      logResult(
+      const failure = failureFor(error, parsed.envelope.commandId)
+      logFailureResult(
         dependencies,
         'material-command-result',
-        result,
+        failure,
         parsed.envelope.command.type,
       )
-      return result
+      return failure.result
     }
   }
   if (!isProofMaterialCommandEnvelope(parsed.envelope)) {
@@ -721,14 +766,14 @@ export async function executeMaterialCommand(
     )
     return result
   } catch (error) {
-    const result = failureFor(error, parsed.envelope.commandId)
-    logResult(
+    const failure = failureFor(error, parsed.envelope.commandId)
+    logFailureResult(
       dependencies,
       'material-command-result',
-      result,
+      failure,
       parsed.envelope.command.type,
     )
-    return result
+    return failure.result
   }
 }
 
@@ -787,8 +832,13 @@ export async function resolveMaterialCommand(
     )
     return result
   } catch (error) {
-    const result = failureFor(error, commandId)
-    logResult(dependencies, 'material-command-resolution', result, 'unknown')
-    return result
+    const failure = failureFor(error, commandId)
+    logFailureResult(
+      dependencies,
+      'material-command-resolution',
+      failure,
+      'unknown',
+    )
+    return failure.result
   }
 }
