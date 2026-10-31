@@ -75,6 +75,38 @@ async function expectHomeVisible(page: Page) {
   await expect(page.getByRole("navigation", { name: "Training sections" })).toBeVisible();
 }
 
+test("uses the shared canvas, banner, and card surface hierarchy", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("tests/viewport/signedInHome.html");
+  await expectHomeVisible(page);
+
+  await expect(page.locator("main")).toHaveCSS(
+    "background-color",
+    "rgb(248, 250, 252)",
+  );
+  await expect(page.locator(".session-controls")).toHaveCSS(
+    "background-color",
+    "rgb(231, 236, 248)",
+  );
+  await expect(page.locator(".next-workout-summary")).toHaveCSS(
+    "background-color",
+    "rgb(255, 255, 255)",
+  );
+
+  await page.getByRole("button", { name: "Plan", exact: true }).click();
+  const panel = page.locator(".section-panel");
+  await expect(panel).toHaveCSS("background-color", "rgb(248, 250, 252)");
+  await expect
+    .poll(() =>
+      panel.evaluate((element) =>
+        window.getComputedStyle(element, "::before").backgroundColor,
+      ),
+    )
+    .toBe("rgb(231, 236, 248)");
+});
+
 test("keeps the signed-in home in normal flow at phone width", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("tests/viewport/signedInHome.html");
@@ -179,12 +211,20 @@ test("hides training destinations until runner setup is complete", async ({
   );
 });
 
-test("preserves the desktop signed-in header", async ({ page }) => {
+test("keeps the desktop signed-in banner in normal flow", async ({ page }) => {
   await page.setViewportSize({ width: 1_440, height: 900 });
   await page.goto("tests/viewport/signedInHome.html");
   await expectHomeVisible(page);
 
-  await expect(page.locator(".session-controls")).toHaveCSS("position", "absolute");
+  const controls = page.locator(".session-controls");
+  const title = page.getByRole("heading", { level: 1, name: "Marathoner." });
+
+  await expect(controls).toHaveCSS("position", "static");
+  await expect(controls).toHaveCSS(
+    "background-color",
+    "rgb(231, 236, 248)",
+  );
+  await expectBefore(controls, title, "desktop account banner and brand");
   await expect(
     page.getByRole("navigation", { name: "Training sections" }),
   ).toHaveCSS("position", "static");

@@ -1,11 +1,11 @@
 .landing-page {
-  --landing-canvas: #f8fafc;
-  --landing-surface: #ffffff;
-  --landing-ink: #0f172a;
-  --landing-muted: #475569;
-  --landing-accent: #1d4ed8;
-  --landing-border: #cbd5e1;
-  --landing-banner: #e7ecf8;
+  --landing-canvas: var(--app-canvas);
+  --landing-surface: var(--app-surface);
+  --landing-ink: var(--app-ink);
+  --landing-muted: var(--app-muted);
+  --landing-accent: var(--app-accent);
+  --landing-border: var(--app-border);
+  --landing-banner: var(--app-banner);
   --landing-content-width: 100rem;
   --landing-card-radius: 1rem;
   --landing-card-shadow: 0 1.5rem 4rem rgba(15, 23, 42, 0.1);

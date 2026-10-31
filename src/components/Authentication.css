@@ -20,17 +20,23 @@
 }
 
 .session-controls {
-  position: absolute;
-  top: 20px;
-  right: 20px;
+  position: static;
   display: flex;
   align-items: center;
+  align-self: stretch;
+  justify-content: flex-end;
   gap: 0.75rem;
+  box-sizing: border-box;
+  width: 100%;
+  padding: clamp(0.85rem, 2vw, 1.25rem) clamp(1rem, 3vw, 2rem);
+  border-bottom: 1px solid var(--app-border);
+  background: var(--app-banner);
   line-height: 1.2;
 }
 
 .session-user {
   margin: 0;
+  color: var(--app-muted);
   font-size: 0.9rem;
 }
 
@@ -40,9 +46,9 @@
   padding: 10px 20px;
   border: solid;
   border-radius: 5px;
-  background-color: white;
-  box-shadow: 0 1em 0.5em rgb(204, 204, 204);
-  color: black;
+  background-color: var(--app-surface);
+  box-shadow: 0 0.4rem 1rem rgb(15 23 42 / 8%);
+  color: var(--app-ink);
   font-size: 1rem;
   font-weight: 600;
 }
@@ -296,8 +302,7 @@
 
 @media (max-width: 768px) {
   .session-controls {
-    right: 16px;
-    left: 16px;
+    flex-wrap: wrap;
     justify-content: flex-end;
   }
 
