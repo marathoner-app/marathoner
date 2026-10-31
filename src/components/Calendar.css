@@ -11,9 +11,9 @@
 .plan-header {
   margin-bottom: 1.5rem;
   padding: clamp(1rem, 3vw, 1.75rem);
-  border: 1px solid #d8e0eb;
+  border: 1px solid var(--app-border);
   border-radius: 1rem;
-  background: #f5f7fb;
+  background: var(--app-banner);
 }
 
 .plan-heading {
@@ -101,7 +101,7 @@
   padding: 0.875rem;
   border: 1px solid #d8e0eb;
   border-radius: 0.75rem;
-  background: #ffffff;
+  background: var(--app-surface);
 }
 
 .plan-week-summary dt,
@@ -144,7 +144,7 @@
   border: 1px solid #ccd5e2;
   border-left-width: 0.4rem;
   border-radius: 0.875rem;
-  background: #ffffff;
+  background: var(--app-surface);
   color: #172033;
   font: inherit;
   line-height: 1.35;
@@ -155,7 +155,7 @@
 
 .plan-day:hover {
   border-color: #4b6f9d;
-  background: #ffffff;
+  background: var(--app-surface);
   box-shadow: 0 0.5rem 1.25rem rgba(31, 47, 68, 0.12);
   transform: translateY(-1px);
 }
@@ -246,7 +246,7 @@
   padding: clamp(1.25rem, 4vw, 2rem);
   overflow-y: auto;
   border-radius: 1rem;
-  background-color: #ffffff;
+  background-color: var(--app-surface);
   box-shadow: 0 1.5rem 3rem rgba(10, 17, 28, 0.3);
   color: #172033;
   line-height: 1.5;
@@ -278,7 +278,7 @@
   margin-top: 1.25rem;
   padding: 1rem;
   border-radius: 0.75rem;
-  background: #f5f7fb;
+  background: var(--app-subtle-surface);
 }
 
 .plan-workout-notes h4,

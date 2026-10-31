@@ -17,7 +17,8 @@
   min-width: 0;
   padding: clamp(16px, 1.5rem, 24px);
   border-radius: 8px;
-  background: #f9f9f9;
+  border: 1px solid var(--app-border);
+  background: var(--app-surface);
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
   color: black;
 }
