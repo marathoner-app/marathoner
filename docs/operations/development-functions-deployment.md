@@ -163,14 +163,13 @@ membership, unsupported versions, and wrong-project configuration create no
 run or receipt. Use private console/log inspection only as needed and retain
 redacted outcomes.
 
-The ordinary Track provider must not migrate under #346 until this rehearsal
-passes and listener cleanup is confirmed.
-
 The November 4, 2026 rehearsal passed. The development client and Functions
 used `marathoner-d9bf9`; one fictional run converged through the listener,
 deletion converged, the disabled runtime flag rejected the same check without a
-run, and the restored runtime passed again. This approves the client activation
-gate but does not change any checked-in environment flag or migrate Track.
+run, and the restored runtime passed again. Issue #346 subsequently migrated
+ordinary Track creation and deletion to the command client. Track still depends
+on the server runtime flag and the other gates in this runbook; disabling the
+server flag remains the containment path.
 
 ## Rollback
 

@@ -217,8 +217,8 @@ account in the `ios-development` Debug build. After training data reaches its
 ready state and the onboarding overlay is closed, the signed-in home shows
 **Live run-command rehearsal**. The panel is compiled into the two explicit
 native modes, `ios-development` and `ios-beta`, and excluded from ordinary web
-builds. It does not switch the normal Track provider, which remains owned by
-#346.
+builds. Ordinary Track creation and deletion now use the same reviewed command
+client; this rehearsal panel remains only as a reversible operator check.
 
 Select **Run reversible command check** once. The panel submits a fixed
 fictional unplanned 5 km run, waits for the signed-in Firestore listener to
