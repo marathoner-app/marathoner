@@ -47,6 +47,19 @@ export function garminPushDeliveryFromDocument(
     }
   }
   if (
+    data.kind === 'permission_change' &&
+    typeof data.activityExportGranted === 'boolean'
+  ) {
+    return {
+      schemaVersion: 1,
+      kind: 'permission_change',
+      deliveryId,
+      providerAccountDigest: data.providerAccountDigest,
+      observedAt: data.observedAt,
+      activityExportGranted: data.activityExportGranted,
+    }
+  }
+  if (
     data.kind !== 'activity' ||
     typeof data.providerActivityId !== 'string' ||
     typeof data.startedAt !== 'string' ||
@@ -98,6 +111,14 @@ export class FirestoreGarminActivityPushStore implements GarminPushStore {
 
   completeDeregistration(
     options: Parameters<GarminPushStore['completeDeregistration']>[0],
+  ) {
+    return this.oauthStore.completeProviderDeregistration(options)
+  }
+
+  completeActivityPermissionRevocation(
+    options: Parameters<
+      GarminPushStore['completeActivityPermissionRevocation']
+    >[0],
   ) {
     return this.oauthStore.completeProviderDeregistration(options)
   }

@@ -301,4 +301,77 @@ describe('Firestore Garmin push ingestion', () => {
         .get(),
     ).resolves.toEqual(expect.objectContaining({ exists: false }))
   })
+
+  it('removes the connection and account link after Activity permission is withdrawn', async () => {
+    await connectOwner()
+    const permissionChange = {
+      userPermissionsChange: [
+        {
+          userId: providerUserId,
+          summaryId: 'synthetic-permission-change',
+          permissions: ['HEALTH_EXPORT'],
+          changeTimeInSeconds: 1_793_822_400,
+        },
+      ],
+    }
+    await receive(permissionChange)
+    await receive(permissionChange)
+    await processGarminPushDelivery(await queuedDelivery(), {
+      environment: 'beta',
+      log: vi.fn(),
+      now: () => new Date('2026-11-04T20:01:00.000Z'),
+      store: pushStore,
+      submitImport,
+    })
+
+    await expect(
+      database.doc(`users/${ownerId}/providerConnections/garmin`).get(),
+    ).resolves.toEqual(expect.objectContaining({ exists: false }))
+    await expect(
+      database
+        .doc(
+          `providerAccountLinks/${garminProviderAccountDigest(providerUserId)}`,
+        )
+        .get(),
+    ).resolves.toEqual(expect.objectContaining({ exists: false }))
+    const queue = await database.collection('garminPushDeliveries').get()
+    expect(queue.docs[0]?.data()).toMatchObject({
+      status: 'processed',
+      outcome: 'permission_revoked',
+    })
+    expect(JSON.stringify(queue.docs[0]?.data())).not.toContain(providerUserId)
+    expect(JSON.stringify(queue.docs[0]?.data())).not.toContain('HEALTH_EXPORT')
+  })
+
+  it('keeps the connection when Activity permission remains granted', async () => {
+    await connectOwner()
+    await receive({
+      userPermissionsChange: [
+        {
+          userId: providerUserId,
+          summaryId: 'synthetic-permission-change',
+          permissions: ['ACTIVITY_EXPORT', 'HEALTH_EXPORT'],
+          changeTimeInSeconds: 1_793_822_400,
+        },
+      ],
+    })
+    await processGarminPushDelivery(await queuedDelivery(), {
+      environment: 'beta',
+      log: vi.fn(),
+      now: () => new Date('2026-11-04T20:01:00.000Z'),
+      store: pushStore,
+      submitImport,
+    })
+
+    await expect(
+      database.doc(`users/${ownerId}/providerConnections/garmin`).get(),
+    ).resolves.toEqual(expect.objectContaining({ exists: true }))
+    await expect(
+      database
+        .doc(
+          `providerAccountLinks/${garminProviderAccountDigest(providerUserId)}`,
+        )
+        .get(),
+    ).resolves.toEqual(expect.objectContaining({ exists: true }))
+  })
 })

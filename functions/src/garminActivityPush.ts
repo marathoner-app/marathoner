@@ -54,9 +54,19 @@ export type GarminPushDeregistrationDelivery = Readonly<{
   observedAt: string
 }>
 
+export type GarminPushPermissionChangeDelivery = Readonly<{
+  schemaVersion: typeof PUSH_SCHEMA_VERSION
+  kind: 'permission_change'
+  deliveryId: string
+  providerAccountDigest: string
+  observedAt: string
+  activityExportGranted: boolean
+}>
+
 export type GarminPushDelivery =
   | GarminPushActivityDelivery
   | GarminPushDeregistrationDelivery
+  | GarminPushPermissionChangeDelivery
 
 export type GarminPushLogEntry = Readonly<{
   event: 'garmin-activity-push' | 'garmin-activity-processing'
@@ -81,9 +91,19 @@ export interface GarminPushStore {
     environment: GarminOAuthEnvironment
     providerAccountDigest: string
   }): Promise<void>
+  completeActivityPermissionRevocation(options: {
+    environment: GarminOAuthEnvironment
+    providerAccountDigest: string
+  }): Promise<void>
   markProcessed(options: {
     deliveryId: string
-    outcome: 'deregistered' | 'ignored' | 'imported' | 'review_required' | 'stale'
+    outcome:
+      | 'deregistered'
+      | 'ignored'
+      | 'imported'
+      | 'permission_revoked'
+      | 'review_required'
+      | 'stale'
     processedAt: string
   }): Promise<void>
 }
@@ -287,6 +307,44 @@ function parseDeregistration(
   }
 }
 
+function parsePermissionChange(
+  value: unknown,
+  observedAt: string,
+): GarminPushPermissionChangeDelivery | null {
+  if (!isRecord(value)) return null
+  const userId = nonEmptyString(value.userId, 512)
+  const summaryId = nonEmptyString(value.summaryId, 512)
+  const changeTimeInSeconds = safePositiveInteger(value.changeTimeInSeconds)
+  if (
+    userId === null ||
+    summaryId === null ||
+    changeTimeInSeconds === null ||
+    !Array.isArray(value.permissions) ||
+    value.permissions.length > 100 ||
+    value.permissions.some(
+      (permission) => nonEmptyString(permission, 128) === null,
+    )
+  ) {
+    return null
+  }
+  const accountDigest = garminProviderAccountDigest(userId)
+  const activityExportGranted = value.permissions.includes('ACTIVITY_EXPORT')
+  return {
+    schemaVersion: PUSH_SCHEMA_VERSION,
+    kind: 'permission_change',
+    deliveryId: deliveryId([
+      accountDigest,
+      'permission_change',
+      summaryId,
+      String(changeTimeInSeconds),
+      String(activityExportGranted),
+    ]),
+    providerAccountDigest: accountDigest,
+    observedAt,
+    activityExportGranted,
+  }
+}
+
 function parseDeliveries(
   body: unknown,
   observedAt: string,
@@ -302,7 +360,17 @@ function parseDeliveries(
     ? body.deregistrations
     : []
   if (
-    activities.length + deregistrations.length > MAX_DELIVERIES_PER_REQUEST
+    body.userPermissionsChange !== undefined &&
+    !Array.isArray(body.userPermissionsChange)
+  ) {
+    return { deliveries: [], invalid: true }
+  }
+  const permissionChanges = Array.isArray(body.userPermissionsChange)
+    ? body.userPermissionsChange
+    : []
+  if (
+    activities.length + deregistrations.length + permissionChanges.length >
+    MAX_DELIVERIES_PER_REQUEST
   ) {
     return { deliveries: [], invalid: true }
   }
@@ -314,6 +382,11 @@ function parseDeliveries(
   }
   for (const deregistration of deregistrations) {
     const parsed = parseDeregistration(deregistration, observedAt)
+    if (parsed === null) return { deliveries: [], invalid: true }
+    deliveries.push(parsed)
+  }
+  for (const permissionChange of permissionChanges) {
+    const parsed = parsePermissionChange(permissionChange, observedAt)
     if (parsed === null) return { deliveries: [], invalid: true }
     deliveries.push(parsed)
   }
@@ -395,6 +468,27 @@ export async function processGarminPushDelivery(
     dependencies.log({
       event: 'garmin-activity-processing',
       status: 'succeeded',
+      count: 1,
+    })
+    return
+  }
+  if (delivery.kind === 'permission_change') {
+    if (!delivery.activityExportGranted) {
+      await dependencies.store.completeActivityPermissionRevocation({
+        environment: dependencies.environment,
+        providerAccountDigest: delivery.providerAccountDigest,
+      })
+    }
+    await dependencies.store.markProcessed({
+      deliveryId: delivery.deliveryId,
+      outcome: delivery.activityExportGranted
+        ? 'ignored'
+        : 'permission_revoked',
+      processedAt,
+    })
+    dependencies.log({
+      event: 'garmin-activity-processing',
+      status: delivery.activityExportGranted ? 'ignored' : 'succeeded',
       count: 1,
     })
     return
