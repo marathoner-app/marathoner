@@ -260,13 +260,14 @@ state; the live-read listener remains the only visible source of truth. Run
 editing intentionally retains its existing repository path and latency
 diagnostics.
 
-The migration is prepared but cannot be activated yet.
-`VITE_COMPLETED_RUN_COMMANDS_ENABLED` is typed and validated, defaults to
-`false` in every checked-in environment, and currently rejects `true` at build
-time. Issue #347 must record a passing development create/delete smoke test and
-rollback rehearsal before a reviewed code change can approve live activation.
-This makes the next activation small and explicit without allowing an `.env`
-change to bypass the gate.
+The migration is prepared but remains off in every checked-in environment.
+`VITE_COMPLETED_RUN_COMMANDS_ENABLED` is typed and validated and defaults to
+`false`. Issue #347 recorded a passing owner-development create/delete smoke
+test, listener convergence, cleanup, and rollback rehearsal, so the reviewed
+client gate now permits a later environment-specific activation. Issue #346
+still owns that activation and the Track provider migration. A client `.env`
+change cannot bypass the server's reviewed-project, runtime-flag, Auth,
+membership, App Check, version, ownership, and revision gates.
 
 Two independent Firebase app instances now prove the completed-run lane against
 the Authentication, Functions, and Firestore emulators. When both are signed in
@@ -286,12 +287,13 @@ tests prove that logs contain only event, fixed command type, and status—not
 owner IDs, command IDs, completed-run IDs, notes, payloads, or thrown error
 objects.
 
-This proof does not activate the lane in a deployed environment. Functions
-deployment and smoke testing, the activation approval described above, denial
-of direct material writes in Firestore Security Rules, App Check enforcement,
-and adaptation commands all remain open in their owning issues. Live listener
-synchronization and account-cache isolation are already implemented through
-#159; the prepared provider path preserves that boundary.
+The owner-development Functions lane is deployed and its reversible smoke and
+rollback are recorded. The ordinary Track provider is still inactive because
+all checked-in client environments request `false`; #346 owns that migration.
+Denial of direct material writes in Firestore Security Rules, external-beta App
+Check enforcement, and adaptation commands remain in their owning issues. Live
+listener synchronization and account-cache isolation are already implemented
+through #159; the prepared provider path preserves that boundary.
 
 `PlanApprovalReview` owns the participant-facing handoff from a fully reviewed
 proposal to that client. Its final confirmation snapshots the exact input and

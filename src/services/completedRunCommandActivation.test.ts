@@ -1,5 +1,10 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { resolveCompletedRunCommandsEnabled } from "./completedRunCommandActivation";
+
+afterEach(() => {
+  vi.unstubAllEnvs();
+  vi.resetModules();
+});
 
 describe("resolveCompletedRunCommandsEnabled", () => {
   it.each([undefined, "", "false", " FALSE "])(
@@ -31,7 +36,7 @@ describe("resolveCompletedRunCommandsEnabled", () => {
         requested: "true",
         liveActivationApproved: false,
       }),
-    ).toThrow("issue #347");
+    ).toThrow("reviewed live activation approval");
   });
 
   it("allows activation only after the live rehearsal is approved", () => {
@@ -41,5 +46,14 @@ describe("resolveCompletedRunCommandsEnabled", () => {
         liveActivationApproved: true,
       }),
     ).toBe(true);
+  });
+
+  it("applies the recorded live approval when an environment requests activation", async () => {
+    vi.stubEnv("VITE_COMPLETED_RUN_COMMANDS_ENABLED", "true");
+    vi.resetModules();
+
+    const activation = await import("./completedRunCommandActivation");
+
+    expect(activation.completedRunCommandsEnabled).toBe(true);
   });
 });

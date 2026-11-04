@@ -19,16 +19,18 @@ export function resolveCompletedRunCommandsEnabled({
 
   if (!liveActivationApproved) {
     throw new Error(
-      "Completed-run commands cannot be enabled until issue #347 records a passing live create/delete smoke test and rollback rehearsal.",
+      "Completed-run commands cannot be enabled without reviewed live activation approval.",
     );
   }
 
   return true;
 }
 
-// Keep deployed and native builds fail-closed until the live activation issue
-// records the evidence required to change this reviewed constant.
-const liveActivationApproved = false;
+// Issue #347 recorded the owner-development live create/delete and rollback
+// rehearsal. This approves eligibility only: checked-in environments still
+// request false, and the server retains its project, runtime-flag, Auth,
+// membership, App Check, version, ownership, and revision gates.
+const liveActivationApproved = true;
 
 export const completedRunCommandsEnabled =
   resolveCompletedRunCommandsEnabled({
