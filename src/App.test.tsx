@@ -344,6 +344,24 @@ describe('App authentication state', () => {
       screen.getByText(/training methodology and safety guidance have not yet/i)
     ).toBeInTheDocument()
     expect(
+      screen.getByText(/completed running workouts from Apple Health/i)
+    ).toBeInTheDocument()
+    expect(
+      screen.getByText(/Direct Garmin import is not enabled yet/i)
+    ).toBeInTheDocument()
+    expect(
+      screen.getByText(/does not sell personal or workout data/i)
+    ).toBeInTheDocument()
+    expect(
+      screen.getByText(/only third-party services that process imported/i)
+    ).toBeInTheDocument()
+    expect(
+      screen.getByText(/request access to, correction of, or export/i)
+    ).toBeInTheDocument()
+    expect(
+      screen.queryByText(/does not currently import watch/i)
+    ).not.toBeInTheDocument()
+    expect(
       screen.queryByRole('navigation', { name: 'Training sections' })
     ).not.toBeInTheDocument()
   })
