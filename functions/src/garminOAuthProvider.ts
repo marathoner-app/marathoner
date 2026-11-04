@@ -1,4 +1,5 @@
 import type {
+  GarminConnectionGrant,
   GarminOAuthProvider,
   GarminTokenGrant,
 } from './garminOAuthHandler.js'
@@ -10,6 +11,7 @@ type GarminOAuthProviderConfiguration = Readonly<{
   redirectUri: string
   revocationUrl: string
   tokenUrl: string
+  userIdUrl: string
 }>
 
 function configuredUrl(value: string, label: string): URL {
@@ -30,7 +32,10 @@ function nonEmpty(value: string, label: string): string {
   return value
 }
 
-function tokenGrant(value: unknown, now: Date): GarminTokenGrant {
+function tokenGrant(
+  value: unknown,
+  now: Date,
+): GarminTokenGrant {
   if (typeof value !== 'object' || value === null) {
     throw new Error('The OAuth provider returned an invalid token response.')
   }
@@ -59,6 +64,21 @@ function tokenGrant(value: unknown, now: Date): GarminTokenGrant {
   }
 }
 
+function providerUserId(value: unknown): string {
+  if (typeof value !== 'object' || value === null) {
+    throw new Error('The OAuth provider returned an invalid user response.')
+  }
+  const userId = (value as Record<string, unknown>).userId
+  if (
+    typeof userId !== 'string' ||
+    userId.trim() === '' ||
+    userId.length > 512
+  ) {
+    throw new Error('The OAuth provider returned no usable user identifier.')
+  }
+  return userId
+}
+
 export class HttpGarminOAuthProvider implements GarminOAuthProvider {
   private readonly authorizationEndpoint: URL
   private readonly clientId: string
@@ -66,6 +86,7 @@ export class HttpGarminOAuthProvider implements GarminOAuthProvider {
   private readonly redirectUri: string
   private readonly revocationEndpoint: URL
   private readonly tokenEndpoint: URL
+  private readonly userIdEndpoint: URL
 
   constructor(
     configuration: GarminOAuthProviderConfiguration,
@@ -85,6 +106,10 @@ export class HttpGarminOAuthProvider implements GarminOAuthProvider {
     this.revocationEndpoint = configuredUrl(
       configuration.revocationUrl,
       'The revocation endpoint',
+    )
+    this.userIdEndpoint = configuredUrl(
+      configuration.userIdUrl,
+      'The user ID endpoint',
     )
     configuredUrl(configuration.redirectUri, 'The OAuth redirect URI')
     this.clientId = nonEmpty(configuration.clientId, 'The OAuth client ID')
@@ -109,7 +134,7 @@ export class HttpGarminOAuthProvider implements GarminOAuthProvider {
   async exchangeAuthorizationCode(options: {
     code: string
     codeVerifier: string
-  }): Promise<GarminTokenGrant> {
+  }): Promise<GarminConnectionGrant> {
     const request = this.options.fetch ?? fetch
     const clientSecret = nonEmpty(
       this.clientSecret,
@@ -130,10 +155,32 @@ export class HttpGarminOAuthProvider implements GarminOAuthProvider {
     if (!response.ok) {
       throw new Error('The OAuth provider rejected the token exchange.')
     }
-    return tokenGrant(
-      await response.json(),
+    const tokenResponse = await response.json()
+    const rawGrant = tokenGrant(
+      tokenResponse,
       this.options.now?.() ?? new Date(),
     )
+    try {
+      const userResponse = await request(this.userIdEndpoint, {
+        headers: { authorization: `Bearer ${rawGrant.accessToken}` },
+      })
+      if (!userResponse.ok) {
+        throw new Error('The OAuth provider rejected the user lookup.')
+      }
+      return {
+        ...rawGrant,
+        providerUserId: providerUserId(await userResponse.json()),
+      }
+    } catch (error) {
+      try {
+        await this.revoke(rawGrant)
+      } catch {
+        // The unusable grant was never mapped to an owner. A later provider
+        // cleanup cannot safely recover it, so this best-effort call is the
+        // only permitted custody path.
+      }
+      throw error
+    }
   }
 
   async revoke(grant: GarminTokenGrant): Promise<void> {

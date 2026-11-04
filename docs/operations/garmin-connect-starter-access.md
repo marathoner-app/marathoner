@@ -190,6 +190,9 @@ The repository may name configuration contracts but never store their values:
 | `GARMIN_CLIENT_SECRET` | Secret Manager in `marathonerapp-beta`; used only by backend token exchange and refresh. |
 | `GARMIN_OAUTH_REDIRECT_URI` | Non-secret beta configuration matching the exact deployed callback registered with Garmin. |
 | `GARMIN_ACTIVITY_PUSH_URL` | Non-secret beta endpoint registered in Garmin's private configuration tools after #651 deploys it. |
+| `GARMIN_ACTIVITY_PUSH_ENABLED` | Non-secret beta activation flag; remains false until live proof is approved. |
+| `GARMIN_ACTIVITY_PUSH_SOURCE_CIDRS` | Private beta runtime configuration copied from the approved provider documentation; never issue or PR evidence. |
+| `GARMIN_USER_ID_URL` | Private beta server endpoint used to bind a connected provider account to one Marathoner owner. |
 
 Issue #650 implements the trusted callback as the exported
 `garminOAuthCallback` HTTPS function and keeps it disabled by default. The
@@ -198,6 +201,13 @@ additional private runtime endpoint names, state lifecycle, environment guard,
 grant custody, replay behavior, and disconnect cleanup. The route is not yet a
 live registered callback: provider terms, app creation, secret creation,
 configuration, and deployment remain explicit owner checkpoints.
+
+Issue #651 implements `garminActivityPush` plus its asynchronous Firestore
+processor and keeps both default-off. The
+[Activity push boundary](../architecture/garmin-activity-push-boundary.md)
+defines source validation, durable acknowledgment, hashed owner mapping,
+minimal normalization, duplicate review, deregistration, and privacy-safe
+evidence. No live endpoint is registered by that implementation.
 
 Provider-specific details that are not public belong in private implementation
 configuration, not this repository. #650 and #651 must preserve that boundary

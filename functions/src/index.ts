@@ -10,6 +10,7 @@ import {
 } from 'firebase-functions/params'
 import { setGlobalOptions } from 'firebase-functions/v2'
 import { onCall, onRequest } from 'firebase-functions/v2/https'
+import { onDocumentCreated } from 'firebase-functions/v2/firestore'
 
 import {
   GENERATED_PLAN_SCHEMA_VERSION,
@@ -27,6 +28,7 @@ import {
 import { FirebaseAccountAccessManager } from './firebaseAccountAccessManager.js'
 import { FirestoreAccountDeletionRequestStore } from './firestoreAccountDeletionRequestStore.js'
 import { FirestoreActivityImportStore } from './firestoreActivityImportStore.js'
+import { FirestoreGarminActivityPushStore, garminPushDeliveryFromDocument } from './firestoreGarminActivityPushStore.js'
 import { FirestoreGarminOAuthStore } from './firestoreGarminOAuthStore.js'
 import { FirestoreMaterialCommandStore } from './firestoreMaterialCommandStore.js'
 import { FirestoreOperatorActivationControlStore } from './firestoreOperatorActivationControlStore.js'
@@ -55,6 +57,12 @@ import {
   type GarminOAuthLogEntry,
 } from './garminOAuthHandler.js'
 import { HttpGarminOAuthProvider } from './garminOAuthProvider.js'
+import {
+  garminPushClientIp,
+  processGarminPushDelivery,
+  receiveGarminActivityPush,
+  type GarminPushLogEntry,
+} from './garminActivityPush.js'
 
 if (getApps().length === 0) initializeApp()
 
@@ -158,6 +166,22 @@ const garminOAuthEnabled = defineBoolean('GARMIN_OAUTH_ENABLED', {
   description:
     'Enables the trusted Garmin OAuth boundary only in the closed beta project.',
 })
+const garminActivityPushEnabled = defineBoolean(
+  'GARMIN_ACTIVITY_PUSH_ENABLED',
+  {
+    default: false,
+    description:
+      'Enables trusted Garmin Activity push receipt only in the closed beta project.',
+  },
+)
+const garminActivityPushSourceCidrs = defineString(
+  'GARMIN_ACTIVITY_PUSH_SOURCE_CIDRS',
+  {
+    default: '',
+    description:
+      'Private comma-separated provider source ranges for Activity push verification.',
+  },
+)
 const garminOAuthEnvironment = defineString('GARMIN_OAUTH_ENVIRONMENT', {
   default: 'development',
   description: 'Names the isolated Garmin grant environment.',
@@ -171,10 +195,12 @@ const garminAuthorizationUrl = defineString('GARMIN_AUTHORIZATION_URL', {
   default: '',
 })
 const garminTokenUrl = defineString('GARMIN_TOKEN_URL', { default: '' })
+const garminUserIdUrl = defineString('GARMIN_USER_ID_URL', { default: '' })
 const garminRevocationUrl = defineString('GARMIN_REVOCATION_URL', {
   default: '',
 })
 const garminStore = new FirestoreGarminOAuthStore(database)
+const garminPushStore = new FirestoreGarminActivityPushStore(database)
 
 function configuredGarminEnvironment(): GarminOAuthEnvironment {
   return garminOAuthEnvironment.value() === 'beta' ? 'beta' : 'development'
@@ -207,6 +233,7 @@ function garminOAuthDependencies(options: {
       ? new HttpGarminOAuthProvider({
           authorizationUrl: garminAuthorizationUrl.value(),
           tokenUrl: garminTokenUrl.value(),
+          userIdUrl: garminUserIdUrl.value(),
           revocationUrl: garminRevocationUrl.value(),
           clientId: garminClientId.value(),
           clientSecret:
@@ -228,6 +255,19 @@ function garminCaller(request: {
     appCheckVerified: request.app !== undefined || functionsEmulator,
     ownerId: request.auth?.uid ?? null,
   }
+}
+
+function garminPushEnabled(): boolean {
+  return (
+    garminActivityPushEnabled.value() &&
+    useCompletedRunCommands &&
+    configuredGarminEnvironment() === 'beta' &&
+    gcloudProject.value() === 'marathonerapp-beta'
+  )
+}
+
+function logGarminPush(entry: GarminPushLogEntry) {
+  logger.info('Garmin Activity push boundary event', entry)
 }
 
 // Cloud Run must admit the HTTPS request before Firebase can populate
@@ -360,5 +400,80 @@ export const garminOAuthCallback = onRequest(
       .status(result.status === 'unavailable' ? 503 : 400)
       .type('text/plain')
       .send('Marathoner could not complete the Garmin connection. Return to Marathoner and try again.')
+  },
+)
+
+export const garminActivityPush = onRequest(
+  { invoker: 'public' },
+  async (request, response) => {
+    response.set('Cache-Control', 'no-store')
+    response.set('X-Content-Type-Options', 'nosniff')
+    const result = await receiveGarminActivityPush(
+      {
+        body: request.body,
+        bodyBytes: request.rawBody.length,
+        clientId: request.get('garmin-client-id') ?? '',
+        clientIp: garminPushClientIp({
+          directIp: request.ip ?? '',
+          forwardedFor: request.get('x-forwarded-for') ?? '',
+        }),
+        contentType: request.get('content-type') ?? '',
+        method: request.method,
+      },
+      {
+        clientId: garminClientId.value(),
+        enabled: garminPushEnabled(),
+        log: logGarminPush,
+        store: garminPushStore,
+        trustedCidrs: garminActivityPushSourceCidrs
+          .value()
+          .split(',')
+          .map((value) => value.trim())
+          .filter((value) => value.length > 0),
+      },
+    )
+    response.status(result.httpStatus).type('text/plain').send('')
+  },
+)
+
+export const processGarminActivityPush = onDocumentCreated(
+  {
+    document: 'garminPushDeliveries/{deliveryId}',
+    retry: true,
+  },
+  async (event) => {
+    if (!garminPushEnabled()) {
+      logGarminPush({
+        event: 'garmin-activity-processing',
+        status: 'configuration_error',
+      })
+      return
+    }
+    const deliveryId = event.params.deliveryId
+    const delivery = garminPushDeliveryFromDocument(
+      deliveryId,
+      event.data?.data(),
+    )
+    if (delivery === null) {
+      logGarminPush({
+        event: 'garmin-activity-processing',
+        status: 'invalid_request',
+      })
+      return
+    }
+    await processGarminPushDelivery(delivery, {
+      environment: configuredGarminEnvironment(),
+      log: logGarminPush,
+      store: garminPushStore,
+      submitImport: (ownerId, command) =>
+        executeMaterialCommand(
+          {
+            appCheckVerified: true,
+            authenticatedUserId: ownerId,
+            data: command,
+          },
+          dependencies,
+        ),
+    })
   },
 )

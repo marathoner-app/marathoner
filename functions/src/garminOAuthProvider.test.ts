@@ -8,6 +8,7 @@ function provider(fetchImplementation: typeof fetch) {
       authorizationUrl: 'https://provider.invalid/oauth/authorize',
       tokenUrl: 'https://provider.invalid/oauth/token',
       revocationUrl: 'https://provider.invalid/oauth/revoke',
+      userIdUrl: 'https://provider.invalid/user/id',
       clientId: 'server-client-id',
       clientSecret: 'server-client-secret',
       redirectUri: 'https://server.invalid/garminOAuthCallback',
@@ -44,13 +45,16 @@ describe('Garmin OAuth HTTP provider adapter', () => {
   })
 
   it('exchanges a code server side and normalizes the token grant', async () => {
-    const request = vi.fn(async () =>
-      Response.json({
+    const request = vi
+      .fn<typeof fetch>()
+      .mockResolvedValueOnce(
+        Response.json({
         access_token: 'access-token',
         refresh_token: 'refresh-token',
         expires_in: 3600,
-      }),
-    )
+        }),
+      )
+      .mockResolvedValueOnce(Response.json({ userId: 'provider-user-id' }))
     const boundary = provider(request)
 
     await expect(
@@ -62,6 +66,7 @@ describe('Garmin OAuth HTTP provider adapter', () => {
       accessToken: 'access-token',
       refreshToken: 'refresh-token',
       expiresAt: '2026-11-04T21:00:00.000Z',
+      providerUserId: 'provider-user-id',
     })
     const body = request.mock.calls[0]?.[1]?.body as URLSearchParams
     expect(Object.fromEntries(body)).toEqual({
@@ -71,6 +76,12 @@ describe('Garmin OAuth HTTP provider adapter', () => {
       client_id: 'server-client-id',
       client_secret: 'server-client-secret',
       code_verifier: 'private-verifier',
+    })
+    expect(request.mock.calls[1]?.[0].toString()).toBe(
+      'https://provider.invalid/user/id',
+    )
+    expect(request.mock.calls[1]?.[1]?.headers).toEqual({
+      authorization: 'Bearer access-token',
     })
   })
 
@@ -96,11 +107,38 @@ describe('Garmin OAuth HTTP provider adapter', () => {
           authorizationUrl: 'http://provider.invalid/authorize',
           tokenUrl: 'https://provider.invalid/token',
           revocationUrl: 'https://provider.invalid/revoke',
+          userIdUrl: 'https://provider.invalid/user/id',
           clientId: 'id',
           clientSecret: 'secret',
           redirectUri: 'https://server.invalid/callback',
         }),
     ).toThrow('must use HTTPS')
+  })
+
+  it('revokes an exchanged grant when the server-side user lookup fails', async () => {
+    const request = vi
+      .fn<typeof fetch>()
+      .mockResolvedValueOnce(
+        Response.json({
+          access_token: 'access-token',
+          refresh_token: 'refresh-token',
+          expires_in: 3600,
+        }),
+      )
+      .mockResolvedValueOnce(new Response(null, { status: 503 }))
+      .mockResolvedValueOnce(new Response(null, { status: 204 }))
+    const boundary = provider(request)
+
+    await expect(
+      boundary.exchangeAuthorizationCode({
+        code: 'authorization-code',
+        codeVerifier: 'private-verifier',
+      }),
+    ).rejects.toThrow('user lookup')
+    const revokeBody = request.mock.calls[2]?.[1]?.body as URLSearchParams
+    expect(Object.fromEntries(revokeBody)).toEqual(
+      expect.objectContaining({ token: 'refresh-token' }),
+    )
   })
 
   it('can build the browser URL without secret access but refuses server exchange', async () => {
@@ -109,6 +147,7 @@ describe('Garmin OAuth HTTP provider adapter', () => {
         authorizationUrl: 'https://provider.invalid/authorize',
         tokenUrl: 'https://provider.invalid/token',
         revocationUrl: 'https://provider.invalid/revoke',
+        userIdUrl: 'https://provider.invalid/user/id',
         clientId: 'server-client-id',
         clientSecret: '',
         redirectUri: 'https://server.invalid/callback',

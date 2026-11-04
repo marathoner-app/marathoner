@@ -2,7 +2,10 @@ import { deleteApp, initializeApp } from 'firebase-admin/app'
 import { getFirestore, Timestamp } from 'firebase-admin/firestore'
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
-import { FirestoreGarminOAuthStore } from './firestoreGarminOAuthStore.js'
+import {
+  FirestoreGarminOAuthStore,
+  garminProviderAccountDigest,
+} from './firestoreGarminOAuthStore.js'
 
 const projectId = 'demo-marathoner'
 const ownerId = 'garmin-oauth-owner'
@@ -14,6 +17,7 @@ const grant = {
   accessToken: 'private-access-token',
   refreshToken: 'private-refresh-token',
   expiresAt: '2026-11-04T21:00:00.000Z',
+  providerUserId: 'synthetic-provider-user',
 }
 
 async function clearFirestoreEmulator() {
@@ -149,6 +153,25 @@ describe('Firestore Garmin OAuth custody', () => {
       codeVerifier: null,
       codeDigest: 'first-code-digest',
     })
+    const accountDigest = garminProviderAccountDigest(grant.providerUserId)
+    const accountLink = await database
+      .doc(`providerAccountLinks/${accountDigest}`)
+      .get()
+    expect(accountLink.data()).toMatchObject({
+      provider: 'garmin_connect',
+      environment: 'beta',
+      ownerId,
+    })
+    expect(JSON.stringify(accountLink.data())).not.toContain(
+      grant.providerUserId,
+    )
+    const connection = await database
+      .doc(`users/${ownerId}/providerConnections/garmin`)
+      .get()
+    expect(connection.data()?.providerAccountDigest).toBe(accountDigest)
+    expect(JSON.stringify(connection.data())).not.toContain(
+      grant.providerUserId,
+    )
   })
 
   it('keeps grants environment scoped and deletes token material after disconnect', async () => {
@@ -182,10 +205,26 @@ describe('Firestore Garmin OAuth custody', () => {
     ).resolves.toEqual({ kind: 'disconnected' })
     await expect(
       store.reserveDisconnect({ environment: 'beta', ownerId }),
-    ).resolves.toEqual({ kind: 'reserved', grants: [grant] })
+    ).resolves.toEqual({
+      kind: 'reserved',
+      grants: [
+        {
+          accessToken: grant.accessToken,
+          refreshToken: grant.refreshToken,
+          expiresAt: grant.expiresAt,
+        },
+      ],
+    })
     await store.completeDisconnect({ environment: 'beta', ownerId })
     await expect(
       database.doc(`users/${ownerId}/providerConnections/garmin`).get(),
+    ).resolves.toEqual(expect.objectContaining({ exists: false }))
+    await expect(
+      database
+        .doc(
+          `providerAccountLinks/${garminProviderAccountDigest(grant.providerUserId)}`,
+        )
+        .get(),
     ).resolves.toEqual(expect.objectContaining({ exists: false }))
   })
 
@@ -267,5 +306,62 @@ describe('Firestore Garmin OAuth custody', () => {
       environment: 'development',
       accessToken: 'development-access-token',
     })
+  })
+
+  it('never maps one provider account to two Marathoner owners', async () => {
+    await store.createAuthorization({
+      createdAt: '2026-11-04T20:00:00.000Z',
+      environment: 'beta',
+      expiresAt: '2026-11-04T20:10:00.000Z',
+      ownerId,
+      stateDigest: 'first-owner-state',
+      codeVerifier: 'first-private-verifier',
+    })
+    await store.reserveCallback({
+      codeDigest: 'first-code-digest',
+      environment: 'beta',
+      now: '2026-11-04T20:01:00.000Z',
+      stateDigest: 'first-owner-state',
+    })
+    await store.completeCallback({
+      connectedAt: '2026-11-04T20:02:00.000Z',
+      environment: 'beta',
+      grant,
+      ownerId,
+      stateDigest: 'first-owner-state',
+    })
+
+    await store.createAuthorization({
+      createdAt: '2026-11-04T20:03:00.000Z',
+      environment: 'beta',
+      expiresAt: '2026-11-04T20:13:00.000Z',
+      ownerId: otherOwnerId,
+      stateDigest: 'second-owner-state',
+      codeVerifier: 'second-private-verifier',
+    })
+    await store.reserveCallback({
+      codeDigest: 'second-code-digest',
+      environment: 'beta',
+      now: '2026-11-04T20:04:00.000Z',
+      stateDigest: 'second-owner-state',
+    })
+    await expect(
+      store.completeCallback({
+        connectedAt: '2026-11-04T20:05:00.000Z',
+        environment: 'beta',
+        grant: {
+          ...grant,
+          accessToken: 'second-owner-access-token',
+          refreshToken: 'second-owner-refresh-token',
+        },
+        ownerId: otherOwnerId,
+        stateDigest: 'second-owner-state',
+      }),
+    ).rejects.toThrow('already mapped')
+    await expect(
+      database
+        .doc(`users/${otherOwnerId}/providerConnections/garmin`)
+        .get(),
+    ).resolves.toEqual(expect.objectContaining({ exists: false }))
   })
 })
