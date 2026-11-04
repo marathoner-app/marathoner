@@ -1,16 +1,20 @@
-# Garmin Connect Starter access application
+# Garmin Connect Starter Activity API access
 
-- **Status:** Submitted; awaiting Garmin review
+- **Status:** Starter access approved; binding terms and app creation pending owner acceptance
 - **Prepared:** November 3, 2026
 - **Submitted:** November 3, 2026
+- **Portal reviewed:** November 4, 2026
 - **Owner:** Kevin Tulloch
-- **Issue:** [#622](https://github.com/marathoner-app/marathoner/issues/622)
+- **Application issue:** [#622](https://github.com/marathoner-app/marathoner/issues/622)
+- **Access-verification issue:** [#649](https://github.com/marathoner-app/marathoner/issues/649)
 - **Requested product:** Garmin Connect Starter business access, Activity API only
 - **Dependent delivery:** [#623](https://github.com/marathoner-app/marathoner/issues/623)
 
-This record prepares the smallest truthful Garmin Connect request needed for
-automatic completed-run import. It is an operations record, not evidence that
-Garmin has approved Marathoner or that a production integration exists.
+This record began as the smallest truthful Garmin Connect request needed for
+automatic completed-run import. Garmin now exposes active Starter access to the
+owner account. The access is real, but Marathoner has not accepted the binding
+developer agreement, created an app or credentials, configured an endpoint, or
+enabled a production integration.
 
 ## Current posture
 
@@ -28,7 +32,7 @@ imply that the LLC, an Apple organization team, or outside beta already exists.
 
 ## Requested access and exclusions
 
-Request Starter business access to the **Activity API only**. The intended
+Use Starter business access for the **Activity API only**. The intended
 integration receives completed running activities after each runner gives
 explicit OAuth consent. It uses Garmin's Starter push delivery and does not
 request historical backfill.
@@ -48,23 +52,39 @@ If Garmin presents a bundled entitlement, Marathoner still subscribes to and
 processes only the Activity API data needed for this use case. Any proposal to
 add another product requires a separate issue and privacy review.
 
-## Public form answers
+The portal currently presents Starter access for up to 1,000 connected users,
+push-only delivery, and no historical-data access. It also displays Health,
+Women's Health, Training, and Courses as available products. Their presence is
+not approval to configure or process them; the Marathoner app must select
+Activity API only.
 
-Garmin's current Starter request form asks for the fields below. Private owner
-identity, address, email, and provider-account details belong only in the live
-form and the private provider record. They must not be copied into GitHub.
+## App-creation answers
+
+The approved portal now exposes the app-creation fields below. Private owner
+identity, phone number, provider-account details, app identifiers, and
+credentials belong only in the live portal and private provider record. They
+must not be copied into GitHub.
 
 | Garmin field | Prepared answer |
 | --- | --- |
-| Company name | Enter the current legal owner/business name and identify Marathoner as the product. Do not enter the planned LLC name. |
+| App name | `Marathoner` |
+| OAuth redirect URL | The stable beta callback owned by `marathonerapp-beta`; do not submit a placeholder or development URL before #650 publishes the route. |
+| Description | Use the bounded application overview below. |
+| Activity-data association | `Associated with identifiable users` |
+| APIs | Select `Activity API` only. Leave Health, Women's Health, Training, and Courses unselected. |
+| Branding image URL | `https://marathonerapp.com/brand/marathoner-icon-256.png` |
 | Company website | `https://marathonerapp.com/` |
-| Company privacy policy | `https://marathonerapp.com/#privacy-data-use` |
-| Contact name, title, email, address | Owner enters privately. Use `Founder and technical maintainer` as the title. |
-| Primary business service | `Coaching & Training Programs` |
-| Industry | `Fitness & Wellness` |
-| APIs requested | Select `Activity API` only. Leave Courses, Health, Training, and Women's Health unselected. |
-| Expected connected users in next 12 months | `0-100` |
-| Existing Garmin contact | `No` |
+| Contact phone number | Owner enters privately. |
+| Sell Garmin activity data | `No` |
+| Full legal company name | Owner enters the current sole-proprietor legal name. Do not use the planned LLC name. |
+| Privacy policy | `https://marathonerapp.com/#privacy-data-use` after the corrected automatic-import notice is deployed. |
+| How data is used or sold | State the minimum import use below and that Garmin data is not sold. |
+| Specific purposes | Create or reconcile the consenting runner's completed running records and compare them with that runner's training plan. |
+| Product | `Connect Developer - Starter` |
+
+Do not select the portal's initial `Anonymous` or `Yes`-to-data-sale defaults.
+Marathoner associates a Garmin activity with the consenting runner's account
+and does not sell it.
 
 ### Application overview
 
@@ -136,9 +156,59 @@ workout association remain separate.
 - Raw Garmin payloads are not operational evidence and must not be retained in
   ordinary logs.
 
-The public privacy copy is truthful for today's product: it says watch data is
-not currently imported. Update that copy and the complete privacy inventory
-before enabling the integration for any outside participant.
+The public privacy copy must remain truthful before Garmin app creation. It now
+acknowledges the existing Apple Health import and describes Google Firebase and
+Google Cloud processing, sale and advertising exclusions, the absence of AI
+processing for imported workouts, and the runner's access, correction, export,
+consent-withdrawal, and deletion routes. Direct Garmin import must remain
+described as unavailable until it is actually enabled.
+
+## Reviewed technical boundary
+
+The public Starter posture defines a server-to-server integration at this
+level:
+
+- Garmin uses OAuth 2.0 for runner authorization. Provider credentials and
+  runner token material stay on Marathoner's backend.
+- Starter delivery is HTTPS push only. Garmin sends new summaries after
+  connection; there is no historical backfill.
+- Configure only the completed-activity delivery needed to normalize supported
+  running records into the provider-neutral import contract. Do not configure
+  activity files, GPS tracks, all-day Health, Training, Courses, or Women's
+  Health in this scope.
+- The trusted push receiver must use the provider-supported delivery checks,
+  strict request-size and schema validation, idempotent persistence, and a
+  privacy-safe asynchronous processing boundary.
+- Disconnect must remove Marathoner-held token material and stop future import
+  according to the approved provider flow.
+
+The repository may name configuration contracts but never store their values:
+
+| Configuration name | Custody and purpose |
+| --- | --- |
+| `GARMIN_CLIENT_ID` | Beta server configuration; identifies Marathoner's live Starter app. It is never a development fixture value. |
+| `GARMIN_CLIENT_SECRET` | Secret Manager in `marathonerapp-beta`; used only by backend token exchange and refresh. |
+| `GARMIN_OAUTH_REDIRECT_URI` | Non-secret beta configuration matching the exact deployed callback registered with Garmin. |
+| `GARMIN_ACTIVITY_PUSH_URL` | Non-secret beta endpoint registered in Garmin's private configuration tools after #651 deploys it. |
+
+Provider-specific details that are not public belong in private implementation
+configuration, not this repository. #650 and #651 must preserve that boundary
+while keeping the provider adapter independently testable with synthetic
+fixtures.
+
+## Environment ownership
+
+Marathoner does not share live provider credentials across environments:
+
+| Environment | Garmin posture |
+| --- | --- |
+| Development and emulators | Synthetic OAuth outcomes and push fixtures only. No live Garmin client ID, secret, runner grant, or provider endpoint. |
+| Closed beta (`marathonerapp-beta`) | Sole live Garmin client, backend callback, token custody, push receiver, runner mapping, and disconnect path. Access remains allowlisted. |
+| Public production | Not configured. A future transition requires a separate release and provider review. |
+
+The exact callback and push URLs are outputs of #650 and #651. Register them
+only after the routes exist in the beta project; do not use localhost, the
+GitHub Pages origin, the development project, or a temporary URL.
 
 ## Ownership and private custody
 
@@ -164,13 +234,15 @@ record only the status, public-safe requirement, and next action.
 | Field | Current record |
 | --- | --- |
 | Application date | November 3, 2026 |
-| Status | Submitted; Garmin displayed `Thank you for your interest, we'll be reaching out to you soon.` |
+| Portal review date | November 4, 2026 |
+| Status | `approved but terms pending`; the owner account has active Starter access and can create an app, but no app or credentials exist. |
 | Requested product | Starter business access; Activity API only |
-| Approved products | None |
+| Portal entitlement | Starter access for up to 1,000 connected users, push-only delivery, and no historical data. Only Activity API is in Marathoner's approved scope. |
 | Public-safe application reference | None; the confirmation page supplied no reference number |
-| Provider blocker | Awaiting provider review; Garmin publishes no approval-time guarantee |
-| Next action | Monitor the private owner mailbox and record Garmin's response without copying private correspondence |
-| #623 state | Blocked until usable Activity API access and acceptable terms are confirmed |
+| Provider blocker | Private owner review and acceptance of the provider terms remain pending. The terms are not reproduced or summarized in this public repository. |
+| Product prerequisite | Deploy the corrected public privacy notice, then implement the stable beta OAuth callback before registering the redirect URI. |
+| Next action | Owner reviews the agreement checkpoint; #650 implements the trusted OAuth route before app creation. |
+| #623 state | Blocked while #649 remains `approved but terms pending`; #650-#652 stay dependency-blocked. |
 
 Possible provider outcomes are `submitted`, `more information requested`,
 `approved but terms pending`, `approved and usable`, `rejected`, or `legal
@@ -192,19 +264,23 @@ Stop before accepting or committing if Garmin presents any of the following:
 - a request to expose credentials, personal addresses, contracts, or private
   correspondence in public evidence.
 
-The owner must review the exact term before commitment. Provider approval alone
-does not unblock #623 if the access is unusable or the attached terms have not
-been accepted.
+The owner must review the exact terms privately before commitment. Provider
+approval alone therefore does not unblock #623.
 
-## Verification after submission
+## Verification before app creation
 
-1. Confirm the submitted request selected Activity API only.
-2. Record the submission date and a non-sensitive reference if Garmin provides
-   one that is safe to publish.
-3. Keep the confirmation and correspondence in the private provider record.
-4. Record any provider request or blocker in the external-dependency table.
-5. Do not close #622 or start #623 until the repository status matches the real
-   provider state.
+1. Confirm the corrected public privacy notice is deployed at the submitted
+   policy URL.
+2. Review and explicitly accept or decline the binding agreement outside the
+   repository; do not paste it into an issue or pull request.
+3. Deploy the stable beta OAuth callback from #650 before registering the exact
+   redirect URL.
+4. Create the app with Activity API only, identifiable-user association, no
+   data sale, the current sole-proprietor legal name, and Starter product.
+5. Move the generated secret directly into beta Secret Manager. Never paste it
+   into chat, the terminal transcript, source control, screenshots, or issues.
+6. Confirm the provider tools accept the beta endpoints before removing the
+   blocked state from #623.
 
 ## Official references
 

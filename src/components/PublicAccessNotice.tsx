@@ -41,10 +41,23 @@ export default function PublicAccessNotice({
           <h3 id="privacy-data-use-title">Privacy and data use</h3>
           <p>
             Existing accounts use Firebase Authentication. Email addresses and
-            any training records entered in the prototype are stored through
-            Firebase services. The product does not currently import watch,
-            GPS, payment, or health-platform data. Do not enter another
-            person&apos;s information.
+            training records entered or imported in the prototype are stored
+            through Google Firebase and Google Cloud. Those are the only
+            third-party services that process imported workout data.
+          </p>
+          <p>
+            With explicit permission, the iPhone app can import completed
+            running workouts from Apple Health. Marathoner limits those imports
+            to the workout source, date and time, distance, duration, and the
+            identifiers needed to avoid duplicates. It does not write to Apple
+            Health or import all-day health data. Direct Garmin import is not
+            enabled yet.
+          </p>
+          <p>
+            Marathoner does not sell personal or workout data, use it for
+            advertising, or process imported workout data with an AI or
+            machine-learning system. Do not enter another person&apos;s
+            information.
           </p>
         </section>
 
@@ -54,10 +67,12 @@ export default function PublicAccessNotice({
             <p>
               Existing account holders can{" "}
               <a href={supportHref}>email Marathoner support</a> to ask a
-              question, withdraw from future research, or initiate account and
-              training-data deletion. Send the request from the account email
-              when possible. Never include a password or unnecessary health or
-              training details.
+              question; request access to, correction of, or export of their
+              training data; withdraw permission for future imports; withdraw
+              from future research; or initiate account and training-data
+              deletion. Send the request from the account email when possible.
+              Never include a password or unnecessary health or training
+              details.
             </p>
           ) : (
             <p role="status">

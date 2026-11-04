@@ -8,7 +8,8 @@ toward a conditional iOS founding beta. January 15, 2027 remains a
 scope-or-date decision checkpoint and optimistic invitation floor, not a
 delivery promise. The November 3 capacity forecast places the likely invitation
 decision on February 28, 2027 and the conservative capacity date on August 8,
-subject to every evidence gate and potentially later Garmin provider approval.
+subject to every evidence gate and completion of the approved-but-not-yet-
+configured Garmin integration.
 The first invitation batch is limited to five to eight allowlisted adults who
 already run consistently and are preparing for a first marathon. The existing
 responsive web application remains the planning and analysis surface; Android
