@@ -12,7 +12,6 @@ import {
   type CompletedRun,
   type CompletedRunId,
   type DateOnly,
-  type PlannedWorkout,
   type Shoe,
   type ShoeId,
   type UserId,
@@ -34,9 +33,6 @@ import type {
   TrainingRepositories,
   UpdateCompletedRunInput,
 } from "../persistence/trainingRepositories";
-import {
-  completedRunCommandsEnabled as defaultCompletedRunCommandsEnabled,
-} from "../services/completedRunCommandActivation";
 import type {
   CompletedRunCommandClient,
   RunCompletionClientResult,
@@ -81,7 +77,6 @@ type TrainingDataProviderProps = {
   readonly children: ReactNode;
   readonly repositoryFactory?: TrainingRepositoryFactory;
   readonly liveReadSourceFactory?: TrainingLiveReadSourceFactory;
-  readonly completedRunCommandsEnabled?: boolean;
   readonly completedRunCommandClientFactory?: CompletedRunCommandClientFactory;
   readonly createCompletedRunCommandId?: CompletedRunCommandIdFactory;
 };
@@ -206,7 +201,6 @@ function deletionFailure(result: RunDeletionClientResult): Error {
 
 type AcknowledgedSource =
   | { readonly source: "profile"; readonly value: UserProfile | null }
-  | { readonly source: "workouts"; readonly value: readonly PlannedWorkout[] }
   | { readonly source: "runs"; readonly value: readonly CompletedRun[] }
   | { readonly source: "shoes"; readonly value: readonly Shoe[] };
 
@@ -223,7 +217,6 @@ export default function TrainingDataProvider({
   children,
   repositoryFactory = defaultRepositoryFactory,
   liveReadSourceFactory = defaultLiveReadSourceFactory,
-  completedRunCommandsEnabled = defaultCompletedRunCommandsEnabled,
   completedRunCommandClientFactory = defaultCompletedRunCommandClientFactory,
   createCompletedRunCommandId = defaultCompletedRunCommandId,
 }: TrainingDataProviderProps) {
@@ -262,9 +255,7 @@ export default function TrainingDataProvider({
       const [repositories, source, completedRunCommandClient] = await Promise.all([
         repositoryFactory(userId),
         liveReadSourceFactory(userId, generation),
-        completedRunCommandsEnabled
-          ? completedRunCommandClientFactory()
-          : Promise.resolve(null),
+        completedRunCommandClientFactory(),
       ]);
 
       if (generation !== sessionGenerationRef.current) return;
@@ -303,7 +294,6 @@ export default function TrainingDataProvider({
     }
   }, [
     completedRunCommandClientFactory,
-    completedRunCommandsEnabled,
     liveReadSourceFactory,
     repositoryFactory,
     userId,
@@ -440,140 +430,59 @@ export default function TrainingDataProvider({
       measureOperation(
         runCreationTimingNames.submissionTotal,
         async () => {
-          if (completedRunCommandsEnabled) {
-            const commandClient = requireCompletedRunCommandClient();
-            const pending = pendingRunCompletionRef.current;
+          const commandClient = requireCompletedRunCommandClient();
+          const pending = pendingRunCompletionRef.current;
 
-            if (pending !== null) {
-              const resolved = await commandClient.resolveCompletion(
-                pending.submission.commandId,
-              );
-              if (resolved.status === "run_completed") {
-                pendingRunCompletionRef.current = null;
-                return completedRunFromReceipt(userId, pending.input, resolved);
-              }
-              if (resolved.status !== "outcome_unknown") {
-                pendingRunCompletionRef.current = null;
-              }
-              throw completionFailure(resolved);
-            }
-
-            const plannedWorkout = plannedWorkoutReference(
-              input.plannedWorkoutPlanId,
-              input.plannedWorkoutId,
-              synchronizedSnapshot,
-              "complete",
+          if (pending !== null) {
+            const resolved = await commandClient.resolveCompletion(
+              pending.submission.commandId,
             );
-            const submission: RunCompletionSubmission = {
-              commandId: createCompletedRunCommandId("complete"),
-              input: {
-                plannedWorkout,
-                shoeId: input.shoeId,
-                startedAt: input.startedAt,
-                timeZone: input.timeZone,
-                distance: input.distance,
-                duration: input.duration,
-                perceivedEffort: input.perceivedEffort,
-                unusualPain: input.unusualPain,
-                notes: input.notes,
-              },
-            };
-            pendingRunCompletionRef.current = { input, submission };
-
-            let result = await commandClient.submitCompletion(submission);
-            if (result.status === "outcome_unknown") {
-              result = await commandClient.resolveCompletion(
-                submission.commandId,
-              );
-            }
-            if (result.status === "run_completed") {
+            if (resolved.status === "run_completed") {
               pendingRunCompletionRef.current = null;
-              return completedRunFromReceipt(userId, input, result);
+              return completedRunFromReceipt(userId, pending.input, resolved);
             }
-            if (result.status !== "outcome_unknown") {
+            if (resolved.status !== "outcome_unknown") {
               pendingRunCompletionRef.current = null;
             }
-            throw completionFailure(result);
+            throw completionFailure(resolved);
           }
 
-          const repositories = requireRepositories();
-          const associatedWorkout =
-            input.plannedWorkoutPlanId === undefined ||
-            input.plannedWorkoutId === undefined
-              ? null
-              : synchronizedSnapshot?.workouts.find(
-                  (workout) =>
-                    workout.planId === input.plannedWorkoutPlanId &&
-                    workout.id === input.plannedWorkoutId,
-                ) ?? null;
-
-          if (associatedWorkout?.kind === "rest") {
-            throw new Error("A completed run cannot be attached to a rest day.");
-          }
-
-          if (
-            input.plannedWorkoutPlanId !== undefined &&
-            input.plannedWorkoutId !== undefined &&
-            associatedWorkout === null
-          ) {
-            throw new Error("That planned workout is no longer available.");
-          }
-
-          if (associatedWorkout?.status === "completed") {
-            throw new Error(
-              "That planned workout already has a completion record.",
-            );
-          }
-
-          const run = await repositories.runs.create(input);
-          let completedWorkout: PlannedWorkout | null = null;
-
-          if (
-            run.plannedWorkoutPlanId !== undefined &&
-            run.plannedWorkoutId !== undefined
-          ) {
-            const planId = run.plannedWorkoutPlanId;
-            const workoutId = run.plannedWorkoutId;
-            try {
-              completedWorkout = await measureOperation(
-                runCreationTimingNames.plannedWorkoutAcknowledgement,
-                () =>
-                  repositories.workouts.update(
-                    planId,
-                    workoutId,
-                    { status: "completed" },
-                  ),
-              );
-            } catch (error) {
-              await repositories.runs.delete(run.id);
-              throw error;
-            }
-          }
-
-          acknowledgeServerWrites((kernel) => [
-            {
-              source: "runs",
-              value: replaceById(kernel.sources.runs.value, run).sort(
-                (left, right) =>
-                  right.startedAt.localeCompare(left.startedAt),
-              ),
+          const plannedWorkout = plannedWorkoutReference(
+            input.plannedWorkoutPlanId,
+            input.plannedWorkoutId,
+            synchronizedSnapshot,
+            "complete",
+          );
+          const submission: RunCompletionSubmission = {
+            commandId: createCompletedRunCommandId("complete"),
+            input: {
+              plannedWorkout,
+              shoeId: input.shoeId,
+              startedAt: input.startedAt,
+              timeZone: input.timeZone,
+              distance: input.distance,
+              duration: input.duration,
+              perceivedEffort: input.perceivedEffort,
+              unusualPain: input.unusualPain,
+              notes: input.notes,
             },
-            ...(completedWorkout === null
-              ? []
-              : [
-                  {
-                    source: "workouts" as const,
-                    value: replaceById(
-                      kernel.sources.workouts.value,
-                      completedWorkout,
-                    ).sort((left, right) =>
-                      left.scheduledDate.localeCompare(right.scheduledDate),
-                    ),
-                  },
-                ]),
-          ]);
+          };
+          pendingRunCompletionRef.current = { input, submission };
 
-          return run;
+          let result = await commandClient.submitCompletion(submission);
+          if (result.status === "outcome_unknown") {
+            result = await commandClient.resolveCompletion(
+              submission.commandId,
+            );
+          }
+          if (result.status === "run_completed") {
+            pendingRunCompletionRef.current = null;
+            return completedRunFromReceipt(userId, input, result);
+          }
+          if (result.status !== "outcome_unknown") {
+            pendingRunCompletionRef.current = null;
+          }
+          throw completionFailure(result);
         },
         (submission) =>
           recordSlowRunDiagnostic({
@@ -584,11 +493,8 @@ export default function TrainingDataProvider({
           }),
       ),
     [
-      acknowledgeServerWrites,
-      completedRunCommandsEnabled,
       createCompletedRunCommandId,
       requireCompletedRunCommandClient,
-      requireRepositories,
       synchronizedSnapshot,
       userId,
     ],
@@ -612,128 +518,60 @@ export default function TrainingDataProvider({
 
   const deleteRun = useCallback(
     async (id: CompletedRunId) => {
-      if (completedRunCommandsEnabled) {
-        const commandClient = requireCompletedRunCommandClient();
-        const pending = pendingRunDeletionRef.current;
+      const commandClient = requireCompletedRunCommandClient();
+      const pending = pendingRunDeletionRef.current;
 
-        if (pending !== null) {
-          const resolved = await commandClient.resolveDeletion(
-            pending.submission.commandId,
-          );
-          if (resolved.status === "run_deleted") {
-            pendingRunDeletionRef.current = null;
-            if (pending.submission.completedRunId === id) return;
-          } else {
-            if (resolved.status !== "outcome_unknown") {
-              pendingRunDeletionRef.current = null;
-            }
-            throw deletionFailure(resolved);
-          }
-        }
-
-        const currentSnapshot = synchronizedSnapshot;
-        const run = currentSnapshot?.runs.find(
-          (candidate) => candidate.id === id,
+      if (pending !== null) {
+        const resolved = await commandClient.resolveDeletion(
+          pending.submission.commandId,
         );
-
-        if (currentSnapshot === null || run === undefined) return;
-
-        const submission: RunDeletionSubmission = {
-          commandId: createCompletedRunCommandId("delete"),
-          completedRunId: run.id,
-          expectedCompletedRunUpdatedAt: run.updatedAt,
-          plannedWorkout: plannedWorkoutReference(
-            run.plannedWorkoutPlanId,
-            run.plannedWorkoutId,
-            currentSnapshot,
-            "delete",
-          ),
-        };
-        pendingRunDeletionRef.current = { submission };
-
-        let result = await commandClient.submitDeletion(submission);
-        if (result.status === "outcome_unknown") {
-          result = await commandClient.resolveDeletion(submission.commandId);
-        }
-        if (result.status === "run_deleted") {
+        if (resolved.status === "run_deleted") {
           pendingRunDeletionRef.current = null;
-          return;
+          if (pending.submission.completedRunId === id) return;
+        } else {
+          if (resolved.status !== "outcome_unknown") {
+            pendingRunDeletionRef.current = null;
+          }
+          throw deletionFailure(resolved);
         }
-        if (result.status !== "outcome_unknown") {
-          pendingRunDeletionRef.current = null;
-        }
-        throw deletionFailure(result);
       }
 
-      const repositories = requireRepositories();
       const currentSnapshot = synchronizedSnapshot;
       const run = currentSnapshot?.runs.find(
         (candidate) => candidate.id === id,
       );
 
-      if (currentSnapshot === null || run === undefined) {
-        return;
-      }
+      if (currentSnapshot === null || run === undefined) return;
 
-      const hasAnotherCompletion = currentSnapshot.runs.some(
-        (candidate) =>
-          candidate.id !== run.id &&
-          candidate.plannedWorkoutPlanId === run.plannedWorkoutPlanId &&
-          candidate.plannedWorkoutId === run.plannedWorkoutId,
-      );
-      let reopenedWorkout: PlannedWorkout | null = null;
-
-      if (
-        !hasAnotherCompletion &&
-        run.plannedWorkoutPlanId !== undefined &&
-        run.plannedWorkoutId !== undefined
-      ) {
-        reopenedWorkout = await repositories.workouts.update(
+      const submission: RunDeletionSubmission = {
+        commandId: createCompletedRunCommandId("delete"),
+        completedRunId: run.id,
+        expectedCompletedRunUpdatedAt: run.updatedAt,
+        plannedWorkout: plannedWorkoutReference(
           run.plannedWorkoutPlanId,
           run.plannedWorkoutId,
-          { status: "planned" },
-        );
-      }
+          currentSnapshot,
+          "delete",
+        ),
+      };
+      pendingRunDeletionRef.current = { submission };
 
-      try {
-        await repositories.runs.delete(id);
-      } catch (error) {
-        if (reopenedWorkout !== null) {
-          await repositories.workouts.update(
-            reopenedWorkout.planId,
-            reopenedWorkout.id,
-            { status: "completed" },
-          );
-        }
-        throw error;
+      let result = await commandClient.submitDeletion(submission);
+      if (result.status === "outcome_unknown") {
+        result = await commandClient.resolveDeletion(submission.commandId);
       }
-
-      acknowledgeServerWrites((kernel) => [
-        {
-          source: "runs",
-          value: kernel.sources.runs.value.filter((candidate) => candidate.id !== id),
-        },
-        ...(reopenedWorkout === null
-          ? []
-          : [
-              {
-                source: "workouts" as const,
-                value: replaceById(
-                  kernel.sources.workouts.value,
-                  reopenedWorkout,
-                ).sort((left, right) =>
-                  left.scheduledDate.localeCompare(right.scheduledDate),
-                ),
-              },
-            ]),
-      ]);
+      if (result.status === "run_deleted") {
+        pendingRunDeletionRef.current = null;
+        return;
+      }
+      if (result.status !== "outcome_unknown") {
+        pendingRunDeletionRef.current = null;
+      }
+      throw deletionFailure(result);
     },
     [
-      acknowledgeServerWrites,
-      completedRunCommandsEnabled,
       createCompletedRunCommandId,
       requireCompletedRunCommandClient,
-      requireRepositories,
       synchronizedSnapshot,
     ],
   );

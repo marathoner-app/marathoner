@@ -1,6 +1,6 @@
 # Material-command boundary
 
-- **Status:** Local proof and deletion-request boundaries complete; plan approval, run completion, and completed-run deletion are atomically persisted; two-client completed-run proof retained against emulators; production activation and deployment blocked
+- **Status:** Owner-development Track creation and deletion use the live command boundary; external-beta activation and remaining material-write migrations stay gated
 - **Decision date:** 2026-10-05
 - **Owner:** Marathoner maintainer
 - **Proof issue:** [#158](https://github.com/marathoner-app/marathoner/issues/158)
@@ -16,6 +16,8 @@
 - **Run-deletion transaction issue:** [#260](https://github.com/marathoner-app/marathoner/issues/260)
 - **Completed-run client issue:** [#261](https://github.com/marathoner-app/marathoner/issues/261)
 - **Two-client completed-run proof issue:** [#262](https://github.com/marathoner-app/marathoner/issues/262)
+- **Track provider migration issue:** [#346](https://github.com/marathoner-app/marathoner/issues/346)
+- **Owner-development activation issue:** [#347](https://github.com/marathoner-app/marathoner/issues/347)
 
 ## Purpose and scope
 
@@ -251,23 +253,20 @@ submission or resolution never calls the transport, queues work, or replays
 after reconnection; the caller must explicitly use the matching resolution
 method with the original command ID.
 
-`TrainingDataProvider` now contains the current listener-aware migration path
-for completed-run creation and deletion. In command mode it supplies the
-listener-confirmed run and workout revisions, retains an ambiguous command ID
-for explicit resolution, and never falls back to a direct create or delete.
-Command receipts finish the form action but do not synthesize Track or Analyze
-state; the live-read listener remains the only visible source of truth. Run
-editing intentionally retains its existing repository path and latency
-diagnostics.
+`TrainingDataProvider` routes completed-run creation and deletion through the
+listener-aware command client. It supplies the listener-confirmed run and
+workout revisions, retains an ambiguous command ID for explicit resolution,
+and has no direct repository create or delete fallback. Command receipts finish
+the form action but do not synthesize Track or Analyze state; the live-read
+listener remains the only visible source of truth. Run editing intentionally
+retains its existing repository path and latency diagnostics.
 
-The migration is prepared but remains off in every checked-in environment.
-`VITE_COMPLETED_RUN_COMMANDS_ENABLED` is typed and validated and defaults to
-`false`. Issue #347 recorded a passing owner-development create/delete smoke
-test, listener convergence, cleanup, and rollback rehearsal, so the reviewed
-client gate now permits a later environment-specific activation. Issue #346
-still owns that activation and the Track provider migration. A client `.env`
-change cannot bypass the server's reviewed-project, runtime-flag, Auth,
-membership, App Check, version, ownership, and revision gates.
+Issue #347 recorded a passing owner-development create/delete smoke test,
+listener convergence, cleanup, and rollback rehearsal. Issue #346 then removed
+the temporary client activation switch and migrated the ordinary Track
+provider. The server still fails closed behind its reviewed-project,
+runtime-flag, Auth, membership, App Check, version, ownership, and revision
+gates.
 
 Two independent Firebase app instances now prove the completed-run lane against
 the Authentication, Functions, and Firestore emulators. When both are signed in
@@ -287,13 +286,13 @@ tests prove that logs contain only event, fixed command type, and status—not
 owner IDs, command IDs, completed-run IDs, notes, payloads, or thrown error
 objects.
 
-The owner-development Functions lane is deployed and its reversible smoke and
-rollback are recorded. The ordinary Track provider is still inactive because
-all checked-in client environments request `false`; #346 owns that migration.
-Denial of direct material writes in Firestore Security Rules, external-beta App
-Check enforcement, and adaptation commands remain in their owning issues. Live
-listener synchronization and account-cache isolation are already implemented
-through #159; the prepared provider path preserves that boundary.
+The owner-development Functions lane is deployed, its reversible smoke and
+rollback are recorded, and the ordinary Track provider uses that lane for
+creation and deletion. Denial of direct material writes in Firestore Security
+Rules, external-beta App Check enforcement, and adaptation commands remain in
+their owning issues. Live listener synchronization and account-cache isolation
+are already implemented through #159; the provider migration preserves that
+boundary.
 
 `PlanApprovalReview` owns the participant-facing handoff from a fully reviewed
 proposal to that client. Its final confirmation snapshots the exact input and
