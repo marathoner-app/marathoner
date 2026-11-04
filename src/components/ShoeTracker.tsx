@@ -290,6 +290,22 @@ function workoutName(workout: PlannedWorkout): string {
   return `${workout.purpose[0].toUpperCase()}${workout.purpose.slice(1)} run`;
 }
 
+function importedRunSource(run: CompletedRun): string | null {
+  if (run.importProvider === undefined) return null;
+  if (run.importProvider === "garmin_connect") return "Garmin Connect";
+  if (run.reportedOrigin === "garmin") return "Garmin via Apple Health";
+  return "Apple Health";
+}
+
+function workoutAssociationFrom(value: FormDataEntryValue | null) {
+  const association = String(value ?? "");
+  const [planId, workoutId] = association ? association.split("/") : [];
+  return {
+    planId: planId ? createTrainingPlanId(planId) : null,
+    workoutId: workoutId ? createPlannedWorkoutId(workoutId) : null,
+  };
+}
+
 export default function ShoeTracker({
   distanceUnit,
   runs,
@@ -319,7 +335,7 @@ export default function ShoeTracker({
     new Map<CompletedRunId, HTMLButtonElement>(),
   );
   const editRunDateInputRefs = useRef(
-    new Map<CompletedRunId, HTMLInputElement>(),
+    new Map<CompletedRunId, HTMLElement>(),
   );
   const editButtonToRestoreRef = useRef<CompletedRunId | null>(null);
   const activeShoes = shoes.filter((shoe) => shoe.status === "active");
@@ -592,12 +608,25 @@ export default function ShoeTracker({
               {runs.map((run) => {
                 const shoe = shoes.find((candidate) => candidate.id === run.shoeId);
                 const isEditing = editingRunId === run.id;
+                const importSource = importedRunSource(run);
+                const isImported = importSource !== null;
+                const editableWorkouts = plannedWorkouts.filter(
+                  (workout) =>
+                    workout.kind !== "rest" &&
+                    (workout.status === "planned" ||
+                      (workout.planId === run.plannedWorkoutPlanId &&
+                        workout.id === run.plannedWorkoutId)),
+                );
 
                 return (
                   <li key={run.id}>
                     {isEditing ? (
                       <form
-                        aria-label={`Edit run from ${getRunLocalDate(run)}`}
+                        aria-label={
+                          isImported
+                            ? `Add details to run from ${getRunLocalDate(run)}`
+                            : `Edit run from ${getRunLocalDate(run)}`
+                        }
                         aria-busy={pendingAction === "update-run"}
                         className="run-edit-form"
                         onSubmit={async (event) => {
@@ -608,17 +637,33 @@ export default function ShoeTracker({
                           setPendingAction("update-run");
                           try {
                             const selectedDate = String(data.get("date"));
+                            const association = workoutAssociationFrom(
+                              data.get("workout"),
+                            );
+                            const shoeId = String(data.get("shoe") ?? "");
                             await onUpdateRun(run.id, {
-                              startedAt:
-                                selectedDate === getRunLocalDate(run)
-                                  ? undefined
-                                  : parseCompletedRunDate(selectedDate, run.timeZone),
-                              distance: parseDistance(
-                                String(data.get("distance")),
-                                distanceUnit,
-                              ),
-                              duration: readElapsedDuration(data, "duration"),
-                              shoeId: createShoeId(String(data.get("shoe"))),
+                              plannedWorkoutPlanId: association.planId,
+                              plannedWorkoutId: association.workoutId,
+                              shoeId: shoeId ? createShoeId(shoeId) : null,
+                              ...(isImported
+                                ? {}
+                                : {
+                                    startedAt:
+                                      selectedDate === getRunLocalDate(run)
+                                        ? undefined
+                                        : parseCompletedRunDate(
+                                            selectedDate,
+                                            run.timeZone,
+                                          ),
+                                    distance: parseDistance(
+                                      String(data.get("distance")),
+                                      distanceUnit,
+                                    ),
+                                    duration: readElapsedDuration(
+                                      data,
+                                      "duration",
+                                    ),
+                                  }),
                               perceivedEffort:
                                 parsePerceivedEffort(data.get("perceivedEffort")) ?? null,
                               notes: parseRunNotes(data.get("notes")) ?? null,
@@ -632,55 +677,113 @@ export default function ShoeTracker({
                           }
                         }}
                       >
-                        <label>
-                          Edit run date
-                          <input
-                            ref={(input) => {
-                              if (input === null) {
+                        {isImported ? (
+                          <div
+                            ref={(element) => {
+                              if (element === null) {
                                 editRunDateInputRefs.current.delete(run.id);
                               } else {
-                                editRunDateInputRefs.current.set(run.id, input);
+                                editRunDateInputRefs.current.set(run.id, element);
                               }
                             }}
-                            aria-describedby={`edit-run-date-help-${run.id}`}
-                            name="date"
-                            type="date"
-                            defaultValue={getRunLocalDate(run)}
-                            required
-                          />
-                        </label>
-                        <p
-                          id={`edit-run-date-help-${run.id}`}
-                          className="training-field-hint"
-                        >
-                          Use the date this run was completed. Future dates are not allowed.
-                        </p>
+                            className="imported-run-facts"
+                            tabIndex={-1}
+                          >
+                            <p className="imported-run-source">
+                              Imported from {importSource}
+                            </p>
+                            <dl>
+                              <div><dt>Date</dt><dd>{getRunLocalDate(run)}</dd></div>
+                              <div><dt>Distance</dt><dd>{formatDistance(run.distance, distanceUnit)}</dd></div>
+                              <div><dt>Elapsed time</dt><dd>{formatDuration(run.duration)}</dd></div>
+                            </dl>
+                            <p className="training-field-hint">
+                              These facts come from {importSource}. Correct them there,
+                              then check for runs again.
+                            </p>
+                            <input
+                              name="date"
+                              type="hidden"
+                              value={getRunLocalDate(run)}
+                            />
+                          </div>
+                        ) : (
+                          <>
+                            <label>
+                              Edit run date
+                              <input
+                                ref={(input) => {
+                                  if (input === null) {
+                                    editRunDateInputRefs.current.delete(run.id);
+                                  } else {
+                                    editRunDateInputRefs.current.set(run.id, input);
+                                  }
+                                }}
+                                aria-describedby={`edit-run-date-help-${run.id}`}
+                                name="date"
+                                type="date"
+                                defaultValue={getRunLocalDate(run)}
+                                required
+                              />
+                            </label>
+                            <p
+                              id={`edit-run-date-help-${run.id}`}
+                              className="training-field-hint"
+                            >
+                              Use the date this run was completed. Future dates are not allowed.
+                            </p>
+                            <label>
+                              Edit distance ({distanceUnitName(distanceUnit)})
+                              <input
+                                name="distance"
+                                type="number"
+                                min="0.01"
+                                step="0.01"
+                                defaultValue={formatDistanceValue(
+                                  run.distance,
+                                  distanceUnit,
+                                )}
+                                required
+                              />
+                            </label>
+                            <ElapsedDurationInput
+                              legend="Edit elapsed time"
+                              name="duration"
+                              defaultValue={run.duration}
+                            />
+                          </>
+                        )}
                         <label>
-                          Edit distance ({distanceUnitName(distanceUnit)})
-                          <input
-                            name="distance"
-                            type="number"
-                            min="0.01"
-                            step="0.01"
-                            defaultValue={formatDistanceValue(
-                              run.distance,
-                              distanceUnit,
-                            )}
-                            required
-                          />
+                          Planned workout
+                          <select
+                            name="workout"
+                            defaultValue={
+                              run.plannedWorkoutPlanId && run.plannedWorkoutId
+                                ? `${run.plannedWorkoutPlanId}/${run.plannedWorkoutId}`
+                                : ""
+                            }
+                          >
+                            <option value="">Unplanned run</option>
+                            {editableWorkouts.map((workout) => (
+                              <option
+                                key={workout.id}
+                                value={`${workout.planId}/${workout.id}`}
+                              >
+                                {workout.scheduledDate}: {workoutName(workout)}
+                              </option>
+                            ))}
+                          </select>
                         </label>
-                        <ElapsedDurationInput
-                          legend="Edit elapsed time"
-                          name="duration"
-                          defaultValue={run.duration}
-                        />
                         <label>
-                          Edit running shoes
+                          {isImported
+                            ? "Running shoes (optional)"
+                            : "Edit running shoes"}
                           <select
                             name="shoe"
-                            defaultValue={run.shoeId}
-                            required
+                            defaultValue={run.shoeId ?? ""}
+                            required={!isImported}
                           >
+                            {isImported && <option value="">Add shoes later</option>}
                             {shoes
                               .filter(
                                 (candidate) =>
@@ -741,6 +844,11 @@ export default function ShoeTracker({
                       </form>
                     ) : (
                       <>
+                        {isImported && (
+                          <p className="imported-run-source">
+                            Imported from {importSource}
+                          </p>
+                        )}
                         <span>
                           {getRunLocalDate(run)}: {formatDistance(
                             run.distance,
@@ -761,14 +869,18 @@ export default function ShoeTracker({
                             }
                           }}
                           type="button"
-                          aria-label={`Edit run from ${getRunLocalDate(run)}`}
+                          aria-label={
+                            isImported
+                              ? `Add details to run from ${getRunLocalDate(run)}`
+                              : `Edit run from ${getRunLocalDate(run)}`
+                          }
                           onClick={() => {
                             setError(null);
                             setActionStatus(null);
                             setEditingRunId(run.id);
                           }}
                         >
-                          Edit
+                          {isImported ? "Add run details" : "Edit"}
                         </button>
                         <button
                           type="button"

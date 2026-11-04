@@ -502,6 +502,45 @@ describe("founding-beta membership rules", () => {
     await assertSucceeds(deleteDoc(ownerReference));
   });
 
+  it("keeps imported-run provenance server-owned for approved members", async () => {
+    await seedMembership(firstUserId);
+    const path = `users/${firstUserId}/runs/imported-run-1`;
+    await testEnvironment.withSecurityRulesDisabled(async (context) => {
+      await setDoc(
+        doc(context.firestore(), path),
+        runDocument(firstUserId, {
+          importProvider: "garmin_connect",
+          reportedOrigin: "garmin",
+        }),
+      );
+    });
+    const database = authenticatedContext(firstUserId).firestore();
+    const reference = doc(database, path);
+
+    await assertSucceeds(
+      updateDoc(reference, {
+        shoeId: "shoe-2",
+        perceivedEffort: "about_right",
+        updatedAt: new Date("2026-10-05T14:00:00.000Z"),
+      }),
+    );
+    await assertFails(
+      updateDoc(reference, {
+        reportedOrigin: "apple",
+        updatedAt: new Date("2026-10-05T15:00:00.000Z"),
+      }),
+    );
+    await assertFails(
+      setDoc(
+        doc(database, `users/${firstUserId}/runs/imported-run-2`),
+        runDocument(firstUserId, {
+          importProvider: "apple_health",
+          reportedOrigin: "apple",
+        }),
+      ),
+    );
+  });
+
   it("denies an approved account whose email is not verified", async () => {
     await seedMembership(firstUserId);
     await seedPlanAndWorkout();

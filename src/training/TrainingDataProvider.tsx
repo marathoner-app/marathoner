@@ -39,6 +39,8 @@ import type {
   RunCompletionSubmission,
   RunDeletionClientResult,
   RunDeletionSubmission,
+  RunUpdateClientResult,
+  RunUpdateSubmission,
 } from "../services/completedRunCommandClient";
 import {
   TrainingDataContext,
@@ -66,7 +68,7 @@ export type TrainingLiveReadSourceFactory = (
 export type CompletedRunCommandClientFactory = () =>
   Promise<CompletedRunCommandClient>;
 
-export type CompletedRunCommandOperation = "complete" | "delete";
+export type CompletedRunCommandOperation = "complete" | "delete" | "update";
 
 export type CompletedRunCommandIdFactory = (
   operation: CompletedRunCommandOperation,
@@ -119,6 +121,12 @@ type PendingRunDeletion = {
   readonly submission: RunDeletionSubmission;
 };
 
+type PendingRunUpdate = {
+  readonly prior: CompletedRun;
+  readonly changes: UpdateCompletedRunInput;
+  readonly submission: RunUpdateSubmission;
+};
+
 function messageFor(error: unknown): string {
   return error instanceof Error
     ? error.message
@@ -140,8 +148,8 @@ function errorFor(state: TrainingSynchronizationState): string | null {
 }
 
 function plannedWorkoutReference(
-  planId: CreateCompletedRunInput["plannedWorkoutPlanId"],
-  workoutId: CreateCompletedRunInput["plannedWorkoutId"],
+  planId: CreateCompletedRunInput["plannedWorkoutPlanId"] | null,
+  workoutId: CreateCompletedRunInput["plannedWorkoutId"] | null,
   snapshot: SynchronizedTrainingSnapshot | null,
   operation: CompletedRunCommandOperation,
 ): PlannedWorkoutCommandReferenceV1 | null {
@@ -168,6 +176,61 @@ function plannedWorkoutReference(
     planId: workout.planId,
     workoutId: workout.id,
     expectedUpdatedAt: workout.updatedAt,
+  };
+}
+
+function updatedRun(
+  prior: CompletedRun,
+  changes: UpdateCompletedRunInput,
+  updatedAt: CompletedRun["updatedAt"],
+): CompletedRun {
+  const imported = prior.importProvider !== undefined;
+  const plannedWorkoutPlanId =
+    changes.plannedWorkoutPlanId === null
+      ? undefined
+      : changes.plannedWorkoutPlanId ?? prior.plannedWorkoutPlanId;
+  const plannedWorkoutId =
+    changes.plannedWorkoutId === null
+      ? undefined
+      : changes.plannedWorkoutId ?? prior.plannedWorkoutId;
+  const shoeId =
+    changes.shoeId === null ? undefined : changes.shoeId ?? prior.shoeId;
+  const perceivedEffort =
+    changes.perceivedEffort === null
+      ? undefined
+      : changes.perceivedEffort ?? prior.perceivedEffort;
+  const unusualPain =
+    changes.unusualPain === null
+      ? undefined
+      : changes.unusualPain ?? prior.unusualPain;
+  const notes =
+    changes.notes === null ? undefined : changes.notes ?? prior.notes;
+
+  if ((plannedWorkoutPlanId === undefined) !== (plannedWorkoutId === undefined)) {
+    throw new Error("Select a complete planned-workout association.");
+  }
+
+  return {
+    id: prior.id,
+    userId: prior.userId,
+    ...(plannedWorkoutPlanId === undefined ? {} : { plannedWorkoutPlanId }),
+    ...(plannedWorkoutId === undefined ? {} : { plannedWorkoutId }),
+    ...(shoeId === undefined ? {} : { shoeId }),
+    startedAt: imported ? prior.startedAt : changes.startedAt ?? prior.startedAt,
+    timeZone: imported ? prior.timeZone : changes.timeZone ?? prior.timeZone,
+    distance: imported ? prior.distance : changes.distance ?? prior.distance,
+    duration: imported ? prior.duration : changes.duration ?? prior.duration,
+    ...(perceivedEffort === undefined ? {} : { perceivedEffort }),
+    ...(unusualPain === undefined ? {} : { unusualPain }),
+    ...(notes === undefined ? {} : { notes }),
+    ...(prior.importProvider === undefined
+      ? {}
+      : { importProvider: prior.importProvider }),
+    ...(prior.reportedOrigin === undefined
+      ? {}
+      : { reportedOrigin: prior.reportedOrigin }),
+    createdAt: prior.createdAt,
+    updatedAt,
   };
 }
 
@@ -199,6 +262,13 @@ function deletionFailure(result: RunDeletionClientResult): Error {
   return new Error(result.message);
 }
 
+function updateFailure(result: RunUpdateClientResult): Error {
+  if (result.status === "run_updated") {
+    return new Error("The run update receipt was handled incorrectly.");
+  }
+  return new Error(result.message);
+}
+
 type AcknowledgedSource =
   | { readonly source: "profile"; readonly value: UserProfile | null }
   | { readonly source: "runs"; readonly value: readonly CompletedRun[] }
@@ -226,6 +296,7 @@ export default function TrainingDataProvider({
     useRef<CompletedRunCommandClient | null>(null);
   const pendingRunCompletionRef = useRef<PendingRunCompletion | null>(null);
   const pendingRunDeletionRef = useRef<PendingRunDeletion | null>(null);
+  const pendingRunUpdateRef = useRef<PendingRunUpdate | null>(null);
   const unsubscribeRef = useRef<(() => void) | null>(null);
   const sessionGenerationRef = useRef(0);
   const [synchronization, setSynchronization] = useState(() =>
@@ -244,6 +315,7 @@ export default function TrainingDataProvider({
     completedRunCommandClientRef.current = null;
     pendingRunCompletionRef.current = null;
     pendingRunDeletionRef.current = null;
+    pendingRunUpdateRef.current = null;
     setSynchronization(
       createTrainingSynchronizationKernel({
         ownerId: userId,
@@ -310,6 +382,7 @@ export default function TrainingDataProvider({
       completedRunCommandClientRef.current = null;
       pendingRunCompletionRef.current = null;
       pendingRunDeletionRef.current = null;
+      pendingRunUpdateRef.current = null;
     };
   }, [startSynchronization]);
 
@@ -500,9 +573,8 @@ export default function TrainingDataProvider({
     ],
   );
 
-  const updateRun = useCallback(
-    async (id: CompletedRunId, changes: UpdateCompletedRunInput) => {
-      const run = await requireRepositories().runs.update(id, changes);
+  const acknowledgeRunUpdate = useCallback(
+    (run: CompletedRun) => {
       acknowledgeServerWrites((kernel) => [
         {
           source: "runs",
@@ -513,7 +585,88 @@ export default function TrainingDataProvider({
       ]);
       return run;
     },
-    [acknowledgeServerWrites, requireRepositories],
+    [acknowledgeServerWrites],
+  );
+
+  const updateRun = useCallback(
+    async (id: CompletedRunId, changes: UpdateCompletedRunInput) => {
+      const commandClient = requireCompletedRunCommandClient();
+      const pending = pendingRunUpdateRef.current;
+
+      if (pending !== null) {
+        const resolved = await commandClient.resolveUpdate(
+          pending.submission.commandId,
+        );
+        if (resolved.status === "run_updated") {
+          pendingRunUpdateRef.current = null;
+          if (pending.submission.completedRunId === id) {
+            return acknowledgeRunUpdate(
+              updatedRun(
+                pending.prior,
+                pending.changes,
+                resolved.completedRunUpdatedAt,
+              ),
+            );
+          }
+        } else {
+          if (resolved.status !== "outcome_unknown") {
+            pendingRunUpdateRef.current = null;
+          }
+          throw updateFailure(resolved);
+        }
+      }
+
+      const currentSnapshot = synchronizedSnapshot;
+      const prior = currentSnapshot?.runs.find((candidate) => candidate.id === id);
+      if (currentSnapshot === null || prior === undefined) {
+        throw new Error("That run is no longer available.");
+      }
+
+      const projected = updatedRun(prior, changes, prior.updatedAt);
+      const submission: RunUpdateSubmission = {
+        commandId: createCompletedRunCommandId("update"),
+        completedRunId: prior.id,
+        expectedCompletedRunUpdatedAt: prior.updatedAt,
+        input: {
+          plannedWorkout: plannedWorkoutReference(
+            projected.plannedWorkoutPlanId,
+            projected.plannedWorkoutId,
+            currentSnapshot,
+            "update",
+          ),
+          shoeId: projected.shoeId,
+          startedAt: projected.startedAt,
+          timeZone: projected.timeZone,
+          distance: projected.distance,
+          duration: projected.duration,
+          perceivedEffort: projected.perceivedEffort,
+          unusualPain: projected.unusualPain,
+          notes: projected.notes,
+        },
+      };
+      pendingRunUpdateRef.current = { prior, changes, submission };
+
+      let result = await commandClient.submitUpdate(submission);
+      if (result.status === "outcome_unknown") {
+        result = await commandClient.resolveUpdate(submission.commandId);
+      }
+      if (result.status === "run_updated") {
+        pendingRunUpdateRef.current = null;
+        return acknowledgeRunUpdate(
+          updatedRun(prior, changes, result.completedRunUpdatedAt),
+        );
+      }
+      if (result.status !== "outcome_unknown") {
+        pendingRunUpdateRef.current = null;
+      }
+      throw updateFailure(result);
+    },
+    [
+      acknowledgeRunUpdate,
+      createCompletedRunCommandId,
+      requireCompletedRunCommandClient,
+      synchronizedSnapshot,
+    ],
   );
 
   const deleteRun = useCallback(

@@ -6,6 +6,8 @@ import ShoeTracker from "../../src/components/ShoeTracker";
 import {
   createCompletedRunId,
   createDistanceMeters,
+  createDurationSeconds,
+  createIanaTimeZone,
   createShoeId,
   createUserId,
   createUtcDateTime,
@@ -22,9 +24,25 @@ import type {
 
 const userId = createUserId("viewport-runner");
 const timestamp = createUtcDateTime("2026-10-21T16:00:00Z");
+const importedFixture = new URLSearchParams(window.location.search).has("imported");
+
+const importedRun: CompletedRun = {
+  id: createCompletedRunId("viewport-imported-run"),
+  userId,
+  startedAt: timestamp,
+  timeZone: createIanaTimeZone("America/Los_Angeles"),
+  distance: createDistanceMeters(8_047),
+  duration: createDurationSeconds(2_705),
+  importProvider: "apple_health",
+  reportedOrigin: "garmin",
+  createdAt: timestamp,
+  updatedAt: timestamp,
+};
 
 function TrackViewportFixture() {
-  const [runs, setRuns] = useState<CompletedRun[]>([]);
+  const [runs, setRuns] = useState<CompletedRun[]>(
+    importedFixture ? [importedRun] : [],
+  );
   const [shoes, setShoes] = useState<Shoe[]>([]);
 
   const createShoe = async (input: CreateShoeInput) => {

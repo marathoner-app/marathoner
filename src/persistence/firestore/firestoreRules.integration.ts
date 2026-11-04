@@ -624,6 +624,46 @@ describe("Firestore training-data ownership rules", () => {
     await assertSucceeds(deleteDoc(ownerReference));
   });
 
+  it("keeps imported-run provenance server-owned while allowing enrichment", async () => {
+    const path = `users/${firstUserId}/runs/imported-run-1`;
+    await testEnvironment.withSecurityRulesDisabled(async (context) => {
+      await setDoc(
+        doc(context.firestore(), path),
+        runDocument(firstUserId, {
+          importProvider: "apple_health",
+          reportedOrigin: "garmin",
+        }),
+      );
+    });
+    const database = testEnvironment
+      .authenticatedContext(firstUserId)
+      .firestore();
+    const reference = doc(database, path);
+
+    await assertSucceeds(
+      updateDoc(reference, {
+        perceivedEffort: "harder_than_expected",
+        notes: "Warm afternoon.",
+        updatedAt: new Date("2026-10-05T14:00:00.000Z"),
+      }),
+    );
+    await assertFails(
+      updateDoc(reference, {
+        importProvider: "garmin_connect",
+        updatedAt: new Date("2026-10-05T15:00:00.000Z"),
+      }),
+    );
+    await assertFails(
+      setDoc(
+        doc(database, `users/${firstUserId}/runs/imported-run-2`),
+        runDocument(firstUserId, {
+          importProvider: "apple_health",
+          reportedOrigin: "apple",
+        }),
+      ),
+    );
+  });
+
   it.each([
     ["an unknown field", { unexpectedField: true }],
     ["a blank time zone", { timeZone: "" }],

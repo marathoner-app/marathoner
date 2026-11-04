@@ -235,6 +235,8 @@ function importedRun(
     timeZone: event.timeZone,
     distance: event.distanceMeters,
     duration: createDurationSeconds(resolveActivityDurationSeconds(event)),
+    importProvider: event.provider,
+    reportedOrigin: event.reportedOrigin,
     createdAt: createUtcDateTime(committedAt),
     updatedAt: createUtcDateTime(committedAt),
   }
@@ -255,6 +257,8 @@ function updatedImportedRun(
     timeZone: event.timeZone,
     distance: event.distanceMeters,
     duration: createDurationSeconds(resolveActivityDurationSeconds(event)),
+    importProvider: event.provider,
+    reportedOrigin: event.reportedOrigin,
     updatedAt: createUtcDateTime(updatedAt),
   }
   if (validateCompletedRun(run).length > 0) {
@@ -472,6 +476,23 @@ export class FirestoreActivityImportStore implements ActivityImportStore {
       }
 
       if (resolution.kind === 'duplicate') {
+        const runNeedsProvenanceBackfill =
+          existingRun !== null &&
+          event.operation === 'upsert' &&
+          (existingRun.importProvider !== event.provider ||
+            existingRun.reportedOrigin !== event.reportedOrigin)
+        const backfilledRun =
+          runNeedsProvenanceBackfill &&
+          existingRun !== null &&
+          event.operation === 'upsert'
+            ? updatedImportedRun(existingRun, event, processedAt)
+            : existingRun
+        if (runNeedsProvenanceBackfill && backfilledRun !== null) {
+          transaction.set(
+            this.database.doc(runDocumentPath(ownerId, backfilledRun.id)),
+            completedRunAdminDocument(backfilledRun),
+          )
+        }
         const result =
           existing?.state === 'review_required'
             ? reviewResult({
@@ -485,8 +506,13 @@ export class FirestoreActivityImportStore implements ActivityImportStore {
             : appliedResult({
                 commandId: options.envelope.commandId,
                 canonicalCommandId,
-                completedRun: existingRun,
-                operation: existing?.state === 'deleted' ? 'deleted' : 'unchanged',
+                completedRun: backfilledRun,
+                operation:
+                  existing?.state === 'deleted'
+                    ? 'deleted'
+                    : runNeedsProvenanceBackfill
+                      ? 'updated'
+                      : 'unchanged',
                 processedAt,
               })
         if (

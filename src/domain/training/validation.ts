@@ -249,6 +249,15 @@ export function validateCompletedRun(run: CompletedRun): ValidationIssue[] {
     });
   }
 
+  const hasImportProvider = run.importProvider !== undefined;
+  const hasReportedOrigin = run.reportedOrigin !== undefined;
+  if (hasImportProvider !== hasReportedOrigin) {
+    issues.push({
+      field: "importProvider",
+      message: "Imported-run provenance needs both provider and reported origin.",
+    });
+  }
+
   return issues;
 }
 

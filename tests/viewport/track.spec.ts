@@ -286,3 +286,53 @@ test("keeps the complete Track workflow usable with 200% text", async ({
 
   await exerciseTrackWorkflow(page, "200% text");
 });
+
+test("keeps imported-run details usable at phone width", async ({ page }) => {
+  await page.goto("tests/viewport/track.html?imported=1");
+
+  await expect(page.getByText("Imported from Garmin via Apple Health")).toBeVisible();
+  const openDetails = page.getByRole("button", {
+    name: /Add details to run from/,
+  });
+  await expectMinimumTouchTarget(openDetails, "open imported-run details");
+  await openDetails.click();
+
+  const form = page.getByRole("form", { name: /Add details to run from/ });
+  await expect(form).toBeVisible();
+  await expect(form.getByText("Date")).toBeVisible();
+  await expect(form.getByText("Distance")).toBeVisible();
+  await expect(form.getByText("Elapsed time")).toBeVisible();
+  await expect(form.getByText(/Correct them there/)).toBeVisible();
+  await expect(form.getByLabel("Edit run date")).toHaveCount(0);
+  await expect(form.getByRole("spinbutton", { name: /Edit distance/ })).toHaveCount(0);
+  await expectMinimumTouchTargets([
+    {
+      locator: form.getByRole("combobox", { name: "Planned workout" }),
+      label: "imported-run planned workout",
+    },
+    {
+      locator: form.getByRole("combobox", { name: "Running shoes (optional)" }),
+      label: "imported-run shoes",
+    },
+    {
+      locator: form.getByRole("combobox", {
+        name: "Edit perceived effort (optional)",
+      }),
+      label: "imported-run effort",
+    },
+    {
+      locator: form.getByRole("textbox", { name: "Edit run notes (optional)" }),
+      label: "imported-run notes",
+    },
+    {
+      locator: form.getByRole("button", { name: "Save" }),
+      label: "save imported-run details",
+    },
+    {
+      locator: form.getByRole("button", { name: "Cancel" }),
+      label: "cancel imported-run details",
+    },
+  ]);
+  await expectNoHorizontalOverflow(page, "Track", "while enriching an imported run");
+  await expectTrackerCardsToContainControls(page, "imported-run details");
+});

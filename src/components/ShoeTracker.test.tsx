@@ -5,15 +5,19 @@ import { describe, expect, it, vi } from "vitest";
 import {
   createCompletedRunId,
   COMPLETED_RUN_NOTES_MAX_LENGTH,
+  createDateOnly,
   createDistanceMeters,
   createDurationSeconds,
   createIanaTimeZone,
+  createPlannedWorkoutId,
   createShoeId,
+  createTrainingPlanId,
   createUserId,
   createUtcDateTime,
   type CompletedRun,
   type DateOnly,
   type DistanceUnit,
+  type PlannedWorkout,
   type Shoe,
   type ShoeId,
 } from "../domain/training";
@@ -40,6 +44,7 @@ function deferredRequest() {
 function Harness({
   initialShoes = [],
   initialRuns = [],
+  initialPlannedWorkouts = [],
   distanceUnit = "mile",
   onCreateShoeCall = () => undefined,
   onCreateRunCall = () => undefined,
@@ -50,6 +55,7 @@ function Harness({
 }: {
   initialShoes?: Shoe[];
   initialRuns?: CompletedRun[];
+  initialPlannedWorkouts?: PlannedWorkout[];
   distanceUnit?: DistanceUnit;
   onCreateShoeCall?: (input: CreateShoeInput) => void | Promise<void>;
   onCreateRunCall?: (input: CreateCompletedRunInput) => void | Promise<void>;
@@ -107,6 +113,14 @@ function Harness({
       duration: changes.duration ?? existing.duration,
       shoeId:
         changes.shoeId === null ? undefined : changes.shoeId ?? existing.shoeId,
+      plannedWorkoutPlanId:
+        changes.plannedWorkoutPlanId === null
+          ? undefined
+          : changes.plannedWorkoutPlanId ?? existing.plannedWorkoutPlanId,
+      plannedWorkoutId:
+        changes.plannedWorkoutId === null
+          ? undefined
+          : changes.plannedWorkoutId ?? existing.plannedWorkoutId,
       perceivedEffort:
         changes.perceivedEffort === null
           ? undefined
@@ -146,7 +160,7 @@ function Harness({
       distanceUnit={distanceUnit}
       runs={runs}
       shoes={shoes}
-      plannedWorkouts={[]}
+      plannedWorkouts={initialPlannedWorkouts}
       onCreateShoe={createShoe}
       onRetireShoe={retireShoe}
       onCreateRun={createRun}
@@ -660,6 +674,162 @@ describe("ShoeTracker", () => {
     expect(
       await screen.findByText("Warm afternoon; carried water."),
     ).toBeInTheDocument();
+  });
+
+  it("enriches an imported run without asking the runner to re-enter source facts", async () => {
+    const shoe: Shoe = {
+      id: createShoeId("shoe-1"),
+      userId,
+      name: "Daily Trainer",
+      startingDistance: createDistanceMeters(0),
+      status: "active",
+      createdAt: timestamp,
+      updatedAt: timestamp,
+    };
+    const workout: PlannedWorkout = {
+      id: createPlannedWorkoutId("workout-1"),
+      userId,
+      planId: createTrainingPlanId("plan-1"),
+      scheduledDate: createDateOnly("2026-08-05"),
+      phase: "marathon_training",
+      status: "planned",
+      kind: "run",
+      purpose: "easy",
+      targetDistance: createDistanceMeters(5_000),
+      createdAt: timestamp,
+      updatedAt: timestamp,
+    };
+    const run: CompletedRun = {
+      id: createCompletedRunId("run-1"),
+      userId,
+      startedAt: timestamp,
+      timeZone: createIanaTimeZone("America/Los_Angeles"),
+      distance: createDistanceMeters(5_000),
+      duration: createDurationSeconds(1_800),
+      importProvider: "apple_health",
+      reportedOrigin: "garmin",
+      createdAt: timestamp,
+      updatedAt: timestamp,
+    };
+    const onUpdateRunCall = vi.fn();
+    const user = userEvent.setup();
+    render(
+      <Harness
+        initialShoes={[shoe]}
+        initialRuns={[run]}
+        initialPlannedWorkouts={[workout]}
+        onUpdateRunCall={onUpdateRunCall}
+      />,
+    );
+
+    expect(screen.getByText("Imported from Garmin via Apple Health")).toBeVisible();
+    expect(screen.queryByText(/provider/i)).not.toBeInTheDocument();
+    await user.click(
+      screen.getByRole("button", {
+        name: "Add details to run from 2026-08-05",
+      }),
+    );
+
+    const form = screen.getByRole("form", {
+      name: "Add details to run from 2026-08-05",
+    });
+    expect(within(form).getByText("Date")).toBeVisible();
+    expect(within(form).getByText("Distance")).toBeVisible();
+    expect(within(form).getByText("Elapsed time")).toBeVisible();
+    expect(
+      within(form).queryByRole("spinbutton", { name: /Edit distance/ }),
+    ).not.toBeInTheDocument();
+    expect(within(form).queryByLabelText("Edit run date")).not.toBeInTheDocument();
+    expect(within(form).getByText(/Correct them there/)).toBeVisible();
+
+    await user.click(within(form).getByRole("button", { name: "Cancel" }));
+    expect(onUpdateRunCall).not.toHaveBeenCalled();
+    await user.click(
+      screen.getByRole("button", {
+        name: "Add details to run from 2026-08-05",
+      }),
+    );
+    const reopenedForm = screen.getByRole("form", {
+      name: "Add details to run from 2026-08-05",
+    });
+
+    await user.selectOptions(
+      within(reopenedForm).getByRole("combobox", { name: "Planned workout" }),
+      "plan-1/workout-1",
+    );
+    await user.selectOptions(
+      within(reopenedForm).getByRole("combobox", {
+        name: "Running shoes (optional)",
+      }),
+      "shoe-1",
+    );
+    await user.selectOptions(
+      within(reopenedForm).getByRole("combobox", {
+        name: "Edit perceived effort (optional)",
+      }),
+      "about_right",
+    );
+    await user.type(
+      within(reopenedForm).getByRole("textbox", {
+        name: "Edit run notes (optional)",
+      }),
+      "Felt relaxed after the first mile.",
+    );
+    await user.click(within(reopenedForm).getByRole("button", { name: "Save" }));
+
+    expect(onUpdateRunCall).toHaveBeenCalledWith(run.id, {
+      plannedWorkoutPlanId: workout.planId,
+      plannedWorkoutId: workout.id,
+      shoeId: shoe.id,
+      perceivedEffort: "about_right",
+      notes: "Felt relaxed after the first mile.",
+    });
+    expect(screen.getByText(/Effort: About as expected/)).toBeVisible();
+    expect(screen.getByText("Felt relaxed after the first mile.")).toBeVisible();
+    expect(screen.getByText(/wearing Daily Trainer/)).toBeVisible();
+  });
+
+  it("keeps imported-run enrichment open when saving fails", async () => {
+    const run: CompletedRun = {
+      id: createCompletedRunId("run-1"),
+      userId,
+      startedAt: timestamp,
+      timeZone: createIanaTimeZone("America/Los_Angeles"),
+      distance: createDistanceMeters(5_000),
+      duration: createDurationSeconds(1_800),
+      importProvider: "garmin_connect",
+      reportedOrigin: "garmin",
+      createdAt: timestamp,
+      updatedAt: timestamp,
+    };
+    const user = userEvent.setup();
+    render(
+      <Harness
+        initialRuns={[run]}
+        onUpdateRunCall={() =>
+          Promise.reject(new Error("Run details could not be saved. Try again."))
+        }
+      />,
+    );
+
+    await user.click(
+      screen.getByRole("button", {
+        name: "Add details to run from 2026-08-05",
+      }),
+    );
+    await user.type(
+      screen.getByRole("textbox", { name: "Edit run notes (optional)" }),
+      "Keep this draft.",
+    );
+    await user.click(screen.getByRole("button", { name: "Save" }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Run details could not be saved. Try again.",
+    );
+    expect(
+      screen.getByRole("textbox", { name: "Edit run notes (optional)" }),
+    ).toHaveValue("Keep this draft.");
+    expect(screen.getByRole("button", { name: "Save" })).toBeEnabled();
   });
 
   it("accepts notes at the maximum length", async () => {
