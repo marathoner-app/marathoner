@@ -88,6 +88,17 @@ vi.mock('./services/accountDeletionService', () => ({
   submitAccountDeletionRequest: vi.fn()
 }))
 
+vi.mock('./services/firebaseGarminConnectionClient', () => ({
+  firebaseGarminConnectionClient: {
+    start: vi.fn(),
+    getStatus: vi.fn(async () => ({
+      status: 'unavailable',
+      code: 'garmin-oauth-disabled',
+    })),
+    disconnect: vi.fn(),
+  },
+}))
+
 vi.mock('./training/TrainingDataProvider', () => ({
   default: function MockTrainingDataProvider({
     children

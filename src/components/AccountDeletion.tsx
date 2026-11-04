@@ -16,6 +16,8 @@ import {
 } from '../services/accountDeletionService'
 import SupportDiagnostics from './SupportDiagnostics'
 import AppleHealthConnection from './AppleHealthConnection'
+import GarminConnection from './GarminConnection'
+import type { GarminConnectionClient } from '../services/garminConnectionClient'
 
 type RequestPhase = 'idle' | 'reauthenticating' | 'submitting' | 'resolving'
 
@@ -32,6 +34,7 @@ export interface AccountDeletionDialogProps {
   onAccepted: (receipt: AccountDeletionRequestAcceptedResult) => void
   onClose: () => void
   onUnresolvedCommandChange: (commandId: string | null) => void
+  garminClient?: GarminConnectionClient
 }
 
 export interface AccountDeletionReceiptProps {
@@ -145,6 +148,7 @@ export function AccountDeletionDialog({
   onAccepted,
   onClose,
   onUnresolvedCommandChange,
+  garminClient,
 }: AccountDeletionDialogProps) {
   const headingRef = useRef<HTMLHeadingElement>(null)
   const failureRef = useRef<HTMLParagraphElement>(null)
@@ -290,6 +294,8 @@ export function AccountDeletionDialog({
         <SupportDiagnostics />
 
         <AppleHealthConnection accountScope={accountScope} />
+
+        <GarminConnection accountScope={accountScope} client={garminClient} />
 
         <section
           className="account-deletion-section"

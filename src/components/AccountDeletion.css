@@ -113,6 +113,62 @@
   background: #f8fafc;
 }
 
+.garmin-connection-section {
+  margin-top: 1rem;
+  padding: 1.25rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 0.75rem;
+  background: #f8fafc;
+}
+
+.garmin-connection-section p {
+  margin: 0.75rem 0 0;
+}
+
+.garmin-connection-section button {
+  min-height: 2.75rem;
+  padding: 0.6rem 0.85rem;
+}
+
+.garmin-primary {
+  margin-top: 1rem;
+}
+
+.garmin-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.garmin-disconnect {
+  border: 1px solid #64748b;
+  background: #fff;
+  color: #334155;
+}
+
+.garmin-recovery {
+  margin-top: 1rem;
+  padding: 0.9rem;
+  border-radius: 0.6rem;
+  background: #fff;
+}
+
+.garmin-recovery summary {
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.garmin-recovery button,
+.garmin-check-after-authorization {
+  margin-top: 0.9rem;
+}
+
+.garmin-error {
+  color: #991b1b;
+  font-weight: 650;
+}
+
 .apple-health-section p {
   margin: 0.75rem 0 0;
 }
@@ -283,6 +339,28 @@
 }
 
 @media (max-width: 768px) {
+  .account-settings-backdrop {
+    padding: 0.5rem;
+  }
+
+  .account-settings-dialog {
+    width: calc(100vw - 1rem);
+    max-width: calc(100vw - 1rem);
+    padding: 1rem;
+  }
+
+  .account-settings-header > div {
+    min-width: 0;
+  }
+
+  .account-settings-dialog a,
+  .account-settings-dialog button,
+  .account-settings-dialog label {
+    max-width: 100%;
+    overflow-wrap: anywhere;
+    white-space: normal;
+  }
+
   .session-controls {
     position: static;
     box-sizing: border-box;

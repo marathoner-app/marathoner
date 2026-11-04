@@ -22,6 +22,17 @@ vi.mock('../services/accountDeletionService', () => ({
   submitAccountDeletionRequest: vi.fn(),
 }))
 
+vi.mock('../services/firebaseGarminConnectionClient', () => ({
+  firebaseGarminConnectionClient: {
+    start: vi.fn(),
+    getStatus: vi.fn(async () => ({
+      status: 'unavailable',
+      code: 'garmin-oauth-disabled',
+    })),
+    disconnect: vi.fn(),
+  },
+}))
+
 const mockedReauthenticate = vi.mocked(reauthenticateForAccountDeletion)
 const mockedResolve = vi.mocked(resolveAccountDeletionRequest)
 const mockedSubmit = vi.mocked(submitAccountDeletionRequest)
