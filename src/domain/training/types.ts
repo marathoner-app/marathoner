@@ -7,6 +7,10 @@ import type {
   UserId,
 } from "./identifiers.js";
 import type { DistanceMeters, DistanceUnit, DurationSeconds } from "./units.js";
+import type {
+  ActivityImportProvider,
+  ReportedActivityOrigin,
+} from "../activityImport/contract.js";
 
 export interface EntityTimestamps {
   readonly createdAt: UtcDateTime;
@@ -152,6 +156,9 @@ export interface CompletedRun extends EntityTimestamps {
   readonly perceivedEffort?: PerceivedEffort;
   readonly unusualPain?: boolean;
   readonly notes?: string;
+  /** Sanitized, server-owned provenance for a provider-imported run. */
+  readonly importProvider?: ActivityImportProvider;
+  readonly reportedOrigin?: ReportedActivityOrigin;
 }
 
 export type ShoeStatus = "active" | "retired";

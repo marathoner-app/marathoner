@@ -475,6 +475,57 @@ describe('completed-run command projection', () => {
 })
 
 describe('completed-run update projection', () => {
+  it('preserves server-owned import provenance while adding runner context', () => {
+    const importedRun: CompletedRun = {
+      ...completedRun(),
+      importProvider: 'apple_health',
+      reportedOrigin: 'garmin',
+    }
+    const decision = projectRunUpdate(
+      updateOptions({ loadedRun: importedRun }),
+    )
+
+    expect(decision.ok).toBe(true)
+    if (!decision.ok) throw new Error('Expected an imported-run update.')
+    expect(decision.projection.updatedRun.entity).toEqual(
+      expect.objectContaining({
+        importProvider: 'apple_health',
+        reportedOrigin: 'garmin',
+        notes: 'Edited progression run.',
+      }),
+    )
+  })
+
+  it('ignores client attempts to alter provider-owned imported facts', () => {
+    const importedRun: CompletedRun = {
+      ...completedRun(),
+      importProvider: 'garmin_connect',
+      reportedOrigin: 'garmin',
+    }
+    const options = updateOptions({ loadedRun: importedRun })
+    const envelope = createRunUpdateCommand('update-imported-facts-0001', {
+      completedRunId: runId,
+      expectedCompletedRunUpdatedAt: committedAt,
+      input: {
+        ...options.envelope.command.input,
+        startedAt: createUtcDateTime('2026-10-08T13:30:00Z'),
+        distance: createDistanceMeters(42_195),
+        duration: createDurationSeconds(10_000),
+      },
+    })
+    const decision = projectRunUpdate({ ...options, envelope })
+
+    expect(decision.ok).toBe(true)
+    if (!decision.ok) throw new Error('Expected an imported-run update.')
+    expect(decision.projection.updatedRun.entity).toEqual(
+      expect.objectContaining({
+        startedAt: importedRun.startedAt,
+        distance: importedRun.distance,
+        duration: importedRun.duration,
+      }),
+    )
+  })
+
   it('updates the run while preserving a retained workout association and guard', () => {
     const options = updateOptions()
     const priorRun = JSON.parse(JSON.stringify(options.loadedRun))

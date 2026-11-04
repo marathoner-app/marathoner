@@ -757,6 +757,7 @@ function projectUpdatedRun(
   updatedAt: UtcDateTime,
 ): CompletedRun {
   const input = envelope.command.input
+  const imported = prior.importProvider !== undefined
   const run: CompletedRun = {
     id: prior.id,
     userId: ownerId,
@@ -767,10 +768,10 @@ function projectUpdatedRun(
           plannedWorkoutId: input.plannedWorkout.workoutId,
         }),
     ...(input.shoeId === undefined ? {} : { shoeId: input.shoeId }),
-    startedAt: input.startedAt,
-    timeZone: input.timeZone,
-    distance: input.distance,
-    duration: input.duration,
+    startedAt: imported ? prior.startedAt : input.startedAt,
+    timeZone: imported ? prior.timeZone : input.timeZone,
+    distance: imported ? prior.distance : input.distance,
+    duration: imported ? prior.duration : input.duration,
     ...(input.perceivedEffort === undefined
       ? {}
       : { perceivedEffort: input.perceivedEffort }),
@@ -778,6 +779,12 @@ function projectUpdatedRun(
       ? {}
       : { unusualPain: input.unusualPain }),
     ...(input.notes === undefined ? {} : { notes: input.notes }),
+    ...(prior.importProvider === undefined
+      ? {}
+      : { importProvider: prior.importProvider }),
+    ...(prior.reportedOrigin === undefined
+      ? {}
+      : { reportedOrigin: prior.reportedOrigin }),
     createdAt: prior.createdAt,
     updatedAt,
   }

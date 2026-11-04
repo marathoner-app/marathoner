@@ -93,6 +93,50 @@
   margin: 0;
 }
 
+.imported-run-source {
+  margin: 0;
+  color: #315e52;
+  font-weight: 750;
+}
+
+.imported-run-facts {
+  display: grid;
+  gap: 0.65rem;
+  padding: 0.9rem;
+  border: 1px solid #b8cbc4;
+  border-radius: 0.65rem;
+  background: #f3f8f6;
+}
+
+.imported-run-facts dl {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin: 0;
+}
+
+.imported-run-facts dl div {
+  min-width: 0;
+}
+
+.imported-run-facts dt {
+  color: #52615d;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.imported-run-facts dd {
+  margin: 0.15rem 0 0;
+  overflow-wrap: anywhere;
+  font-weight: 750;
+}
+
+@media (max-width: 520px) {
+  .imported-run-facts dl {
+    grid-template-columns: 1fr;
+  }
+}
+
 .tracker li {
   list-style-type: none;
 }

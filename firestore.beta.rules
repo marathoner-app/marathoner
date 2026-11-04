@@ -381,6 +381,15 @@ service cloud.firestore {
           || isNonblankBoundedString(data.notes, 500));
     }
 
+    function hasValidRunImportProvenance(data) {
+      let hasProvider = data.keys().hasAny(['importProvider']);
+      let hasOrigin = data.keys().hasAny(['reportedOrigin']);
+      return hasProvider == hasOrigin
+        && (!hasProvider
+          || (data.importProvider in ['apple_health', 'garmin_connect']
+            && data.reportedOrigin in ['apple', 'garmin', 'other', 'unknown']));
+    }
+
     function isValidRunWrite(userId) {
       let data = request.resource.data;
       return isValidOwnedWrite(userId)
@@ -407,6 +416,8 @@ service cloud.firestore {
           'perceivedEffort',
           'unusualPain',
           'notes',
+          'importProvider',
+          'reportedOrigin',
           'createdAt',
           'updatedAt'
         ])
@@ -420,12 +431,17 @@ service cloud.firestore {
         && data.updatedAt is timestamp
         && data.updatedAt >= data.createdAt
         && hasValidRunAssociations(data)
-        && hasValidOptionalRunFeedback(data);
+        && hasValidOptionalRunFeedback(data)
+        && hasValidRunImportProvenance(data);
     }
 
     function isValidRunCreate(userId) {
       return isValidRunWrite(userId)
-        && request.resource.data.createdAt == request.resource.data.updatedAt;
+        && request.resource.data.createdAt == request.resource.data.updatedAt
+        && !request.resource.data.keys().hasAny([
+          'importProvider',
+          'reportedOrigin'
+        ]);
     }
 
     function isValidRunUpdate(userId) {
@@ -434,6 +450,11 @@ service cloud.firestore {
       return isValidRunWrite(userId)
         && next.schemaVersion == prior.schemaVersion
         && next.userId == prior.userId
+        && next.keys().hasAny(['importProvider'])
+          == prior.keys().hasAny(['importProvider'])
+        && (!prior.keys().hasAny(['importProvider'])
+          || (next.importProvider == prior.importProvider
+            && next.reportedOrigin == prior.reportedOrigin))
         && next.createdAt == prior.createdAt
         && next.updatedAt >= prior.updatedAt;
     }

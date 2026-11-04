@@ -85,6 +85,71 @@ describe('AppleHealthConnection', () => {
     expect(mockedDisconnect).toHaveBeenCalledWith('owner-a')
   })
 
+  it('explains when a possible duplicate was safely held back', async () => {
+    const user = userEvent.setup()
+    mockedGetState.mockResolvedValue({
+      availability: 'enabled',
+      monitoring: true,
+      authorizationRequestStatus: 'unnecessary',
+    })
+    mockedSynchronize.mockResolvedValue({
+      ...emptySummary,
+      reviewRequired: 1,
+    })
+    render(<AppleHealthConnection accountScope="owner-a" />)
+
+    await user.click(
+      await screen.findByRole('button', { name: 'Check for runs now' }),
+    )
+
+    expect(
+      await screen.findByText(
+        '0 workout changes were saved. Marathoner held back 1 possible duplicate, so no second run was added.',
+      ),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole('button', { name: 'Keep existing run' }),
+    ).toBeEnabled()
+    await user.click(
+      screen.getByRole('button', { name: 'They were separate runs' }),
+    )
+    expect(
+      await screen.findByText(
+        'Open Track and log the other run manually. Marathoner did not add a duplicate.',
+      ),
+    ).toBeInTheDocument()
+    expect(
+      screen.queryByRole('button', { name: 'Keep existing run' }),
+    ).not.toBeInTheDocument()
+  })
+
+  it('can keep the existing run after a possible duplicate is held back', async () => {
+    const user = userEvent.setup()
+    mockedGetState.mockResolvedValue({
+      availability: 'enabled',
+      monitoring: true,
+      authorizationRequestStatus: 'unnecessary',
+    })
+    mockedSynchronize.mockResolvedValue({
+      ...emptySummary,
+      reviewRequired: 1,
+    })
+    render(<AppleHealthConnection accountScope="owner-a" />)
+
+    await user.click(
+      await screen.findByRole('button', { name: 'Check for runs now' }),
+    )
+    await user.click(
+      await screen.findByRole('button', { name: 'Keep existing run' }),
+    )
+
+    expect(
+      await screen.findByText(
+        'Kept the existing run. Marathoner did not add a duplicate.',
+      ),
+    ).toBeInTheDocument()
+  })
+
   it('keeps the web product usable without invoking a native permission flow', async () => {
     mockedGetState.mockResolvedValue({
       availability: 'web',

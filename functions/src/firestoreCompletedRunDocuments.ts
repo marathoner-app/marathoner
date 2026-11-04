@@ -2,6 +2,12 @@ import { Timestamp, type DocumentData } from 'firebase-admin/firestore'
 
 import { RUN_PERCEIVED_EFFORTS } from '../../src/domain/materialCommands/contract.js'
 import {
+  ACTIVITY_IMPORT_PROVIDERS,
+  REPORTED_ACTIVITY_ORIGINS,
+  type ActivityImportProvider,
+  type ReportedActivityOrigin,
+} from '../../src/domain/activityImport/contract.js'
+import {
   createDateOnly,
   createIanaTimeZone,
   createUtcDateTime,
@@ -255,6 +261,8 @@ export function completedRunFromAdminDocument(
   const perceivedEffort = readOptionalString(data, 'perceivedEffort')
   const unusualPain = readOptionalBoolean(data, 'unusualPain')
   const notes = readOptionalString(data, 'notes')
+  const importProvider = readOptionalString(data, 'importProvider')
+  const reportedOrigin = readOptionalString(data, 'reportedOrigin')
   return {
     id: createCompletedRunId(id),
     userId: createUserId(readString(data, 'userId')),
@@ -282,6 +290,24 @@ export function completedRunFromAdminDocument(
         }),
     ...(unusualPain === undefined ? {} : { unusualPain }),
     ...(notes === undefined ? {} : { notes }),
+    ...(importProvider === undefined
+      ? {}
+      : {
+          importProvider: readEnum(
+            data,
+            'importProvider',
+            ACTIVITY_IMPORT_PROVIDERS,
+          ) as ActivityImportProvider,
+        }),
+    ...(reportedOrigin === undefined
+      ? {}
+      : {
+          reportedOrigin: readEnum(
+            data,
+            'reportedOrigin',
+            REPORTED_ACTIVITY_ORIGINS,
+          ) as ReportedActivityOrigin,
+        }),
     createdAt: readTimestamp(data, 'createdAt'),
     updatedAt: readTimestamp(data, 'updatedAt'),
   }
@@ -333,6 +359,12 @@ export function completedRunAdminDocument(run: CompletedRun): DocumentData {
       ? {}
       : { unusualPain: run.unusualPain }),
     ...(run.notes === undefined ? {} : { notes: run.notes }),
+    ...(run.importProvider === undefined
+      ? {}
+      : { importProvider: run.importProvider }),
+    ...(run.reportedOrigin === undefined
+      ? {}
+      : { reportedOrigin: run.reportedOrigin }),
     createdAt: adminTimestamp(run.createdAt),
     updatedAt: adminTimestamp(run.updatedAt),
   }

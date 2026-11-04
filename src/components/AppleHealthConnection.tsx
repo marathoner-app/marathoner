@@ -21,7 +21,7 @@ function summaryMessage(summary: HealthKitImportSummary): string {
     return `${changed} workout ${changed === 1 ? 'change was' : 'changes were'} saved. ${summary.failed} could not be saved and can be tried again.`
   }
   if (summary.reviewRequired > 0) {
-    return `${changed} workout ${changed === 1 ? 'change was' : 'changes were'} saved. ${summary.reviewRequired} possible duplicate ${summary.reviewRequired === 1 ? 'needs' : 'need'} review.`
+    return `${changed} workout ${changed === 1 ? 'change was' : 'changes were'} saved. Marathoner held back ${summary.reviewRequired} possible ${summary.reviewRequired === 1 ? 'duplicate' : 'duplicates'}, so no second run was added.`
   }
   if (changed > 0) {
     return `${changed} Apple Health workout ${changed === 1 ? 'change is' : 'changes are'} now in Marathoner.`
@@ -45,6 +45,7 @@ export default function AppleHealthConnection({
   const [loading, setLoading] = useState(true)
   const [pending, setPending] = useState<PendingOperation>(null)
   const [message, setMessage] = useState<string | null>(null)
+  const [reviewRequiredCount, setReviewRequiredCount] = useState(0)
   const [error, setError] = useState<string | null>(null)
 
   const refresh = async () => {
@@ -74,10 +75,14 @@ export default function AppleHealthConnection({
   ) => {
     setPending(operation)
     setMessage(null)
+    setReviewRequiredCount(0)
     setError(null)
     try {
       const summary = await action()
-      if (summary) setMessage(summaryMessage(summary))
+      if (summary) {
+        setMessage(summaryMessage(summary))
+        setReviewRequiredCount(summary.reviewRequired)
+      }
       await refresh()
     } catch (caught) {
       setError(
@@ -158,6 +163,32 @@ export default function AppleHealthConnection({
         </>
       )}
       {message && <p role="status">{message}</p>}
+      {reviewRequiredCount > 0 && (
+        <div className="apple-health-actions" aria-label="Possible duplicate decision">
+          <button
+            type="button"
+            onClick={() => {
+              setReviewRequiredCount(0)
+              setMessage(
+                'Kept the existing run. Marathoner did not add a duplicate.',
+              )
+            }}
+          >
+            Keep existing run
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setReviewRequiredCount(0)
+              setMessage(
+                'Open Track and log the other run manually. Marathoner did not add a duplicate.',
+              )
+            }}
+          >
+            They were separate runs
+          </button>
+        </div>
+      )}
       {error && (
         <p className="apple-health-error" role="alert">
           {error}

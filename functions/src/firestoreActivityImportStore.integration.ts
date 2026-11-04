@@ -168,6 +168,57 @@ describe('Firestore activity-import persistence', () => {
       userId: ownerId,
       distanceMeters: 10_000,
       durationSeconds: 3_600,
+      importProvider: 'garmin_connect',
+      reportedOrigin: 'garmin',
+    })
+  })
+
+  it('backfills sanitized provenance when a legacy imported run is replayed', async () => {
+    const persistence = store()
+    const firstCommand = createActivityImportCommand(
+      'import-backfill-command-0001',
+      garminEvent(),
+    )
+    await persistence.commit({ envelope: firstCommand, ownerId })
+    await database.doc(`users/${ownerId}/runs/imported-run-1`).update({
+      importProvider: null,
+      reportedOrigin: null,
+    })
+    const runReference = database.doc(
+      `users/${ownerId}/runs/imported-run-1`,
+    )
+    const legacyRun = (await runReference.get()).data()
+    if (legacyRun === undefined) throw new Error('Expected an imported run.')
+    delete legacyRun.importProvider
+    delete legacyRun.reportedOrigin
+    await runReference.set(legacyRun)
+
+    const replay = await persistence.commit({
+      envelope: createActivityImportCommand(
+        'import-backfill-command-0002',
+        garminEvent({
+          observedAt: createUtcDateTime('2026-11-04T17:20:00.000Z'),
+        }),
+      ),
+      ownerId,
+    })
+
+    expect(replay).toEqual({
+      kind: 'applied',
+      result: expect.objectContaining({
+        status: 'activity_imported',
+        operation: 'updated',
+        completedRunId: 'imported-run-1',
+      }),
+    })
+    await expect(runReference.get()).resolves.toEqual(
+      expect.objectContaining({
+        exists: true,
+      }),
+    )
+    expect((await runReference.get()).data()).toMatchObject({
+      importProvider: 'garmin_connect',
+      reportedOrigin: 'garmin',
     })
   })
 

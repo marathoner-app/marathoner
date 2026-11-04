@@ -155,11 +155,13 @@ beforeEach(() => {
       unknownCompletion(commandId),
     ),
     submitDeletion: vi.fn(async ({ commandId }) => unknownDeletion(commandId)),
-    submitUpdate: vi.fn(async ({ commandId }) => ({
-      status: "outcome_unknown" as const,
+    submitUpdate: vi.fn(async ({ commandId, completedRunId }) => ({
+      status: "run_updated" as const,
       commandId,
-      code: "resolve-by-command-id" as const,
-      message: "The update outcome is still unknown.",
+      completedRunId,
+      completedRunUpdatedAt: createUtcDateTime("2026-08-03T12:01:00Z"),
+      reopenedPlannedWorkout: null,
+      completedPlannedWorkout: null,
     })),
     resolveCompletion: vi.fn(async (commandId) =>
       unknownCompletion(commandId),
@@ -493,7 +495,7 @@ describe("TrainingDataProvider", () => {
     expect(screen.getByText("Status: current")).toBeInTheDocument();
   });
 
-  it("recovers from pending listener metadata when the write promise is acknowledged", async () => {
+  it("keeps a command-acknowledged edit current when pending listener metadata arrives", async () => {
     const shoe = await repositories.shoes.create({ name: "Daily Trainer" });
     const run = await repositories.runs.create({
       shoeId: shoe.id,
@@ -502,11 +504,6 @@ describe("TrainingDataProvider", () => {
       distance: milesToMeters(3),
       duration: createDurationSeconds(1_800),
     });
-    let resolveUpdate: (run: CompletedRun) => void = () => undefined;
-    const updateRequest = new Promise<CompletedRun>((resolve) => {
-      resolveUpdate = resolve;
-    });
-    vi.spyOn(repositories.runs, "update").mockReturnValue(updateRequest);
     const user = userEvent.setup();
     renderProvider();
     const source = await waitForSource();
@@ -534,15 +531,7 @@ describe("TrainingDataProvider", () => {
       ]),
     );
 
-    expect(screen.getByText("Status: stale")).toBeInTheDocument();
-    expect(screen.getByText("Total: 3")).toBeInTheDocument();
-
-    await act(async () => {
-      resolveUpdate(updatedRun);
-      await updateRequest;
-    });
-
-    expect(await screen.findByText("Status: current")).toBeInTheDocument();
+    expect(screen.getByText("Status: current")).toBeInTheDocument();
     expect(screen.getByText("Total: 4")).toBeInTheDocument();
     expect(sources).toHaveLength(1);
   });
@@ -571,7 +560,11 @@ describe("TrainingDataProvider", () => {
         {
           type: "source_snapshot",
           source: "runs",
-          value: acknowledged.runs,
+          value: acknowledged.runs.map((run) => ({
+            ...run,
+            distance: milesToMeters(4),
+            updatedAt: createUtcDateTime("2026-08-03T12:01:00Z"),
+          })),
           ownerId: userId,
           sessionGeneration: source.sessionGeneration,
           origin: "cache",
@@ -648,10 +641,14 @@ describe("TrainingDataProvider", () => {
     expect(screen.getByText("Shoe: 3")).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "Edit run" }));
-    await waitFor(async () =>
-      expect(await repositories.runs.list()).toEqual([
-        expect.objectContaining({ distance: milesToMeters(4) }),
-      ]),
+    await waitFor(() =>
+      expect(completedRunCommandClient.submitUpdate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          commandId: "run-update-test-command",
+          completedRunId: run.id,
+          input: expect.objectContaining({ distance: milesToMeters(4) }),
+        }),
+      ),
     );
     expect(await screen.findByText("Total: 4")).toBeInTheDocument();
 
@@ -984,7 +981,7 @@ describe("TrainingDataProvider", () => {
     expect(directDelete).not.toHaveBeenCalled();
   });
 
-  it("keeps completed-run editing on its acknowledged repository path", async () => {
+  it("routes completed-run editing through the trusted command path", async () => {
     const shoe = await repositories.shoes.create({ name: "Daily Trainer" });
     await repositories.runs.create({
       shoeId: shoe.id,
@@ -1001,10 +998,53 @@ describe("TrainingDataProvider", () => {
 
     await user.click(screen.getByRole("button", { name: "Edit run" }));
 
-    await waitFor(() => expect(directUpdate).toHaveBeenCalledOnce());
-    expect(completedRunCommandClient.submitUpdate).not.toHaveBeenCalled();
+    await waitFor(() =>
+      expect(completedRunCommandClient.submitUpdate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          commandId: "run-update-test-command",
+          input: expect.objectContaining({ distance: milesToMeters(4) }),
+        }),
+      ),
+    );
+    expect(directUpdate).not.toHaveBeenCalled();
     expect(await screen.findByText("Total: 4")).toBeInTheDocument();
     expect(screen.getByText("Status: current")).toBeInTheDocument();
+  });
+
+  it("keeps imported source facts unchanged during local update projection", async () => {
+    const run = await repositories.runs.create({
+      startedAt: createUtcDateTime("2026-08-03T14:00:00Z"),
+      timeZone,
+      distance: milesToMeters(3),
+      duration: createDurationSeconds(1_800),
+    });
+    const user = userEvent.setup();
+    renderProvider();
+    const source = await waitForSource();
+    const snapshot = await snapshotFromRepositories(userId, repositories);
+    act(() =>
+      source.emitSnapshot({
+        ...snapshot,
+        runs: [
+          {
+            ...run,
+            importProvider: "apple_health",
+            reportedOrigin: "garmin",
+          },
+        ],
+      }),
+    );
+
+    await user.click(await screen.findByRole("button", { name: "Edit run" }));
+
+    await waitFor(() =>
+      expect(completedRunCommandClient.submitUpdate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          input: expect.objectContaining({ distance: milesToMeters(3) }),
+        }),
+      ),
+    );
+    expect(screen.getByText("Total: 3")).toBeInTheDocument();
   });
 
   it("surfaces a listener error and creates a fresh subscription on retry", async () => {

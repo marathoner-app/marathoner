@@ -36,6 +36,12 @@ import {
   type Weekday,
   type WorkoutStatus,
 } from "../../domain/training";
+import {
+  ACTIVITY_IMPORT_PROVIDERS,
+  REPORTED_ACTIVITY_ORIGINS,
+  type ActivityImportProvider,
+  type ReportedActivityOrigin,
+} from "../../domain/activityImport/contract";
 import { PersistenceError } from "../errors";
 import { TRAINING_SCHEMA_VERSION } from "../trainingSchema";
 
@@ -684,6 +690,14 @@ export function completedRunToDocument(run: CompletedRun): Record<string, unknow
     document.notes = run.notes;
   }
 
+  if (run.importProvider !== undefined) {
+    document.importProvider = run.importProvider;
+  }
+
+  if (run.reportedOrigin !== undefined) {
+    document.reportedOrigin = run.reportedOrigin;
+  }
+
   return document;
 }
 
@@ -698,6 +712,8 @@ export function completedRunFromDocument(
   const plannedWorkoutId = readOptionalString(data, "plannedWorkoutId");
   const shoeId = readOptionalString(data, "shoeId");
   const perceivedEffort = readOptionalString(data, "perceivedEffort");
+  const importProvider = readOptionalString(data, "importProvider");
+  const reportedOrigin = readOptionalString(data, "reportedOrigin");
   const run: CompletedRun = {
     id: createCompletedRunId(id),
     userId: verifyOwner(readString(data, "userId"), expectedUserId),
@@ -720,6 +736,22 @@ export function completedRunFromDocument(
         : readEnum(data, "perceivedEffort", PERCEIVED_EFFORTS) as PerceivedEffort,
     unusualPain: readOptionalBoolean(data, "unusualPain"),
     notes: readOptionalString(data, "notes"),
+    importProvider:
+      importProvider === undefined
+        ? undefined
+        : readEnum(
+            data,
+            "importProvider",
+            ACTIVITY_IMPORT_PROVIDERS,
+          ) as ActivityImportProvider,
+    reportedOrigin:
+      reportedOrigin === undefined
+        ? undefined
+        : readEnum(
+            data,
+            "reportedOrigin",
+            REPORTED_ACTIVITY_ORIGINS,
+          ) as ReportedActivityOrigin,
     createdAt: readTimestamp(data, "createdAt"),
     updatedAt: readTimestamp(data, "updatedAt"),
   };
