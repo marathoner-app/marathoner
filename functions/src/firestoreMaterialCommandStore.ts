@@ -4,6 +4,9 @@ import {
   isMaterialCommandResult,
   materialCommandSignature,
   type AccountDeletionRequestAcceptedResult,
+  type ActivityImportReceiptResult,
+  type ActivityImportReviewRequiredResult,
+  type ActivityImportStaleResult,
   type MaterialCommandCommittedResult,
   type PlanApprovalReceiptResult,
   type ProofMaterialCommandEnvelope,
@@ -34,7 +37,10 @@ export function storedMaterialCommandResult(
   | RecommendationDecisionReceiptResult
   | RunCompletionReceiptResult
   | RunUpdateReceiptResult
-  | RunDeletionReceiptResult {
+  | RunDeletionReceiptResult
+  | ActivityImportReceiptResult
+  | ActivityImportReviewRequiredResult
+  | ActivityImportStaleResult {
   if (
     !isMaterialCommandResult(data) ||
     (data.status !== 'committed' &&
@@ -43,7 +49,13 @@ export function storedMaterialCommandResult(
       data.status !== 'recommendation_decided' &&
       data.status !== 'run_completed' &&
       data.status !== 'run_updated' &&
-      data.status !== 'run_deleted')
+      data.status !== 'run_deleted' &&
+      data.status !== 'activity_imported' &&
+      data.status !== 'activity_import_review_required' &&
+      !(
+        data.status === 'stale_revision' &&
+        data.code === 'provider-activity-version-changed'
+      ))
   ) {
     throw new Error('A stored material-command receipt is invalid.')
   }

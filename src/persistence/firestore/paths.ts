@@ -48,6 +48,14 @@ export const runsCollectionPath = (userId: UserId): string =>
 export const runDocumentPath = (userId: UserId, runId: CompletedRunId): string =>
   `${runsCollectionPath(userId)}/${runId}`;
 
+export const activityImportsCollectionPath = (userId: UserId): string =>
+  `${userDocumentPath(userId)}/activityImports`;
+
+export const activityImportDocumentPath = (
+  userId: UserId,
+  importId: string,
+): string => `${activityImportsCollectionPath(userId)}/${importId}`;
+
 export const shoesCollectionPath = (userId: UserId): string =>
   `${userDocumentPath(userId)}/shoes`;
 

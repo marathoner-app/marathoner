@@ -1,4 +1,5 @@
 import {
+  isActivityImportCommandEnvelope,
   isProofMaterialCommandEnvelope,
   isPlanApprovalCommandEnvelope,
   isRecommendationDecisionCommandEnvelope,
@@ -9,8 +10,13 @@ import {
   materialCommandIdFrom,
   parseMaterialCommand,
   type AccountDeletionRequestAcceptedResult,
+  type ActivityImportCommandEnvelope,
+  type ActivityImportReceiptResult,
+  type ActivityImportReviewRequiredResult,
+  type ActivityImportStaleResult,
   type MaterialCommandCommittedResult,
   type MaterialCommandResult,
+  type MaterialCommandValidationResult,
   type PlanApprovalCommandEnvelope,
   type PlanApprovalReceiptResult,
   type PlanApprovalStaleRevisionResult,
@@ -51,6 +57,7 @@ export type MaterialCommandLogEntry = Readonly<{
     | 'run.complete'
     | 'run.update'
     | 'run.delete'
+    | 'run.import-activity'
     | 'unknown'
   status: MaterialCommandResult['status']
   failureClass?: MaterialCommandFailureClass
@@ -75,6 +82,9 @@ export interface MaterialCommandStore {
     | RunCompletionReceiptResult
     | RunUpdateReceiptResult
     | RunDeletionReceiptResult
+    | ActivityImportReceiptResult
+    | ActivityImportReviewRequiredResult
+    | ActivityImportStaleResult
     | null
   >
 }
@@ -110,6 +120,26 @@ export interface RunUpdateStore {
   }): Promise<
     | { kind: 'updated'; result: RunUpdateReceiptResult }
     | { kind: 'rejected'; result: RunCommandProjectionFailureResult }
+    | { kind: 'conflict' }
+    | { kind: 'membership-required' }
+  >
+}
+
+export interface ActivityImportStore {
+  commit(options: {
+    envelope: ActivityImportCommandEnvelope
+    ownerId: string
+  }): Promise<
+    | {
+        kind: 'applied'
+        result: ActivityImportReceiptResult
+      }
+    | {
+        kind: 'review-required'
+        result: ActivityImportReviewRequiredResult
+      }
+    | { kind: 'stale'; result: ActivityImportStaleResult }
+    | { kind: 'rejected'; result: MaterialCommandValidationResult }
     | { kind: 'conflict' }
     | { kind: 'membership-required' }
   >
@@ -169,6 +199,7 @@ export interface RecommendationDecisionHandlerDependencies {
 }
 
 export interface HandlerDependencies {
+  activityImport?: { store: ActivityImportStore }
   log: (entry: MaterialCommandLogEntry) => void
   planApproval?: PlanApprovalHandlerDependencies
   recommendationDecision?: RecommendationDecisionHandlerDependencies
@@ -435,6 +466,60 @@ export async function executeMaterialCommand(
         stored.kind === 'conflict'
           ? conflictResult(parsed.envelope.commandId)
           : stored.result
+      logResult(
+        dependencies,
+        'material-command-result',
+        result,
+        parsed.envelope.command.type,
+      )
+      return result
+    } catch (error) {
+      const failure = failureFor(error, parsed.envelope.commandId)
+      logFailureResult(
+        dependencies,
+        'material-command-result',
+        failure,
+        parsed.envelope.command.type,
+      )
+      return failure.result
+    }
+  }
+  if (isActivityImportCommandEnvelope(parsed.envelope)) {
+    const activityImport = dependencies.activityImport
+    if (!activityImport) {
+      const result = runCommandNotEnabledResult(parsed.envelope.commandId)
+      logResult(
+        dependencies,
+        'material-command-result',
+        result,
+        parsed.envelope.command.type,
+      )
+      return result
+    }
+    if (options.appCheckVerified !== true) {
+      const result = runCommandAppCheckRequiredResult(
+        parsed.envelope.commandId,
+      )
+      logResult(
+        dependencies,
+        'material-command-result',
+        result,
+        parsed.envelope.command.type,
+      )
+      return result
+    }
+
+    try {
+      const stored = await activityImport.store.commit({
+        envelope: parsed.envelope,
+        ownerId: options.authenticatedUserId,
+      })
+      const result =
+        stored.kind === 'membership-required'
+          ? runCommandMembershipRequiredResult(parsed.envelope.commandId)
+          : stored.kind === 'conflict'
+            ? conflictResult(parsed.envelope.commandId)
+            : stored.result
       logResult(
         dependencies,
         'material-command-result',
@@ -820,6 +905,11 @@ export async function resolveMaterialCommand(
           ? 'plan.approve-generated'
           : stored?.status === 'recommendation_decided'
             ? 'recommendation.decide'
+          : stored?.status === 'activity_imported' ||
+              stored?.status === 'activity_import_review_required' ||
+              (stored?.status === 'stale_revision' &&
+                stored.code === 'provider-activity-version-changed')
+            ? 'run.import-activity'
           : stored?.status === 'run_completed'
             ? 'run.complete'
             : stored?.status === 'run_updated'

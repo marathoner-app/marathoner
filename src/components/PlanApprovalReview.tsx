@@ -126,6 +126,13 @@ function outcomePresentation(result: NonApprovedResult): OutcomePresentation {
           "Marathoner found a different request using this approval identifier. Review the proposal again before continuing.",
         canRetryApproval: false,
       };
+    case "activity_imported":
+    case "activity_import_review_required":
+      return {
+        title: "Approval status needs checking",
+        message: "Marathoner received a response for a different operation. Check the original approval before continuing.",
+        canRetryApproval: false,
+      };
   }
 }
 

@@ -21,6 +21,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
 import {
   createAccountDeletionRequest,
+  createActivityImportCommand,
   createPlanApprovalCommand,
   createProofMaterialCommand,
   createRecommendationDecisionCommand,
@@ -34,6 +35,7 @@ import {
   type RunDeletionReceiptResult,
   type RunUpdateReceiptResult,
 } from '../../src/domain/materialCommands/contract.js'
+import { createProviderActivityId } from '../../src/domain/activityImport/contract.js'
 import {
   RECOMMENDATION_EVIDENCE_SCHEMA_VERSION,
   createRecommendationId,
@@ -645,6 +647,51 @@ afterAll(async () => {
 })
 
 describe('material-command emulator boundary', () => {
+  it('imports a normalized activity through the callable and resolves its listener-visible receipt', async () => {
+    await signInOwner()
+    const command = createActivityImportCommand(
+      'import-activity-emulator-command-0001',
+      {
+        schemaVersion: 'completed-activity-import@1',
+        operation: 'upsert',
+        provider: 'garmin_connect',
+        providerActivityId: createProviderActivityId(
+          'garmin-emulator-activity-0001',
+        ),
+        observedAt: createUtcDateTime('2026-10-08T18:10:00.000Z'),
+        providerUpdatedAt: createUtcDateTime('2026-10-08T18:05:00.000Z'),
+        activityType: 'running',
+        startedAt: createUtcDateTime('2026-10-08T17:00:00.000Z'),
+        endedAt: null,
+        durationSeconds: createDurationSeconds(1_800),
+        timeZone: createIanaTimeZone('America/Los_Angeles'),
+        distanceMeters: createDistanceMeters(5_000),
+        reportedOrigin: 'garmin',
+      },
+    )
+
+    const result = (await submit(command)).data
+    const resolved = (await resolve({ commandId: command.commandId })).data
+
+    expect(result).toEqual(
+      expect.objectContaining({
+        status: 'activity_imported',
+        commandId: command.commandId,
+        canonicalCommandId: command.commandId,
+        operation: 'created',
+        completedRunId: expect.any(String),
+        completedRunUpdatedAt: expect.any(String),
+      }),
+    )
+    expect(resolved).toEqual(result)
+    if (!isMaterialCommandResult(result) || result.status !== 'activity_imported') {
+      throw new Error('Expected an activity-import receipt.')
+    }
+    await expect(
+      database.doc(`users/${ownerId}/runs/${result.completedRunId}`).get(),
+    ).resolves.toEqual(expect.objectContaining({ exists: true }))
+  })
+
   it('returns typed authentication and App Check rejections for deletion requests', async () => {
     const command = createAccountDeletionRequest('delete-command-app-check')
 

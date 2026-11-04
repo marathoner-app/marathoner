@@ -29,6 +29,10 @@ import {
   createRecommendationId,
   type RecommendationId,
 } from '../recommendations/recommendationEvidence.js'
+import {
+  parseCompletedActivityImportEvent,
+  type CompletedActivityImportEventV1,
+} from '../activityImport/contract.js'
 
 export const MATERIAL_COMMAND_ENVELOPE_VERSION = 1 as const
 export const MATERIAL_COMMAND_APP_PROTOCOL_VERSION = 1 as const
@@ -45,6 +49,8 @@ export const RUN_UPDATE_COMMAND_SCHEMA_VERSION = 1 as const
 export const RUN_UPDATE_COMMAND_TYPE = 'run.update' as const
 export const RUN_DELETION_COMMAND_SCHEMA_VERSION = 1 as const
 export const RUN_DELETION_COMMAND_TYPE = 'run.delete' as const
+export const ACTIVITY_IMPORT_COMMAND_SCHEMA_VERSION = 1 as const
+export const ACTIVITY_IMPORT_COMMAND_TYPE = 'run.import-activity' as const
 export const RECOMMENDATION_DECISION_COMMAND_SCHEMA_VERSION = 1 as const
 export const RECOMMENDATION_DECISION_COMMAND_TYPE =
   'recommendation.decide' as const
@@ -148,6 +154,21 @@ export interface RunDeletionCommandEnvelope
   }
 }
 
+type WithoutOwner<Event> = Event extends unknown ? Omit<Event, 'ownerId'> : never
+
+export type ActivityImportCommandEventV1 = WithoutOwner<
+  CompletedActivityImportEventV1
+>
+
+export interface ActivityImportCommandEnvelope
+  extends MaterialCommandEnvelopeBase {
+  command: {
+    type: typeof ACTIVITY_IMPORT_COMMAND_TYPE
+    schemaVersion: typeof ACTIVITY_IMPORT_COMMAND_SCHEMA_VERSION
+    event: ActivityImportCommandEventV1
+  }
+}
+
 export interface RecommendationDecisionCommandEnvelope
   extends MaterialCommandEnvelopeBase {
   command: {
@@ -166,6 +187,7 @@ export type MaterialCommandEnvelope =
   | RunCompletionCommandEnvelope
   | RunUpdateCommandEnvelope
   | RunDeletionCommandEnvelope
+  | ActivityImportCommandEnvelope
   | RecommendationDecisionCommandEnvelope
 
 export function isProofMaterialCommandEnvelope(
@@ -202,6 +224,12 @@ export function isRunDeletionCommandEnvelope(
   envelope: MaterialCommandEnvelope,
 ): envelope is RunDeletionCommandEnvelope {
   return envelope.command.type === RUN_DELETION_COMMAND_TYPE
+}
+
+export function isActivityImportCommandEnvelope(
+  envelope: MaterialCommandEnvelope,
+): envelope is ActivityImportCommandEnvelope {
+  return envelope.command.type === ACTIVITY_IMPORT_COMMAND_TYPE
 }
 
 export function isRecommendationDecisionCommandEnvelope(
@@ -274,6 +302,36 @@ export interface RunDeletionReceiptResult {
   reopenedPlannedWorkout: PlannedWorkoutCommandReceiptV1 | null
 }
 
+export type ActivityImportAppliedOperation =
+  | 'created'
+  | 'updated'
+  | 'unchanged'
+  | 'deleted'
+
+/**
+ * The provider identity keeps one canonical command and, while active, one
+ * listener-visible completed run. Later deliveries may have a new command ID,
+ * but they keep the canonical identity and completed-run ID stable.
+ */
+export interface ActivityImportReceiptResult {
+  status: 'activity_imported'
+  commandId: string
+  canonicalCommandId: string
+  operation: ActivityImportAppliedOperation
+  completedRunId: CompletedRunId | null
+  completedRunUpdatedAt: UtcDateTime | null
+  processedAt: UtcDateTime
+}
+
+export interface ActivityImportReviewRequiredResult
+  extends MaterialCommandFailure {
+  status: 'activity_import_review_required'
+  code: 'cross-provider-duplicate-candidate' | 'provider-update-ambiguous'
+  canonicalCommandId: string
+  candidateCompletedRunId: CompletedRunId | null
+  recordedAt: UtcDateTime
+}
+
 /**
  * A future atomic decision transaction returns this exact receipt. Accepted
  * decisions must identify the newer plan revision created by that transaction.
@@ -319,6 +377,13 @@ export type RunCommandStaleRevisionResult =
   | CompletedRunStaleRevisionResult
   | PlannedWorkoutStaleRevisionResult
 
+export interface ActivityImportStaleResult extends MaterialCommandFailure {
+  status: 'stale_revision'
+  code: 'provider-activity-version-changed'
+  providerUpdatedAt: UtcDateTime | null
+  latestProviderUpdatedAt: UtcDateTime | null
+}
+
 export interface MaterialCommandValidationResult
   extends MaterialCommandFailure {
   status: 'validation_error'
@@ -329,6 +394,7 @@ export interface MaterialCommandValidationResult
     | 'invalid-run-completion'
     | 'invalid-run-update'
     | 'invalid-run-deletion'
+    | 'invalid-activity-import'
     | 'invalid-recommendation-decision'
     | 'planned-workout-not-completable'
     | 'shoe-not-available'
@@ -405,9 +471,12 @@ export type MaterialCommandResult =
   | RunCompletionReceiptResult
   | RunUpdateReceiptResult
   | RunDeletionReceiptResult
+  | ActivityImportReceiptResult
+  | ActivityImportReviewRequiredResult
   | RecommendationDecisionReceiptResult
   | PlanApprovalStaleRevisionResult
   | RunCommandStaleRevisionResult
+  | ActivityImportStaleResult
   | MaterialCommandValidationResult
   | MaterialCommandAuthenticationResult
   | MaterialCommandAuthorizationResult
@@ -722,6 +791,20 @@ function isCompletedRunCommandInput(
         candidate.length <= COMPLETED_RUN_NOTES_MAX_LENGTH,
     )
   )
+}
+
+function parseActivityImportCommandEvent(
+  value: unknown,
+): ActivityImportCommandEventV1 | null {
+  if (!isRecord(value)) return null
+  const parsed = parseCompletedActivityImportEvent({
+    ...value,
+    ownerId: 'authenticated-owner',
+  })
+  if (!parsed.ok) return null
+  const { ownerId, ...event } = parsed.value
+  void ownerId
+  return event
 }
 
 function isExpectedActivePlanRevision(value: unknown): value is number | null {
@@ -1196,6 +1279,53 @@ export function parseMaterialCommand(value: unknown): ParsedMaterialCommand {
     }
   }
 
+  if (command.type === ACTIVITY_IMPORT_COMMAND_TYPE) {
+    if (!hasExactKeys(command, ['type', 'schemaVersion', 'event'])) {
+      return {
+        ok: false,
+        result: validationResult(
+          commandId,
+          'invalid-activity-import',
+          'The imported activity is invalid.',
+        ),
+      }
+    }
+    if (command.schemaVersion !== ACTIVITY_IMPORT_COMMAND_SCHEMA_VERSION) {
+      return {
+        ok: false,
+        result: unsupportedVersionResult(
+          commandId,
+          'unsupported-command-schema-version',
+          ACTIVITY_IMPORT_COMMAND_SCHEMA_VERSION,
+        ),
+      }
+    }
+    const event = parseActivityImportCommandEvent(command.event)
+    if (event === null) {
+      return {
+        ok: false,
+        result: validationResult(
+          commandId,
+          'invalid-activity-import',
+          'The imported activity is invalid.',
+        ),
+      }
+    }
+    return {
+      ok: true,
+      envelope: {
+        envelopeVersion: MATERIAL_COMMAND_ENVELOPE_VERSION,
+        appProtocolVersion: MATERIAL_COMMAND_APP_PROTOCOL_VERSION,
+        commandId,
+        command: {
+          type: ACTIVITY_IMPORT_COMMAND_TYPE,
+          schemaVersion: ACTIVITY_IMPORT_COMMAND_SCHEMA_VERSION,
+          event,
+        },
+      },
+    }
+  }
+
   if (command.type === RECOMMENDATION_DECISION_COMMAND_TYPE) {
     if (
       !hasExactKeys(command, [
@@ -1318,6 +1448,9 @@ export function materialCommandSignature(
       }),
     )
   }
+  if (isActivityImportCommandEnvelope(envelope)) {
+    signature.push(canonicalJson(envelope.command.event))
+  }
   if (isRecommendationDecisionCommandEnvelope(envelope)) {
     signature.push(
       canonicalJson({
@@ -1419,6 +1552,70 @@ export function isRunDeletionReceiptResult(
     isUtcDateTime(value.deletedAt) &&
     (value.reopenedPlannedWorkout === null ||
       isPlannedWorkoutCommandReceipt(value.reopenedPlannedWorkout))
+  )
+}
+
+export function isActivityImportReceiptResult(
+  value: unknown,
+): value is ActivityImportReceiptResult {
+  return (
+    isRecord(value) &&
+    hasExactKeys(value, [
+      'status',
+      'commandId',
+      'canonicalCommandId',
+      'operation',
+      'completedRunId',
+      'completedRunUpdatedAt',
+      'processedAt',
+    ]) &&
+    value.status === 'activity_imported' &&
+    typeof value.commandId === 'string' &&
+    commandIdPattern.test(value.commandId) &&
+    typeof value.canonicalCommandId === 'string' &&
+    commandIdPattern.test(value.canonicalCommandId) &&
+    ['created', 'updated', 'unchanged', 'deleted'].includes(
+      String(value.operation),
+    ) &&
+    (value.completedRunId === null ||
+      isCompletedRunIdValue(value.completedRunId)) &&
+    (value.completedRunUpdatedAt === null ||
+      isUtcDateTime(value.completedRunUpdatedAt)) &&
+    isUtcDateTime(value.processedAt) &&
+    ((value.operation === 'deleted' &&
+      value.completedRunId === null &&
+      value.completedRunUpdatedAt === null) ||
+      (value.operation !== 'deleted' &&
+        isCompletedRunIdValue(value.completedRunId) &&
+        isUtcDateTime(value.completedRunUpdatedAt)))
+  )
+}
+
+export function isActivityImportReviewRequiredResult(
+  value: unknown,
+): value is ActivityImportReviewRequiredResult {
+  return (
+    isRecord(value) &&
+    hasExactKeys(value, [
+      'status',
+      'commandId',
+      'code',
+      'message',
+      'canonicalCommandId',
+      'candidateCompletedRunId',
+      'recordedAt',
+    ]) &&
+    value.status === 'activity_import_review_required' &&
+    (value.code === 'cross-provider-duplicate-candidate' ||
+      value.code === 'provider-update-ambiguous') &&
+    typeof value.message === 'string' &&
+    typeof value.commandId === 'string' &&
+    commandIdPattern.test(value.commandId) &&
+    typeof value.canonicalCommandId === 'string' &&
+    commandIdPattern.test(value.canonicalCommandId) &&
+    (value.candidateCompletedRunId === null ||
+      isCompletedRunIdValue(value.candidateCompletedRunId)) &&
+    isUtcDateTime(value.recordedAt)
   )
 }
 
@@ -1587,6 +1784,14 @@ export function isMaterialCommandResult(
     return isRunDeletionReceiptResult(value)
   }
 
+  if (value.status === 'activity_imported') {
+    return isActivityImportReceiptResult(value)
+  }
+
+  if (value.status === 'activity_import_review_required') {
+    return isActivityImportReviewRequiredResult(value)
+  }
+
   if (value.status === 'recommendation_decided') {
     return isRecommendationDecisionReceiptResult(value)
   }
@@ -1604,6 +1809,7 @@ export function isMaterialCommandResult(
         value.code === 'invalid-run-completion' ||
         value.code === 'invalid-run-update' ||
         value.code === 'invalid-run-deletion' ||
+        value.code === 'invalid-activity-import' ||
         value.code === 'invalid-recommendation-decision' ||
         value.code === 'planned-workout-not-completable' ||
         value.code === 'shoe-not-available' ||
@@ -1643,8 +1849,25 @@ export function isMaterialCommandResult(
       return value.code === 'temporarily-unavailable'
     case 'outcome_unknown':
       return value.code === 'resolve-by-command-id'
-    case 'stale_revision':
-      return isRunCommandStaleRevisionResult(value) || (
+    case 'stale_revision': {
+      if (isRunCommandStaleRevisionResult(value)) return true
+      if (value.code === 'provider-activity-version-changed') {
+        return (
+          hasExactKeys(value, [
+            'status',
+            'commandId',
+            'code',
+            'message',
+            'providerUpdatedAt',
+            'latestProviderUpdatedAt',
+          ]) &&
+          (value.providerUpdatedAt === null ||
+            isUtcDateTime(value.providerUpdatedAt)) &&
+          (value.latestProviderUpdatedAt === null ||
+            isUtcDateTime(value.latestProviderUpdatedAt))
+        )
+      }
+      return (
         hasExactKeys(value, [
           'status',
           'commandId',
@@ -1658,6 +1881,7 @@ export function isMaterialCommandResult(
         isExpectedActivePlanRevision(value.expectedActivePlanRevision) &&
         isExpectedActivePlanRevision(value.actualActivePlanRevision)
       )
+    }
     default:
       return false
   }
@@ -1803,6 +2027,29 @@ export function createRunDeletionCommand(
   if (!parsed.ok) throw new Error(parsed.result.message)
   if (!isRunDeletionCommandEnvelope(parsed.envelope)) {
     throw new Error('The run-deletion command parsed as the wrong command type.')
+  }
+  return parsed.envelope
+}
+
+export function createActivityImportCommand(
+  commandId: string,
+  event: ActivityImportCommandEventV1,
+): ActivityImportCommandEnvelope {
+  const parsed = parseMaterialCommand({
+    envelopeVersion: MATERIAL_COMMAND_ENVELOPE_VERSION,
+    appProtocolVersion: MATERIAL_COMMAND_APP_PROTOCOL_VERSION,
+    commandId,
+    command: {
+      type: ACTIVITY_IMPORT_COMMAND_TYPE,
+      schemaVersion: ACTIVITY_IMPORT_COMMAND_SCHEMA_VERSION,
+      event,
+    },
+  })
+  if (!parsed.ok) throw new Error(parsed.result.message)
+  if (!isActivityImportCommandEnvelope(parsed.envelope)) {
+    throw new Error(
+      'The activity-import command parsed as the wrong command type.',
+    )
   }
   return parsed.envelope
 }

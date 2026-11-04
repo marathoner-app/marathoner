@@ -687,6 +687,27 @@ describe("founding-beta membership rules", () => {
     await assertFails(deleteDoc(doc(ownerDatabase, evidencePath)));
   });
 
+  it("keeps provider import provenance server-only", async () => {
+    await seedMembership(firstUserId);
+    const importPath =
+      `users/${firstUserId}/activityImports/provider-identity-hash`;
+    await testEnvironment.withSecurityRulesDisabled(async (context) => {
+      await setDoc(doc(context.firestore(), importPath), {
+        schemaVersion: 1,
+        userId: firstUserId,
+      });
+    });
+
+    const ownerDatabase = authenticatedContext(firstUserId).firestore();
+    const otherDatabase = authenticatedContext(secondUserId).firestore();
+
+    await assertFails(getDoc(doc(ownerDatabase, importPath)));
+    await assertFails(getDoc(doc(otherDatabase, importPath)));
+    await assertFails(setDoc(doc(ownerDatabase, importPath), {}));
+    await assertFails(updateDoc(doc(ownerDatabase, importPath), { state: "deleted" }));
+    await assertFails(deleteDoc(doc(ownerDatabase, importPath)));
+  });
+
   it("keeps evaluated plan-revision snapshots server-only", async () => {
     await seedMembership(firstUserId);
     const snapshotPath =

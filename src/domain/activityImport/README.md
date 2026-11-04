@@ -15,6 +15,18 @@ data, perceived effort, notes, shoes, and planned-workout decisions.
 Same-provider replay is resolved from the owner, provider, and opaque provider
 activity ID. Cross-provider comparison uses exact normalized facts for a
 deterministic duplicate fingerprint and narrow tolerances for ambiguous
-candidates. Neither result authorizes a silent cross-provider merge; the
-trusted import command introduced by issue #619 must preserve the review
-outcome.
+candidates. Neither result authorizes a silent cross-provider merge.
+
+`run.import-activity` is the trusted persistence boundary. The caller omits
+ownership; the callable function derives it from the authenticated session and
+reconstructs the portable event before validation. A first accepted upsert
+creates one ordinary completed run so existing Track and Analyze listeners see
+it. Provider identity, lifecycle state, and duplicate evidence live in a
+separate server-only import record and cannot be changed through ordinary run
+editing.
+
+Same-provider replay keeps one canonical command and completed-run identity.
+Newer facts update only provider-owned run fields, leaving Marathoner-owned
+workout, shoe, effort, pain, and note fields intact. Deletes retain a tombstone
+so stale provider events cannot resurrect a run. A cross-provider candidate is
+recorded for review without creating another visible run.
