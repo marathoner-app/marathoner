@@ -63,6 +63,12 @@ Official references:
 - [Garmin Activity API](https://developer.garmin.com/gc-developer-program/activity-api/)
 - [Garmin program FAQ](https://developer.garmin.com/gc-developer-program/program-faq/)
 
+The prepared application language, private-custody boundary, owner checkpoint,
+and provider-status record live in the
+[Garmin Connect Starter access runbook](../operations/garmin-connect-starter-access.md).
+The owner submitted the Activity-API-only Starter request on November 3, 2026.
+Submission is not provider approval and does not unblock #623.
+
 Garmin Connect can also share workout summaries with Apple Health. That path
 may support a bounded early iPhone test only after Marathoner verifies the
 available identity, date, distance, and duration fields. Garmin documents that
