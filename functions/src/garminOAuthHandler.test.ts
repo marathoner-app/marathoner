@@ -7,6 +7,7 @@ import {
   sha256Base64Url,
   startGarminOAuth,
   type GarminCallbackReservation,
+  type GarminConnectionGrant,
   type GarminConnectionStatus,
   type GarminDisconnectReservation,
   type GarminOAuthEnvironment,
@@ -16,10 +17,11 @@ import {
 
 const ownerId = 'runner-one'
 const fixedNow = new Date('2026-11-04T20:00:00.000Z')
-const grant: GarminTokenGrant = {
+const grant: GarminConnectionGrant = {
   accessToken: 'private-access-token',
   refreshToken: 'private-refresh-token',
   expiresAt: '2026-11-04T21:00:00.000Z',
+  providerUserId: 'provider-user-id',
 }
 
 class InMemoryGarminOAuthStore implements GarminOAuthStore {
@@ -99,7 +101,7 @@ class InMemoryGarminOAuthStore implements GarminOAuthStore {
   async completeCallback(options: {
     connectedAt: string
     environment: GarminOAuthEnvironment
-    grant: GarminTokenGrant
+    grant: GarminConnectionGrant
     ownerId: string
     stateDigest: string
   }) {

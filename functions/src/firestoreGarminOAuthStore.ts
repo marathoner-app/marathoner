@@ -1,3 +1,5 @@
+import { createHash } from 'node:crypto'
+
 import type { DocumentData, Firestore } from 'firebase-admin/firestore'
 
 import {
@@ -6,6 +8,7 @@ import {
 } from './approvedBetaMembership.js'
 import type {
   GarminCallbackReservation,
+  GarminConnectionGrant,
   GarminConnectionStatus,
   GarminDisconnectReservation,
   GarminOAuthEnvironment,
@@ -15,6 +18,7 @@ import type {
 
 const stateSchemaVersion = 1
 const connectionSchemaVersion = 1
+const providerAccountLinkSchemaVersion = 1
 
 function statePath(stateDigest: string): string {
   return `providerOAuthStates/${stateDigest}`
@@ -22,6 +26,16 @@ function statePath(stateDigest: string): string {
 
 function connectionPath(ownerId: string): string {
   return `users/${ownerId}/providerConnections/garmin`
+}
+
+export function garminProviderAccountDigest(providerUserId: string): string {
+  return createHash('sha256')
+    .update(`garmin-provider-account\u0000${providerUserId}`)
+    .digest('base64url')
+}
+
+function providerAccountLinkPath(providerAccountDigest: string): string {
+  return `providerAccountLinks/${providerAccountDigest}`
 }
 
 function storedGrant(data: DocumentData): GarminTokenGrant {
@@ -137,7 +151,7 @@ export class FirestoreGarminOAuthStore implements GarminOAuthStore {
   async completeCallback(options: {
     connectedAt: string
     environment: GarminOAuthEnvironment
-    grant: GarminTokenGrant
+    grant: GarminConnectionGrant
     ownerId: string
     stateDigest: string
   }): Promise<readonly GarminTokenGrant[]> {
@@ -148,11 +162,18 @@ export class FirestoreGarminOAuthStore implements GarminOAuthStore {
     const membershipReference = this.database.doc(
       approvedBetaMembershipPath(options.ownerId),
     )
+    const providerAccountDigest = garminProviderAccountDigest(
+      options.grant.providerUserId,
+    )
+    const providerAccountReference = this.database.doc(
+      providerAccountLinkPath(providerAccountDigest),
+    )
     return this.database.runTransaction(async (transaction) => {
-      const [state, connection, membership] = await Promise.all([
+      const [state, connection, membership, providerAccount] = await Promise.all([
         transaction.get(stateReference),
         transaction.get(connectionReference),
         transaction.get(membershipReference),
+        transaction.get(providerAccountReference),
       ])
       const stateData = state.data()
       if (
@@ -164,6 +185,16 @@ export class FirestoreGarminOAuthStore implements GarminOAuthStore {
       }
       if (!isApprovedBetaMembership(membership.data(), options.ownerId)) {
         throw new Error('Approved beta membership is no longer active.')
+      }
+      const linkedAccount = providerAccount.data()
+      if (
+        linkedAccount !== undefined &&
+        (linkedAccount.schemaVersion !== providerAccountLinkSchemaVersion ||
+          linkedAccount.provider !== 'garmin_connect' ||
+          linkedAccount.environment !== options.environment ||
+          linkedAccount.ownerId !== options.ownerId)
+      ) {
+        throw new Error('The provider account is already mapped elsewhere.')
       }
       const prior = connection.data()
       if (
@@ -184,6 +215,11 @@ export class FirestoreGarminOAuthStore implements GarminOAuthStore {
         (prior.status === 'connected' || prior.status === 'disconnecting')
           ? storedGrant(prior)
           : null
+      const priorProviderAccountDigest =
+        sameEnvironmentConnection &&
+        typeof prior.providerAccountDigest === 'string'
+          ? prior.providerAccountDigest
+          : null
       const grantsToRevoke = priorGrant
         ? [...pendingRevocationGrants, priorGrant]
         : pendingRevocationGrants
@@ -193,6 +229,7 @@ export class FirestoreGarminOAuthStore implements GarminOAuthStore {
         status: 'connected',
         environment: options.environment,
         ownerId: options.ownerId,
+        providerAccountDigest,
         accessToken: options.grant.accessToken,
         refreshToken: options.grant.refreshToken,
         expiresAt: options.grant.expiresAt,
@@ -200,6 +237,23 @@ export class FirestoreGarminOAuthStore implements GarminOAuthStore {
         updatedAt: options.connectedAt,
         pendingRevocationGrants: grantsToRevoke,
       })
+      transaction.set(providerAccountReference, {
+        schemaVersion: providerAccountLinkSchemaVersion,
+        provider: 'garmin_connect',
+        environment: options.environment,
+        ownerId: options.ownerId,
+        updatedAt: options.connectedAt,
+      })
+      if (
+        priorProviderAccountDigest !== null &&
+        priorProviderAccountDigest !== providerAccountDigest
+      ) {
+        transaction.delete(
+          this.database.doc(
+            providerAccountLinkPath(priorProviderAccountDigest),
+          ),
+        )
+      }
       transaction.update(stateReference, {
         status: 'completed',
         completedAt: options.connectedAt,
@@ -328,8 +382,86 @@ export class FirestoreGarminOAuthStore implements GarminOAuthStore {
         data.environment === options.environment &&
         data.status === 'disconnecting'
       ) {
+        if (typeof data.providerAccountDigest === 'string') {
+          transaction.delete(
+            this.database.doc(
+              providerAccountLinkPath(data.providerAccountDigest),
+            ),
+          )
+        }
         transaction.delete(reference)
       }
+    })
+  }
+
+  async resolvePushOwner(options: {
+    environment: GarminOAuthEnvironment
+    providerAccountDigest: string
+  }): Promise<{ ownerId: string; timeZone: string } | null> {
+    const account = await this.database
+      .doc(providerAccountLinkPath(options.providerAccountDigest))
+      .get()
+    const link = account.data()
+    if (
+      link?.schemaVersion !== providerAccountLinkSchemaVersion ||
+      link.provider !== 'garmin_connect' ||
+      link.environment !== options.environment ||
+      typeof link.ownerId !== 'string'
+    ) {
+      return null
+    }
+    const [connection, membership, profile] = await Promise.all([
+      this.database.doc(connectionPath(link.ownerId)).get(),
+      this.database.doc(approvedBetaMembershipPath(link.ownerId)).get(),
+      this.database.doc(`users/${link.ownerId}`).get(),
+    ])
+    const connectionData = connection.data()
+    const profileData = profile.data()
+    if (
+      connectionData?.schemaVersion !== connectionSchemaVersion ||
+      connectionData.status !== 'connected' ||
+      connectionData.environment !== options.environment ||
+      connectionData.ownerId !== link.ownerId ||
+      connectionData.providerAccountDigest !== options.providerAccountDigest ||
+      !isApprovedBetaMembership(membership.data(), link.ownerId) ||
+      typeof profileData?.timeZone !== 'string'
+    ) {
+      return null
+    }
+    return { ownerId: link.ownerId, timeZone: profileData.timeZone }
+  }
+
+  async completeProviderDeregistration(options: {
+    environment: GarminOAuthEnvironment
+    providerAccountDigest: string
+  }): Promise<void> {
+    const accountReference = this.database.doc(
+      providerAccountLinkPath(options.providerAccountDigest),
+    )
+    await this.database.runTransaction(async (transaction) => {
+      const account = await transaction.get(accountReference)
+      const link = account.data()
+      if (
+        link?.schemaVersion !== providerAccountLinkSchemaVersion ||
+        link.provider !== 'garmin_connect' ||
+        link.environment !== options.environment ||
+        typeof link.ownerId !== 'string'
+      ) {
+        return
+      }
+      const connectionReference = this.database.doc(
+        connectionPath(link.ownerId),
+      )
+      const connection = await transaction.get(connectionReference)
+      const connectionData = connection.data()
+      if (
+        connectionData?.schemaVersion === connectionSchemaVersion &&
+        connectionData.environment === options.environment &&
+        connectionData.providerAccountDigest === options.providerAccountDigest
+      ) {
+        transaction.delete(connectionReference)
+      }
+      transaction.delete(accountReference)
     })
   }
 }

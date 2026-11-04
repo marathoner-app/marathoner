@@ -522,6 +522,8 @@ describe("Firestore training-data ownership rules", () => {
     const statePath = "providerOAuthStates/synthetic-state-digest";
     const connectionPath =
       `users/${firstUserId}/providerConnections/garmin`;
+    const accountLinkPath = "providerAccountLinks/synthetic-account-digest";
+    const pushDeliveryPath = "garminPushDeliveries/synthetic-delivery";
     await testEnvironment.withSecurityRulesDisabled(async (context) => {
       await setDoc(doc(context.firestore(), statePath), {
         schemaVersion: 1,
@@ -531,12 +533,25 @@ describe("Firestore training-data ownership rules", () => {
         schemaVersion: 1,
         ownerId: firstUserId,
       });
+      await setDoc(doc(context.firestore(), accountLinkPath), {
+        schemaVersion: 1,
+        ownerId: firstUserId,
+      });
+      await setDoc(doc(context.firestore(), pushDeliveryPath), {
+        schemaVersion: 1,
+        status: "pending",
+      });
     });
 
     const ownerDatabase = testEnvironment
       .authenticatedContext(firstUserId)
       .firestore();
-    for (const path of [statePath, connectionPath]) {
+    for (const path of [
+      statePath,
+      connectionPath,
+      accountLinkPath,
+      pushDeliveryPath,
+    ]) {
       await assertFails(getDoc(doc(ownerDatabase, path)));
       await assertFails(setDoc(doc(ownerDatabase, path), {}));
       await assertFails(updateDoc(doc(ownerDatabase, path), { status: "changed" }));

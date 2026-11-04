@@ -10,6 +10,9 @@ export type GarminTokenGrant = Readonly<{
   refreshToken: string | null
 }>
 
+export type GarminConnectionGrant = GarminTokenGrant &
+  Readonly<{ providerUserId: string }>
+
 export type GarminConnectionStatus = Readonly<{
   status: 'connected' | 'disconnected' | 'disconnecting'
   connectedAt: string | null
@@ -39,7 +42,7 @@ export interface GarminOAuthProvider {
   exchangeAuthorizationCode(options: {
     code: string
     codeVerifier: string
-  }): Promise<GarminTokenGrant>
+  }): Promise<GarminConnectionGrant>
   revoke(grant: GarminTokenGrant): Promise<void>
 }
 
@@ -76,7 +79,7 @@ export interface GarminOAuthStore {
   completeCallback(options: {
     connectedAt: string
     environment: GarminOAuthEnvironment
-    grant: GarminTokenGrant
+    grant: GarminConnectionGrant
     ownerId: string
     stateDigest: string
   }): Promise<readonly GarminTokenGrant[]>
@@ -288,7 +291,7 @@ export async function completeGarminOAuthCallback(
     return { status: 'pending', code: 'callback-processing' }
   }
 
-  let exchangedGrant: GarminTokenGrant | null = null
+  let exchangedGrant: GarminConnectionGrant | null = null
   try {
     exchangedGrant = await dependencies.provider.exchangeAuthorizationCode({
       code: input.code,

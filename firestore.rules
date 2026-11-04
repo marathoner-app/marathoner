@@ -525,6 +525,14 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
+    match /providerAccountLinks/{accountId} {
+      allow read, write: if false;
+    }
+
+    match /garminPushDeliveries/{deliveryId} {
+      allow read, write: if false;
+    }
+
     match /users/{userId}/providerConnections/{providerId} {
       allow read, write: if false;
     }

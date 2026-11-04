@@ -28,9 +28,10 @@ private provider setup is ready.
 3. `garminOAuthCallback` accepts the provider redirect over HTTPS. It validates
    the state record, environment, expiry, and one-time callback reservation
    before any token exchange or owner mapping.
-4. The server exchanges the code and stores the normalized grant under the
-   authenticated owner's server-only connection record. Callback replay returns
-   the prior outcome without repeating the exchange.
+4. The server exchanges the code, performs the approved server-side user-ID
+   lookup, and stores the normalized grant plus a one-way account digest under
+   the authenticated owner's server-only connection record. Callback replay
+   returns the prior outcome without repeating the exchange.
 5. Reconnect replaces the current grant. Prior grants remain in trusted custody
    until provider revocation succeeds.
 6. `disconnectGarminConnection` marks the connection unusable before contacting
@@ -72,6 +73,7 @@ closed beta runtime and private provider controls.
 | `GARMIN_OAUTH_REDIRECT_URI` | Exact deployed `garminOAuthCallback` URL |
 | `GARMIN_AUTHORIZATION_URL` | Private beta server configuration |
 | `GARMIN_TOKEN_URL` | Private beta server configuration |
+| `GARMIN_USER_ID_URL` | Private beta server configuration used after token exchange |
 | `GARMIN_REVOCATION_URL` | Private beta server configuration |
 
 No configuration value is required for builds or synthetic checks. A live
@@ -87,7 +89,12 @@ The boundary is covered at three levels:
   revocation retry, and deletion;
 - HTTP-adapter tests use synthetic endpoints and token responses only;
 - Firestore emulator tests cover atomic reservation, owner mapping,
-  environment isolation, replay, disconnect deletion, and browser denial.
+  stable provider-account digest mapping, environment isolation, replay,
+  disconnect deletion, and browser denial.
+
+The resulting digest is the only bridge to the
+[Activity push boundary](garmin-activity-push-boundary.md). The raw stable
+provider user ID is not persisted, logged, or returned to a client.
 
 Live callback, provider consent, reconnect, and revocation evidence can be
 recorded only after the owner accepts the private setup checkpoint and creates
