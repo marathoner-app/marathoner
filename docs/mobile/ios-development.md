@@ -212,27 +212,31 @@ window and open `ios/App/App.xcodeproj` directly. Do not recreate the project.
 4. Sign out, force-quit, reopen, and confirm no approved-account state or
    training data appears.
 
-For #347's completed-run proof, return to the approved fictional account in the
-same `ios-beta` Release build. After training data reaches its ready state and
-the onboarding overlay is closed, the signed-in home shows **Live run-command
-rehearsal**. This panel is compiled only into `ios-beta`; the iOS boundary check
-requires it in beta and rejects it from development. It does not switch the
-normal Track provider, which remains owned by #346.
+For #347's owner-development completed-run proof, use the approved internal
+account in the `ios-development` Debug build. After training data reaches its
+ready state and the onboarding overlay is closed, the signed-in home shows
+**Live run-command rehearsal**. The panel is compiled into the two explicit
+native modes, `ios-development` and `ios-beta`, and excluded from ordinary web
+builds. It does not switch the normal Track provider, which remains owned by
+#346.
 
-Select **Run reversible beta check** once. The panel submits a fixed fictional
-unplanned 5 km run, waits for the signed-in Firestore listener to observe the
-server record, deletes that exact receipt, and waits for the listener to
-confirm the record is absent. A pass must report all four stages without
-displaying a command ID, completed-run ID, account identifier, or payload. If
-the panel says cleanup is required, retry the exact synthetic-run cleanup and
-do not remove the fixture account until the record is absent.
+Select **Run reversible command check** once. The panel submits a fixed
+fictional unplanned 5 km run, waits for the signed-in Firestore listener to
+observe the server record, deletes that exact receipt, and waits for the
+listener to confirm the record is absent. A pass must report all four stages
+without displaying a command ID, completed-run ID, account identifier, or
+payload. If the panel says cleanup is required, retry the exact synthetic-run
+cleanup and do not remove the fixture account until the record is absent.
 
-Record the date, iOS and Xcode versions, source commit, beta project ID,
-approved ready-state result, denied permission-state result, and cleanup result
-in the issue or pull request. Do not record account emails, UIDs, passwords,
-device identifiers, or the API key. Delete the temporary membership, both
-temporary Auth users, and the local credential manifest after recording the
-evidence:
+Record the date, available iOS and Xcode versions, source commit, Firebase
+project ID, approved ready-state result, denied permission-state result, and
+cleanup result in the issue or pull request. Do not record account emails,
+UIDs, passwords, device identifiers, or the API key. Retain the development
+owner membership only while the closed internal dogfood path remains approved.
+
+For a separate `ios-beta` rehearsal that uses disposable fixture accounts,
+delete its temporary membership, Auth users, and local credential manifest
+after recording the evidence:
 
 ```sh
 npm run cleanup:beta-ios-smoke -- \

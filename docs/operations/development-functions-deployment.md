@@ -1,11 +1,14 @@
 # Owner-development Functions activation and rollback
 
-- **Status:** Owner-development material-command exports deployed and verified
-  for the closed internal accounts on October 30, 2026
+- **Status:** Owner-development material-command exports deployed; plan
+  approval was verified October 30, 2026, and the completed-run create/delete
+  plus rollback rehearsal passed November 4, 2026
 - **Tracking issue:**
   [#347](https://github.com/marathoner-app/marathoner/issues/347)
 - **Provider migration:**
   [#346](https://github.com/marathoner-app/marathoner/issues/346)
+- **Completed-run evidence:**
+  [November 4 owner-development rehearsal](../mobile/evidence/2026-11-04-development-completed-run-command-rehearsal.md)
 - **External beta path:**
   [Founding-beta Functions deployment](beta-functions-deployment.md)
 
@@ -162,6 +165,12 @@ redacted outcomes.
 
 The ordinary Track provider must not migrate under #346 until this rehearsal
 passes and listener cleanup is confirmed.
+
+The November 4, 2026 rehearsal passed. The development client and Functions
+used `marathoner-d9bf9`; one fictional run converged through the listener,
+deletion converged, the disabled runtime flag rejected the same check without a
+run, and the restored runtime passed again. This approves the client activation
+gate but does not change any checked-in environment flag or migrate Track.
 
 ## Rollback
 
