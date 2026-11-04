@@ -1,5 +1,17 @@
 import { createHash, randomBytes } from 'node:crypto'
 
+import type {
+  GarminConnectionStatus,
+  GarminDisconnectResult,
+  GarminStartResult,
+} from '../../src/domain/garminConnection/contract.js'
+
+export type {
+  GarminConnectionStatus,
+  GarminDisconnectResult,
+  GarminStartResult,
+} from '../../src/domain/garminConnection/contract.js'
+
 export const GARMIN_OAUTH_STATE_LIFETIME_MILLISECONDS = 10 * 60 * 1_000
 
 export type GarminOAuthEnvironment = 'beta' | 'development'
@@ -12,11 +24,6 @@ export type GarminTokenGrant = Readonly<{
 
 export type GarminConnectionGrant = GarminTokenGrant &
   Readonly<{ providerUserId: string }>
-
-export type GarminConnectionStatus = Readonly<{
-  status: 'connected' | 'disconnected' | 'disconnecting'
-  connectedAt: string | null
-}>
 
 export type GarminOAuthLogEntry = Readonly<{
   event:
@@ -126,17 +133,6 @@ type GarminOAuthDependencies = Readonly<{
   store: GarminOAuthStore
 }>
 
-export type GarminStartResult =
-  | Readonly<{ status: 'ready'; authorizationUrl: string }>
-  | Readonly<{
-      status: 'authentication_error' | 'authorization_error' | 'unavailable'
-      code:
-        | 'authentication-required'
-        | 'app-check-required'
-        | 'approved-beta-membership-required'
-        | 'garmin-oauth-disabled'
-    }>
-
 export type GarminCallbackResult = Readonly<{
   status: 'connected' | 'pending' | 'rejected' | 'unavailable'
   code:
@@ -147,17 +143,6 @@ export type GarminCallbackResult = Readonly<{
     | 'provider-exchange-failed'
     | 'garmin-oauth-disabled'
 }>
-
-export type GarminDisconnectResult =
-  | Readonly<{ status: 'disconnected' | 'pending' }>
-  | Readonly<{
-      status: 'authentication_error' | 'authorization_error' | 'unavailable'
-      code:
-        | 'authentication-required'
-        | 'app-check-required'
-        | 'provider-revocation-failed'
-        | 'garmin-oauth-disabled'
-    }>
 
 function base64Url(bytes: Uint8Array): string {
   return Buffer.from(bytes).toString('base64url')

@@ -45,6 +45,22 @@ Firestore Rules explicitly deny browser reads and writes for OAuth state and
 provider connection documents. Admin SDK access remains confined to deployed
 trusted functions.
 
+## Runner-facing controls
+
+Account Settings uses only the three sanitized callable results above. A
+runner can start or replace a connection in a separate provider tab, check the
+server-owned connection state after returning, and disconnect safely. The UI
+does not receive tokens, provider identifiers, callback details, or raw
+provider failures.
+
+Connected runners see a missing-run recovery path that asks them to allow for
+provider processing before logging the run manually, because manual fallback
+could create a duplicate when a delayed activity arrives. The approved push
+model has no truthful client-side "check for runs now" operation, so the UI
+offers connection checking and reconnection instead of pretending to poll the
+provider. A failed disconnect remains visibly recoverable until server-side
+revocation succeeds.
+
 ## Environment boundary
 
 Live OAuth is permitted only when all three conditions agree:
@@ -91,6 +107,9 @@ The boundary is covered at three levels:
 - Firestore emulator tests cover atomic reservation, owner mapping,
   stable provider-account digest mapping, environment isolation, replay,
   disconnect deletion, and browser denial.
+- component and viewport tests cover connect, connected, delayed-run recovery,
+  reconnect, disconnect retry, disabled/failure states, phone layout, and 200%
+  text without relying on a live provider account.
 
 The resulting digest is the only bridge to the
 [Activity push boundary](garmin-activity-push-boundary.md). The raw stable
