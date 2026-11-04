@@ -2,6 +2,7 @@ import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
+import type { ExternalAuthorizationLauncher } from '../services/externalAuthorizationLauncher'
 import type { GarminConnectionClient } from '../services/garminConnectionClient'
 import { findBetaBlockingAccessibilityViolations } from '../test/accessibility'
 import GarminConnection from './GarminConnection'
@@ -52,24 +53,22 @@ describe('GarminConnection', () => {
       status: 'ready',
       authorizationUrl: 'https://provider.invalid/authorize',
     }))
-    const replace = vi.fn()
-    vi.spyOn(window, 'open').mockReturnValue({
-      close: vi.fn(),
-      location: { replace },
-      opener: window,
-    } as unknown as Window)
+    const open = vi.fn(async () => undefined)
+    const authorizationLauncher: ExternalAuthorizationLauncher = {
+      prepare: () => ({ cancel: vi.fn(), open }),
+    }
     render(
       <GarminConnection
         accountScope="runner-one"
+        authorizationLauncher={authorizationLauncher}
         client={client({ getStatus, start })}
       />,
     )
 
     await user.click(await screen.findByRole('button', { name: 'Connect Garmin' }))
 
-    expect(window.open).toHaveBeenCalledWith('', '_blank')
     expect(start).toHaveBeenCalledOnce()
-    expect(replace).toHaveBeenCalledWith('https://provider.invalid/authorize')
+    expect(open).toHaveBeenCalledWith('https://provider.invalid/authorize')
     expect(screen.getByRole('status')).toHaveTextContent(/return here and check/i)
 
     await user.click(screen.getByRole('button', { name: 'Check connection' }))
@@ -81,10 +80,10 @@ describe('GarminConnection', () => {
   it('does not create an authorization request when the browser blocks the new tab', async () => {
     const user = userEvent.setup()
     const start = vi.fn<GarminConnectionClient['start']>()
-    vi.spyOn(window, 'open').mockReturnValue(null)
     render(
       <GarminConnection
         accountScope="runner-one"
+        authorizationLauncher={{ prepare: () => null }}
         client={client({ start })}
       />,
     )
@@ -93,6 +92,28 @@ describe('GarminConnection', () => {
 
     expect(start).not.toHaveBeenCalled()
     expect(screen.getByRole('alert')).toHaveTextContent(/allow marathoner to open/i)
+  })
+
+  it('keeps a failed native browser launch recoverable', async () => {
+    const user = userEvent.setup()
+    const open = vi.fn(async () => {
+      throw new Error('native browser unavailable')
+    })
+    render(
+      <GarminConnection
+        accountScope="runner-one"
+        authorizationLauncher={{
+          prepare: () => ({ cancel: vi.fn(), open }),
+        }}
+        client={client()}
+      />,
+    )
+
+    await user.click(await screen.findByRole('button', { name: 'Connect Garmin' }))
+
+    expect(open).toHaveBeenCalledWith('https://provider.invalid/authorize')
+    expect(screen.getByRole('alert')).toHaveTextContent(/could not open garmin approval/i)
+    expect(screen.getByRole('button', { name: 'Connect Garmin' })).toBeEnabled()
   })
 
   it('warns against duplicate manual logging and offers truthful reconnection', async () => {
