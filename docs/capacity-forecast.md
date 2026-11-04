@@ -1,8 +1,7 @@
 # Capacity-based founding-beta forecast
 
-- **Status:** Historical calibrated snapshot pending the automatic-import
-  reforecast in #625; not a live issue inventory
-- **As of:** October 8, 2026
+- **Status:** Active capacity forecast including automatic completed-run import
+- **As of:** November 3, 2026
 - **Owner:** Kevin Tulloch
 - **Baseline issue:** [#116](https://github.com/marathoner-app/marathoner/issues/116)
 - **Recalibration issue:** [#208](https://github.com/marathoner-app/marathoner/issues/208)
@@ -18,18 +17,18 @@
 
 ## How to interpret this snapshot
 
-This forecast preserves the October 8 scope, estimates, and measured-velocity
-calibration. Work merged after that date—including live-read synchronization,
-additional iOS and accessibility evidence, and later trust slices—appears in
-live issues and milestones but has not been silently subtracted from the tables
-below.
+This forecast preserves the September baseline and October 8 calibration as an
+auditable source, then reconciles issue state through November 3 and adds the
+automatic-import work accepted in #616. The historical tables remain below;
+the November 3 reconciliation, work totals, and gate table are the current
+planning output.
 
-The October 30 decision in #616 added automatic completed-run import to the beta
-critical path. The HealthKit, Garmin, trusted-import, enrichment, and cross-
-provider proof work in #618–#624 is not estimated in this snapshot. February
-21, 2027 therefore remains the recorded October 8 likely scenario, not the
-current invitation forecast for the expanded scope. Issue #625 must publish a
-new forecast before these dates are used for current scheduling decisions.
+The automatic-import estimate covers #618–#624 without charging the #617 epic
+again. Completed #618 is recorded but excluded from remaining work. Garmin
+provider approval is external elapsed time rather than developer capacity, and
+Garmin publishes no approval-time guarantee. The dated scenarios therefore
+remain conditional on usable provider access arriving before it controls the
+critical path.
 
 The operating partner added in October contributes relationship development,
 participant discovery, channel learning, interviews, and feedback. That work
@@ -39,17 +38,24 @@ scope, gates, or external waits triggers the existing reforecast rules.
 
 ## Decision summary
 
-The first two weeks of committee-remediation delivery retired substantially
-more of the September estimate than the baseline model anticipated. The
-selected Capacitor architecture is now running in the production-shaped root
-application, Waves 00 and 01 have passed, and implementation has advanced into
-runner intake, deletion, and App Check work.
+From October 8 through November 3, closed baseline rows retired 60 optimistic,
+99 likely, and 153 conservative legacy estimate units. That evidence includes
+plan approval, daily-use tracking, synchronization, accessibility, rules, and
+trust work rather than pull-request count alone. The same period also produced
+many focused child issues whose effort remains contained in open parent rows;
+they are not double-counted as retired units.
 
-The observation window is short and unusually concentrated, so the forecast
-does not extend its raw rate linearly. It uses only one-fifth to just under
-one-half of the observed likely-estimate burn, adds newly exposed App Check and
-live-synchronization scope, and keeps qualified review, TestFlight review,
-non-owner rehearsal, and participant scheduling as independent gates.
+The new import program adds 43 / 70 / 106 units in total. Its completed
+provider-neutral contract (#618) accounts for 4 / 6 / 9 of those units, leaving
+39 / 64 / 97 import units on the critical path. After reconciling both changes,
+158 / 254 / 385 units remain through the invitation decision.
+
+Recent retirement averaged about 27 likely legacy units per week, above the
+existing 16-unit likely rate. The window is still concentrated, owner-review
+hours remain incomplete, and the remaining work includes native HealthKit,
+trusted commands, provider OAuth/push delivery, and physical-device proof. The
+forecast therefore preserves the cautious 24 / 16 / 10 weekly rates instead of
+treating merge volume as sustainable owner capacity.
 
 The October 8 [product-first decision](product-first-beta-decision.md) removes
 the optional 41 / 63 / 95-unit
@@ -71,26 +77,25 @@ With those controls, the corrected scope forecasts:
 
 | Scenario | Earliest invitation decision | Meaning |
 | --- | --- | --- |
-| Optimistic | December 6, 2026 product-ready; January 15, 2027 invitation floor | Twenty-four units land per week, external waits overlap, and little rework occurs. The existing contract still prevents invitations before January 15. |
-| Likely | February 21, 2027 | Sixteen units land per week, the reviewer path consumes up to six weeks, and normal integration and correction work occur. |
-| Conservative | August 22, 2027 | Ten units land per week, high estimates govern, and reviewer plus TestFlight waits reach their planning bounds. |
+| Optimistic | December 27, 2026 capacity-ready; January 15, 2027 invitation floor | Twenty-four units land per week, provider and reviewer waits overlap, and little rework occurs. The existing contract still prevents invitations before January 15. |
+| Likely | February 28, 2027 | Sixteen units land per week, normal integration and correction work occur, and external waits do not exceed the remaining implementation path. |
+| Conservative | August 8, 2027 or later | Ten units land per week and high estimates govern. Garmin approval has no published completion bound, so a delayed approval can move this date later. |
 
 These are forecasts, not promises. Invitations remain blocked until the
 product and responsibility gates pass, even if a forecast date arrives.
-January 15, 2027 falls after the optimistic product-readiness estimate and
-before the likely scenario. It remains an explicit invitation floor and
+January 15, 2027 falls after the optimistic capacity estimate and before the
+likely scenario. It remains an explicit invitation floor and
 scope-or-date checkpoint, not a capacity-backed promise.
 
-The optimistic December 6 date means product-readiness work could finish before
+The optimistic December 27 date means capacity work could finish before
 the invitation floor. It does not authorize invitations before January 15 in
 #104. Opening earlier would require an explicit founding-beta contract change;
 this forecast changes planning evidence, not the participant promise.
 
-The October 8 model's recommended planning expectation was February 21, 2027
-while preserving every ratified safety, integrity, privacy, and review gate.
-It remains a historical baseline until #625 incorporates the expanded scope.
-If the product work finishes before qualified approval, use the approved non-
-prescriptive fallback or wait rather than silently weakening those gates.
+The recommended planning expectation is February 28, 2027 while preserving
+every ratified safety, integrity, privacy, provider, and review gate. If product
+work finishes before qualified or provider approval, use an explicitly approved
+narrower cohort or wait rather than silently weakening those gates.
 
 ## Recalibrated capacity model
 
@@ -104,10 +109,12 @@ delivery. It does not call merged pull requests owner hours.
 | Input | Recalibrated model |
 | --- | --- |
 | Sustainable owner capacity | At least 14 hours per week, based on at least two flexible hours per day |
-| Observed window | September 22 through October 6, 2026; two delivery weeks |
-| Observed delivery | 41 merged pull requests, 44 linked issue closures, 18 of 57 baseline rows closed, and 100 likely legacy estimate units retired |
+| Initial observed window | September 22 through October 6, 2026; two delivery weeks |
+| Current reconciliation window | October 8 through November 3, 2026; 26 elapsed days |
+| Current measured delivery | 22 additional baseline or added-scope forecast rows closed; 60 optimistic, 99 likely, and 153 conservative legacy estimate units retired |
+| Context only, not capacity | Focused child issues and pull requests demonstrate integration progress but are not converted into owner hours or extra retired units while their estimated parent remains open |
 | Forecast delivery rate | 24 optimistic, 16 likely, and 10 conservative legacy estimate units per week |
-| Rate haircut | Forecast rates retain only 48%, 32%, and 20% of the observed 50 likely-unit weekly burn |
+| Current rate check | About 27 likely legacy units retired per elapsed week; the 16-unit likely forecast remains a deliberate haircut for deeper remaining work and incomplete owner-hour evidence |
 | Likely owner allocation | About 10 planned owner hours from the 14-hour minimum; additional flexibility belongs only in the optimistic case |
 | Reserve | At least 30% of the stated minimum capacity remains for review, support, defects, operations, and estimate error |
 | Reserve use | Review, support, defects, operational work, and estimate uncertainty |
@@ -122,13 +129,14 @@ additional flexibility, not every potentially available hour. Personal
 blackout details do not belong in the public repository. A future blackout
 should be represented only as a reduced session count for the affected week.
 
-The rate haircut is deliberate. The observed work was partly documentation,
-architecture, environment setup, and bounded infrastructure; the remaining
-work contains the generator, atomic mutations, adaptation, cross-client daily
-loop, accessibility, and live operations. Those are expected to require more
-owner judgment and correction. The likely model assumes roughly a twofold gain
-over the original eight-unit weekly plan, not the sixfold gain suggested by a
-literal extension of the two-week sample.
+The rate haircut is deliberate. Recent work mixed complete user journeys with
+documentation, architecture, bounded infrastructure, and many small children
+whose parent gates remain open. The remaining work contains native HealthKit,
+provider OAuth and push delivery, trusted mutations, methodology reconciliation,
+physical-device proof, and live operations. Those are expected to require more
+owner judgment and correction. The likely model retains the prior twofold gain
+over the original eight-unit weekly plan rather than extending a concentrated
+delivery window linearly.
 
 The baseline began with the week ending September 27, 2026. Its issue estimates
 remain below as an auditable source. Issue #116 is recorded for completeness
@@ -313,6 +321,50 @@ these beta totals by #223. Issues #211–#214 are completed preparation and
 #215–#218 are retired from this critical path. The estimates remain documented
 in the dormant commercial plan if that work is reactivated later.
 
+## November 3 critical-path reconciliation
+
+The October 8 table is retained as the auditable starting point. Since that
+calibration, the following estimated rows closed:
+
+- Wave 02: #71 and #72, retiring 11 / 18 / 27 units;
+- Wave 03: #62, #73–#77, #114, and #159, retiring 21 / 35 / 54 units; and
+- Wave 05: #3, #4, #8, #9, #60, #61, #63, #64, #127, #143, #201, and #204,
+  retiring 28 / 46 / 72 units.
+
+Together those 22 rows retire 60 / 99 / 153 units. Focused children completed
+inside still-open estimated parents are evidence of progress but do not retire
+the parent weight. This keeps the reconciliation conservative and avoids
+turning issue or pull-request volume into owner hours.
+
+The October 30 automatic-import decision adds these three-point estimates under
+the existing estimate rules:
+
+| Issue | Work | Type | Optimistic | Likely | Conservative | Remaining on November 3 |
+| --- | --- | --- | ---: | ---: | ---: | ---: |
+| [#618](https://github.com/marathoner-app/marathoner/issues/618) | Provider-neutral completed-activity contract | Shared contract | 4 | 6 | 9 | Completed; 0 / 0 / 0 |
+| [#619](https://github.com/marathoner-app/marathoner/issues/619) | Trusted imported-run persistence and emulator proof | Gate | 6 | 10 | 15 | 6 / 10 / 15 |
+| [#620](https://github.com/marathoner-app/marathoner/issues/620) | HealthKit bridge, normalization, and physical-iPhone proof | Gate plus device evidence | 8 | 13 | 20 | 8 / 13 / 20 |
+| [#621](https://github.com/marathoner-app/marathoner/issues/621) | Imported-run enrichment and duplicate-review UI | Gate | 5 | 8 | 12 | 5 / 8 / 12 |
+| [#622](https://github.com/marathoner-app/marathoner/issues/622) | Truthful Garmin Starter Activity API application | Gate plus external wait | 2 | 3 | 5 | 2 / 3 / 5 |
+| [#623](https://github.com/marathoner-app/marathoner/issues/623) | Garmin OAuth, push ingestion, recovery, and limited-account proof | Gate plus external wait | 12 | 20 | 30 | 12 / 20 / 30 |
+| [#624](https://github.com/marathoner-app/marathoner/issues/624) | Cross-provider physical-device and failure-state proof | Gate plus device evidence | 6 | 10 | 15 | 6 / 10 / 15 |
+| **Automatic-import total** |  |  | **43** | **70** | **106** | **39 / 64 / 97** |
+
+Issue #617 is the delivery epic and adds no separate implementation weight.
+Garmin's review time also adds no owner-capacity units; it is modeled under
+external elapsed time below.
+
+The current remaining work by wave is:
+
+| Wave | Legacy or prior added scope | Automatic import | Current optimistic | Current likely | Current conservative |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| 02 Intake and Initial Plan | 14 / 22 / 33 | 0 / 0 / 0 | 14 | 22 | 33 |
+| 03 Track, Learn, and Adapt | 43 / 71 / 108 | 8 / 13 / 20 (#619, #622) | 51 | 84 | 128 |
+| 04 iOS Daily Companion | 27 / 43 / 65 | 13 / 21 / 32 (#620, #621) | 40 | 64 | 97 |
+| 05 Trust and External-Beta Readiness | 30 / 46 / 69 | 18 / 30 / 45 (#623, #624) | 48 | 76 | 114 |
+| 06A Founding Cohort Invitations | 5 / 8 / 13 | 0 / 0 / 0 | 5 | 8 | 13 |
+| **Remaining through invitation decision** | **119 / 190 / 288** | **39 / 64 / 97** | **158** | **254** | **385** |
+
 ### Post-invitation reviews
 
 | Issue | Work | Earliest evidence window | Optimistic | Likely | Conservative |
@@ -326,15 +378,18 @@ in the dormant commercial plan if that work is reactivated later.
 
 | Boundary | Optimistic | Likely | Conservative |
 | --- | ---: | ---: | ---: |
-| Remaining legacy estimate units through invitation decision | 179 | 289 | 441 |
+| Remaining legacy and prior added-scope units through invitation decision | 119 | 190 | 288 |
+| Remaining automatic-import units through invitation decision | 39 | 64 | 97 |
+| Total remaining units through invitation decision | 158 | 254 | 385 |
 | Additional units through the eight-week decision | 7 | 12 | 19 |
-| Total through the eight-week decision | 186 | 301 | 460 |
+| Total through the eight-week decision | 165 | 266 | 404 |
 
 These are planning weights, not measured owner hours. The inventory retains the
-open product baseline and added-scope rows. Optional commercial-research issues
-are not charged. Issue #116 and completed work are excluded. The three
-post-invitation review issues remain separate because their evidence windows
-cannot begin before invitations.
+open product baseline, prior added scope, and automatic-import rows. Optional
+commercial-research issues are not charged. Issue #116, completed #618, and
+other completed work are excluded from remaining totals. The three post-
+invitation review issues remain separate because their evidence windows cannot
+begin before invitations.
 
 ## External elapsed time
 
@@ -347,6 +402,7 @@ does not justify material spending.
 | --- | --- | --- | --- |
 | Qualified reviewer availability | 2–6 calendar weeks to identify and schedule | Keep the combined packet ready; activate #191 when the prescriptive journey is stable and internally testable and the wait is within the next four to six weeks of blocking external beta | If review remains unavailable when internal predecessors are complete, choose the non-prescriptive fallback or move the date |
 | Rules and content review | 1–3 calendar weeks per complete review packet | Owner preparation is in #119, #134, and #135 estimates; reviewer elapsed time is separate | Unapproved high-risk rules or content cannot ship |
+| Garmin Starter Activity API approval | No published approval-time guarantee; Garmin says a typical integration takes 1–4 weeks after approval | Submit #622 before the wait controls Wave 05; #623 owner work is estimated separately and cannot start until usable access and terms exist | If approval is not usable when #623 reaches the active path, explicitly move the invitation date or approve a cohort limited to ecosystems with a verified automatic path |
 | California entity formation, D-U-N-S synchronization, Apple organization enrollment, signing, and App Store Connect setup | 1–3 calendar weeks after accepted formation as a planning allowance | Preserve the prepared [#281](https://github.com/marathoner-app/marathoner/issues/281) path and continue Personal Team development; activate the paid path when organization identity, App Attest, or external distribution is within the next four to six weeks of becoming the blocker | The Personal Team cannot supply the intended seller identity or App Attest profile; unresolved enrollment blocks #205 beta proof and external distribution |
 | First external TestFlight review | 1 week likely; 2 weeks conservative including correction allowance | Prioritize #122 early enough to overlap review with the remaining iOS work | No external invitation without an approved build |
 | Non-owner device rehearsal | 1–3 calendar weeks to schedule | Book after the first installable candidate exists; owner execution effort is in #122 and #140 | A failed critical journey creates a blocking issue |
@@ -361,6 +417,16 @@ when its activation test passes; it does not block ordinary web or Personal
 Team development, but it eventually controls App Attest and external
 distribution.
 
+Garmin's current program overview identifies Starter Business access as the
+entry point for organizations and includes push-only Activity API delivery with
+limited user capacity. Its FAQ says access follows approval and describes a
+typical integration as one to four weeks, but it does not publish a duration or
+guarantee for the approval itself. See Garmin's
+[program overview](https://developer.garmin.com/gc-developer-program/overview/)
+and [program FAQ](https://developer.garmin.com/gc-developer-program/enterprise/program-faq/).
+The forecast therefore does not convert approval time into owner units or
+pretend the August conservative capacity date bounds the provider wait.
+
 Apple documents that the first build submitted for external testing receives a
 full TestFlight App Review and that later builds may not require one. Apple does
 not publish a completion guarantee, so the one- and two-week ranges above are
@@ -372,27 +438,30 @@ and [external tester workflow](https://developer.apple.com/help/app-store-connec
 
 The forecast serializes owner work while allowing external scheduling to
 overlap. It uses 24 units per week for the optimistic column, 16 for likely,
-and 10 for conservative. Dates are rounded to Sunday capacity-week boundaries
-beginning October 11, 2026.
+and 10 for conservative. The November 3 checkpoint falls inside a capacity
+week, so the partial week is excluded and dates use full Sunday-ending weeks
+beginning November 15, 2026.
 
-The product waves serialize owner capacity while qualified-review and Apple
-elapsed time overlap as their inputs become ready. The bounded adaptation
-engine waits for applicable qualified approval, not a commercial decision.
-Wave 04 retains one optimistic/likely or two conservative weeks for the first
-external TestFlight review.
+The product waves serialize owner capacity while qualified-review, Garmin,
+Apple, and TestFlight elapsed time overlap as their inputs become ready. The
+bounded adaptation engine waits for applicable qualified approval, not a
+commercial decision. Wave 04 retains one optimistic/likely or two conservative
+weeks for the first external TestFlight review; later owner work can continue
+while that review is pending. Dated provider-complete gates also require usable
+Garmin access and therefore can move later than the capacity dates.
 
 | Evidence gate | Repository target | Optimistic | Likely | Conservative |
 | --- | --- | --- | --- | --- |
 | Wave 00 Solo Delivery and Beta Contract | October 4, 2026 | Passed September 23 | Passed September 23 | Passed September 23 |
 | Wave 01 Shared Mobile Foundation | October 18, 2026 | Passed October 5 | Passed October 5 | Passed October 5 |
-| Wave 02 Intake and Initial Plan | November 15, 2026 | October 25, 2026 | November 1, 2026 | November 22, 2026 |
-| Wave 03 Track, Learn, and Adapt | December 6, 2026 | November 8, 2026 | December 20, 2026 | March 21, 2027 |
-| Wave 04 iOS Daily Companion and external TestFlight review | December 20, 2026 | November 22, 2026 | January 10, 2027 | May 16, 2027 |
-| Wave 05 Trust and External-Beta Readiness | January 8, 2027 | December 6, 2026 | February 14, 2027 | August 8, 2027 |
-| Wave 06A Invitation decision | January 15, 2027 | December 6 product-ready; January 15 floor | February 21, 2027 | August 22, 2027 |
-| Wave 06B Two-week operating review | January 29, 2027 | January 29, 2027 | March 7, 2027 | September 5, 2027 |
-| Wave 06B Four-week validation review | February 12, 2027 | February 12, 2027 | March 21, 2027 | September 19, 2027 |
-| Wave 06C Eight-week validation review | March 12, 2027 | March 12, 2027 | April 18, 2027 | October 17, 2027 |
+| Wave 02 Intake and Initial Plan | November 15, 2026 | November 15, 2026 | November 22, 2026 | December 6, 2026 |
+| Wave 03 Track, Learn, and Adapt | December 6, 2026 | November 29, 2026 | December 27, 2026 | March 7, 2027 |
+| Wave 04 iOS Daily Companion and external TestFlight review | December 20, 2026 | December 20, 2026 | January 31, 2027 | May 23, 2027 |
+| Wave 05 Trust and External-Beta Readiness | January 8, 2027 | December 27, 2026 capacity; provider access required | February 28, 2027 capacity; provider access required | August 1, 2027 capacity; provider access required |
+| Wave 06A Invitation decision | January 15, 2027 | December 27 capacity-ready; January 15 floor | February 28, 2027 | August 8, 2027 or later |
+| Wave 06B Two-week operating review | January 29, 2027 | January 29, 2027 | March 14, 2027 | August 22, 2027 or later |
+| Wave 06B Four-week validation review | February 12, 2027 | February 12, 2027 | March 28, 2027 | September 5, 2027 or later |
+| Wave 06C Eight-week validation review | March 12, 2027 | March 12, 2027 | April 25, 2027 | October 3, 2027 or later |
 
 Review dates include the required observation window and enough planned
 sessions to prepare the decision. They are not obtained by relabeling the
@@ -401,24 +470,29 @@ invitation date as completed validation.
 ## Scope-or-date decision
 
 The original January 15 checkpoint remains inside the forecast range. It
-follows the optimistic December 6 capacity date and precedes the likely
-February 21 decision. Treating January as a commitment would require the
-optimistic delivery rate, the short reviewer path, external TestFlight review,
-and no binding correction cycle to occur together. The short delivery sample
-does not support making that combination the plan.
+follows the optimistic December 27 capacity date and precedes the likely
+February 28 decision. Treating January as a commitment would require the
+optimistic delivery rate, usable Garmin access, the short reviewer path,
+external TestFlight review, and no binding correction cycle to occur together.
+The delivery sample does not support making that combination the plan.
 
 The recommended response is therefore:
 
 1. keep all invitation gates in force;
 2. treat January 15 as a decision checkpoint rather than an invitation
    expectation;
-3. retain February 21, 2027 and August 22, 2027 as the October 8 likely and
-   conservative references, not current expanded-scope forecasts;
+3. plan around February 28, 2027 as the likely capacity-backed invitation
+   decision and August 8, 2027 as the conservative capacity date, while
+   recognizing Garmin approval can move either later;
 4. prioritize the product waves while #191, #281/#205, and #122 advance when
-   their trust and external dependencies permit;
+   their trust and external dependencies permit, and submit #622 before Garmin
+   approval controls the critical path;
 5. keep product payments outside beta and condition bounded adaptation on
    qualified review rather than payment evidence; and
-6. complete #625 now that #616 has changed critical-path scope.
+6. preserve the intended HealthKit and direct-Garmin cohort for now. If Garmin
+   access becomes the controlling delay, make a separate explicit decision to
+   move the date or narrow the cohort; do not fall back silently to manual
+   logging.
 
 Moving #8, #9, #76, and #77 out of beta milestones would remove only 13 likely
 units, less than one likely delivery week. It does not make January the likely
@@ -432,8 +506,8 @@ responsible product experiment.
 
 | Tier | Participant promise | Preliminary owner effort | Forecast at likely capacity |
 | --- | --- | ---: | --- |
-| Internal functional candidate | The end-to-end product journey works for the owner on web and iOS, without claiming external readiness | Included in Waves 02–04 | January 10, 2027 likely after the first TestFlight review allowance |
-| Functional founding beta | The ratified bounded product works for five to eight participants, with iOS, deterministic rules, and the mandatory safety, privacy, integrity, deletion, and support gates | 289 likely legacy units remain through invitations | February 21, 2027 likely |
+| Internal functional candidate | The end-to-end product journey works for the owner on web and iOS, without claiming external readiness | Included in Waves 02–04 | January 31, 2027 likely after the first TestFlight review allowance |
+| Functional founding beta | The ratified bounded product works for five to eight participants, with verified automatic import for each included ecosystem plus the mandatory methodology, safety, privacy, integrity, deletion, and support gates | 254 likely units remain through invitations | February 28, 2027 likely if provider access does not control the gate |
 | Optional commercial evidence | Formal interviews, payment behavior, and acquisition evidence are collected only after a later activation decision | Excluded from beta totals; prior reference estimate is 63 likely units | No active date and no beta dependency |
 
 No tier permits unreviewed algorithmic or founder-originated coaching. Optional
@@ -459,6 +533,15 @@ recorded, and the remaining feature and operations work is deeper. The 16-unit
 likely rate is therefore a conservative calibration judgment, not an
 hours-derived productivity claim.
 
+The October 8 through November 3 reconciliation adds a more feature-heavy
+sample: 22 estimated rows closed and 99 likely legacy units retired over 26
+elapsed days, or about 27 likely units per week. Plan approval, Track and
+Analyze daily-use work, synchronization, accessibility, Firestore rules, and
+operator controls are represented. Numerous smaller child issues also merged,
+but they do not retire additional units while their estimated parent remains
+open. Because native provider integration and live external gates are not yet
+represented in the sample, the 24 / 16 / 10 forecast rates remain unchanged.
+
 For the next calibration window, record without private calendar details:
 
 - planned owner-review hours available and used;
@@ -468,10 +551,11 @@ For the next calibration window, record without private calendar details:
 - external wait time; and
 - whether the 30% reserve was preserved.
 
-Reforecast after Wave 02 passes or four additional delivery weeks, whichever
-comes first. The next sample must include #70–#72 or comparable end-to-end
-feature work; another documentation-heavy sample may not justify a higher
-rate. Do not reduce the owner-understanding requirement to improve the metric.
+Reforecast after Wave 02 passes, Garmin returns a material provider decision,
+or four additional delivery weeks pass, whichever comes first. The next sample
+should include #619–#621 or comparable native/trusted integration work; another
+documentation-heavy sample may not justify a higher rate. Do not reduce the
+owner-understanding requirement to improve the metric.
 
 ## Reforecast rules
 
@@ -500,21 +584,24 @@ a schedule decision.
 
 The baseline was built from the live subissue hierarchy and open milestone
 contents on September 22, 2026. The first recalibration used state through the
-merge of #207 on October 6. The October 8 strategy correction preserves that
-measured product inventory, removes completed #203, and excludes the optional
-#211–#218 commercial-proof hierarchy from beta totals.
+merge of #207 on October 6. The October 8 strategy correction removed optional
+#211–#218 commercial proof from beta totals. This November 3 reconciliation
+uses issue state through merged #618 and adds #618–#624 explicitly.
 
 - All open baseline rows and newly exposed critical-path leaves through the
   invitation decision have a three-point estimate or an explicit containment
-  rule.
+  rule; #618–#624 now have their own estimate table.
 - #4 and #23 retain estimated residual rows because their open parent scope is
   not fully represented by their current children.
 - The completed #79 decomposition is not charged again through #195–#197.
 - Completed #203 is excluded, and #126 plus #211–#218 carry no beta-critical
   capacity.
+- Completed #618 is recorded in the import estimate but excluded from remaining
+  work; #617 is an epic and is not charged again.
 - #191 is contained within #119, #162 within the #23 residual, and #161 within
   #201–#206.
-- External elapsed time is separate from owner effort.
+- External elapsed time is separate from owner effort, including Garmin access
+  review, which has no published approval-time guarantee.
 - Every repository evidence gate has likely and conservative dates.
 - Post-invitation reviews are scheduled from the forecast invitation date, not
   from the historical January target.

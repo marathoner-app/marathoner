@@ -67,11 +67,10 @@ conflict.
 
 5. **Read dates as forecasts, not promises.** Read the summary and gate table
    in the [capacity forecast](capacity-forecast.md). January 15, 2027 is an
-   invitation floor and scope-or-date checkpoint. The October 8 model estimated
-   February 21, 2027 as likely and August 22, 2027 as conservative, but it
-   predates the automatic-import scope amendment. Issue
-   [#625](https://github.com/marathoner-app/marathoner/issues/625) tracks the
-   formal reforecast; live issues show work completed since that calibration.
+   invitation floor and scope-or-date checkpoint. The November 3 model estimates
+   February 28, 2027 as likely and August 8, 2027 as the conservative capacity
+   date after adding automatic import and reconciling completed work. Provider
+   approval and every other evidence gate can move those dates later.
 
 6. **Understand how people will be found and supported.** Read the
    [founding cohort plan](founding-cohort-plan.md). Focus on personal
