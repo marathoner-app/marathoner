@@ -747,6 +747,31 @@ describe("founding-beta membership rules", () => {
     await assertFails(deleteDoc(doc(ownerDatabase, importPath)));
   });
 
+  it("keeps provider OAuth state and grants server-only", async () => {
+    await seedMembership(firstUserId);
+    const statePath = "providerOAuthStates/synthetic-state-digest";
+    const connectionPath =
+      `users/${firstUserId}/providerConnections/garmin`;
+    await testEnvironment.withSecurityRulesDisabled(async (context) => {
+      await setDoc(doc(context.firestore(), statePath), {
+        schemaVersion: 1,
+        ownerId: firstUserId,
+      });
+      await setDoc(doc(context.firestore(), connectionPath), {
+        schemaVersion: 1,
+        ownerId: firstUserId,
+      });
+    });
+
+    const ownerDatabase = authenticatedContext(firstUserId).firestore();
+    for (const path of [statePath, connectionPath]) {
+      await assertFails(getDoc(doc(ownerDatabase, path)));
+      await assertFails(setDoc(doc(ownerDatabase, path), {}));
+      await assertFails(updateDoc(doc(ownerDatabase, path), { status: "changed" }));
+      await assertFails(deleteDoc(doc(ownerDatabase, path)));
+    }
+  });
+
   it("keeps evaluated plan-revision snapshots server-only", async () => {
     await seedMembership(firstUserId);
     const snapshotPath =

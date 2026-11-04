@@ -521,6 +521,14 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
+    match /providerOAuthStates/{stateId} {
+      allow read, write: if false;
+    }
+
+    match /users/{userId}/providerConnections/{providerId} {
+      allow read, write: if false;
+    }
+
     match /users/{userId}/runs/{runId} {
       allow read, delete: if isSignedInAs(userId);
       allow create: if isSignedInAs(userId)

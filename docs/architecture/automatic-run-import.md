@@ -167,7 +167,7 @@ behavior must match the implemented providers before invitations open.
 | 4 | [#621 Imported-run enrichment](https://github.com/marathoner-app/marathoner/issues/621) | 04 iOS Daily Companion | #618 and #619 complete |
 | 5 | [#622 Garmin Starter application](https://github.com/marathoner-app/marathoner/issues/622) | 03 Track, Learn, and Adapt | Complete |
 | 6 | [#649 Garmin access and configuration](https://github.com/marathoner-app/marathoner/issues/649) | 05 Trust and External-Beta Readiness | Approved access; owner terms checkpoint remains |
-| 7 | [#650 Trusted Garmin OAuth](https://github.com/marathoner-app/marathoner/issues/650) | 05 Trust and External-Beta Readiness | #649 complete |
+| 7 | [#650 Trusted Garmin OAuth](https://github.com/marathoner-app/marathoner/issues/650) | 05 Trust and External-Beta Readiness | Implemented with synthetic proof; live private configuration and deployment remain off |
 | 8 | [#651 Garmin push ingestion](https://github.com/marathoner-app/marathoner/issues/651) | 05 Trust and External-Beta Readiness | #649 and #650 complete |
 | 9 | [#652 Garmin recovery UI](https://github.com/marathoner-app/marathoner/issues/652) | 05 Trust and External-Beta Readiness | #650 and #651 complete |
 | 10 | [#623 Direct Garmin ingestion](https://github.com/marathoner-app/marathoner/issues/623) | 05 Trust and External-Beta Readiness | #649-#652 complete |
