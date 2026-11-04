@@ -29,11 +29,11 @@ and timing should change when participant evidence shows that a different
 approach would be more responsible or effective.
 
 January 15, 2027 remains the invitation floor and scope-or-date checkpoint. The
-December 6 optimistic and February 21 likely dates are October 8 forecast
-outputs that predate the automatic-import scope amendment. Issue
-[#625](https://github.com/marathoner-app/marathoner/issues/625) tracks the
-reforecast; cohort timing follows the product and responsibility gates rather
-than the historical milestone or superseded estimate alone.
+November 3 [capacity forecast](capacity-forecast.md) places capacity readiness
+at December 27 optimistic, the invitation decision at February 28 likely, and
+the conservative capacity date at August 8. Garmin approval has no published
+completion bound and can move those dates later. Cohort timing follows the
+product, provider, and responsibility gates rather than a forecast alone.
 
 ## Objective
 

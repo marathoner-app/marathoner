@@ -459,12 +459,9 @@ bounded adaptation engine depends on qualified review and product evidence.
 - an installable internal or TestFlight candidate.
 
 The exact wave contract and evidence gates are maintained in the
-[zero-to-beta plan](zero-to-beta-plan.md). The October 8
-[capacity forecast](capacity-forecast.md) is the last calibrated scheduling
-snapshot, but it predates the automatic-import scope accepted in #616. Issue
-[#625](https://github.com/marathoner-app/marathoner/issues/625) tracks the
-required reforecast; until it is complete, the old dates are planning history,
-not a claim that the new scope fits without moving them.
+[zero-to-beta plan](zero-to-beta-plan.md). The November 3
+[capacity forecast](capacity-forecast.md) is the current calibrated scheduling
+snapshot and includes the automatic-import scope accepted in #616.
 
 ### Invite-only external beta: after the invitation gates pass
 

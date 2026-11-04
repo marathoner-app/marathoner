@@ -5,7 +5,10 @@ Plan, track, and understand marathon training in one focused workspace.
 Marathoner is an actively developed training companion for runners preparing
 for a marathon. The product is being built in small, understandable increments
 toward a conditional iOS founding beta. January 15, 2027 remains a
-scope-or-date decision checkpoint, not a capacity-backed invitation forecast.
+scope-or-date decision checkpoint and optimistic invitation floor, not a
+delivery promise. The November 3 capacity forecast places the likely invitation
+decision on February 28, 2027 and the conservative capacity date on August 8,
+subject to every evidence gate and potentially later Garmin provider approval.
 The first invitation batch is limited to five to eight allowlisted adults who
 already run consistently and are preparing for a first marathon. The existing
 responsive web application remains the planning and analysis surface; Android

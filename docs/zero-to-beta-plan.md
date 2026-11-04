@@ -1,9 +1,9 @@
 # Marathoner zero-to-beta plan
 
 - **Status:** Active delivery plan
-- **Last updated:** October 30, 2026
+- **Last updated:** November 3, 2026
 - **Product owner and current implementer:** Kevin Tulloch
-- **Decision checkpoint:** January 15, 2027; it is the optimistic invitation floor, precedes the likely forecast, and is not a delivery promise
+- **Decision checkpoint:** January 15, 2027; it is the optimistic invitation floor, precedes the February 28 likely forecast, and is not a delivery promise
 - **Master tracker:** [GitHub issue #104](https://github.com/marathoner-app/marathoner/issues/104)
 - **Active remediation:** [Committee remediation sprint](committee-remediation-sprint.md)
 - **Founding-beta contract:** [GitHub issue #117](https://github.com/marathoner-app/marathoner/issues/117)
@@ -27,16 +27,15 @@ hold/repeat/reschedule recommendations, timely reviewed guidance, and informed
 approval of material plan changes.
 
 January 15, 2027 remains the contractual invitation floor and scope-or-date
-checkpoint. The October 8 [capacity recalibration](capacity-forecast.md)
-placed product readiness at December 6, 2026 optimistic, February 21, 2027
-likely, and August 22, 2027 conservative after removing optional commercial
-research from the critical path. Those dates predate the October 30 automatic-
-import scope amendment and do not include #618–#624. Issue
-[#625](https://github.com/marathoner-app/marathoner/issues/625) tracks the
-required reforecast. The optimistic capacity date does not permit invitations
-before January 15 without a separate contract change. None of these dates
-promises beta access, public launch, completed cohort validation, or an Android
-external release.
+checkpoint. The November 3 [capacity recalibration](capacity-forecast.md)
+includes automatic completed-run import and places capacity readiness at
+December 27, 2026 optimistic, the invitation decision at February 28, 2027
+likely, and the conservative capacity date at August 8, 2027. Garmin provider
+approval has no published completion bound and may move any provider-complete
+date later. The optimistic capacity date does not permit invitations before
+January 15 without a separate contract change. None of these dates promises
+beta access, public launch, completed cohort validation, or an Android external
+release.
 
 The September 2026 committee review found that the target remains conditional
 on methodology authority, executable issue decomposition, client data
@@ -206,9 +205,8 @@ separate Android evidence.
 Each wave ends in observable evidence, not only merged code. Work may overlap
 when it does not weaken the preceding gate. The targets below are the original
 evidence checkpoints. The [capacity forecast](capacity-forecast.md) records
-the October 8 optimistic, likely, and conservative snapshot. Automatic import
-changed critical-path scope on October 30, so #625 must recalibrate those dates
-before they are treated as current planning output.
+the current November 3 optimistic, likely, and conservative scenarios,
+including automatic completed-run import and external provider timing.
 
 | Wave | Target | Tracker | Required outcome |
 | --- | --- | --- | --- |
