@@ -191,6 +191,14 @@ The repository may name configuration contracts but never store their values:
 | `GARMIN_OAUTH_REDIRECT_URI` | Non-secret beta configuration matching the exact deployed callback registered with Garmin. |
 | `GARMIN_ACTIVITY_PUSH_URL` | Non-secret beta endpoint registered in Garmin's private configuration tools after #651 deploys it. |
 
+Issue #650 implements the trusted callback as the exported
+`garminOAuthCallback` HTTPS function and keeps it disabled by default. The
+[trusted OAuth boundary](../architecture/garmin-oauth-boundary.md) defines the
+additional private runtime endpoint names, state lifecycle, environment guard,
+grant custody, replay behavior, and disconnect cleanup. The route is not yet a
+live registered callback: provider terms, app creation, secret creation,
+configuration, and deployment remain explicit owner checkpoints.
+
 Provider-specific details that are not public belong in private implementation
 configuration, not this repository. #650 and #651 must preserve that boundary
 while keeping the provider adapter independently testable with synthetic
@@ -240,9 +248,9 @@ record only the status, public-safe requirement, and next action.
 | Portal entitlement | Starter access for up to 1,000 connected users, push-only delivery, and no historical data. Only Activity API is in Marathoner's approved scope. |
 | Public-safe application reference | None; the confirmation page supplied no reference number |
 | Provider blocker | Private owner review and acceptance of the provider terms remain pending. The terms are not reproduced or summarized in this public repository. |
-| Product prerequisite | Deploy the corrected public privacy notice, then implement the stable beta OAuth callback before registering the redirect URI. |
-| Next action | Owner reviews the agreement checkpoint; #650 implements the trusted OAuth route before app creation. |
-| #623 state | Blocked while #649 remains `approved but terms pending`; #650-#652 stay dependency-blocked. |
+| Product prerequisite | Deploy the corrected public privacy notice and the disabled-by-default trusted OAuth boundary before registering its exact beta callback URI. |
+| Next action | Owner reviews the agreement checkpoint; then create the private beta app, place its secret directly in Secret Manager, configure the exact callback, and perform the bounded live proof. |
+| #623 state | Default-off implementation continues. Live provider use remains blocked on the owner terms/app checkpoint and completion of #651-#652. |
 
 Possible provider outcomes are `submitted`, `more information requested`,
 `approved but terms pending`, `approved and usable`, `rejected`, or `legal
