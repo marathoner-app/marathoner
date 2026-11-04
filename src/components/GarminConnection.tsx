@@ -7,12 +7,17 @@ import type {
   GarminStartResult,
 } from '../domain/garminConnection/contract'
 import {
+  systemExternalAuthorizationLauncher,
+} from '../services/externalAuthorizationLauncher'
+import type { ExternalAuthorizationLauncher } from '../services/externalAuthorizationLauncher'
+import {
   firebaseGarminConnectionClient,
 } from '../services/firebaseGarminConnectionClient'
 import type { GarminConnectionClient } from '../services/garminConnectionClient'
 
 interface GarminConnectionProps {
   accountScope: string
+  authorizationLauncher?: ExternalAuthorizationLauncher
   client?: GarminConnectionClient
 }
 
@@ -77,6 +82,7 @@ function connectedDate(value: string | null): string | null {
 
 export default function GarminConnection({
   accountScope,
+  authorizationLauncher = systemExternalAuthorizationLauncher,
   client = firebaseGarminConnectionClient,
 }: GarminConnectionProps) {
   const [connection, setConnection] = useState<GarminConnectionStatus | null>(null)
@@ -145,29 +151,28 @@ export default function GarminConnection({
   }, [accountScope, client])
 
   const start = async () => {
-    const authorizationWindow = window.open('', '_blank')
-    if (authorizationWindow === null) {
+    const authorizationTarget = authorizationLauncher.prepare()
+    if (authorizationTarget === null) {
       setError('Allow Marathoner to open a new tab, then try connecting Garmin again.')
       return
     }
-    authorizationWindow.opener = null
     setPending('start')
     setMessage(null)
     setError(null)
     try {
       const result = await client.start()
       if (result.status !== 'ready') {
-        authorizationWindow.close()
+        authorizationTarget.cancel()
         setError(connectionFailure(result))
         return
       }
-      authorizationWindow.location.replace(result.authorizationUrl)
+      await authorizationTarget.open(result.authorizationUrl)
       setMessage(
-        'Garmin opened in a new tab. After approving access, return here and check the connection.',
+        'Garmin opened for approval. After approving access, return here and check the connection.',
       )
     } catch {
-      authorizationWindow.close()
-      setError('Marathoner could not start the Garmin connection. Try again shortly.')
+      authorizationTarget.cancel()
+      setError('Marathoner could not open Garmin approval. Try again shortly.')
     } finally {
       setPending(null)
     }
