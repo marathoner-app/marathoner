@@ -36,6 +36,10 @@ import {
 import { isBetaRunCommandRehearsalMode } from "./components/betaRunCommandRehearsalMode";
 import { isInternalPlanProposalRehearsalMode } from "./components/internalPlanProposalRehearsalMode";
 import { resolvePlanSurfaceData } from "./training/planSurfaceData";
+import {
+  resumeHealthKitImportMonitoring,
+  stopHealthKitImportMonitoring,
+} from "./services/healthKitImport";
 
 const publicSupportEmail = "kevin@marathonerapp.com";
 const BetaRunCommandRehearsal = isBetaRunCommandRehearsalMode(
@@ -129,6 +133,14 @@ function App() {
       void clearInternalPlanRehearsalSession();
     }
     lastSignedInUserId.current = signedInUserId;
+  }, [signedInUserId]);
+
+  useEffect(() => {
+    if (signedInUserId === null) return;
+    void resumeHealthKitImportMonitoring(signedInUserId).catch(() => undefined);
+    return () => {
+      void stopHealthKitImportMonitoring(signedInUserId);
+    };
   }, [signedInUserId]);
 
   useEffect(() => {
@@ -335,6 +347,7 @@ function App() {
         auth.status === "signedIn" &&
         accountSettingsOpen && (
           <AccountDeletionDialog
+            accountScope={auth.user.uid}
             email={auth.user.email}
             supportEmail={publicSupportEmail}
             unresolvedCommandId={unresolvedDeletionCommandId}

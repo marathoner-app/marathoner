@@ -47,6 +47,7 @@ function renderDialog(
     onUnresolvedCommandChange,
     ...render(
       <AccountDeletionDialog
+        accountScope="runner-account"
         email="runner@example.com"
         supportEmail={supportEmail}
         unresolvedCommandId={unresolvedCommandId}

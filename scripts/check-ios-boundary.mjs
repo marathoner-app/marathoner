@@ -59,9 +59,11 @@ async function run() {
   )
   const [
     appDelegate,
+    appDebugEntitlements,
     appEntitlements,
     capacitorConfig,
     bridgeViewController,
+    healthKitPlugin,
     debugConfig,
     infoPlist,
     launchStoryboard,
@@ -78,6 +80,10 @@ async function run() {
     selectedFirebaseConfiguration,
   ] = await Promise.all([
     readFile(path.join(repositoryRoot, 'ios/App/App/AppDelegate.swift'), 'utf8'),
+    readFile(
+      path.join(repositoryRoot, 'ios/App/App/App.debug.entitlements'),
+      'utf8',
+    ),
     readFile(path.join(repositoryRoot, 'ios/App/App/App.entitlements'), 'utf8'),
     readFile(path.join(repositoryRoot, 'capacitor.config.ts'), 'utf8'),
     readFile(
@@ -85,6 +91,10 @@ async function run() {
         repositoryRoot,
         'ios/App/App/MarathonerBridgeViewController.swift',
       ),
+      'utf8',
+    ),
+    readFile(
+      path.join(repositoryRoot, 'ios/App/App/HealthKitPlugin.swift'),
       'utf8',
     ),
     readFile(path.join(repositoryRoot, 'ios/debug.xcconfig'), 'utf8'),
@@ -142,9 +152,11 @@ async function run() {
   const violations = [
     ...findIosProjectViolations({
       appDelegate,
+      appDebugEntitlements,
       appEntitlements,
       capacitorConfig,
       bridgeViewController,
+      healthKitPlugin,
       debugConfig,
       infoPlist,
       launchStoryboard,

@@ -15,6 +15,7 @@ import {
   submitAccountDeletionRequest,
 } from '../services/accountDeletionService'
 import SupportDiagnostics from './SupportDiagnostics'
+import AppleHealthConnection from './AppleHealthConnection'
 
 type RequestPhase = 'idle' | 'reauthenticating' | 'submitting' | 'resolving'
 
@@ -24,6 +25,7 @@ interface AccountDeletionFailure {
 }
 
 export interface AccountDeletionDialogProps {
+  accountScope: string
   email: string | null
   supportEmail: string
   unresolvedCommandId: string | null
@@ -136,6 +138,7 @@ function reauthenticationFailure(error: unknown): AccountDeletionFailure {
 }
 
 export function AccountDeletionDialog({
+  accountScope,
   email,
   supportEmail,
   unresolvedCommandId,
@@ -285,6 +288,8 @@ export function AccountDeletionDialog({
         </div>
 
         <SupportDiagnostics />
+
+        <AppleHealthConnection accountScope={accountScope} />
 
         <section
           className="account-deletion-section"
