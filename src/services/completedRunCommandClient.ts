@@ -118,6 +118,8 @@ function mapSharedFailure(
     case 'run_completed':
     case 'run_updated':
     case 'run_deleted':
+    case 'activity_imported':
+    case 'activity_import_review_required':
     case 'recommendation_decided':
       return unknownOutcome(commandId)
     case 'stale_revision':

@@ -557,6 +557,10 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    match /users/{userId}/activityImports/{importId} {
+      allow read, write: if false;
+    }
+
     match /users/{userId}/runs/{runId} {
       allow read, delete: if canAccessBetaTrainingData(userId);
       allow create: if canAccessBetaTrainingData(userId)

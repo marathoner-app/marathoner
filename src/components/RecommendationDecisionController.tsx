@@ -123,6 +123,12 @@ function failurePresentation(
         "This decision could not be safely repeated",
         "Marathoner found a different request using this decision identifier. Your active plan was not changed; review the latest recommendation before continuing.",
       );
+    case "activity_imported":
+    case "activity_import_review_required":
+      return unavailable(
+        "Decision status needs checking",
+        "Marathoner received a response for a different operation. Check the original recommendation before continuing.",
+      );
   }
 }
 

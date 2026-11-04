@@ -21,6 +21,7 @@ import {
 } from './completedRunCommandActivation.js'
 import { FirebaseAccountAccessManager } from './firebaseAccountAccessManager.js'
 import { FirestoreAccountDeletionRequestStore } from './firestoreAccountDeletionRequestStore.js'
+import { FirestoreActivityImportStore } from './firestoreActivityImportStore.js'
 import { FirestoreMaterialCommandStore } from './firestoreMaterialCommandStore.js'
 import { FirestoreOperatorActivationControlStore } from './firestoreOperatorActivationControlStore.js'
 import { FirestorePlanApprovalStore } from './firestorePlanApprovalStore.js'
@@ -117,6 +118,7 @@ const dependencies = {
   },
   ...(useCompletedRunCommands
     ? {
+        activityImport: { store: new FirestoreActivityImportStore(database) },
         runCompletion: { store: new FirestoreRunCompletionStore(database) },
         runDeletion: { store: new FirestoreRunDeletionStore(database) },
         runUpdate: { store: new FirestoreRunUpdateStore(database) },

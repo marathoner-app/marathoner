@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import {
   ACCOUNT_DELETION_REQUEST_SCHEMA_VERSION,
+  ACTIVITY_IMPORT_COMMAND_SCHEMA_VERSION,
   MATERIAL_COMMAND_APP_PROTOCOL_VERSION,
   MATERIAL_COMMAND_ENVELOPE_VERSION,
   MATERIAL_COMMAND_PROOF_SCHEMA_VERSION,
@@ -11,6 +12,7 @@ import {
   RUN_DELETION_COMMAND_SCHEMA_VERSION,
   RUN_UPDATE_COMMAND_SCHEMA_VERSION,
   createAccountDeletionRequest,
+  createActivityImportCommand,
   createPlanApprovalCommand,
   createProofMaterialCommand,
   createRecommendationDecisionCommand,
@@ -30,6 +32,7 @@ import {
   type PlannedWorkoutCommandReferenceV1,
 } from './contract'
 import { createRecommendationId } from '../recommendations/recommendationEvidence'
+import { createProviderActivityId } from '../activityImport/contract'
 import {
   PLAN_GENERATION_RESULT_SCHEMA_VERSION,
   createCompletedRunId,
@@ -52,6 +55,7 @@ const completionCommandId = 'complete-run-command-0001'
 const updateCommandId = 'update-run-command-0001'
 const deletionCommandId = 'delete-run-command-0001'
 const recommendationDecisionCommandId = 'decide-recommendation-command-0001'
+const activityImportCommandId = 'import-activity-command-0001'
 const recommendationId = createRecommendationId('recommendation-0001')
 const completedRunId = createCompletedRunId('run-0001')
 const completedRunUpdatedAt = createUtcDateTime('2026-10-08T14:00:00Z')
@@ -96,6 +100,85 @@ function copy<T>(value: T): T {
 }
 
 describe('material-command contract', () => {
+  it('creates a normalized activity-import command without caller ownership', () => {
+    const command = createActivityImportCommand(activityImportCommandId, {
+      schemaVersion: 'completed-activity-import@1',
+      operation: 'upsert',
+      provider: 'garmin_connect',
+      providerActivityId: createProviderActivityId('garmin-activity-001'),
+      observedAt: createUtcDateTime('2026-11-04T16:00:00.000Z'),
+      providerUpdatedAt: createUtcDateTime('2026-11-04T15:59:00.000Z'),
+      activityType: 'running',
+      startedAt: createUtcDateTime('2026-11-04T14:00:00.000Z'),
+      endedAt: null,
+      durationSeconds: createDurationSeconds(3_600),
+      timeZone: createIanaTimeZone('America/Los_Angeles'),
+      distanceMeters: createDistanceMeters(10_000),
+      reportedOrigin: 'garmin',
+    })
+
+    expect(parseMaterialCommand(command)).toEqual({ ok: true, envelope: command })
+    expect(command.command.schemaVersion).toBe(
+      ACTIVITY_IMPORT_COMMAND_SCHEMA_VERSION,
+    )
+    expect(JSON.stringify(command)).not.toContain('ownerId')
+    expect(materialCommandSignature(command)).toContain(
+      'run.import-activity:1:',
+    )
+  })
+
+  it('rejects owner injection, unsupported versions, and malformed imported facts', () => {
+    const command = createActivityImportCommand(activityImportCommandId, {
+      schemaVersion: 'completed-activity-import@1',
+      operation: 'delete',
+      provider: 'apple_health',
+      providerActivityId: createProviderActivityId('health-activity-001'),
+      observedAt: createUtcDateTime('2026-11-04T16:00:00.000Z'),
+      providerUpdatedAt: null,
+    })
+
+    expect(
+      parseMaterialCommand({
+        ...command,
+        command: {
+          ...command.command,
+          event: { ...command.command.event, ownerId: 'another-runner' },
+        },
+      }),
+    ).toEqual({
+      ok: false,
+      result: expect.objectContaining({
+        code: 'ownership-field-prohibited',
+      }),
+    })
+    expect(
+      parseMaterialCommand({
+        ...command,
+        command: { ...command.command, schemaVersion: 2 },
+      }),
+    ).toEqual({
+      ok: false,
+      result: expect.objectContaining({
+        status: 'unsupported_version',
+        supportedVersion: 1,
+      }),
+    })
+    expect(
+      parseMaterialCommand({
+        ...command,
+        command: {
+          ...command.command,
+          event: { ...command.command.event, provider: 'unknown-provider' },
+        },
+      }),
+    ).toEqual({
+      ok: false,
+      result: expect.objectContaining({
+        code: 'invalid-activity-import',
+      }),
+    })
+  })
+
   it('creates and parses the supported proof command', () => {
     const command = createProofMaterialCommand(commandId)
 

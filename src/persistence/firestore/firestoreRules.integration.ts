@@ -494,6 +494,30 @@ describe("Firestore training-data ownership rules", () => {
     await assertFails(deleteDoc(doc(ownerDatabase, evidencePath)));
   });
 
+  it("keeps provider import provenance server-only", async () => {
+    const importPath =
+      `users/${firstUserId}/activityImports/provider-identity-hash`;
+    await testEnvironment.withSecurityRulesDisabled(async (context) => {
+      await setDoc(doc(context.firestore(), importPath), {
+        schemaVersion: 1,
+        userId: firstUserId,
+      });
+    });
+
+    const ownerDatabase = testEnvironment
+      .authenticatedContext(firstUserId)
+      .firestore();
+    const otherDatabase = testEnvironment
+      .authenticatedContext(secondUserId)
+      .firestore();
+
+    await assertFails(getDoc(doc(ownerDatabase, importPath)));
+    await assertFails(getDoc(doc(otherDatabase, importPath)));
+    await assertFails(setDoc(doc(ownerDatabase, importPath), {}));
+    await assertFails(updateDoc(doc(ownerDatabase, importPath), { state: "deleted" }));
+    await assertFails(deleteDoc(doc(ownerDatabase, importPath)));
+  });
+
   it("keeps evaluated plan-revision snapshots server-only", async () => {
     const snapshotPath =
       `users/${firstUserId}/planRevisionSnapshots/plan-1--revision-1`;
