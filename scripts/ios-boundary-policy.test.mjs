@@ -15,14 +15,18 @@ const validProject = {
     #endif
     FirebaseApp.configure()
   `,
+  appDebugEntitlements:
+    '<key>com.apple.developer.healthkit</key><true/><key>com.apple.developer.healthkit.background-delivery</key><true/>',
   appEntitlements:
-    '<key>com.apple.developer.devicecheck.appattest-environment</key><string>production</string>',
+    '<key>com.apple.developer.devicecheck.appattest-environment</key><string>production</string><key>com.apple.developer.healthkit</key><true/><key>com.apple.developer.healthkit.background-delivery</key><true/>',
   bridgeViewController:
-    'installStartupOverlay() registerPluginInstance(StartupOverlayPlugin()) DispatchQueue.main.asyncAfter(deadline: .now() + 10',
+    'installStartupOverlay() registerPluginInstance(StartupOverlayPlugin()) registerPluginInstance(HealthKitPlugin()) DispatchQueue.main.asyncAfter(deadline: .now() + 10',
+  healthKitPlugin:
+    'import HealthKit requestAuthorization(toShare: [], read: [workoutType]) HKAnchoredObjectQuery( HKObserverQuery( enableBackgroundDelivery( workout.workoutActivityType == .running',
   capacitorConfig: `appId: 'com.marathonerapp.marathoner'\nappName: 'Marathoner'\nwebDir: 'dist-ios'\nbackgroundColor: '#ffffff'\ncontentInset: 'always'\nerrorPath: 'startup-error.html'\nlaunchAutoHide: true\nlaunchShowDuration: 10_000\nbackgroundColor: '#ffffffff'\n'@capacitor-firebase/app-check'\nsymlink: true`,
   debugConfig: '#include? "local.xcconfig"',
   infoPlist:
-    '<string>Marathoner</string><key>UIUserInterfaceStyle</key><string>Light</string>',
+    '<string>Marathoner</string><key>UIUserInterfaceStyle</key><string>Light</string><key>NSHealthShareUsageDescription</key>',
   launchStoryboard:
     '<view><label text="Marathoner."/><label text="Loading your session..."/><color key="backgroundColor" white="1"/></view>',
   mainStoryboard:
@@ -49,9 +53,12 @@ const validProject = {
   xcodeProject: `
     PRODUCT_BUNDLE_IDENTIFIER = com.marathonerapp.marathoner;
     GoogleService-Info.plist in Resources
+    HealthKitPlugin.swift in Sources
+    com.apple.HealthKit
     APPDEBUG0001 /* Debug */ = {
       isa = XCBuildConfiguration;
       buildSettings = {
+        CODE_SIGN_ENTITLEMENTS = App/App.debug.entitlements;
         CODE_SIGN_STYLE = Automatic;
       };
       name = Debug;
@@ -170,7 +177,7 @@ describe('iOS boundary policy', () => {
 
   it('rejects a Debug target that requests the production App Attest entitlement', () => {
     const xcodeProject = validProject.xcodeProject.replace(
-      'CODE_SIGN_STYLE = Automatic;',
+      'CODE_SIGN_ENTITLEMENTS = App/App.debug.entitlements;',
       'CODE_SIGN_ENTITLEMENTS = App/App.entitlements;',
     )
 
@@ -178,6 +185,19 @@ describe('iOS boundary policy', () => {
       findIosProjectViolations({ ...validProject, xcodeProject }),
     ).toContain(
       'App target Debug configuration must not request the production App Attest entitlement',
+    )
+  })
+
+  it('rejects a Debug target without the HealthKit-only entitlement file', () => {
+    const xcodeProject = validProject.xcodeProject.replace(
+      'CODE_SIGN_ENTITLEMENTS = App/App.debug.entitlements;',
+      '',
+    )
+
+    expect(
+      findIosProjectViolations({ ...validProject, xcodeProject }),
+    ).toContain(
+      'App target Debug configuration is missing CODE_SIGN_ENTITLEMENTS = App/App.debug.entitlements;',
     )
   })
 

@@ -105,6 +105,50 @@
   border-top: 1px solid #cbd5e1;
 }
 
+.apple-health-section {
+  margin-top: 1.5rem;
+  padding: 1.25rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 0.75rem;
+  background: #f8fafc;
+}
+
+.apple-health-section p {
+  margin: 0.75rem 0 0;
+}
+
+.apple-health-privacy-note {
+  color: #475569;
+  font-size: 0.92rem;
+}
+
+.apple-health-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.apple-health-section button {
+  min-height: 2.75rem;
+  padding: 0.6rem 0.85rem;
+}
+
+.apple-health-primary {
+  margin-top: 1rem;
+}
+
+.apple-health-disconnect {
+  background: #fff;
+  color: #334155;
+  border: 1px solid #64748b;
+}
+
+.apple-health-error {
+  color: #991b1b;
+  font-weight: 650;
+}
+
 .account-settings-dialog h2:focus,
 .account-deletion-error:focus {
   outline: 3px solid #2563eb;

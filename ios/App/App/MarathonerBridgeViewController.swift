@@ -8,6 +8,7 @@ final class MarathonerBridgeViewController: CAPBridgeViewController {
     override func capacitorDidLoad() {
         super.capacitorDidLoad()
         bridge?.registerPluginInstance(StartupOverlayPlugin())
+        bridge?.registerPluginInstance(HealthKitPlugin())
     }
 
     override func viewDidLoad() {

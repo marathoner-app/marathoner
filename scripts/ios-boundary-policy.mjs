@@ -95,9 +95,18 @@ function requireAppTargetEntitlements(violations, xcodeProject) {
     configurationList,
     'Debug',
   )
-  if (debugBlock?.includes('CODE_SIGN_ENTITLEMENTS')) {
+  if (debugBlock?.includes('CODE_SIGN_ENTITLEMENTS = App/App.entitlements;')) {
     violations.push(
       'App target Debug configuration must not request the production App Attest entitlement',
+    )
+  }
+  if (
+    !debugBlock?.includes(
+      'CODE_SIGN_ENTITLEMENTS = App/App.debug.entitlements;',
+    )
+  ) {
+    violations.push(
+      'App target Debug configuration is missing CODE_SIGN_ENTITLEMENTS = App/App.debug.entitlements;',
     )
   }
 
@@ -120,9 +129,11 @@ function requireAppTargetEntitlements(violations, xcodeProject) {
 
 export function findIosProjectViolations({
   appDelegate,
+  appDebugEntitlements,
   appEntitlements,
   capacitorConfig,
   bridgeViewController,
+  healthKitPlugin,
   debugConfig,
   infoPlist,
   launchStoryboard,
@@ -222,6 +233,27 @@ export function findIosProjectViolations({
       'App.entitlements must bind com.apple.developer.devicecheck.appattest-environment to production',
     )
   }
+  for (const [label, entitlements] of [
+    ['App.debug.entitlements', appDebugEntitlements],
+    ['App.entitlements', appEntitlements],
+  ]) {
+    for (const requiredHealthKitEntitlement of [
+      'com.apple.developer.healthkit',
+      'com.apple.developer.healthkit.background-delivery',
+    ]) {
+      requireText(
+        violations,
+        entitlements,
+        `<key>${requiredHealthKitEntitlement}</key>`,
+        label,
+      )
+    }
+  }
+  if (appDebugEntitlements.includes('appattest-environment')) {
+    violations.push(
+      'App.debug.entitlements must not request the production App Attest entitlement',
+    )
+  }
   requireText(
     violations,
     infoPlist,
@@ -238,6 +270,12 @@ export function findIosProjectViolations({
     violations,
     infoPlist,
     '<string>Light</string>',
+    'Info.plist',
+  )
+  requireText(
+    violations,
+    infoPlist,
+    '<key>NSHealthShareUsageDescription</key>',
     'Info.plist',
   )
   requireText(
@@ -276,6 +314,7 @@ export function findIosProjectViolations({
   for (const startupBridgeValue of [
     'installStartupOverlay()',
     'registerPluginInstance(StartupOverlayPlugin())',
+    'registerPluginInstance(HealthKitPlugin())',
     'DispatchQueue.main.asyncAfter(deadline: .now() + 10',
   ]) {
     requireText(
@@ -285,6 +324,33 @@ export function findIosProjectViolations({
       'MarathonerBridgeViewController.swift',
     )
   }
+  for (const healthKitBridgeValue of [
+    'import HealthKit',
+    'requestAuthorization(toShare: [], read: [workoutType])',
+    'HKAnchoredObjectQuery(',
+    'HKObserverQuery(',
+    'enableBackgroundDelivery(',
+    'workout.workoutActivityType == .running',
+  ]) {
+    requireText(
+      violations,
+      healthKitPlugin,
+      healthKitBridgeValue,
+      'HealthKitPlugin.swift',
+    )
+  }
+  requireText(
+    violations,
+    xcodeProject,
+    'HealthKitPlugin.swift in Sources',
+    'Xcode project',
+  )
+  requireText(
+    violations,
+    xcodeProject,
+    'com.apple.HealthKit',
+    'Xcode project',
+  )
   requireText(
     violations,
     sceneDelegate,
