@@ -1,7 +1,7 @@
 # Founding-beta Functions deployment boundary
 
-- **Status:** Repository boundary, client attestation bootstrap, and console
-  cost controls verified; first live deployment remains owned by #205
+- **Status:** Core and Garmin beta Functions deployed; App Check observation and
+  rollback evidence remain owned by #205
 - **Tracking issue:**
   [#201](https://github.com/marathoner-app/marathoner/issues/201)
 - **First deployment owner:**
@@ -13,8 +13,9 @@
 
 Issue #201 created a reviewable path to the exact beta project. The maintainer
 approved and verified the bounded beta billing configuration on October 8,
-2026. This runbook does not itself authorize a deployment or deploy, delete,
-or invoke a Function. Keep those distinctions visible in every review.
+2026. The initial material-command deployment and later reviewed Garmin exports
+now use that boundary. This runbook documents the controls; each future deploy,
+delete, or invocation still requires its owning issue and explicit scope.
 
 The separately guarded owner-only development path is documented in
 [Owner-development Functions activation and rollback](development-functions-deployment.md).
@@ -81,8 +82,14 @@ The beta configuration names one Node 22 codebase, `material-commands`, with
 these current exports:
 
 - `submitMaterialCommand`;
-- `resolveMaterialCommand`; and
-- `requestAccountDeletion`.
+- `resolveMaterialCommand`;
+- `requestAccountDeletion`;
+- `startGarminConnection`;
+- `getGarminConnection`;
+- `disconnectGarminConnection`;
+- `garminOAuthCallback`;
+- `garminActivityPush`; and
+- `processGarminActivityPush`.
 
 Any new export requires a separate review before the deploy command below is
 changed. Do not replace the scoped export list with an unqualified
@@ -122,7 +129,12 @@ billing account ID, payment method, billing address, private notification
 addresses, and account recovery details outside GitHub. Budget alerts notify;
 they do not suspend services or impose a hard spending cap.
 
-## First-deployment prerequisites
+## Initial core-deployment prerequisites
+
+The following section is retained as the exact initial three-export deployment
+procedure and rollback baseline. That deployment has occurred; it is not the
+current full remote inventory and must not be reused to omit or delete later
+reviewed Garmin exports.
 
 Issue #205 owns the first deployment. Before running any command in the next
 section, its reviewer must confirm all of the following:
@@ -154,7 +166,7 @@ section, its reviewer must confirm all of the following:
 If any item is false or uncertain, stop. Do not remove or weaken the guard to
 make a deployment proceed.
 
-## First-deploy remote inventory
+## Initial core-deploy remote inventory
 
 Before the first deployment, #205 must prove that the beta project has no
 existing Cloud Functions:
@@ -168,7 +180,7 @@ its source and owner, and reconcile it through a separate reviewed change. The
 scoped deployment below does not delete or constrain an unrelated remote
 export, so an unexpected Function makes the first-deploy premise false.
 
-## Documented first-deploy command — do not run in #201
+## Documented initial core-deploy command — do not reuse as a full deployment
 
 The explicit project and scoped export filters prevent Firestore or an
 unreviewed Functions codebase from joining this operation:
@@ -185,10 +197,11 @@ Issue #205 must retain the CLI result, deployed export names, regions, and
 redacted observation result. It must not retain access tokens, request bodies,
 owner IDs, command IDs, participant data, or raw logs in GitHub.
 
-Immediately rerun `npx firebase functions:list --project marathonerapp-beta`
-and require exactly `submitMaterialCommand`, `resolveMaterialCommand`, and
-`requestAccountDeletion`, all in `us-central1`, with no additional export.
-Otherwise stop client testing and follow the rollback procedure.
+For the initial deployment, the inventory required exactly
+`submitMaterialCommand`, `resolveMaterialCommand`, and
+`requestAccountDeletion`, all in `us-central1`. The current inventory also
+contains the six reviewed Garmin exports listed above. Any other export remains
+an unexpected live resource and requires reconciliation.
 
 ## Callable transport verification
 
@@ -200,7 +213,7 @@ authentication, App Check, membership, ownership, and revision checks remain
 the application authorization boundary.
 
 Immediately after the inventory check, send an empty callable envelope to each
-of the three reviewed URLs from `functions:list`:
+of the three core callable URLs from `functions:list`:
 
 ```sh
 curl --silent --show-error \
@@ -220,7 +233,7 @@ do not begin client testing while any endpoint has that result.
 The Marathoner organization inherits the legacy Domain Restricted Sharing
 constraint. If a create reports that Firebase could not set the invoker IAM
 policy, do not weaken that organization policy and do not add an `allUsers` IAM
-binding. For only the three reviewed Cloud Run services, open **Security**,
+binding. For only the named reviewed Cloud Run services being deployed, open **Security**,
 select **Allow public access**, review the authentication-only diff, and deploy
 the change. In this configuration the console disables the Cloud Run invoker
 IAM check, which is the documented path for a public endpoint when Domain

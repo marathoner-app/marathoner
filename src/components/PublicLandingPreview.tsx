@@ -60,7 +60,7 @@ function TrackPreview() {
     <div className="landing-preview__run-card">
       <div className="landing-preview__run-heading">
         <div>
-          <p>Manual run log</p>
+          <p>Imported run</p>
           <h3>Morning run</h3>
         </div>
         <div className="landing-preview__distance">
@@ -71,7 +71,7 @@ function TrackPreview() {
 
       <div className="landing-preview__saved-state">
         <span aria-hidden="true">✓</span>
-        Run recorded
+        Run ready for review
       </div>
 
       <dl className="landing-preview__details">

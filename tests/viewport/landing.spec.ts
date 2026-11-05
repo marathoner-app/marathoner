@@ -128,7 +128,7 @@ for (const viewport of viewports) {
       expect(cursorBounds.height).toBeGreaterThanOrEqual(40);
     }
     await previewAreaButtons[1].click();
-    await expect(preview.getByText("Run recorded")).toBeVisible();
+    await expect(preview.getByText("Run ready for review")).toBeVisible();
     await expectStablePreviewLayout();
     await previewAreaButtons[2].click();
     await expect(preview.getByText("12.8 mi")).toBeVisible();
@@ -174,7 +174,7 @@ for (const viewport of viewports) {
       )
       .toBe(viewport.explanationColumns);
     const platforms = page.getByRole("region", {
-      name: "Log runs on your phone. Review the full plan on the web.",
+      name: "Keep up with training on your phone. See the full picture on the web.",
     });
     await expect(platforms).toBeVisible();
     await expect(

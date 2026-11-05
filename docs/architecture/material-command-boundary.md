@@ -305,9 +305,10 @@ plan and next workout. Focus moves to the confirmation, failure, and success
 states, while status and alert regions announce asynchronous changes.
 
 The component accepts an injected approval client and reload callback. Its
-tests use only the checked-in synthetic contract fixtures. The signed-in
-production journey does not mount a generated proposal, and no fixture artifact
-is imported into that journey; live use remains blocked on an approved
+tests use only the checked-in synthetic contract fixtures. Ordinary builds do
+not mount a generated proposal. The private development dogfood build can mount
+the one pinned provisional artifact only when both the client flag and trusted
+server policy agree; invited-participant use remains blocked on an approved
 methodology and generator.
 
 `firebaseMaterialCommandClient.ts` is the browser transport. It attaches the
@@ -374,19 +375,17 @@ from Marathoner's logger.
 
 ## Deployment ownership
 
-These issues do not deploy a live function. `firebase.json` contains the local
-runtime definition, but it invokes the generalized Functions guard as
-`development` and therefore remains deployment-blocked. `firebase.beta.json`
-names the same reviewed codebase behind an exact `marathonerapp-beta` check and
-a non-secret operator-intent phrase. Issue #201 establishes that boundary
-without deploying a Function.
+`firebase.json` contains the guarded owner-development runtime definition, and
+`firebase.beta.json` names the reviewed codebase behind an exact
+`marathonerapp-beta` check and a non-secret operator-intent phrase. Core command,
+deletion, and Garmin exports are now deployed through those environment
+boundaries.
 
-The first live deployment remains owned by #205; #143, #201, and #204 are
-complete, but their recorded evidence must still be rechecked before the live
-operation. The deployment must preserve the development/beta environment
+Issue #205 still owns the incomplete App Check observation and rollback
+evidence. Every later deployment must preserve the development/beta environment
 boundary, confirm billing and region, activate completed-run stores only
-through the ignored beta parameter file, apply the beta membership policy, and
-follow the scoped deploy and rollback commands in the
+through the environment-specific ignored parameter file, apply the beta
+membership policy, and follow the scoped deploy and rollback commands in the
 [beta Functions runbook](../operations/beta-functions-deployment.md). Removing
 or weakening the guard merely to make a deploy command succeed is not approved.
 
@@ -399,7 +398,7 @@ or weakening the guard merely to make a deploy command succeed is not approved.
 - #159 adds live reads, freshness, and account cache isolation.
 - #138 may use the boundary on iOS only after its required workflow migrations.
 - #197 implements the fixed, idempotent account-deletion runner and manifest
-  verification after the #195 request lock; its live-project allowlist remains
-  empty pending #124.
+  verification after the #195 request lock; #124 still owns the complete
+  private-record adapter and beta release-candidate rehearsal.
 - #196 adds recent password reauthentication and the user-facing deletion
   experience without changing ownership or target selection.

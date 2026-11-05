@@ -1,6 +1,6 @@
 # Garmin Connect Starter Activity API access
 
-- **Status:** Starter access approved; binding terms and app creation pending owner acceptance
+- **Status:** Starter access approved and configured for closed-beta proof
 - **Prepared:** November 3, 2026
 - **Submitted:** November 3, 2026
 - **Portal reviewed:** November 4, 2026
@@ -12,17 +12,21 @@
 
 This record began as the smallest truthful Garmin Connect request needed for
 automatic completed-run import. Garmin now exposes active Starter access to the
-owner account. The access is real, but Marathoner has not accepted the binding
-developer agreement, created an app or credentials, configured an endpoint, or
-enabled a production integration.
+owner account. The owner accepted the private provider checkpoint, created the
+Activity-API-only beta app, placed its secret in private custody, registered the
+reviewed endpoints, and enabled the closed-beta integration. The first real run
+recorded after connection and the full #624 proof matrix remain open.
 
 ## Current posture
 
 Marathoner is a founder-operated, pre-beta marathon-training product. It has
 two internal owner/partner accounts today, no public account registration, no
-public beta, no current revenue, and no production Garmin integration. The
+public beta, no current revenue, and no public-production Garmin integration. The
 planned founding cohort is five to eight invited adults, bounded to at most 12
 concurrent participants and 15 accepted participants during validation.
+
+The Garmin integration is active only for allowlisted closed-beta accounts. It
+is not a public production integration and does not open signup or invitations.
 
 The California LLC and Apple organization enrollment described in the
 [legal-entity decision](legal-entity-and-apple-enrollment.md) are intentionally
@@ -58,9 +62,9 @@ Women's Health, Training, and Courses as available products. Their presence is
 not approval to configure or process them; the Marathoner app must select
 Activity API only.
 
-## App-creation answers
+## Submitted app-creation answers
 
-The approved portal now exposes the app-creation fields below. Private owner
+The approved portal exposed the app-creation fields below. Private owner
 identity, phone number, provider-account details, app identifiers, and
 credentials belong only in the live portal and private provider record. They
 must not be copied into GitHub.
@@ -126,8 +130,9 @@ and does not sell it.
 > collect all-day Health data, historical backfill, or FIT/GPS route files in
 > this scope.
 
-These answers describe the requested direction, not deployed behavior. If the
-implementation changes before submission, update the answers first.
+These answers preserve the public-safe application record. The current deployed
+boundary is documented below; provider-private identifiers and credentials do
+not belong in this repository.
 
 ## Data, consent, and deletion boundary
 
@@ -156,12 +161,12 @@ workout association remain separate.
 - Raw Garmin payloads are not operational evidence and must not be retained in
   ordinary logs.
 
-The public privacy copy must remain truthful before Garmin app creation. It now
-acknowledges the existing Apple Health import and describes Google Firebase and
-Google Cloud processing, sale and advertising exclusions, the absence of AI
-processing for imported workouts, and the runner's access, correction, export,
-consent-withdrawal, and deletion routes. Direct Garmin import must remain
-described as unavailable until it is actually enabled.
+The public privacy copy acknowledges Apple Health and Garmin as optional workout
+sources and describes Google Firebase and Google Cloud processing, sale and
+advertising exclusions, the absence of AI processing for imported workouts,
+and the runner's access, correction, export, consent-withdrawal, and deletion
+routes. It must continue to distinguish closed-beta availability from public
+access.
 
 ## Reviewed technical boundary
 
@@ -189,25 +194,26 @@ The repository may name configuration contracts but never store their values:
 | `GARMIN_CLIENT_ID` | Beta server configuration; identifies Marathoner's live Starter app. It is never a development fixture value. |
 | `GARMIN_CLIENT_SECRET` | Secret Manager in `marathonerapp-beta`; used only by backend token exchange and refresh. |
 | `GARMIN_OAUTH_REDIRECT_URI` | Non-secret beta configuration matching the exact deployed callback registered with Garmin. |
-| `GARMIN_ACTIVITY_PUSH_URL` | Non-secret beta endpoint registered in Garmin's private configuration tools after #651 deploys it. |
-| `GARMIN_ACTIVITY_PUSH_ENABLED` | Non-secret beta activation flag; remains false until live proof is approved. |
+| `GARMIN_ACTIVITY_PUSH_URL` | Non-secret deployed beta endpoint registered in Garmin's private configuration tools. |
+| `GARMIN_ACTIVITY_PUSH_ENABLED` | Non-secret beta activation flag; false by default in source and enabled only in the reviewed beta runtime. |
 | `GARMIN_ACTIVITY_PUSH_SOURCE_CIDRS` | Private beta runtime configuration copied from the approved provider documentation; never issue or PR evidence. |
 | `GARMIN_USER_ID_URL` | Private beta server endpoint used to bind a connected provider account to one Marathoner owner. |
 
 Issue #650 implements the trusted callback as the exported
-`garminOAuthCallback` HTTPS function and keeps it disabled by default. The
+`garminOAuthCallback` HTTPS function and keeps source defaults disabled. The
 [trusted OAuth boundary](../architecture/garmin-oauth-boundary.md) defines the
 additional private runtime endpoint names, state lifecycle, environment guard,
-grant custody, replay behavior, and disconnect cleanup. The route is not yet a
-live registered callback: provider terms, app creation, secret creation,
-configuration, and deployment remain explicit owner checkpoints.
+grant custody, replay behavior, and disconnect cleanup. The route is deployed,
+registered, and enabled in the reviewed beta runtime, and one owner connection
+has completed provider authorization.
 
 Issue #651 implements `garminActivityPush` plus its asynchronous Firestore
-processor and keeps both default-off. The
+processor and keeps both default-off in source. The
 [Activity push boundary](../architecture/garmin-activity-push-boundary.md)
 defines source validation, durable acknowledgment, hashed owner mapping,
 minimal normalization, duplicate review, deregistration, and privacy-safe
-evidence. No live endpoint is registered by that implementation.
+evidence. Both functions are deployed and the receiver is registered in the
+private Garmin configuration. The first real running delivery remains open.
 
 Provider-specific details that are not public belong in private implementation
 configuration, not this repository. #650 and #651 must preserve that boundary
@@ -224,9 +230,9 @@ Marathoner does not share live provider credentials across environments:
 | Closed beta (`marathonerapp-beta`) | Sole live Garmin client, backend callback, token custody, push receiver, runner mapping, and disconnect path. Access remains allowlisted. |
 | Public production | Not configured. A future transition requires a separate release and provider review. |
 
-The exact callback and push URLs are outputs of #650 and #651. Register them
-only after the routes exist in the beta project; do not use localhost, the
-GitHub Pages origin, the development project, or a temporary URL.
+The exact callback and push URLs are outputs of #650 and #651 and are registered
+only in the beta app. Do not reuse localhost, the GitHub Pages origin, the
+development project, or a temporary URL for live provider configuration.
 
 ## Ownership and private custody
 
@@ -253,14 +259,14 @@ record only the status, public-safe requirement, and next action.
 | --- | --- |
 | Application date | November 3, 2026 |
 | Portal review date | November 4, 2026 |
-| Status | `approved but terms pending`; the owner account has active Starter access and can create an app, but no app or credentials exist. |
+| Status | `approved and usable`; the private Activity-API-only beta app and reviewed endpoints are configured. |
 | Requested product | Starter business access; Activity API only |
 | Portal entitlement | Starter access for up to 1,000 connected users, push-only delivery, and no historical data. Only Activity API is in Marathoner's approved scope. |
 | Public-safe application reference | None; the confirmation page supplied no reference number |
-| Provider blocker | Private owner review and acceptance of the provider terms remain pending. The terms are not reproduced or summarized in this public repository. |
-| Product prerequisite | Deploy the corrected public privacy notice and the disabled-by-default trusted OAuth boundary before registering its exact beta callback URI. |
-| Next action | Owner reviews the agreement checkpoint; then create the private beta app, place its secret directly in Secret Manager, configure the exact callback, and perform the bounded live proof. |
-| #623 state | Default-off implementation continues. Live provider use remains blocked on the owner terms/app checkpoint and completion of #651-#652. |
+| Provider blocker | None for implementation. Private terms and credentials remain outside the public repository. |
+| Product prerequisite | Completed: privacy notice, trusted OAuth, push receiver, permission-change endpoint, private secret custody, and provider endpoint registration. |
+| Next action | Record a real owner-controlled run after connection and complete the bounded proof in #623 and #624. |
+| #623 state | Unblocked implementation is complete; the parent remains open for real-run and remaining live evidence. |
 
 Possible provider outcomes are `submitted`, `more information requested`,
 `approved but terms pending`, `approved and usable`, `rejected`, or `legal
@@ -282,23 +288,22 @@ Stop before accepting or committing if Garmin presents any of the following:
 - a request to expose credentials, personal addresses, contracts, or private
   correspondence in public evidence.
 
-The owner must review the exact terms privately before commitment. Provider
-approval alone therefore does not unblock #623.
+The owner reviewed the exact terms privately before configuration. Any later
+scope, pricing, contract, or product change still triggers this stop-and-review
+boundary.
 
-## Verification before app creation
+## Completed configuration checkpoint
 
-1. Confirm the corrected public privacy notice is deployed at the submitted
-   policy URL.
-2. Review and explicitly accept or decline the binding agreement outside the
-   repository; do not paste it into an issue or pull request.
-3. Deploy the stable beta OAuth callback from #650 before registering the exact
-   redirect URL.
-4. Create the app with Activity API only, identifiable-user association, no
-   data sale, the current sole-proprietor legal name, and Starter product.
-5. Move the generated secret directly into beta Secret Manager. Never paste it
-   into chat, the terminal transcript, source control, screenshots, or issues.
-6. Confirm the provider tools accept the beta endpoints before removing the
-   blocked state from #623.
+1. The corrected public privacy notice is deployed at the submitted policy URL.
+2. The owner reviewed the binding agreement privately; it is not reproduced in
+   issues or source control.
+3. The stable beta OAuth callback was deployed before registration.
+4. The app uses Activity API only, identifiable-user association, no data sale,
+   the current sole-proprietor legal name, and Starter product.
+5. The generated secret moved directly into beta Secret Manager and is absent
+   from chat, terminal transcripts, source control, screenshots, and issues.
+6. The provider tools accept the registered endpoints. #623 now remains open
+   for real-run evidence rather than configuration work.
 
 ## Official references
 

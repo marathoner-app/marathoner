@@ -302,13 +302,12 @@ the write boundary.
    memory-only cache are implemented.
 5. The web provider now uses listeners for reads, publishes stale/current state,
    blocks mutations outside a current session, and clears old-session state.
-   While the temporary direct-write path remains, a successful remote repository
-   acknowledgement is reduced into the same current-session snapshot instead of
-   requiring a second listener-metadata event before the result becomes visible.
-   Two authenticated emulator clients retain evidence for listener convergence,
-   disconnect/reconnect, teardown, and owner isolation, while the build rejects
-   durable training snapshot storage. The read migration is complete; direct
-   material writes still require command migration.
+   Completed-run creation, update, deletion, and provider imports use the
+   trusted command boundary; successful acknowledgements reconcile into the
+   current-session snapshot while listeners remain the cross-client source of
+   truth. Two authenticated emulator clients retain evidence for listener
+   convergence, disconnect/reconnect, teardown, and owner isolation, while the
+   build rejects durable training snapshot storage.
    The same snapshot now carries the strictly validated server-owned active-plan
    pointer and revision needed by a later adaptation-evidence normalizer; it does
    not itself infer associations or run the evaluator.
@@ -319,8 +318,9 @@ the write boundary.
 No mobile material-write flow may ship until steps 1 through 5 pass in the
 emulator and web client, its adapter uses memory-only training-data caching, and
 the mobile runtime has passed offline, retry, conflict, logout, and
-account-switch tests. Issue #138 therefore remains blocked by the atomic command
-work and the live-read/cache-isolation implementation named by this decision.
+account-switch tests. The shared command and live-read predecessors now pass;
+#138 remains responsible for the final iOS daily-loop evidence and any other
+dependencies declared on that issue.
 
 ## Follow-up ownership
 

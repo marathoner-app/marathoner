@@ -1,6 +1,6 @@
 # Garmin Activity push boundary
 
-- **Status:** Implemented with synthetic and emulator proof; live beta configuration and deployment remain off
+- **Status:** Implemented, deployed, and provider-configured in the closed beta; first real run proof remains open
 - **Issue:** [#651](https://github.com/marathoner-app/marathoner/issues/651)
 - **Provider scope:** Completed running summaries and deregistration only
 
@@ -13,9 +13,10 @@ submits supported running summaries through the existing
 credentials, grants, stable provider identities, raw push bodies, or private
 endpoint configuration.
 
-No live Garmin app, endpoint, runner connection, provider terms acceptance,
-secret, deployment, or portal configuration is created by this change. Those
-remain explicit owner actions.
+The live Garmin app, receiver, asynchronous processor, permission-change
+endpoint, secret custody, provider configuration, and owner connection are now
+active in the closed beta. Source defaults remain fail-closed. A real running
+activity recorded after connection has not yet proved end-to-end delivery.
 
 ## Trusted receipt and processing
 
@@ -89,11 +90,11 @@ documentation ranges only.
 
 | Name | Custody |
 | --- | --- |
-| `GARMIN_ACTIVITY_PUSH_ENABLED` | Non-secret activation flag; false by default |
+| `GARMIN_ACTIVITY_PUSH_ENABLED` | Non-secret activation flag; false by default in source and enabled in the reviewed closed-beta runtime |
 | `GARMIN_ACTIVITY_PUSH_SOURCE_CIDRS` | Private beta runtime configuration copied from the approved provider documentation |
 | `GARMIN_CLIENT_ID` | Beta server configuration used for OAuth and push verification |
 | `GARMIN_USER_ID_URL` | Private beta server endpoint for the post-OAuth user lookup |
-| `GARMIN_ACTIVITY_PUSH_URL` | Exact deployed receiver URL registered only after deployment |
+| `GARMIN_ACTIVITY_PUSH_URL` | Exact deployed receiver URL registered in the private Garmin app configuration |
 
 ## Verification
 
@@ -109,6 +110,8 @@ documentation ranges only.
 - The full lint, test, build, material-command emulator, and Firestore Rules
   suites remain required before merge.
 
-Live endpoint registration, a provider-generated synthetic push, a real owner
-connection, and limited-account observation remain release proof, not evidence
-that may be fabricated in this repository.
+Endpoint registration, provider configuration, hostile-request rejection, and
+one owner connection have passed. The first real post-connection run,
+same-provider retry/update behavior, cross-provider duplicate handling,
+disconnect, relaunch, and limited-account observation remain release proof in
+#623 and #624, not evidence that may be fabricated in this repository.

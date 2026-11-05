@@ -201,7 +201,9 @@ describe("PublicLandingPage", () => {
     const trackPanel = within(preview).getByRole("region", {
       name: "Track preview",
     });
-    expect(within(trackPanel).getByText("Run recorded")).toBeInTheDocument();
+    expect(
+      within(trackPanel).getByText("Run ready for review"),
+    ).toBeInTheDocument();
     expect(within(trackPanel).getByText("Felt steady")).toBeInTheDocument();
     expect(within(trackPanel).getByText("Daily trainer")).toBeInTheDocument();
     expect(within(trackPanel).getByText("214 mi logged")).toBeInTheDocument();
@@ -249,7 +251,7 @@ describe("PublicLandingPage", () => {
       expect(
         within(
           within(preview).getByRole("region", { name: "Track preview" }),
-        ).getByText("Run recorded"),
+        ).getByText("Run ready for review"),
       ).toBeInTheDocument();
     } finally {
       vi.useRealTimers();
@@ -344,14 +346,14 @@ describe("PublicLandingPage", () => {
     );
     expect(cards[1]).toHaveTextContent("Track what matters");
     expect(cards[1]).toHaveTextContent(
-      "Log completed runs, perceived effort, notes, and shoes without a social feed.",
+      "Import completed runs from Apple Health or Garmin, then add perceived effort, notes, and shoes without a social feed.",
     );
     expect(cards[1]).toHaveTextContent(
       "Planned: Add fueling, hydration, sleep, and recovery inputs.",
     );
     expect(cards[2]).toHaveTextContent("Adjust with confidence");
     expect(cards[2]).toHaveTextContent(
-      "Not available today: Marathoner does not currently recommend or apply training adjustments.",
+      "These provisional rules are being tested internally and still require qualified review before beta coaching use.",
     );
     expect(within(explanation).queryByRole("button")).not.toBeInTheDocument();
     expect(within(explanation).queryByRole("link")).not.toBeInTheDocument();
@@ -361,12 +363,15 @@ describe("PublicLandingPage", () => {
     renderPublicLandingPage();
 
     const platforms = screen.getByRole("region", {
-      name: "Log runs on your phone. Review the full plan on the web.",
+      name: "Keep up with training on your phone. See the full picture on the web.",
     });
     const platformCards = within(platforms).getAllByRole("article");
 
     expect(platformCards).toHaveLength(2);
     expect(platformCards[0]).toHaveTextContent("iPhone");
+    expect(platformCards[0]).toHaveTextContent(
+      "importing completed runs from Apple Health",
+    );
     expect(platformCards[0]).toHaveTextContent(
       "Public TestFlight invitations are not open.",
     );
@@ -388,6 +393,29 @@ describe("PublicLandingPage", () => {
       within(platforms).queryByRole("link", { name: /TestFlight|App Store/i }),
     ).not.toBeInTheDocument();
     expect(within(platforms).queryByText(/Android/i)).not.toBeInTheDocument();
+  });
+
+  it("describes current automatic imports without opening public access", () => {
+    renderPublicLandingPage();
+
+    const privacy = document.querySelector("#privacy-data-use");
+
+    expect(privacy).toBeInTheDocument();
+    expect(privacy).toHaveTextContent(
+      "Apple Health and Garmin Connect are optional sources for completed workouts",
+    );
+    expect(privacy).toHaveTextContent(
+      "Existing private accounts can also connect Garmin for new completed running activities.",
+    );
+    expect(privacy).toHaveTextContent(
+      "Garmin does not provide historical backfill through this integration.",
+    );
+    expect(privacy).not.toHaveTextContent("Direct Garmin import is not enabled yet");
+    expect(
+      screen.getByRole("heading", {
+        name: "New account registration is closed.",
+      }),
+    ).toBeInTheDocument();
   });
 
   it("shares one login dialog and restores focus to each opening trigger", async () => {

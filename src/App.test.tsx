@@ -358,13 +358,13 @@ describe('App authentication state', () => {
       screen.getByText(/completed running workouts from Apple Health/i)
     ).toBeInTheDocument()
     expect(
-      screen.getByText(/Direct Garmin import is not enabled yet/i)
+      screen.getByText(/private accounts can also connect Garmin/i)
     ).toBeInTheDocument()
     expect(
       screen.getByText(/does not sell personal or workout data/i)
     ).toBeInTheDocument()
     expect(
-      screen.getByText(/only third-party services that process imported/i)
+      screen.getByText(/Apple Health and Garmin Connect are optional sources/i)
     ).toBeInTheDocument()
     expect(
       screen.getByText(/request access to, correction of, or export/i)

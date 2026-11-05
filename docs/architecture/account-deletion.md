@@ -50,10 +50,10 @@ Firebase recommends deleting collections from a trusted server environment and
 documents that recursive deletion is non-atomic. Firebase also requires the
 Blaze plan to deploy Cloud Functions. Therefore the beta project must have an
 explicitly approved billing account, budget alerts, spend controls, deployment
-boundary, and rollback owner before the request endpoint can go live. The
-repository now has an exact-beta-project guard. Completed #143 and #204 evidence
-must still be rechecked on the release candidate, and #205 must authorize the
-first live release.
+boundary, and rollback owner before the request endpoint can go live. Those
+controls and the exact-beta-project guard are in place, and the request endpoint
+is deployed. Issue #205 still owns the incomplete observation window and
+release-candidate evidence.
 
 ## Data inventory
 
@@ -74,9 +74,13 @@ table and the deletion runner in the same pull request.
 | `users/{uid}/runs/{runId}` | Completed runs and feedback | Covered by recursive deletion of `users/{uid}`. |
 | `users/{uid}/shoes/{shoeId}` | Shoe records | Covered by recursive deletion of `users/{uid}`. |
 | `betaMemberships/{uid}` | Allowlist status and approval metadata | Change to `deletion_pending` to lock access, then delete during completion. |
-| `materialCommandReceipts/{uid}/commands/{commandId}` | Server idempotency receipts for proof, deletion-request, and plan-approval commands | Recursively delete the owner document path and descendants. This store is implemented and emulator-tested but not deployed. |
-| `materialCommandProofs/{uid}` | Local server-boundary proof state | Delete. This store is currently local proof infrastructure, not deployed. |
-| `accountDeletionRequests/{requestId}` | Server-only workflow state, including the UID only while work is pending; implemented locally and not deployed | Remove all identity fields after completion, retain the anonymous completion receipt for 30 days, then delete it. |
+| `materialCommandReceipts/{uid}/commands/{commandId}` | Server idempotency receipts for completed-run, import, deletion-request, plan-approval, and recommendation-decision commands | Recursively delete the owner document path and descendants. The trusted store is deployed in the private environments that enable the corresponding command. |
+| `materialCommandProofs/{uid}` | Development-only server-boundary proof state | Delete. This path remains local/development proof infrastructure. |
+| `accountDeletionRequests/{requestId}` | Server-only workflow state, including the UID only while work is pending | Remove all identity fields after completion, retain the anonymous completion receipt for 30 days, then delete it. The request handler and runner are deployed to the beta project. |
+| `providerOAuthStates/{stateDigest}` | Server-only pending Garmin authorization state keyed by a one-way state digest | Required before external beta: remove pending states owned by the account. This global path is not yet part of manifest version 1 and is owned by #623/#124. |
+| `users/{uid}/providerConnections/garmin` | Server-only Garmin grant material and connection status | Covered by recursive deletion of `users/{uid}`, but provider revocation must be attempted before the user tree is removed. |
+| `providerAccountLinks/{providerDigest}` | One-way Garmin account digest mapped to one Marathoner owner | Required before external beta: delete the owner mapping so later pushes cannot resolve an owner. This global path is not yet part of manifest version 1 and is owned by #623/#124. |
+| `garminPushDeliveries/{deliveryId}` | Minimal normalized, server-only Garmin delivery queue state keyed by provider digests | Required before external beta: define bounded retention and remove pending or retained deliveries attributable to the deleted connection. This global path is not yet part of manifest version 1 and is owned by #623/#124. |
 | Current client memory | Current-session authentication and training state | Clear immediately when the request is accepted; persistent participant-data caching remains prohibited. |
 
 The retired `users/{uid}/mobileSpikeProofs/issue-87-shared-record` path is not a
@@ -93,6 +97,10 @@ receipts are descendants of the already recursive
 and verify owner deletion and cross-owner preservation. The global
 `operatorControls/recommendationActivation` record contains no participant
 identity or training data and is not part of an individual account deletion.
+The Garmin integration adds the global provider state and delivery roots named
+above. Manifest version `1` is therefore not sufficient for an external-beta
+account with Garmin state until #623/#124 add the adapter, cleanup order,
+retention rule, verification, and failure recovery.
 
 Marathoner currently has no Cloud Storage participant objects, analytics event
 store, app-managed export, or app-managed backup. Issue #124 may add a
@@ -279,21 +287,19 @@ The accepted design is split into focused child issues in this order:
 1. **#195 — implement the deletion-request contract and account lock.** The
    shared payload-free command, callable handler, five-minute authentication
    check, protected request schema, atomic membership transition, App Check
-   gate, Auth disable/revocation, and local tests are complete. Live deployment
-   remains blocked by #161, #121 coordination, release-candidate rechecks of the
-   completed #143/#204 evidence, and #205 authorization. The beta-only Blaze and
-   budget boundary is verified in #201 but does not itself authorize deployment.
+   gate, Auth disable/revocation, tests, and beta deployment are complete.
+   Observation and release-candidate evidence remain in #205 and #124.
 2. **#197 — implement the idempotent deletion runner and manifest tests.** The
    fixed-path Admin command, stage checkpoints, failure injection, recursive
-   verification, anonymized receipt, exact-ID cleanup, and operator runbook are
-   complete against fictional emulator records. Live projects remain blocked
-   until #124 supplies the declared private-record adapter and rehearsal.
+   verification, anonymized receipt, exact-ID cleanup, operator runbook, and
+   beta runtime are complete. Issue #124 still owns the declared private-record
+   adapter and complete release-candidate rehearsal.
 3. **#196 — add the calm account-deletion experience.** The shared responsive UI,
    password reauthentication and token refresh, typed outcomes,
    original-command resolution, immediate state clearing, accessibility
    coverage, and accurate participant copy are implemented. The Capacitor
-   shell builds and synchronizes the same root interface; live acceptance
-   remains gated by #161 and the deployment controls above.
+   shell builds and synchronizes the same root interface; external-beta
+   acceptance remains gated by #124, #205, and their release controls.
 4. **Rehearse the complete procedure in #124.** Name the private participant
    system, include its records in the manifest, run the development and beta
    rehearsals, and record the invitation-gate result.

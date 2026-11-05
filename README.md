@@ -8,8 +8,10 @@ toward a conditional iOS founding beta. January 15, 2027 remains a
 scope-or-date decision checkpoint and optimistic invitation floor, not a
 delivery promise. The November 3 capacity forecast places the likely invitation
 decision on February 28, 2027 and the conservative capacity date on August 8,
-subject to every evidence gate and completion of the approved-but-not-yet-
-configured Garmin integration.
+subject to every evidence gate. Apple Health import has passed owner-device
+proof, and the approved Garmin integration is configured for the closed beta;
+its first real completed-run delivery and the cross-provider proof matrix remain
+open.
 The first invitation batch is limited to five to eight allowlisted adults who
 already run consistently and are preparing for a first marathon. The existing
 responsive web application remains the planning and analysis surface; Android
@@ -27,9 +29,11 @@ Marathoner is currently a deployed pre-beta product under active development.
 It is not open for public signup or founding-beta invitations. The existing
 experience includes:
 
-- **Plan:** browse persisted training weeks and inspect planned-workout details.
-- **Track:** persist shoes and runs, associate runs with planned workouts, and
-  edit or delete completed runs.
+- **Plan:** use the private owner-dogfood path to build, review, approve, and
+  persist a provisional plan, then browse training weeks and workout details.
+- **Track:** import completed runs from Apple Health or Garmin, retain manual
+  entry as a fallback, associate runs with planned workouts, and enrich, edit,
+  or delete completed runs.
 - **Analyze:** calculate mileage, pace, and run counts from completed-run history.
 - **Runner setup:** save and revise the minimum first-marathon context, including
   target timing, recent running, availability, constraints, and unit preference.
@@ -37,14 +41,12 @@ experience includes:
   through Firebase email/password authentication. Public account creation is
   disabled while the beta trust and access controls are incomplete.
 
-An owner-only internal rehearsal can now map a saved runner profile into the
+Owner and operating-partner dogfood can map a saved runner profile into the
 pinned draft plan rules, produce supported or unsupported results, choose a
-start date, review and activate a session-only plan, inspect saved training
-history, evaluate draft adaptations, preview accepted rehearsal changes across
-the normal Home and Plan surfaces, and exercise draft recommendation, guidance,
-and safety presentation. That mode is deliberately excluded from production
-and iOS bundles. It proves implementation; it does not approve the draft
-methodology or authorize participant-facing recommendations.
+start date, and review, approve, and persist a provisional plan. Separate
+internal rehearsal surfaces exercise draft adaptations, recommendation,
+guidance, and safety presentation. These paths prove implementation only; they
+do not approve the draft methodology or authorize participant-facing coaching.
 
 The visible features share the typed Firestore persistence layer. Follow the
 [open issues](https://github.com/marathoner-app/marathoner/issues) to see what is
@@ -130,9 +132,10 @@ and validation.
 Marathoner is centered on a single-page React application with no client-side
 router or general-purpose application server. Its authenticated training data
 uses typed repositories backed by Cloud Firestore, and the repository contains
-a bounded Cloud Functions backend for trusted material commands. That backend
-is emulator-proven, and its three reviewed callable exports are deployed to the
-beta project. The valid-client observation window, organization-signed iPhone
+a bounded Cloud Functions backend for trusted material commands, account
+deletion, and Garmin OAuth and push ingestion. Those reviewed boundaries are
+emulator-proven and deployed to the beta project. The valid-client observation
+window, organization-signed iPhone
 proof, rollback evidence, and staged enforcement remain gated by issue #205
 and its successors. The accepted
 [mobile client ADR](docs/architecture/mobile-client-architecture.md) selects a
@@ -184,12 +187,11 @@ The current application flow is deliberately small:
    plan evaluation; saving progress writes through the same profile repository.
 6. Opening Plan, Track, or Analyze mounts a view over that shared snapshot.
 7. Current feature mutations reconcile with server-confirmed listener results,
-   so every open panel observes the same records. The trusted backend already
-   implements run completion, update, deletion, and recommendation-decision
-   commands, but the normal Track create, edit, and delete paths remain on the
-   client repository until the live activation and provider-migration gates
-   pass. The production recommendation surface is mounted fail-closed with an
-   empty approved-content registry.
+   so every open panel observes the same records. Track creation, update,
+   deletion, and automatic imports use the trusted material-command boundary;
+   profile and shoe writes remain explicit owner-scoped repository operations.
+   The participant recommendation surface stays fail-closed with an empty
+   approved-content registry.
 
 The shared training domain model is documented in
 [`docs/architecture/training-domain-model.md`](docs/architecture/training-domain-model.md).
@@ -225,33 +227,28 @@ The development/test-only Creator Radar boundary is documented in
 
 ## Current data limitations
 
-- In participant production, completing runner setup stores context only. It
-  does not yet determine eligibility or generate, approve, or activate a
-  training plan.
-- A deterministic generator and adaptation evaluator are implemented against
-  the exact pinned draft artifacts for owner-only internal rehearsal. They
-  remain unapproved, cannot enter production or iOS bundles, and cannot create
-  participant plan or recommendation records.
-- Reusable proposal review, final confirmation, and typed approval-state UI is
-  implemented, including same-command recovery and a post-approval training-
-  data reload. The complete proposal and session-only activation journey is
-  mounted only in internal rehearsal. Accounts without an approved persisted
-  plan still receive an honest production empty state. The participant
-  generation path is tracked in
+- The private development dogfood deployment can generate, approve, and persist
+  an owner or operating-partner plan from the exact pinned draft artifact. The
+  artifact remains provisional and visibly unapproved; public or invited beta
+  participants cannot receive it until the qualified-review gate passes. The
+  participant generation path remains tracked in
   [issue #29](https://github.com/marathoner-app/marathoner/issues/29).
+- The deterministic adaptation evaluator and its recommendation, guidance, and
+  safety presentation remain internal rehearsal behavior. They cannot create
+  participant recommendation records or authorize coaching before review.
 - Owner-scoped real-time training reads, recommendation-evidence reads, and
-  memory-only cache isolation are implemented. The backend and clients support
-  atomic run and recommendation-decision commands, but normal Track run
-  creation, editing, and deletion remain fail-closed from that command path
-  until the live activation and migration issues pass. Profile and shoe writes
-  remain explicit client-repository operations.
-- The deletion-request lock and fixed, idempotent deletion runner are
-  implemented and tested locally, and the shared responsive account-settings
-  experience is complete. Live projects remain deliberately blocked; the
-  private-record adapter, complete rehearsal, and #205-authorized backend
-  deployment remain required before Marathoner can claim complete in-product
-  account deletion. The beta-only Blaze and budget boundary is verified but
-  does not authorize that deployment.
+  memory-only cache isolation are implemented. Normal Track run creation,
+  editing, deletion, and provider imports use atomic commands; profile and shoe
+  writes remain explicit client-repository operations.
+- The deletion-request lock, fixed idempotent runner, trusted callable, and
+  responsive account-settings experience are implemented and deployed to the
+  beta project. Limited-account rehearsal, support, incident, and observation
+  evidence remain open before external beta under issues #124 and #205.
+- Apple Health owner-device proof imported and reconciled completed workouts.
+  Direct Garmin connection, token custody, push receipt, permission-change, and
+  recovery paths are configured in the closed beta. The first real post-
+  connection Garmin run and the full duplicate/disconnect/relaunch matrix remain
+  open in issues #623 and #624.
 - The Track flow captures date, distance, elapsed time, shoe, optional planned-
   workout association, perceived effort, and notes. A complete draft guidance
   set, recommendation explanations, source trace, review gallery, and safety
