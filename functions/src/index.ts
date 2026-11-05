@@ -30,6 +30,7 @@ import { FirestoreAccountDeletionRequestStore } from './firestoreAccountDeletion
 import { FirestoreActivityImportStore } from './firestoreActivityImportStore.js'
 import { FirestoreGarminActivityPushStore, garminPushDeliveryFromDocument } from './firestoreGarminActivityPushStore.js'
 import { FirestoreGarminOAuthStore } from './firestoreGarminOAuthStore.js'
+import { FirestoreInternalAdaptationRecommendationStore } from './firestoreInternalAdaptationRecommendationStore.js'
 import { FirestoreMaterialCommandStore } from './firestoreMaterialCommandStore.js'
 import { FirestoreOperatorActivationControlStore } from './firestoreOperatorActivationControlStore.js'
 import { FirestorePlanApprovalStore } from './firestorePlanApprovalStore.js'
@@ -63,6 +64,8 @@ import {
   receiveGarminActivityPush,
   type GarminPushLogEntry,
 } from './garminActivityPush.js'
+import { executeInternalAdaptationRecommendation } from './internalAdaptationRecommendationHandler.js'
+import { loadPinnedInternalAdaptationArtifacts } from './pinnedInternalAdaptationArtifacts.js'
 
 if (getApps().length === 0) initializeApp()
 
@@ -88,6 +91,14 @@ const emulatorPlanApprovalPolicy: readonly PlanApprovalArtifactPolicyRecord[] = 
   },
 ]
 const functionsEmulator = process.env.FUNCTIONS_EMULATOR === 'true'
+const internalAdaptationRecommendationsEnabled = defineBoolean(
+  'MARATHONER_INTERNAL_ADAPTATION_RECOMMENDATIONS_ENABLED',
+  {
+    default: false,
+    description:
+      'Enables owner-controlled pending draft adaptation generation in the reviewed beta project.',
+  },
+)
 const useEmulatorPlanApprovalPolicy = functionsEmulator
 const provisionalPlanDogfoodEnabled = defineBoolean(
   'MARATHONER_PROVISIONAL_PLAN_DOGFOOD_ENABLED',
@@ -118,6 +129,9 @@ const useCompletedRunCommands = shouldInstallCompletedRunCommandStores({
 const operatorActivationGate = new OperatorActivationGate(
   new FirestoreOperatorActivationControlStore(database),
 )
+const internalAdaptationArtifacts = loadPinnedInternalAdaptationArtifacts()
+const internalAdaptationStore =
+  new FirestoreInternalAdaptationRecommendationStore(database)
 
 const dependencies = {
   store: new FirestoreMaterialCommandStore(database),
@@ -296,6 +310,28 @@ export const resolveMaterialCommand = onCall(
       },
       dependencies,
     ),
+)
+
+export const generateInternalAdaptationRecommendation = onCall(
+  { enforceAppCheck: false, invoker: 'public' },
+  (request) =>
+    executeInternalAdaptationRecommendation({
+      caller: {
+        appCheckVerified: request.app !== undefined || functionsEmulator,
+        ownerId: request.auth?.uid ?? null,
+      },
+      data: request.data,
+      dependencies: {
+        enabled:
+          internalAdaptationRecommendationsEnabled.value() &&
+          (functionsEmulator || gcloudProject.value() === 'marathonerapp-beta'),
+        artifacts: internalAdaptationArtifacts,
+        store: internalAdaptationStore,
+        log: (entry) => {
+          logger.info('Internal adaptation recommendation event', entry)
+        },
+      },
+    }),
 )
 
 // The verified request.app value is enforced inside the handler so unsupported

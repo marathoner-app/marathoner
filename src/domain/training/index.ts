@@ -5,6 +5,7 @@ export * from "./adaptationPlanContext";
 export * from "./adaptationPlanProjection";
 export * from "./adaptationRescheduleCandidates";
 export * from "./adaptationTrainingProjection";
+export * from "./pinnedDraftMethodology";
 export * from "./calculations";
 export * from "./dates";
 export * from "./deterministicPlanGenerator";

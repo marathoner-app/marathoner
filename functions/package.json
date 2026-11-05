@@ -8,7 +8,7 @@
     "node": "22"
   },
   "scripts": {
-    "build": "node scripts/clean-build.mjs && tsc -p tsconfig.json && node scripts/check-deploy-package.mjs"
+    "build": "node scripts/clean-build.mjs && tsc -p tsconfig.json && node scripts/copy-internal-adaptation-artifacts.mjs && node scripts/check-deploy-package.mjs"
   },
   "dependencies": {
     "@marathoner/training-contract": "file:vendor/training-contract",
