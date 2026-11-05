@@ -1,9 +1,5 @@
 import { describe, expect, it } from "vitest";
 import {
-  previewWorkoutsForInternalLiveAdaptation,
-  projectInternalLiveAdaptation,
-} from "../src/components/internalLiveAdaptationProjection";
-import {
   ADAPTATION_HISTORY_EVIDENCE_SCHEMA_VERSION,
   createDateOnly,
   createDistanceMeters,
@@ -12,6 +8,8 @@ import {
   createTrainingPlanId,
   createUserId,
   createUtcDateTime,
+  previewWorkoutsForAdaptationProjection,
+  projectAdaptationFromTrainingSnapshot,
   type AdaptationHistoryEvidenceV1,
   type AdaptationRescheduleCandidateV1,
   type PlannedWorkout,
@@ -118,9 +116,9 @@ const noCandidate: AdaptationRescheduleCandidateV1 = {
   consecutiveRunDatesAfterMove: 0,
 };
 
-describe("projectInternalLiveAdaptation", () => {
+describe("projectAdaptationFromTrainingSnapshot", () => {
   it("projects the evaluated plan week onto the next week in memory", () => {
-    const result = projectInternalLiveAdaptation({
+    const result = projectAdaptationFromTrainingSnapshot({
       evidence,
       activePlan,
       workouts,
@@ -147,7 +145,7 @@ describe("projectInternalLiveAdaptation", () => {
   });
 
   it("projects the exact trigger workout by the supplied candidate delay", () => {
-    const result = projectInternalLiveAdaptation({
+    const result = projectAdaptationFromTrainingSnapshot({
       evidence,
       activePlan,
       workouts,
@@ -180,7 +178,7 @@ describe("projectInternalLiveAdaptation", () => {
         : workout,
     );
     expect(
-      projectInternalLiveAdaptation({
+      projectAdaptationFromTrainingSnapshot({
         evidence,
         activePlan,
         workouts: ambiguous,
@@ -193,7 +191,7 @@ describe("projectInternalLiveAdaptation", () => {
     });
 
     expect(
-      projectInternalLiveAdaptation({
+      projectAdaptationFromTrainingSnapshot({
         evidence: { ...evidence, activePlanRevision: 5 },
         activePlan,
         workouts,
@@ -205,7 +203,7 @@ describe("projectInternalLiveAdaptation", () => {
 
   it("binds a reschedule candidate to the actual skipped trigger", () => {
     expect(
-      projectInternalLiveAdaptation({
+      projectAdaptationFromTrainingSnapshot({
         evidence,
         activePlan,
         workouts,
@@ -227,9 +225,9 @@ describe("projectInternalLiveAdaptation", () => {
   });
 });
 
-describe("previewWorkoutsForInternalLiveAdaptation", () => {
+describe("previewWorkoutsForAdaptationProjection", () => {
   it("returns a moved skipped workout to planned status in the session preview", () => {
-    const projected = projectInternalLiveAdaptation({
+    const projected = projectAdaptationFromTrainingSnapshot({
       evidence,
       activePlan,
       workouts,
@@ -247,7 +245,7 @@ describe("previewWorkoutsForInternalLiveAdaptation", () => {
     expect(projected.kind).toBe("ready");
     if (projected.kind !== "ready") return;
 
-    const preview = previewWorkoutsForInternalLiveAdaptation({
+    const preview = previewWorkoutsForAdaptationProjection({
       activePlan,
       workouts,
       projection: projected.projection,
@@ -267,7 +265,7 @@ describe("previewWorkoutsForInternalLiveAdaptation", () => {
   });
 
   it("reconciles a complete projection into a view-only calendar snapshot", () => {
-    const projected = projectInternalLiveAdaptation({
+    const projected = projectAdaptationFromTrainingSnapshot({
       evidence,
       activePlan,
       workouts,
@@ -277,7 +275,7 @@ describe("previewWorkoutsForInternalLiveAdaptation", () => {
     expect(projected.kind).toBe("ready");
     if (projected.kind !== "ready") return;
 
-    const preview = previewWorkoutsForInternalLiveAdaptation({
+    const preview = previewWorkoutsForAdaptationProjection({
       activePlan,
       workouts: [...workouts, restWorkout, otherPlanWorkout],
       projection: projected.projection,
@@ -301,7 +299,7 @@ describe("previewWorkoutsForInternalLiveAdaptation", () => {
   });
 
   it("refuses missing, duplicate, and incompatible synchronized mappings", () => {
-    const projected = projectInternalLiveAdaptation({
+    const projected = projectAdaptationFromTrainingSnapshot({
       evidence,
       activePlan,
       workouts,
@@ -312,7 +310,7 @@ describe("previewWorkoutsForInternalLiveAdaptation", () => {
     if (projected.kind !== "ready") return;
 
     expect(
-      previewWorkoutsForInternalLiveAdaptation({
+      previewWorkoutsForAdaptationProjection({
         activePlan,
         workouts: workouts.slice(0, -1),
         projection: projected.projection,
@@ -320,7 +318,7 @@ describe("previewWorkoutsForInternalLiveAdaptation", () => {
     ).toMatchObject({ kind: "not_ready", code: "preview_workout_missing" });
 
     expect(
-      previewWorkoutsForInternalLiveAdaptation({
+      previewWorkoutsForAdaptationProjection({
         activePlan,
         workouts: [...workouts, workouts[0]],
         projection: projected.projection,
@@ -331,7 +329,7 @@ describe("previewWorkoutsForInternalLiveAdaptation", () => {
     });
 
     expect(
-      previewWorkoutsForInternalLiveAdaptation({
+      previewWorkoutsForAdaptationProjection({
         activePlan,
         workouts: workouts.map((workout) =>
           workout.id === "week-2-easy" && workout.kind !== "rest"

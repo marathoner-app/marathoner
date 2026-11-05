@@ -9,9 +9,9 @@ import {
   valuesForInternalAdaptationScenario,
   type DraftAdaptationFixtureValues,
 } from "../src/components/internalAdaptationScenarioPacket";
-import { inputForInternalLiveAdaptation } from "../src/components/internalLiveAdaptationEvaluation";
 import {
   ADAPTATION_HISTORY_EVIDENCE_SCHEMA_VERSION,
+  assembleAdaptationEvaluationInput,
   createDateOnly,
   createDistanceMeters,
   createPlannedWorkoutId,
@@ -394,7 +394,7 @@ describe("InternalLiveAdaptationRehearsal", () => {
   it("assembles only normalized history and explicit trusted facts", () => {
     const values = fixtureValues("no-change-on-track");
     const evidence = evidenceFor(values);
-    const input = inputForInternalLiveAdaptation(evidence, packet, {
+    const input = assembleAdaptationEvaluationInput(evidence, packet.rules, {
       currentCoreWeek: values.currentCoreWeek,
       currentWeekKind: values.currentWeekKind,
       nextWeekKind: values.nextWeekKind,

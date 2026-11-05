@@ -1,22 +1,22 @@
 import {
   ADAPTATION_PLAN_PROJECTION_INPUT_SCHEMA_VERSION,
   AdaptationPlanProjectionError,
-  createDateOnly,
   projectAdaptationPlan,
-  type AdaptationAction,
-  type AdaptationHistoryEvidenceV1,
   type AdaptationPlanAdjustmentV1,
   type AdaptationPlanProjectionV1,
   type AdaptationPlanWorkoutV1,
-  type AdaptationRescheduleCandidateV1,
-  type DateOnly,
-  type PlannedWorkout,
-  type TrainingPlan,
-} from "../domain/training";
+} from "./adaptationPlanProjection.js";
+import type { AdaptationHistoryEvidenceV1 } from "./adaptationHistoryNormalization.js";
+import type {
+  AdaptationAction,
+  AdaptationRescheduleCandidateV1,
+} from "./adaptationEvaluation.js";
+import { createDateOnly, type DateOnly } from "./dates.js";
+import type { PlannedWorkout, TrainingPlan } from "./types.js";
 
 type MaterialAdaptationAction = Exclude<AdaptationAction, "no_change">;
 
-export interface InternalLiveAdaptationProjectionRequest {
+export interface AdaptationTrainingProjectionRequest {
   readonly evidence: AdaptationHistoryEvidenceV1;
   readonly activePlan: TrainingPlan;
   readonly workouts: readonly PlannedWorkout[];
@@ -24,7 +24,7 @@ export interface InternalLiveAdaptationProjectionRequest {
   readonly rescheduleCandidate: AdaptationRescheduleCandidateV1;
 }
 
-export type InternalLiveAdaptationProjectionResult =
+export type AdaptationTrainingProjectionResult =
   | {
       readonly kind: "ready";
       readonly projection: AdaptationPlanProjectionV1;
@@ -36,13 +36,13 @@ export type InternalLiveAdaptationProjectionResult =
       readonly message: string;
     };
 
-export interface InternalLiveAdaptationCalendarPreviewRequest {
+export interface AdaptationCalendarPreviewRequest {
   readonly activePlan: TrainingPlan;
   readonly workouts: readonly PlannedWorkout[];
   readonly projection: AdaptationPlanProjectionV1;
 }
 
-export type InternalLiveAdaptationCalendarPreviewResult =
+export type AdaptationCalendarPreviewResult =
   | {
       readonly kind: "ready";
       readonly workouts: readonly PlannedWorkout[];
@@ -54,13 +54,13 @@ export type InternalLiveAdaptationCalendarPreviewResult =
       readonly message: string;
     };
 
-class LiveProjectionInputError extends Error {
+export class AdaptationTrainingProjectionInputError extends Error {
   constructor(
     readonly code: string,
     message: string,
   ) {
     super(message);
-    this.name = "LiveProjectionInputError";
+    this.name = "AdaptationTrainingProjectionInputError";
   }
 }
 
@@ -79,7 +79,7 @@ function shiftDate(date: DateOnly, days: number): DateOnly {
 function weekNumberFor(plan: TrainingPlan, date: DateOnly): number {
   const dayOffset = calendarDay(date) - calendarDay(plan.startDate);
   if (dayOffset < 0) {
-    throw new LiveProjectionInputError(
+    throw new AdaptationTrainingProjectionInputError(
       "workout_before_plan",
       "The projection snapshot contains a date before the active plan starts.",
     );
@@ -93,7 +93,7 @@ function projectionTarget(
   const hasDistance = workout.targetDistance !== undefined;
   const hasDuration = workout.targetDuration !== undefined;
   if (hasDistance === hasDuration) {
-    throw new LiveProjectionInputError(
+    throw new AdaptationTrainingProjectionInputError(
       "ambiguous_workout_target",
       `Workout ${workout.id} must have exactly one distance or duration target.`,
     );
@@ -104,7 +104,7 @@ function projectionTarget(
   if (workout.targetDuration !== undefined) {
     return { kind: "duration", duration: workout.targetDuration };
   }
-  throw new LiveProjectionInputError(
+  throw new AdaptationTrainingProjectionInputError(
     "missing_workout_target",
     `Workout ${workout.id} has no projection target.`,
   );
@@ -122,7 +122,7 @@ function projectionWorkouts(
     )
     .map((workout) => {
       if (workout.userId !== activePlan.userId) {
-        throw new LiveProjectionInputError(
+        throw new AdaptationTrainingProjectionInputError(
           "workout_owner_mismatch",
           `Workout ${workout.id} does not belong to the active-plan owner.`,
         );
@@ -141,7 +141,7 @@ function projectionWorkouts(
 }
 
 function adjustmentFor(
-  request: InternalLiveAdaptationProjectionRequest,
+  request: AdaptationTrainingProjectionRequest,
   workouts: readonly AdaptationPlanWorkoutV1[],
 ): AdaptationPlanAdjustmentV1 {
   if (
@@ -170,7 +170,7 @@ function adjustmentFor(
     !candidate.runnerConfirmedAvailable ||
     !candidate.targetDateEmpty
   ) {
-    throw new LiveProjectionInputError(
+    throw new AdaptationTrainingProjectionInputError(
       "missing_reschedule_candidate",
       "The accepted reschedule recommendation needs one complete prevalidated candidate.",
     );
@@ -179,7 +179,7 @@ function adjustmentFor(
     (workout) => workout.id === request.evidence.triggerWorkoutId,
   );
   if (trigger === undefined) {
-    throw new LiveProjectionInputError(
+    throw new AdaptationTrainingProjectionInputError(
       "trigger_workout_missing",
       "The trigger workout is not present in the active-plan projection snapshot.",
     );
@@ -189,7 +189,7 @@ function adjustmentFor(
     trigger.kind !== "run" ||
     candidate.workoutPurpose !== trigger.purpose
   ) {
-    throw new LiveProjectionInputError(
+    throw new AdaptationTrainingProjectionInputError(
       "reschedule_candidate_mismatch",
       "The prevalidated reschedule candidate does not match the skipped trigger workout.",
     );
@@ -208,16 +208,16 @@ function adjustmentFor(
   };
 }
 
-export function projectInternalLiveAdaptation(
-  request: InternalLiveAdaptationProjectionRequest,
-): InternalLiveAdaptationProjectionResult {
+export function projectAdaptationFromTrainingSnapshot(
+  request: AdaptationTrainingProjectionRequest,
+): AdaptationTrainingProjectionResult {
   try {
     if (
       request.activePlan.id !== request.evidence.activePlanId ||
       request.activePlan.userId !== request.evidence.ownerId ||
       request.activePlan.status !== "active"
     ) {
-      throw new LiveProjectionInputError(
+      throw new AdaptationTrainingProjectionInputError(
         "active_plan_mismatch",
         "The inspected evidence no longer matches the loaded active plan.",
       );
@@ -236,7 +236,7 @@ export function projectInternalLiveAdaptation(
     return { kind: "ready", projection, adjustment };
   } catch (error) {
     if (
-      error instanceof LiveProjectionInputError ||
+      error instanceof AdaptationTrainingProjectionInputError ||
       error instanceof AdaptationPlanProjectionError
     ) {
       return {
@@ -252,7 +252,7 @@ export function projectInternalLiveAdaptation(
 function calendarPreviewRefusal(
   code: string,
   message: string,
-): InternalLiveAdaptationCalendarPreviewResult {
+): AdaptationCalendarPreviewResult {
   return { kind: "not_ready", code, message };
 }
 
@@ -272,9 +272,9 @@ function sameProjectedWorkout(
   return JSON.stringify(left) === JSON.stringify(right);
 }
 
-export function previewWorkoutsForInternalLiveAdaptation(
-  request: InternalLiveAdaptationCalendarPreviewRequest,
-): InternalLiveAdaptationCalendarPreviewResult {
+export function previewWorkoutsForAdaptationProjection(
+  request: AdaptationCalendarPreviewRequest,
+): AdaptationCalendarPreviewResult {
   const { activePlan, workouts, projection } = request;
   if (
     activePlan.status !== "active" ||
@@ -316,7 +316,7 @@ export function previewWorkoutsForInternalLiveAdaptation(
   try {
     livePrescriptions = projectionWorkouts(activePlan, workouts);
   } catch (error) {
-    if (error instanceof LiveProjectionInputError) {
+    if (error instanceof AdaptationTrainingProjectionInputError) {
       return calendarPreviewRefusal(error.code, error.message);
     }
     throw error;
