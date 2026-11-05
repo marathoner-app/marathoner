@@ -82,8 +82,8 @@ export default function RecommendationDecisionReview({
           <strong>Internal preview</strong>
           <span>
             {internalRehearsal
-              ? "This synthetic recommendation is not approved training guidance. Choices below are session-only and cannot change a real plan."
-              : "This synthetic recommendation is not approved training guidance and cannot change a plan."}
+              ? "This recommendation uses provisional training rules and unreviewed explanation copy. It is not approved training guidance. Choices below are session-only and cannot change a real plan."
+              : "This recommendation uses provisional training rules and unreviewed explanation copy. It is not approved training guidance and cannot change a plan."}
           </span>
         </div>
       )}
