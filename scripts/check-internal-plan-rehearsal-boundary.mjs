@@ -1,9 +1,13 @@
 import { readFile, readdir } from 'node:fs/promises'
 import path from 'node:path'
 
-const provisionalPlanDogfoodArtifact = 'beta-rules@0.2.0-draft'
-const forbiddenBuildText = [
+const provisionalDogfoodBuildText = [
+  'beta-rules@0.2.0-draft',
   'beta-adaptation@0.2.0-draft',
+  'generateInternalAdaptationRecommendation',
+  'Check recent training against the draft adjustment rules',
+]
+const forbiddenBuildText = [
   'beta-safety@0.1.0-draft',
   'Internal draft plan rehearsal',
   'Internal draft adaptation rehearsal',
@@ -63,7 +67,7 @@ export async function findInternalPlanRehearsalLeaks(
   const files = await collectTextFiles(directory)
   const forbiddenValues = allowProvisionalPlanDogfood
     ? forbiddenBuildText
-    : [provisionalPlanDogfoodArtifact, ...forbiddenBuildText]
+    : [...provisionalDogfoodBuildText, ...forbiddenBuildText]
 
   for (const file of files) {
     const contents = await readFile(file, 'utf8')

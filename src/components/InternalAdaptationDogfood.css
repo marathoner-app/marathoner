@@ -1,0 +1,69 @@
+.internal-adaptation-dogfood {
+  box-sizing: border-box;
+  width: min(100%, 46rem);
+  margin: 1.25rem auto;
+  padding: clamp(1.25rem, 4vw, 2rem);
+  overflow-wrap: anywhere;
+  border: 1px solid #b9c8c7;
+  border-radius: 0.9rem;
+  background: #f2f6f3;
+  color: #17202a;
+  line-height: 1.5;
+  text-align: left;
+}
+
+.internal-adaptation-dogfood h2,
+.internal-adaptation-dogfood p {
+  margin: 0;
+}
+
+.internal-adaptation-dogfood h2 {
+  margin-top: 0.25rem;
+  font-size: clamp(1.4rem, 4vw, 2rem);
+  line-height: 1.2;
+}
+
+.internal-adaptation-dogfood > p:not(:first-child) {
+  margin-top: 0.75rem;
+}
+
+.internal-adaptation-dogfood-eyebrow {
+  color: #315866;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.internal-adaptation-dogfood-trigger {
+  font-weight: 700;
+}
+
+.internal-adaptation-dogfood button,
+.internal-adaptation-review-again {
+  min-width: 2.75rem;
+  min-height: 2.75rem;
+  margin-top: 1rem;
+  padding: 0.65rem 1rem;
+}
+
+.internal-adaptation-dogfood-review {
+  width: min(100%, 46rem);
+  margin: 0 auto 1.25rem;
+}
+
+.internal-adaptation-review-again {
+  display: block;
+  margin-right: auto;
+  margin-left: auto;
+  border: 1px solid #17202a;
+  background: #ffffff;
+  color: #17202a;
+}
+
+@media (max-width: 600px) {
+  .internal-adaptation-dogfood button,
+  .internal-adaptation-review-again {
+    width: 100%;
+  }
+}

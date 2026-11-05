@@ -35,6 +35,7 @@ import {
 } from "./components/trainingSections";
 import { isBetaRunCommandRehearsalMode } from "./components/betaRunCommandRehearsalMode";
 import { isInternalPlanProposalRehearsalMode } from "./components/internalPlanProposalRehearsalMode";
+import { isInternalAdaptationDogfoodEnabled } from "./components/internalAdaptationDogfoodMode";
 import { resolvePlanSurfaceData } from "./training/planSurfaceData";
 import {
   resumeHealthKitImportMonitoring,
@@ -64,6 +65,12 @@ const PlanProposalBuilder =
   import.meta.env.VITE_PROVISIONAL_PLAN_DOGFOOD === "true"
     ? lazy(() => import("./components/PlanProposalBuilderLive"))
     : null;
+const InternalAdaptationDogfood = isInternalAdaptationDogfoodEnabled({
+  firebaseEnvironment: import.meta.env.VITE_FIREBASE_ENVIRONMENT,
+  provisionalPlanDogfood: import.meta.env.VITE_PROVISIONAL_PLAN_DOGFOOD,
+})
+  ? lazy(() => import("./components/InternalAdaptationDogfoodLive"))
+  : null;
 
 async function clearInternalPlanRehearsalSession(): Promise<void> {
   if (InternalPlanProposalRehearsal === null) return;
@@ -545,7 +552,24 @@ function AuthenticatedExperience({
                 />
               </Suspense>
             )}
-          <RecommendationDecisionSurface />
+          {InternalAdaptationDogfood === null && (
+            <RecommendationDecisionSurface />
+          )}
+          {InternalAdaptationDogfood && onboardingComplete && (
+            <Suspense
+              fallback={
+                <div className="training-home-status" role="status">
+                  <p>Loading the internal training check...</p>
+                </div>
+              }
+            >
+              <InternalAdaptationDogfood
+                activePlanState={training.activePlanState}
+                workouts={training.workouts}
+                runs={training.runs}
+              />
+            </Suspense>
+          )}
           {onboardingComplete && (
             <TrainingSectionNavigation
               activeSection={null}
