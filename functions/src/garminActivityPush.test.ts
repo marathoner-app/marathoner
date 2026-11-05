@@ -161,6 +161,80 @@ describe('Garmin Activity push receipt', () => {
     expect(delivery?.kind).toBe('deregistration')
     expect(JSON.stringify(delivery)).not.toContain('synthetic-provider-user')
   })
+
+  it('queues only the derived Activity permission state without raw identity or permissions', async () => {
+    const { dependencies, enqueue } = receiveDependencies()
+    const body = {
+      userPermissionsChange: [
+        {
+          userId: 'synthetic-provider-user',
+          summaryId: 'synthetic-permission-change',
+          permissions: ['HEALTH_EXPORT', 'WORKOUT_IMPORT'],
+          changeTimeInSeconds: 1_793_822_400,
+        },
+      ],
+    }
+
+    await expect(
+      receiveGarminActivityPush(request(body), dependencies),
+    ).resolves.toEqual({ httpStatus: 200, status: 'accepted' })
+    const [delivery] = enqueue.mock.calls[0]?.[0] ?? []
+    expect(delivery).toEqual({
+      schemaVersion: 1,
+      kind: 'permission_change',
+      deliveryId: expect.stringMatching(/^[A-Za-z0-9_-]{43}$/),
+      providerAccountDigest: garminProviderAccountDigest(
+        'synthetic-provider-user',
+      ),
+      observedAt: now.toISOString(),
+      activityExportGranted: false,
+    })
+    expect(JSON.stringify(delivery)).not.toContain('synthetic-provider-user')
+    expect(JSON.stringify(delivery)).not.toContain('HEALTH_EXPORT')
+    expect(JSON.stringify(delivery)).not.toContain(
+      'synthetic-permission-change',
+    )
+  })
+
+  it('rejects malformed permission-change payloads before queueing anything', async () => {
+    const { dependencies, enqueue } = receiveDependencies()
+    await expect(
+      receiveGarminActivityPush(
+        request({
+          userPermissionsChange: [
+            {
+              userId: 'synthetic-provider-user',
+              summaryId: 'synthetic-permission-change',
+              permissions: 'ACTIVITY_EXPORT',
+              changeTimeInSeconds: 1_793_822_400,
+            },
+          ],
+        }),
+        dependencies,
+      ),
+    ).resolves.toEqual({ httpStatus: 400, status: 'rejected' })
+    expect(enqueue).not.toHaveBeenCalled()
+  })
+
+  it('deduplicates permission-change retries with a stable delivery identity', async () => {
+    const body = {
+      userPermissionsChange: [
+        {
+          userId: 'synthetic-provider-user',
+          summaryId: 'synthetic-permission-change',
+          permissions: ['ACTIVITY_EXPORT'],
+          changeTimeInSeconds: 1_793_822_400,
+        },
+      ],
+    }
+    const first = receiveDependencies()
+    const second = receiveDependencies()
+    await receiveGarminActivityPush(request(body), first.dependencies)
+    await receiveGarminActivityPush(request(body), second.dependencies)
+    expect(first.enqueue.mock.calls[0]?.[0][0]?.deliveryId).toBe(
+      second.enqueue.mock.calls[0]?.[0][0]?.deliveryId,
+    )
+  })
 })
 
 describe('Garmin Activity push processing', () => {
@@ -170,6 +244,7 @@ describe('Garmin Activity push processing', () => {
   }) {
     const markProcessed = vi.fn(async () => undefined)
     const completeDeregistration = vi.fn(async () => undefined)
+    const completeActivityPermissionRevocation = vi.fn(async () => undefined)
     const resolveOwner = vi.fn(async () => options.owner)
     const submitImport = vi.fn(async (_ownerId, command) =>
       options.result ?? importedResult(command.commandId),
@@ -182,11 +257,13 @@ describe('Garmin Activity push processing', () => {
         store: {
           resolveOwner,
           completeDeregistration,
+          completeActivityPermissionRevocation,
           markProcessed,
         } satisfies Omit<GarminPushStore, 'enqueue'>,
         submitImport,
       },
       completeDeregistration,
+      completeActivityPermissionRevocation,
       markProcessed,
       resolveOwner,
       submitImport,
@@ -260,6 +337,49 @@ describe('Garmin Activity push processing', () => {
       providerAccountDigest: 'account-digest',
     })
     expect(boundary.submitImport).not.toHaveBeenCalled()
+  })
+
+  it('removes server custody when Activity export permission is withdrawn', async () => {
+    const boundary = processor({ owner: null })
+    await processGarminPushDelivery(
+      {
+        schemaVersion: 1,
+        kind: 'permission_change',
+        deliveryId: 'permission-change-001',
+        providerAccountDigest: 'account-digest',
+        observedAt: now.toISOString(),
+        activityExportGranted: false,
+      },
+      boundary.dependencies,
+    )
+    expect(boundary.completeActivityPermissionRevocation).toHaveBeenCalledWith({
+      environment: 'beta',
+      providerAccountDigest: 'account-digest',
+    })
+    expect(boundary.markProcessed).toHaveBeenCalledWith(
+      expect.objectContaining({ outcome: 'permission_revoked' }),
+    )
+  })
+
+  it('keeps the connection when Activity export permission remains granted', async () => {
+    const boundary = processor({ owner: null })
+    await processGarminPushDelivery(
+      {
+        schemaVersion: 1,
+        kind: 'permission_change',
+        deliveryId: 'permission-change-002',
+        providerAccountDigest: 'account-digest',
+        observedAt: now.toISOString(),
+        activityExportGranted: true,
+      },
+      boundary.dependencies,
+    )
+    expect(
+      boundary.completeActivityPermissionRevocation,
+    ).not.toHaveBeenCalled()
+    expect(boundary.markProcessed).toHaveBeenCalledWith(
+      expect.objectContaining({ outcome: 'ignored' }),
+    )
   })
 })
 
