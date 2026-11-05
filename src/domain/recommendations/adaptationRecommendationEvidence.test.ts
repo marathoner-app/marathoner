@@ -3,7 +3,7 @@ import {
   createRecommendationId,
   validateRecommendationEvidence,
   type RecommendationEvidenceV2,
-} from "../domain/recommendations";
+} from "./index";
 import {
   ADAPTATION_EVALUATION_INPUT_SCHEMA_VERSION,
   ADAPTATION_EVALUATION_RESULT_SCHEMA_VERSION,
@@ -24,8 +24,8 @@ import {
   type AdaptationPlanProjectionV1,
   type AdaptationPlanWorkoutV1,
   type TrainingPlan,
-} from "../domain/training";
-import { assembleInternalLiveRecommendationEvidence } from "./internalLiveRecommendationEvidence";
+} from "../training";
+import { assembleAdaptationRecommendationEvidence } from "./adaptationRecommendationEvidence";
 
 const planId = createTrainingPlanId("plan-active");
 const recommendedAt = createUtcDateTime("2026-10-27T18:00:00.000Z");
@@ -164,9 +164,9 @@ const adjustments = [
 
 function assemble(
   adjustment: AdaptationPlanAdjustmentV1,
-  overrides: Partial<Parameters<typeof assembleInternalLiveRecommendationEvidence>[0]> = {},
+  overrides: Partial<Parameters<typeof assembleAdaptationRecommendationEvidence>[0]> = {},
 ) {
-  return assembleInternalLiveRecommendationEvidence({
+  return assembleAdaptationRecommendationEvidence({
     recommendationId: createRecommendationId("internal-recommendation-1"),
     recommendedAt,
     activePlan: plan,
@@ -178,7 +178,7 @@ function assemble(
   });
 }
 
-describe("assembleInternalLiveRecommendationEvidence", () => {
+describe("assembleAdaptationRecommendationEvidence", () => {
   it.each(adjustments)(
     "assembles valid pending evidence for $action",
     (adjustment) => {
@@ -233,6 +233,11 @@ describe("assembleInternalLiveRecommendationEvidence", () => {
   });
 
   it("refuses stale, plan-mismatched, action-mismatched, and empty projections", () => {
+    expect(
+      assemble(adjustments[1], {
+        activePlan: { ...plan, status: "archived" },
+      }),
+    ).toMatchObject({ kind: "not_ready", code: "inactive_plan" });
     expect(
       assemble(adjustments[1], {
         evaluationInput: { ...evaluationInput, evaluatedPlanRevision: 6 },

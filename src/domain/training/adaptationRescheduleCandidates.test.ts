@@ -9,8 +9,8 @@ import {
   type AdaptationHistoryEvidenceV1,
   type PlannedWorkout,
   type TrainingPlan,
-} from "../domain/training";
-import { deriveInternalSessionDraftRescheduleCandidates } from "./internalSessionDraftRescheduleCandidates";
+} from "./index";
+import { deriveAdaptationRescheduleCandidates } from "./adaptationRescheduleCandidates";
 
 const ownerId = createUserId("owner-1");
 const planId = createTrainingPlanId("plan-1");
@@ -75,10 +75,10 @@ const rules = {
   maximumConsecutiveRunDatesAfterReschedule: 2,
 };
 
-describe("deriveInternalSessionDraftRescheduleCandidates", () => {
+describe("deriveAdaptationRescheduleCandidates", () => {
   it("derives schedule facts while leaving runner availability unconfirmed", () => {
     expect(
-      deriveInternalSessionDraftRescheduleCandidates({
+      deriveAdaptationRescheduleCandidates({
         plan,
         workouts: [trigger, workout("long", "2030-01-13")],
         evidence,
@@ -117,7 +117,7 @@ describe("deriveInternalSessionDraftRescheduleCandidates", () => {
       status: "skipped",
     });
     expect(
-      deriveInternalSessionDraftRescheduleCandidates({
+      deriveAdaptationRescheduleCandidates({
         plan,
         workouts: [sundayTrigger],
         evidence: { ...evidence, triggerWorkoutId: sundayTrigger.id },
@@ -125,7 +125,7 @@ describe("deriveInternalSessionDraftRescheduleCandidates", () => {
       }),
     ).toEqual([]);
     expect(
-      deriveInternalSessionDraftRescheduleCandidates({
+      deriveAdaptationRescheduleCandidates({
         plan,
         workouts: [trigger, workout("occupied", "2030-01-10")],
         evidence,
@@ -136,7 +136,7 @@ describe("deriveInternalSessionDraftRescheduleCandidates", () => {
 
   it("treats a generated rest record as an available target date", () => {
     expect(
-      deriveInternalSessionDraftRescheduleCandidates({
+      deriveAdaptationRescheduleCandidates({
         plan,
         workouts: [
           workout("completed", "2030-01-08", { status: "completed" }),
@@ -153,7 +153,7 @@ describe("deriveInternalSessionDraftRescheduleCandidates", () => {
 
   it("omits a move that would create too many consecutive run dates", () => {
     expect(
-      deriveInternalSessionDraftRescheduleCandidates({
+      deriveAdaptationRescheduleCandidates({
         plan,
         workouts: [
           trigger,
@@ -172,7 +172,7 @@ describe("deriveInternalSessionDraftRescheduleCandidates", () => {
       purpose: "long",
     });
     expect(
-      deriveInternalSessionDraftRescheduleCandidates({
+      deriveAdaptationRescheduleCandidates({
         plan,
         workouts: [longTrigger],
         evidence,
@@ -180,7 +180,7 @@ describe("deriveInternalSessionDraftRescheduleCandidates", () => {
       }),
     ).toEqual([]);
     expect(
-      deriveInternalSessionDraftRescheduleCandidates({
+      deriveAdaptationRescheduleCandidates({
         plan,
         workouts: [trigger],
         evidence: { ...evidence, triggerKind: "planned_run_completed" },
@@ -189,10 +189,32 @@ describe("deriveInternalSessionDraftRescheduleCandidates", () => {
     ).toEqual([]);
   });
 
+  it("fails closed when candidate bounds are invalid", () => {
+    expect(
+      deriveAdaptationRescheduleCandidates({
+        plan,
+        workouts: [trigger],
+        evidence,
+        rules: { ...rules, maximumRescheduleDelayDays: 0 },
+      }),
+    ).toEqual([]);
+    expect(
+      deriveAdaptationRescheduleCandidates({
+        plan,
+        workouts: [trigger],
+        evidence,
+        rules: {
+          ...rules,
+          maximumConsecutiveRunDatesAfterReschedule: 0,
+        },
+      }),
+    ).toEqual([]);
+  });
+
   it("does not mutate the plan workouts", () => {
     const workouts = [trigger, workout("other", "2030-01-12")];
     const snapshot = structuredClone(workouts);
-    deriveInternalSessionDraftRescheduleCandidates({
+    deriveAdaptationRescheduleCandidates({
       plan,
       workouts,
       evidence,
