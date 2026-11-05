@@ -21,6 +21,19 @@ async function requireMatchingFile(relativePath) {
   }
 }
 
+async function requireMatchingFileFromRepository(sourcePath, deployedPath) {
+  const repositoryRoot = new URL('../', functionsRoot)
+  const [source, deployed] = await Promise.all([
+    readFile(new URL(sourcePath, repositoryRoot), 'utf8'),
+    readFile(new URL(deployedPath, functionsRoot), 'utf8'),
+  ])
+  if (source !== deployed) {
+    throw new Error(
+      `Bundled internal artifact ${deployedPath} differs from ${sourcePath}.`,
+    )
+  }
+}
+
 const [functionsPackage, vendoredPackage] = await Promise.all([
   readJson(new URL('package.json', functionsRoot)),
   readJson(new URL('package.json', vendoredRoot)),
@@ -68,5 +81,16 @@ if (
     'Expected the compiled Functions domain to load the deployable training contract.',
   )
 }
+
+await Promise.all([
+  requireMatchingFileFromRepository(
+    'docs/methodology/artifacts/beta-rules/0.2.0-draft/beta-rules.json',
+    'lib/functions/artifacts/beta-rules.json',
+  ),
+  requireMatchingFileFromRepository(
+    'docs/methodology/artifacts/beta-adaptation/0.2.0-draft/beta-adaptation.json',
+    'lib/functions/artifacts/beta-adaptation.json',
+  ),
+])
 
 console.log('Functions deployment includes the canonical training contract runtime.')
