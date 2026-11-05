@@ -1,13 +1,13 @@
 import {
   ADAPTATION_EVALUATION_INPUT_SCHEMA_VERSION,
   type AdaptationEvaluationInputV1,
-  type AdaptationHistoryEvidenceV1,
+  type AdaptationEvaluationRulesV1,
   type AdaptationRescheduleCandidateV1,
   type AdaptationWeekKind,
-} from "../domain/training";
-import type { InternalAdaptationScenarioPacket } from "./internalAdaptationScenarioPacket";
+} from "./adaptationEvaluation.js";
+import type { AdaptationHistoryEvidenceV1 } from "./adaptationHistoryNormalization.js";
 
-export interface InternalLiveAdaptationTrustedFacts {
+export interface AdaptationInputTrustedFacts {
   readonly currentCoreWeek: number;
   readonly currentWeekKind: AdaptationWeekKind;
   readonly nextWeekKind: AdaptationWeekKind;
@@ -16,15 +16,18 @@ export interface InternalLiveAdaptationTrustedFacts {
   readonly inputCompletenessConfirmed: boolean;
 }
 
-export function inputForInternalLiveAdaptation(
+export function assembleAdaptationEvaluationInput(
   evidence: AdaptationHistoryEvidenceV1,
-  packet: InternalAdaptationScenarioPacket,
-  trustedFacts: InternalLiveAdaptationTrustedFacts,
+  rules: Pick<
+    AdaptationEvaluationRulesV1,
+    "basePlanArtifactVersion" | "adaptationArtifactVersion"
+  >,
+  trustedFacts: AdaptationInputTrustedFacts,
 ): AdaptationEvaluationInputV1 {
   return {
     schemaVersion: ADAPTATION_EVALUATION_INPUT_SCHEMA_VERSION,
-    basePlanArtifactVersion: packet.rules.basePlanArtifactVersion,
-    adaptationArtifactVersion: packet.rules.adaptationArtifactVersion,
+    basePlanArtifactVersion: rules.basePlanArtifactVersion,
+    adaptationArtifactVersion: rules.adaptationArtifactVersion,
     activePlanStatus: evidence.activePlanStatus,
     activePlanRevision: evidence.activePlanRevision,
     evaluatedPlanRevision: evidence.evaluatedPlanRevision,

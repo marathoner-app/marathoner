@@ -2,11 +2,15 @@ import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import {
   createUtcDateTime,
   evaluateAdaptation,
+  assembleAdaptationEvaluationInput,
+  previewWorkoutsForAdaptationProjection,
+  projectAdaptationFromTrainingSnapshot,
   type AdaptationEvaluationInputV1,
   type AdaptationEvaluationResultV1,
   type AdaptationHistoryEvidenceV1,
   type AdaptationOutcomeRuleV1,
   type AdaptationPlanAdjustmentV1,
+  type AdaptationTrainingProjectionResult,
   type AdaptationPlanWorkoutV1,
   type AdaptationRescheduleCandidateV1,
   type AdaptationWeekKind,
@@ -25,12 +29,6 @@ import { createDraftRecommendationDecisionContent } from "../recommendations/rec
 import Calendar from "./Calendar";
 import InternalAdaptationDecisionRehearsal from "./InternalAdaptationDecisionRehearsal";
 import type { InternalAdaptationScenarioPacket } from "./internalAdaptationScenarioPacket";
-import { inputForInternalLiveAdaptation } from "./internalLiveAdaptationEvaluation";
-import {
-  previewWorkoutsForInternalLiveAdaptation,
-  projectInternalLiveAdaptation,
-  type InternalLiveAdaptationProjectionResult,
-} from "./internalLiveAdaptationProjection";
 import {
   assembleInternalLiveRecommendationEvidence,
 } from "./internalLiveRecommendationEvidence";
@@ -139,11 +137,11 @@ export default function InternalLiveAdaptationRehearsal({
     kind: "not_run",
   });
   const [projectionOutcome, setProjectionOutcome] =
-    useState<InternalLiveAdaptationProjectionResult | null>(null);
+    useState<AdaptationTrainingProjectionResult | null>(null);
   const evaluationSequence = useRef(0);
   const calendarPreview = useMemo(() => {
     if (projectionOutcome?.kind !== "ready") return null;
-    return previewWorkoutsForInternalLiveAdaptation({
+    return previewWorkoutsForAdaptationProjection({
       activePlan,
       workouts,
       projection: projectionOutcome.projection,
@@ -270,7 +268,7 @@ export default function InternalLiveAdaptationRehearsal({
         ),
       } satisfies InternalSessionDraftPlanContext);
 
-    const input = inputForInternalLiveAdaptation(evidence, packet, {
+    const input = assembleAdaptationEvaluationInput(evidence, packet.rules, {
       ...evaluationPlanContext,
       rescheduleCandidate: candidateForEvaluation(),
       inputCompletenessConfirmed: completenessConfirmed,
@@ -764,7 +762,7 @@ export default function InternalLiveAdaptationRehearsal({
                     onSessionProjectionChange?.(null);
                     return;
                   }
-                  const projected = projectInternalLiveAdaptation({
+                  const projected = projectAdaptationFromTrainingSnapshot({
                     evidence,
                     activePlan,
                     workouts,
@@ -776,7 +774,7 @@ export default function InternalLiveAdaptationRehearsal({
                     onSessionProjectionChange?.(null);
                     return;
                   }
-                  const preview = previewWorkoutsForInternalLiveAdaptation({
+                  const preview = previewWorkoutsForAdaptationProjection({
                     activePlan,
                     workouts,
                     projection: projected.projection,
