@@ -1,6 +1,6 @@
 # Garmin trusted OAuth boundary
 
-- **Status:** Implemented and verified with synthetic provider fixtures; live beta configuration and deployment remain off
+- **Status:** Implemented, deployed, and owner-authorized in the closed beta
 - **Issue:** [#650](https://github.com/marathoner-app/marathoner/issues/650)
 - **Provider scope:** Garmin Connect Activity API only
 
@@ -13,10 +13,11 @@ PKCE verifiers, access grants, refresh grants, and provider responses never
 enter the browser bundle, native WebView, repository, application logs, or
 ordinary support output.
 
-The implementation is deliberately disabled by default. It does not create a
-Garmin application, accept provider terms, create credentials, deploy a live
-callback, or authorize a runner. Those remain explicit owner actions after the
-private provider setup is ready.
+The source implementation remains disabled by default and can activate only in
+the reviewed beta environment. The private Garmin app, credentials, callback,
+and beta runtime are now configured, and one owner-controlled account has
+completed provider authorization. Reconnect, revocation, relaunch, and
+limited-account evidence remain part of the final proof in #624.
 
 ## Trusted flow
 
@@ -82,7 +83,7 @@ closed beta runtime and private provider controls.
 
 | Name | Custody |
 | --- | --- |
-| `GARMIN_OAUTH_ENABLED` | Non-secret beta activation flag; false by default |
+| `GARMIN_OAUTH_ENABLED` | Non-secret beta activation flag; false by default in source and enabled in the reviewed closed-beta runtime |
 | `GARMIN_OAUTH_ENVIRONMENT` | Non-secret environment guard |
 | `GARMIN_CLIENT_ID` | Beta server configuration |
 | `GARMIN_CLIENT_SECRET` | Google Secret Manager, bound only to trusted functions |
@@ -115,7 +116,6 @@ The resulting digest is the only bridge to the
 [Activity push boundary](garmin-activity-push-boundary.md). The raw stable
 provider user ID is not persisted, logged, or returned to a client.
 
-Live callback, provider consent, reconnect, and revocation evidence can be
-recorded only after the owner accepts the private setup checkpoint and creates
-the beta application without copying credentials or provider-private material
-into GitHub.
+The live callback and owner-consent path have passed without copying
+credentials or provider-private material into GitHub. Reconnect, revocation,
+relaunch, and limited-account observations remain release evidence in #624.

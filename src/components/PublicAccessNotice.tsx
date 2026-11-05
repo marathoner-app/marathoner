@@ -42,16 +42,18 @@ export default function PublicAccessNotice({
           <p>
             Existing accounts use Firebase Authentication. Email addresses and
             training records entered or imported in the prototype are stored
-            through Google Firebase and Google Cloud. Those are the only
-            third-party services that process imported workout data.
+            and processed through Google Firebase and Google Cloud. Apple Health
+            and Garmin Connect are optional sources for completed workouts;
+            each connection requires the account holder&apos;s permission.
           </p>
           <p>
             With explicit permission, the iPhone app can import completed
             running workouts from Apple Health. Marathoner limits those imports
             to the workout source, date and time, distance, duration, and the
             identifiers needed to avoid duplicates. It does not write to Apple
-            Health or import all-day health data. Direct Garmin import is not
-            enabled yet.
+            Health or import all-day health data. Existing private accounts can
+            also connect Garmin for new completed running activities. Garmin
+            does not provide historical backfill through this integration.
           </p>
           <p>
             Marathoner does not sell personal or workout data, use it for

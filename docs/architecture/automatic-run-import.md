@@ -1,6 +1,6 @@
 # Automatic completed-run import
 
-- **Status:** Accepted product and architecture direction; provider delivery remains open
+- **Status:** Implemented in the closed beta; final Garmin and cross-provider proof remains open
 - **Decision date:** 2026-10-30
 - **Decision issue:** [#616](https://github.com/marathoner-app/marathoner/issues/616)
 - **Delivery epic:** [#617](https://github.com/marathoner-app/marathoner/issues/617)
@@ -68,9 +68,11 @@ The prepared application language, private-custody boundary, owner checkpoint,
 and provider-status record live in the
 [Garmin Connect Starter access runbook](../operations/garmin-connect-starter-access.md).
 The owner submitted the Activity-API-only Starter request on November 3, 2026,
-and the portal showed active Starter access on November 4. Access is classified
-as `approved but terms pending`: no app or credentials exist, and the binding
-agreement requires explicit owner acceptance before #623 is unblocked.
+and received usable Starter access on November 4. The private beta app, trusted
+OAuth callback, push receiver, permission-change endpoint, credentials, and
+closed-beta runtime configuration now exist. One owner account has completed
+provider authorization. The first real post-connection Garmin running delivery
+and the complete cross-provider proof matrix remain open in #623 and #624.
 
 Garmin Connect can also share workout summaries with Apple Health. That path
 may support a bounded early iPhone test only after Marathoner verifies the
@@ -161,16 +163,16 @@ behavior must match the implemented providers before invitations open.
 
 | Order | Issue | Milestone | Starts when |
 | --- | --- | --- | --- |
-| 1 | [#618 Provider-neutral import contract](https://github.com/marathoner-app/marathoner/issues/618) | 03 Track, Learn, and Adapt | Now |
-| 2 | [#619 Trusted imported-run persistence](https://github.com/marathoner-app/marathoner/issues/619) | 03 Track, Learn, and Adapt | #618 and #346 complete |
-| 3 | [#620 HealthKit running-workout import](https://github.com/marathoner-app/marathoner/issues/620) | 04 iOS Daily Companion | #618 and #619 complete |
-| 4 | [#621 Imported-run enrichment](https://github.com/marathoner-app/marathoner/issues/621) | 04 iOS Daily Companion | #618 and #619 complete |
+| 1 | [#618 Provider-neutral import contract](https://github.com/marathoner-app/marathoner/issues/618) | 03 Track, Learn, and Adapt | Complete |
+| 2 | [#619 Trusted imported-run persistence](https://github.com/marathoner-app/marathoner/issues/619) | 03 Track, Learn, and Adapt | Complete |
+| 3 | [#620 HealthKit running-workout import](https://github.com/marathoner-app/marathoner/issues/620) | 04 iOS Daily Companion | Complete; owner-device import proved |
+| 4 | [#621 Imported-run enrichment](https://github.com/marathoner-app/marathoner/issues/621) | 04 iOS Daily Companion | Complete |
 | 5 | [#622 Garmin Starter application](https://github.com/marathoner-app/marathoner/issues/622) | 03 Track, Learn, and Adapt | Complete |
-| 6 | [#649 Garmin access and configuration](https://github.com/marathoner-app/marathoner/issues/649) | 05 Trust and External-Beta Readiness | Approved access; owner terms checkpoint remains |
-| 7 | [#650 Trusted Garmin OAuth](https://github.com/marathoner-app/marathoner/issues/650) | 05 Trust and External-Beta Readiness | Implemented with synthetic proof; live private configuration and deployment remain off |
-| 8 | [#651 Garmin push ingestion](https://github.com/marathoner-app/marathoner/issues/651) | 05 Trust and External-Beta Readiness | Implemented with synthetic and emulator proof; live beta configuration remains off |
-| 9 | [#652 Garmin recovery UI](https://github.com/marathoner-app/marathoner/issues/652) | 05 Trust and External-Beta Readiness | Implemented with component and viewport proof; live beta configuration remains off |
-| 10 | [#623 Direct Garmin ingestion](https://github.com/marathoner-app/marathoner/issues/623) | 05 Trust and External-Beta Readiness | #649-#652 complete |
+| 6 | [#649 Garmin access and configuration](https://github.com/marathoner-app/marathoner/issues/649) | 05 Trust and External-Beta Readiness | Complete |
+| 7 | [#650 Trusted Garmin OAuth](https://github.com/marathoner-app/marathoner/issues/650) | 05 Trust and External-Beta Readiness | Complete; deployed and owner-authorized |
+| 8 | [#651 Garmin push ingestion](https://github.com/marathoner-app/marathoner/issues/651) | 05 Trust and External-Beta Readiness | Complete; deployed and provider-configured |
+| 9 | [#652 Garmin recovery UI](https://github.com/marathoner-app/marathoner/issues/652) | 05 Trust and External-Beta Readiness | Complete |
+| 10 | [#623 Direct Garmin ingestion](https://github.com/marathoner-app/marathoner/issues/623) | 05 Trust and External-Beta Readiness | First real post-connection run and remaining live evidence |
 | 11 | [#624 Cross-provider beta proof](https://github.com/marathoner-app/marathoner/issues/624) | 05 Trust and External-Beta Readiness | #620, #621, and #623 complete |
 
 ## Non-goals

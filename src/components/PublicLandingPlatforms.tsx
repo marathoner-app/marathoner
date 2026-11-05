@@ -17,12 +17,13 @@ export default function PublicLandingPlatforms({
       <div className="landing-platforms__intro">
         <p className="landing-platforms__eyebrow">Where Marathoner fits</p>
         <h2 id="landing-platforms-title">
-          Log runs on your phone. Review the full plan on the web.
+          Keep up with training on your phone. See the full picture on the web.
         </h2>
         <p>
-          That is the intended split: a quick iPhone companion for viewing and
-          recording workouts, with more room on the web for setup, history, and
-          analysis. Public iOS access is not open yet.
+          The iPhone companion is built for the daily loop and Apple Health
+          imports. The responsive web experience leaves more room for setup,
+          Garmin connection, history, and analysis. Public iOS access is not
+          open yet.
         </p>
       </div>
 
@@ -31,9 +32,9 @@ export default function PublicLandingPlatforms({
           <p className="landing-platforms__label">Intended daily companion</p>
           <h3>iPhone</h3>
           <p>
-            Designed for viewing the next workout and recording manual
-            completion, effort, notes, and shoes. Bounded adjustment decisions
-            remain planned.
+            Designed for viewing the next workout, importing completed runs
+            from Apple Health, and adding effort, notes, shoes, and plan
+            matches. Manual entry remains a fallback.
           </p>
           <p
             id="landing-platforms-ios-status"

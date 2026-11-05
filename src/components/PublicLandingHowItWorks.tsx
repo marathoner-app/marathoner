@@ -11,9 +11,10 @@ export default function PublicLandingHowItWorks() {
         </h2>
         <p>
           Tell Marathoner when you can run, which day works for your long run,
-          and what race you are preparing for. The current prototype turns
-          those details into an initial plan and records what you complete.
-          Guided adjustments are still planned.
+          and what race you are preparing for. The private prototype turns
+          those details into a plan, brings in completed runs from supported
+          connected sources, and tests bounded adjustments when training does
+          not go as planned.
         </p>
       </div>
 
@@ -38,12 +39,14 @@ export default function PublicLandingHowItWorks() {
         <article className="landing-how-it-works__card">
           <div className="landing-how-it-works__card-heading">
             <span aria-hidden="true">02</span>
-            <p className="landing-how-it-works__status">Current + planned</p>
+            <p className="landing-how-it-works__status">Current prototype</p>
           </div>
           <h3>Track what matters</h3>
           <p>
-            <strong>Current prototype:</strong> Log completed runs, perceived
-            effort, notes, and shoes without a social feed.
+            <strong>Current prototype:</strong> Import completed runs from Apple
+            Health or Garmin, then add perceived effort, notes, and shoes
+            without a social feed. Manual entry remains available when a run is
+            missing.
           </p>
           <p className="landing-how-it-works__boundary">
             <strong>Planned:</strong> Add fueling, hydration, sleep, and recovery
@@ -54,17 +57,18 @@ export default function PublicLandingHowItWorks() {
         <article className="landing-how-it-works__card">
           <div className="landing-how-it-works__card-heading">
             <span aria-hidden="true">03</span>
-            <p className="landing-how-it-works__status">Planned workflow</p>
+            <p className="landing-how-it-works__status">Internal testing</p>
           </div>
           <h3>Adjust with confidence</h3>
           <p>
-            Future bounded suggestions may reschedule, hold, or repeat training,
-            explain why, and ask for your approval before a meaningful plan
-            change.
+            Marathoner can rehearse bounded suggestions to reschedule, hold, or
+            repeat training, explain why, and ask for approval before a
+            meaningful plan change.
           </p>
           <p className="landing-how-it-works__boundary">
-            <strong>Not available today:</strong> Marathoner does not currently
-            recommend or apply training adjustments.
+            <strong>Current boundary:</strong> These provisional rules are being
+            tested internally and still require qualified review before beta
+            coaching use.
           </p>
         </article>
       </div>
