@@ -9,9 +9,11 @@ import {
   type AdaptationEvaluationResultV1,
   type AdaptationHistoryEvidenceV1,
   type AdaptationOutcomeRuleV1,
+  type AdaptationPlanContext,
   type AdaptationPlanAdjustmentV1,
   type AdaptationTrainingProjectionResult,
   type AdaptationPlanWorkoutV1,
+  type AdaptationRescheduleCandidateOption,
   type AdaptationRescheduleCandidateV1,
   type AdaptationWeekKind,
   type DistanceUnit,
@@ -22,6 +24,7 @@ import {
   type UtcDateTime,
 } from "../domain/training";
 import {
+  assembleAdaptationRecommendationEvidence,
   createRecommendationId,
   type RecommendationId,
 } from "../domain/recommendations";
@@ -29,11 +32,6 @@ import { createDraftRecommendationDecisionContent } from "../recommendations/rec
 import Calendar from "./Calendar";
 import InternalAdaptationDecisionRehearsal from "./InternalAdaptationDecisionRehearsal";
 import type { InternalAdaptationScenarioPacket } from "./internalAdaptationScenarioPacket";
-import {
-  assembleInternalLiveRecommendationEvidence,
-} from "./internalLiveRecommendationEvidence";
-import type { InternalSessionDraftPlanContext } from "./internalSessionDraftPlanContext";
-import type { InternalSessionDraftRescheduleCandidate } from "./internalSessionDraftRescheduleCandidates";
 
 interface InternalLiveAdaptationRehearsalProps {
   readonly evidence: AdaptationHistoryEvidenceV1;
@@ -41,8 +39,8 @@ interface InternalLiveAdaptationRehearsalProps {
   readonly activePlan: TrainingPlan;
   readonly workouts: readonly PlannedWorkout[];
   readonly distanceUnit: DistanceUnit;
-  readonly planContext?: InternalSessionDraftPlanContext;
-  readonly sessionRescheduleCandidates?: readonly InternalSessionDraftRescheduleCandidate[];
+  readonly planContext?: AdaptationPlanContext;
+  readonly sessionRescheduleCandidates?: readonly AdaptationRescheduleCandidateOption[];
   readonly onSessionProjectionChange?: (
     projection: GeneratedPlanEntityProjection | null,
   ) => void;
@@ -154,7 +152,7 @@ export default function InternalLiveAdaptationRehearsal({
     ) {
       return null;
     }
-    return assembleInternalLiveRecommendationEvidence({
+    return assembleAdaptationRecommendationEvidence({
       recommendationId: outcome.recommendationId,
       recommendedAt: outcome.recommendedAt,
       activePlan,
@@ -266,7 +264,7 @@ export default function InternalLiveAdaptationRehearsal({
         nextWeekIntroducesProgression: booleanFromChoice(
           nextWeekIntroducesProgression as Exclude<BooleanChoice, "">,
         ),
-      } satisfies InternalSessionDraftPlanContext);
+      } satisfies AdaptationPlanContext);
 
     const input = assembleAdaptationEvaluationInput(evidence, packet.rules, {
       ...evaluationPlanContext,

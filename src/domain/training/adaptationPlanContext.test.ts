@@ -8,10 +8,10 @@ import {
   createUserId,
   createUtcDateTime,
   type TrainingPlan,
-} from "../domain/training";
-import { createInternalAdaptationScenarioPacket } from "./internalAdaptationScenarioPacket";
-import { createInternalPlanProposalRehearsalRuleSet } from "./internalPlanProposalRehearsalRules";
-import { deriveInternalSessionDraftPlanContext } from "./internalSessionDraftPlanContext";
+} from "./index";
+import { createInternalAdaptationScenarioPacket } from "../../components/internalAdaptationScenarioPacket";
+import { createInternalPlanProposalRehearsalRuleSet } from "../../components/internalPlanProposalRehearsalRules";
+import { deriveAdaptationPlanContext } from "./adaptationPlanContext";
 
 const timestamp = createUtcDateTime("2030-01-01T00:00:00.000Z");
 const planArtifactDirectory = path.join(
@@ -47,7 +47,7 @@ function createPlan(targetRaceDate = "2030-05-12"): TrainingPlan {
 }
 
 function derive(evaluationDate: string, targetRaceDate?: string) {
-  return deriveInternalSessionDraftPlanContext({
+  return deriveAdaptationPlanContext({
     plan: createPlan(targetRaceDate),
     evaluationDate: createDateOnly(evaluationDate),
     basePlanRules,
@@ -55,7 +55,7 @@ function derive(evaluationDate: string, targetRaceDate?: string) {
   });
 }
 
-describe("deriveInternalSessionDraftPlanContext", () => {
+describe("deriveAdaptationPlanContext", () => {
   it("derives a load week and a new next-week progression", () => {
     expect(derive("2030-02-12")).toEqual({
       kind: "ready",
@@ -106,6 +106,31 @@ describe("deriveInternalSessionDraftPlanContext", () => {
       expect.objectContaining({
         kind: "not_ready",
         code: "session_plan_week_unsupported",
+      }),
+    );
+  });
+
+  it("fails closed for an invalid plan horizon or incomplete pinned rules", () => {
+    expect(derive("2030-02-12", "2030-01-06")).toEqual(
+      expect.objectContaining({
+        kind: "not_ready",
+        code: "session_plan_horizon_invalid",
+      }),
+    );
+    expect(
+      deriveAdaptationPlanContext({
+        plan: createPlan(),
+        evaluationDate: createDateOnly("2030-02-12"),
+        basePlanRules: {
+          coreWeekKinds: [],
+          rules: basePlanRules.rules,
+        },
+        adaptationRules: adaptationPacket.rules,
+      }),
+    ).toEqual(
+      expect.objectContaining({
+        kind: "not_ready",
+        code: "session_plan_rules_invalid",
       }),
     );
   });

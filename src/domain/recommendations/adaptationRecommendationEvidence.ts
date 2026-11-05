@@ -3,17 +3,19 @@ import {
   validateRecommendationEvidence,
   type RecommendationEvidenceV2,
   type RecommendationId,
-} from "../domain/recommendations";
+} from "./recommendationEvidence.js";
 import type {
   AdaptationEvaluationInputV1,
   AdaptationEvaluationResultV1,
+} from "../training/adaptationEvaluation.js";
+import type {
   AdaptationPlanAdjustmentV1,
   AdaptationPlanProjectionV1,
-  TrainingPlan,
-  UtcDateTime,
-} from "../domain/training";
+} from "../training/adaptationPlanProjection.js";
+import type { UtcDateTime } from "../training/dates.js";
+import type { TrainingPlan } from "../training/types.js";
 
-export interface InternalLiveRecommendationEvidenceRequest {
+export interface AdaptationRecommendationEvidenceRequest {
   readonly recommendationId: RecommendationId;
   readonly recommendedAt: UtcDateTime;
   readonly activePlan: TrainingPlan;
@@ -23,7 +25,7 @@ export interface InternalLiveRecommendationEvidenceRequest {
   readonly projection: AdaptationPlanProjectionV1;
 }
 
-export type InternalLiveRecommendationEvidenceResult =
+export type AdaptationRecommendationEvidenceResult =
   | {
       readonly kind: "ready";
       readonly evidence: RecommendationEvidenceV2;
@@ -43,11 +45,11 @@ export type InternalLiveRecommendationEvidenceResult =
 
 function notReady(
   code: Extract<
-    InternalLiveRecommendationEvidenceResult,
+    AdaptationRecommendationEvidenceResult,
     { readonly kind: "not_ready" }
   >["code"],
   message: string,
-): InternalLiveRecommendationEvidenceResult {
+): AdaptationRecommendationEvidenceResult {
   return { kind: "not_ready", code, message };
 }
 
@@ -62,9 +64,9 @@ function isMaterialRecommendation(
   );
 }
 
-export function assembleInternalLiveRecommendationEvidence(
-  request: InternalLiveRecommendationEvidenceRequest,
-): InternalLiveRecommendationEvidenceResult {
+export function assembleAdaptationRecommendationEvidence(
+  request: AdaptationRecommendationEvidenceRequest,
+): AdaptationRecommendationEvidenceResult {
   const {
     activePlan,
     adjustment,

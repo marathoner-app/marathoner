@@ -1,26 +1,23 @@
 import type {
   AdaptationEvaluationRulesV1,
   AdaptationWeekKind,
-  DateOnly,
-  DeterministicPlanRulesV1,
-  TrainingPlan,
-} from "../domain/training";
-import type { InternalPlanProposalRehearsalRuleSet } from "./internalPlanProposalRehearsalRules";
+} from "./adaptationEvaluation.js";
+import type { DateOnly } from "./dates.js";
+import type { DeterministicPlanRulesV1 } from "./deterministicPlanGenerator.js";
+import type { TrainingPlan } from "./types.js";
 
-export interface InternalSessionDraftPlanContext {
+export interface AdaptationPlanContext {
   readonly currentCoreWeek: number;
   readonly currentWeekKind: AdaptationWeekKind;
   readonly nextWeekKind: AdaptationWeekKind;
   readonly nextWeekIntroducesProgression: boolean;
 }
 
-interface InternalSessionDraftPlanContextRequest {
+export interface DeriveAdaptationPlanContextRequest {
   readonly plan: TrainingPlan;
   readonly evaluationDate: DateOnly;
-  readonly basePlanRules: Pick<
-    InternalPlanProposalRehearsalRuleSet,
-    "coreWeekKinds"
-  > & {
+  readonly basePlanRules: {
+    readonly coreWeekKinds: readonly AdaptationWeekKind[];
     readonly rules: Pick<
       DeterministicPlanRulesV1,
       "positionPurposes" | "leadInWeek" | "coreWeeks"
@@ -32,10 +29,10 @@ interface InternalSessionDraftPlanContextRequest {
   >;
 }
 
-export type InternalSessionDraftPlanContextResult =
+export type AdaptationPlanContextResult =
   | {
       readonly kind: "ready";
-      readonly context: InternalSessionDraftPlanContext;
+      readonly context: AdaptationPlanContext;
     }
   | {
       readonly kind: "not_ready";
@@ -52,7 +49,7 @@ function calendarDay(value: DateOnly): number {
 function notReady(
   code: string,
   message: string,
-): InternalSessionDraftPlanContextResult {
+): AdaptationPlanContextResult {
   return { kind: "not_ready", code, message };
 }
 
@@ -65,12 +62,12 @@ function weeklyDistance(
   );
 }
 
-export function deriveInternalSessionDraftPlanContext({
+export function deriveAdaptationPlanContext({
   plan,
   evaluationDate,
   basePlanRules,
   adaptationRules,
-}: InternalSessionDraftPlanContextRequest): InternalSessionDraftPlanContextResult {
+}: DeriveAdaptationPlanContextRequest): AdaptationPlanContextResult {
   const planStartDay = calendarDay(plan.startDate);
   const targetRaceDay = calendarDay(plan.targetRaceDate);
   const inclusivePreRaceDays = targetRaceDay - planStartDay + 1;

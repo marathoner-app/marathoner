@@ -1,19 +1,17 @@
-import {
-  createDateOnly,
-  type AdaptationEvaluationRulesV1,
-  type AdaptationHistoryEvidenceV1,
-  type AdaptationRescheduleCandidateV1,
-  type DateOnly,
-  type PlannedWorkout,
-  type TrainingPlan,
-} from "../domain/training";
+import type {
+  AdaptationEvaluationRulesV1,
+  AdaptationRescheduleCandidateV1,
+} from "./adaptationEvaluation.js";
+import type { AdaptationHistoryEvidenceV1 } from "./adaptationHistoryNormalization.js";
+import { createDateOnly, type DateOnly } from "./dates.js";
+import type { PlannedWorkout, TrainingPlan } from "./types.js";
 
-export interface InternalSessionDraftRescheduleCandidate {
+export interface AdaptationRescheduleCandidateOption {
   readonly targetDate: DateOnly;
   readonly candidate: AdaptationRescheduleCandidateV1;
 }
 
-interface DeriveInternalSessionDraftRescheduleCandidatesRequest {
+export interface DeriveAdaptationRescheduleCandidatesRequest {
   readonly plan: TrainingPlan;
   readonly workouts: readonly PlannedWorkout[];
   readonly evidence: AdaptationHistoryEvidenceV1;
@@ -60,17 +58,16 @@ function maximumConsecutiveDates(dates: readonly DateOnly[]): number {
 }
 
 /**
- * Derives schedule facts for the owner-only session rehearsal.
- *
+ * Derives schedule facts without treating the schedule as runner consent.
  * Availability deliberately remains false because only the runner can confirm
- * that fact in the interface.
+ * that fact.
  */
-export function deriveInternalSessionDraftRescheduleCandidates({
+export function deriveAdaptationRescheduleCandidates({
   plan,
   workouts,
   evidence,
   rules,
-}: DeriveInternalSessionDraftRescheduleCandidatesRequest): readonly InternalSessionDraftRescheduleCandidate[] {
+}: DeriveAdaptationRescheduleCandidatesRequest): readonly AdaptationRescheduleCandidateOption[] {
   if (
     evidence.triggerKind !== "planned_run_skipped" ||
     !Number.isSafeInteger(rules.maximumRescheduleDelayDays) ||
@@ -116,7 +113,7 @@ export function deriveInternalSessionDraftRescheduleCandidates({
     return [workout.scheduledDate];
   });
 
-  const candidates: InternalSessionDraftRescheduleCandidate[] = [];
+  const candidates: AdaptationRescheduleCandidateOption[] = [];
   for (
     let delayCalendarDays = 1;
     delayCalendarDays <= rules.maximumRescheduleDelayDays;

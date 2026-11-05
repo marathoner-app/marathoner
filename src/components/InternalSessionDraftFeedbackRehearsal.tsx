@@ -1,6 +1,8 @@
 import { useMemo, useState, type FormEvent } from "react";
 import {
   createUtcDateTime,
+  deriveAdaptationPlanContext,
+  deriveAdaptationRescheduleCandidates,
   getRunLocalDate,
   metersToKilometers,
   metersToMiles,
@@ -21,8 +23,6 @@ import {
   type InternalSessionDraftRunPair,
   type InternalSessionDraftSkippedWorkout,
 } from "./internalSessionDraftAdaptation";
-import { deriveInternalSessionDraftPlanContext } from "./internalSessionDraftPlanContext";
-import { deriveInternalSessionDraftRescheduleCandidates } from "./internalSessionDraftRescheduleCandidates";
 
 interface InternalSessionDraftFeedbackRehearsalProps {
   readonly projection: GeneratedPlanEntityProjection | null;
@@ -236,7 +236,7 @@ export default function InternalSessionDraftFeedbackRehearsal({
   const planContextResult = useMemo(() => {
     if (assembly?.normalization.kind !== "ready") return null;
 
-    return deriveInternalSessionDraftPlanContext({
+    return deriveAdaptationPlanContext({
       plan: assembly.plan,
       evaluationDate: assembly.normalization.evidence.evaluationDate,
       basePlanRules: planRuleSet,
@@ -246,7 +246,7 @@ export default function InternalSessionDraftFeedbackRehearsal({
   const sessionRescheduleCandidates = useMemo(() => {
     if (assembly?.normalization.kind !== "ready") return null;
 
-    return deriveInternalSessionDraftRescheduleCandidates({
+    return deriveAdaptationRescheduleCandidates({
       plan: assembly.plan,
       workouts: assembly.workouts,
       evidence: assembly.normalization.evidence,
