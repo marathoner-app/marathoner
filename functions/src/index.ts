@@ -64,6 +64,10 @@ import {
   receiveGarminActivityPush,
   type GarminPushLogEntry,
 } from './garminActivityPush.js'
+import {
+  INTERNAL_ADAPTATION_RECOMMENDATIONS_ENABLED_PARAM,
+  shouldEnableInternalAdaptationRecommendations,
+} from './internalAdaptationRecommendationActivation.js'
 import { executeInternalAdaptationRecommendation } from './internalAdaptationRecommendationHandler.js'
 import { loadPinnedInternalAdaptationArtifacts } from './pinnedInternalAdaptationArtifacts.js'
 
@@ -92,13 +96,19 @@ const emulatorPlanApprovalPolicy: readonly PlanApprovalArtifactPolicyRecord[] = 
 ]
 const functionsEmulator = process.env.FUNCTIONS_EMULATOR === 'true'
 const internalAdaptationRecommendationsEnabled = defineBoolean(
-  'MARATHONER_INTERNAL_ADAPTATION_RECOMMENDATIONS_ENABLED',
+  INTERNAL_ADAPTATION_RECOMMENDATIONS_ENABLED_PARAM,
   {
     default: false,
     description:
-      'Enables owner-controlled pending draft adaptation generation in the reviewed beta project.',
+      'Enables owner-controlled pending draft adaptation generation only in the development dogfood project.',
   },
 )
+const useInternalAdaptationRecommendations =
+  shouldEnableInternalAdaptationRecommendations({
+    activationEnabled: internalAdaptationRecommendationsEnabled.value(),
+    functionsEmulator,
+    projectId: gcloudProject.value(),
+  })
 const useEmulatorPlanApprovalPolicy = functionsEmulator
 const provisionalPlanDogfoodEnabled = defineBoolean(
   'MARATHONER_PROVISIONAL_PLAN_DOGFOOD_ENABLED',
@@ -322,9 +332,7 @@ export const generateInternalAdaptationRecommendation = onCall(
       },
       data: request.data,
       dependencies: {
-        enabled:
-          internalAdaptationRecommendationsEnabled.value() &&
-          (functionsEmulator || gcloudProject.value() === 'marathonerapp-beta'),
+        enabled: useInternalAdaptationRecommendations,
         artifacts: internalAdaptationArtifacts,
         store: internalAdaptationStore,
         log: (entry) => {

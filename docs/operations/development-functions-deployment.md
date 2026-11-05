@@ -80,6 +80,36 @@ two existing development accounts should be able to activate the exact pinned
 provisional plan. This does not approve the methodology and does not enable the
 policy in the beta project.
 
+`MARATHONER_INTERNAL_ADAPTATION_RECOMMENDATIONS_ENABLED` separately controls
+the trusted pending draft-adaptation command. It is false by default and can
+become effective only in `marathoner-d9bf9`; the Functions runtime rejects the
+beta project and every unknown project even if the value is accidentally set
+to true. Enable it only for a separately approved owner-dogfood proof using the
+paired development dogfood client. It does not approve methodology, accept or
+decline a recommendation, or authorize a plan mutation.
+
+## Draft adaptation command preparation
+
+Issue #671 prepares the development-only activation boundary but does not
+authorize a deployment or enable the parameter. When a later issue explicitly
+approves live proof, deploy only the reviewed callable:
+
+```sh
+MARATHONER_DEVELOPMENT_FUNCTIONS_DEPLOY_CONFIRMATION=DEPLOY-DEVELOPMENT-FUNCTIONS-FOR-OWNER-DOGFOOD \
+  npx firebase deploy \
+  --config firebase.json \
+  --project marathoner-d9bf9 \
+  --only functions:material-commands:generateInternalAdaptationRecommendation
+```
+
+Before that command, require the same clean-checkout, App Check, exact
+membership, runtime-role, budget, and rollback checks used for the material
+commands. After deployment, keep the parameter false until the owner separately
+approves the proof window. Roll back by restoring the value to false and
+redeploying only this callable. If removal is necessary, delete only
+`generateInternalAdaptationRecommendation` from `us-central1` after verifying
+the target project.
+
 ## Predeployment checklist
 
 - [ ] The owner explicitly approved the billing attachment and reviewed its
