@@ -362,6 +362,51 @@ describe('material-command contract', () => {
     })
   })
 
+  it('omits undefined optional run fields before transport serialization', () => {
+    const inputWithUndefinedOptionals: CompletedRunCommandInputV1 = {
+      plannedWorkout: null,
+      shoeId: undefined,
+      startedAt: completedRunInput.startedAt,
+      timeZone: completedRunInput.timeZone,
+      distance: completedRunInput.distance,
+      duration: completedRunInput.duration,
+      perceivedEffort: undefined,
+      unusualPain: undefined,
+      notes: undefined,
+    }
+    const expectedInput: CompletedRunCommandInputV1 = {
+      plannedWorkout: null,
+      startedAt: completedRunInput.startedAt,
+      timeZone: completedRunInput.timeZone,
+      distance: completedRunInput.distance,
+      duration: completedRunInput.duration,
+    }
+
+    const completion = createRunCompletionCommand(
+      'complete-run-with-empty-optionals-0001',
+      inputWithUndefinedOptionals,
+    )
+    const update = createRunUpdateCommand(
+      'update-run-with-empty-optionals-0001',
+      {
+        completedRunId,
+        expectedCompletedRunUpdatedAt: completedRunUpdatedAt,
+        input: inputWithUndefinedOptionals,
+      },
+    )
+
+    expect(completion.command.input).toEqual(expectedInput)
+    expect(update.command.input).toEqual(expectedInput)
+    expect(parseMaterialCommand(completion)).toEqual({
+      ok: true,
+      envelope: completion,
+    })
+    expect(parseMaterialCommand(update)).toEqual({
+      ok: true,
+      envelope: update,
+    })
+  })
+
   it('creates and parses a complete run update without caller ownership', () => {
     const command = createRunUpdateCommand(updateCommandId, {
       completedRunId,

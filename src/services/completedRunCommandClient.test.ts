@@ -163,6 +163,45 @@ describe('completed-run command client', () => {
     )
   })
 
+  it('removes undefined optional fields before submitting a completed run', async () => {
+    const boundary = transport(completionReceipt)
+    const client = createCompletedRunCommandClient({
+      isOnline: () => true,
+      transport: boundary,
+    })
+    const submission: RunCompletionSubmission = {
+      ...completionSubmission,
+      input: {
+        ...completionSubmission.input,
+        shoeId: undefined,
+        perceivedEffort: undefined,
+        unusualPain: undefined,
+        notes: undefined,
+      },
+    }
+
+    await expect(client.submitCompletion(submission)).resolves.toEqual(
+      completionReceipt,
+    )
+
+    expect(boundary.submit).toHaveBeenCalledWith({
+      envelopeVersion: 1,
+      appProtocolVersion: 1,
+      commandId: completionCommandId,
+      command: {
+        type: RUN_COMPLETION_COMMAND_TYPE,
+        schemaVersion: 1,
+        input: {
+          plannedWorkout: completionSubmission.input.plannedWorkout,
+          startedAt: completionSubmission.input.startedAt,
+          timeZone: completionSubmission.input.timeZone,
+          distance: completionSubmission.input.distance,
+          duration: completionSubmission.input.duration,
+        },
+      },
+    })
+  })
+
   it('builds deletion envelopes without losing IDs or expected versions', async () => {
     const boundary = transport(deletionReceipt)
     const client = createCompletedRunCommandClient({
