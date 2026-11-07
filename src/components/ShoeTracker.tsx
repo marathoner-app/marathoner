@@ -36,6 +36,11 @@ import type {
   CreateShoeInput,
   UpdateCompletedRunInput,
 } from "../persistence/trainingRepositories";
+import {
+  PendingRunSaveError,
+  pendingRunSaveMessage,
+  type PendingRunSaveCheckResult,
+} from "../training/pendingRunSave";
 import ElapsedDurationInput from "./ElapsedDurationInput";
 import { readElapsedDuration } from "./elapsedDuration";
 import {
@@ -51,6 +56,8 @@ type ShoeTrackerProps = {
   readonly onCreateShoe: (input: CreateShoeInput) => Promise<Shoe>;
   readonly onRetireShoe: (id: ShoeId, retiredOn: DateOnly) => Promise<Shoe>;
   readonly onCreateRun: (input: CreateCompletedRunInput) => Promise<CompletedRun>;
+  readonly hasPendingRunSave: boolean;
+  readonly onCheckPendingRunSave: () => Promise<PendingRunSaveCheckResult>;
   readonly onUpdateRun: (
     id: CompletedRunId,
     changes: UpdateCompletedRunInput,
@@ -65,6 +72,7 @@ export type ShoeTrackerInitialFocusTarget =
 
 type PendingAction =
   | "add-shoe"
+  | "check-run-save"
   | "create-run"
   | "update-run"
   | "delete-run"
@@ -314,6 +322,8 @@ export default function ShoeTracker({
   onCreateShoe,
   onRetireShoe,
   onCreateRun,
+  hasPendingRunSave,
+  onCheckPendingRunSave,
   onUpdateRun,
   onDeleteRun,
   initialFocusTarget = null,
@@ -323,12 +333,19 @@ export default function ShoeTracker({
   const [runDate, setRunDate] = useState<string>(today);
   const [error, setError] = useState<string | null>(null);
   const [actionStatus, setActionStatus] = useState<string | null>(null);
+  const [runSaveRecoveryMessage, setRunSaveRecoveryMessage] = useState<
+    string | null
+  >(null);
+  const [runSaveConfirmation, setRunSaveConfirmation] = useState<string | null>(
+    null,
+  );
   const [pendingAction, setPendingAction] = useState<PendingAction | null>(null);
   const pending = pendingAction !== null;
   const [editingRunId, setEditingRunId] = useState<CompletedRunId | null>(null);
   const [runToDelete, setRunToDelete] = useState<CompletedRun | null>(null);
   const [shoeToRetire, setShoeToRetire] = useState<Shoe | null>(null);
   const runDateInputRef = useRef<HTMLInputElement | null>(null);
+  const runEntryFormRef = useRef<HTMLFormElement | null>(null);
   const loggedRunsHeadingRef = useRef<HTMLHeadingElement | null>(null);
   const shoeMileageHeadingRef = useRef<HTMLHeadingElement | null>(null);
   const editRunButtonRefs = useRef(
@@ -377,6 +394,45 @@ export default function ShoeTracker({
   const closeRunEditor = (runId: CompletedRunId) => {
     editButtonToRestoreRef.current = runId;
     setEditingRunId(null);
+  };
+
+  const checkRunSaveStatus = async () => {
+    setError(null);
+    setActionStatus(null);
+    setRunSaveConfirmation(null);
+    setPendingAction("check-run-save");
+    try {
+      const result = await onCheckPendingRunSave();
+      if (result.status === "confirmed") {
+        runEntryFormRef.current?.reset();
+        setRunDate(today());
+        setRunSaveRecoveryMessage(null);
+        setRunSaveConfirmation(
+          "Your run was saved. It will appear in Logged Runs when synchronization finishes.",
+        );
+        return;
+      }
+      if (result.status === "still_unconfirmed") {
+        setRunSaveRecoveryMessage(
+          "Marathoner still can't confirm the save. Your original run is protected from duplication; wait a moment and check again.",
+        );
+        return;
+      }
+      if (result.status === "failed") {
+        setRunSaveRecoveryMessage(null);
+        setError(result.message);
+        return;
+      }
+      setRunSaveRecoveryMessage(null);
+    } catch (caught) {
+      setRunSaveRecoveryMessage(
+        caught instanceof Error
+          ? `${caught.message} Your original run is still protected.`
+          : "Marathoner couldn't check the save yet. Your original run is still protected.",
+      );
+    } finally {
+      setPendingAction(null);
+    }
   };
 
   const closeDeleteConfirmation = () => {
@@ -466,6 +522,7 @@ export default function ShoeTracker({
 
     setError(null);
     setActionStatus(null);
+    setRunSaveConfirmation(null);
     setPendingAction("create-run");
     try {
       const timeZone = currentTimeZone();
@@ -492,7 +549,13 @@ export default function ShoeTracker({
       setRunDate(today());
       setActionStatus(`Run logged for ${runDate}.`);
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "The run could not be saved.");
+      if (caught instanceof PendingRunSaveError) {
+        setRunSaveRecoveryMessage(null);
+      } else {
+        setError(
+          caught instanceof Error ? caught.message : "The run could not be saved.",
+        );
+      }
     } finally {
       setPendingAction(null);
     }
@@ -508,12 +571,38 @@ export default function ShoeTracker({
       )}
       <div className="entry">
         <h2>Run</h2>
+        {runSaveConfirmation && (
+          <p className="run-save-confirmation" role="status">
+            {runSaveConfirmation}
+          </p>
+        )}
+        {hasPendingRunSave && (
+          <section
+            className="run-save-recovery"
+            aria-labelledby="run-save-recovery-heading"
+          >
+            <h3 id="run-save-recovery-heading">Confirm your last run</h3>
+            <p aria-live="polite">
+              {runSaveRecoveryMessage ?? pendingRunSaveMessage}
+            </p>
+            <button
+              type="button"
+              disabled={pending}
+              onClick={() => void checkRunSaveStatus()}
+            >
+              {pendingAction === "check-run-save"
+                ? "Checking save status…"
+                : "Check save status"}
+            </button>
+          </section>
+        )}
         {activeShoes.length === 0 && (
           <p className="training-empty-state">
             Add your current running shoes before logging a run.
           </p>
         )}
         <form
+          ref={runEntryFormRef}
           aria-label="Log a completed run"
           aria-busy={pendingAction === "create-run"}
           onSubmit={handleRunSubmit}
@@ -588,7 +677,12 @@ export default function ShoeTracker({
             Optional context such as weather, fueling, discomfort, or the route. Up to{" "}
             {COMPLETED_RUN_NOTES_MAX_LENGTH} characters.
           </p>
-          <button type="submit" disabled={pending || activeShoes.length === 0}>
+          <button
+            type="submit"
+            disabled={
+              pending || hasPendingRunSave || activeShoes.length === 0
+            }
+          >
             {pendingAction === "create-run" ? "Logging run…" : "Log Run"}
           </button>
         </form>

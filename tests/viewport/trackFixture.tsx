@@ -25,6 +25,9 @@ import type {
 const userId = createUserId("viewport-runner");
 const timestamp = createUtcDateTime("2026-10-21T16:00:00Z");
 const importedFixture = new URLSearchParams(window.location.search).has("imported");
+const pendingRunSaveFixture = new URLSearchParams(window.location.search).has(
+  "pending-run-save",
+);
 
 const importedRun: CompletedRun = {
   id: createCompletedRunId("viewport-imported-run"),
@@ -125,6 +128,10 @@ function TrackViewportFixture() {
       onCreateShoe={createShoe}
       onRetireShoe={retireShoe}
       onCreateRun={createRun}
+      hasPendingRunSave={pendingRunSaveFixture}
+      onCheckPendingRunSave={async () => ({
+        status: "still_unconfirmed",
+      })}
       onUpdateRun={updateRun}
       onDeleteRun={async (id) => {
         setRuns((current) => current.filter((run) => run.id !== id));

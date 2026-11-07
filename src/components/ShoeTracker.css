@@ -88,6 +88,37 @@
   border: 0;
 }
 
+.run-save-recovery,
+.run-save-confirmation {
+  box-sizing: border-box;
+  width: 100%;
+  margin: 0 0 1rem;
+  padding: 1rem;
+  border-radius: 0.65rem;
+}
+
+.run-save-recovery {
+  border: 1px solid #b57b13;
+  background: #fff9e9;
+}
+
+.run-save-recovery h3,
+.run-save-recovery p {
+  margin: 0 0 0.75rem;
+}
+
+.run-save-recovery button {
+  background: #17233d;
+  color: #fff;
+}
+
+.run-save-confirmation {
+  border: 1px solid #7da99a;
+  background: #eef8f4;
+  color: #234e41;
+  font-weight: 700;
+}
+
 .training-field-hint,
 .run-notes {
   margin: 0;

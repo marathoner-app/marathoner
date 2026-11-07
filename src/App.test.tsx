@@ -173,7 +173,9 @@ vi.mock('./training/useTrainingData', () => ({
     staleReasons:
       trainingMock.status === 'stale' ? trainingMock.staleReasons : [],
     lastServerConfirmedAt: null,
+    hasPendingRunSave: false,
     reload: trainingMock.reload,
+    checkPendingRunSave: vi.fn(),
     saveProfile: trainingMock.saveProfile,
     createShoe: vi.fn(),
     retireShoe: vi.fn(),

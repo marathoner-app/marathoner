@@ -374,7 +374,7 @@ describe('completed-run command client', () => {
 
   it('recovers an ambiguous completion by resolving the same command ID', async () => {
     const boundary = transport(completionReceipt)
-    vi.mocked(boundary.submit).mockRejectedValueOnce({
+    vi.mocked(boundary.submit).mockRejectedValue({
       code: 'functions/deadline-exceeded',
     })
     const client = createCompletedRunCommandClient({
@@ -392,13 +392,13 @@ describe('completed-run command client', () => {
     await expect(client.resolveCompletion(completionCommandId)).resolves.toEqual(
       completionReceipt,
     )
-    expect(boundary.submit).toHaveBeenCalledTimes(1)
+    expect(boundary.submit).toHaveBeenCalledTimes(2)
     expect(boundary.resolve).toHaveBeenCalledWith(completionCommandId)
   })
 
   it('recovers an ambiguous deletion by resolving the same command ID', async () => {
     const boundary = transport(deletionReceipt)
-    vi.mocked(boundary.submit).mockRejectedValueOnce({
+    vi.mocked(boundary.submit).mockRejectedValue({
       code: 'functions/deadline-exceeded',
     })
     const client = createCompletedRunCommandClient({
@@ -417,11 +417,12 @@ describe('completed-run command client', () => {
       deletionReceipt,
     )
     expect(boundary.resolve).toHaveBeenCalledWith(deletionCommandId)
+    expect(boundary.submit).toHaveBeenCalledTimes(2)
   })
 
   it('recovers an ambiguous update by resolving the same command ID', async () => {
     const boundary = transport(updateReceipt)
-    vi.mocked(boundary.submit).mockRejectedValueOnce({
+    vi.mocked(boundary.submit).mockRejectedValue({
       code: 'functions/deadline-exceeded',
     })
     const client = createCompletedRunCommandClient({
@@ -439,7 +440,7 @@ describe('completed-run command client', () => {
     await expect(client.resolveUpdate(updateCommandId)).resolves.toEqual(
       updateReceipt,
     )
-    expect(boundary.submit).toHaveBeenCalledTimes(1)
+    expect(boundary.submit).toHaveBeenCalledTimes(2)
     expect(boundary.resolve).toHaveBeenCalledWith(updateCommandId)
   })
 

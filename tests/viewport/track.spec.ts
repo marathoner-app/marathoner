@@ -336,3 +336,28 @@ test("keeps imported-run details usable at phone width", async ({ page }) => {
   await expectNoHorizontalOverflow(page, "Track", "while enriching an imported run");
   await expectTrackerCardsToContainControls(page, "imported-run details");
 });
+
+test("keeps uncertain run recovery clear and usable at phone width", async ({
+  page,
+}) => {
+  await page.goto("tests/viewport/track.html?pending-run-save=1");
+
+  await expect(
+    page.getByRole("heading", { name: "Confirm your last run" }),
+  ).toBeVisible();
+  await expect(
+    page.getByText(/couldn't confirm whether this run finished saving/i),
+  ).toBeVisible();
+  await expect(page.getByText(/command id/i)).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Log Run" })).toBeDisabled();
+  const checkStatus = page.getByRole("button", { name: "Check save status" });
+  await expectMinimumTouchTarget(checkStatus, "check uncertain run save");
+
+  await checkStatus.click();
+
+  await expect(
+    page.getByText(/original run is protected from duplication/i),
+  ).toBeVisible();
+  await expectNoHorizontalOverflow(page, "Track", "with run-save recovery open");
+  await expectTrackerCardsToContainControls(page, "run-save recovery");
+});

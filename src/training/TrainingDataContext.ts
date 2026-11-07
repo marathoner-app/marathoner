@@ -18,6 +18,7 @@ import type {
   UpdateCompletedRunInput,
 } from "../persistence/trainingRepositories";
 import type { TrainingSynchronizationStaleReason } from "./trainingSynchronization";
+import type { PendingRunSaveCheckResult } from "./pendingRunSave";
 
 export type TrainingDataStatus = "loading" | "current" | "stale" | "error";
 
@@ -33,7 +34,9 @@ export interface TrainingDataContextValue {
   readonly canWrite: boolean;
   readonly staleReasons: readonly TrainingSynchronizationStaleReason[];
   readonly lastServerConfirmedAt: UtcDateTime | null;
+  readonly hasPendingRunSave: boolean;
   readonly reload: () => Promise<void>;
+  readonly checkPendingRunSave: () => Promise<PendingRunSaveCheckResult>;
   readonly saveProfile: (input: SaveUserProfileInput) => Promise<UserProfile>;
   readonly createShoe: (input: CreateShoeInput) => Promise<Shoe>;
   readonly retireShoe: (id: ShoeId, retiredOn: DateOnly) => Promise<Shoe>;

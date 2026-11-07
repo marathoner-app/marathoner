@@ -50,14 +50,32 @@ describe('material-command web client', () => {
     expect(boundary.submit).toHaveBeenCalledTimes(1)
   })
 
-  it('marks a timed-out request unknown and resolves it by command ID', async () => {
+  it('retries the exact idempotent command once after a timed-out response', async () => {
     const boundary = transport()
-    vi.mocked(boundary.submit).mockRejectedValueOnce({
+    vi.mocked(boundary.submit)
+      .mockRejectedValueOnce({ code: 'functions/deadline-exceeded' })
+      .mockResolvedValueOnce(committed)
+    const client = createMaterialCommandClient({
+      isOnline: () => true,
+      transport: boundary,
+      retryIdempotentSubmissionsOnce: true,
+    })
+
+    await expect(client.submit(command)).resolves.toEqual(committed)
+    expect(boundary.submit).toHaveBeenCalledTimes(2)
+    expect(boundary.submit).toHaveBeenNthCalledWith(1, command)
+    expect(boundary.submit).toHaveBeenNthCalledWith(2, command)
+  })
+
+  it('marks the outcome unknown when both safe attempts fail', async () => {
+    const boundary = transport()
+    vi.mocked(boundary.submit).mockRejectedValue({
       code: 'functions/deadline-exceeded',
     })
     const client = createMaterialCommandClient({
       isOnline: () => true,
       transport: boundary,
+      retryIdempotentSubmissionsOnce: true,
     })
 
     await expect(client.submit(command)).resolves.toEqual(
@@ -67,9 +85,24 @@ describe('material-command web client', () => {
         commandId,
       }),
     )
-    await expect(client.resolve(commandId)).resolves.toEqual(committed)
+    expect(boundary.submit).toHaveBeenCalledTimes(2)
+  })
+
+  it('does not retry a definitive authentication failure', async () => {
+    const boundary = transport()
+    vi.mocked(boundary.submit).mockRejectedValueOnce({
+      code: 'functions/unauthenticated',
+    })
+    const client = createMaterialCommandClient({
+      isOnline: () => true,
+      transport: boundary,
+      retryIdempotentSubmissionsOnce: true,
+    })
+
+    await expect(client.submit(command)).resolves.toEqual(
+      expect.objectContaining({ status: 'authentication_error' }),
+    )
     expect(boundary.submit).toHaveBeenCalledTimes(1)
-    expect(boundary.resolve).toHaveBeenCalledWith(commandId)
   })
 
   it('maps unavailable transport errors to an explicit retryable result', async () => {
@@ -85,5 +118,6 @@ describe('material-command web client', () => {
     await expect(client.submit(command)).resolves.toEqual(
       expect.objectContaining({ status: 'retryable_error' }),
     )
+    expect(boundary.submit).toHaveBeenCalledTimes(1)
   })
 })
