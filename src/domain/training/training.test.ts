@@ -19,6 +19,7 @@ import {
   createDurationSeconds,
   createIanaTimeZone,
   createUtcDateTimeAtLocalNoon,
+  createUtcDateTimeForCompletedDate,
   createPlannedWorkoutId,
   createShoeId,
   createTrainingPlanId,
@@ -143,6 +144,36 @@ describe("training domain primitives", () => {
         createIanaTimeZone("Asia/Kathmandu"),
       ),
     ).toBe("2026-08-03T06:15:00.000Z");
+  });
+
+  it("keeps today's completed-run timestamp out of the future before noon", () => {
+    const timeZone = createIanaTimeZone("America/Los_Angeles");
+    const today = createDateOnly("2026-11-07");
+
+    expect(
+      createUtcDateTimeForCompletedDate(
+        today,
+        timeZone,
+        new Date("2026-11-07T19:21:00.000Z"),
+      ),
+    ).toBe("2026-11-07T19:20:00.000Z");
+    expect(
+      createUtcDateTimeForCompletedDate(
+        today,
+        timeZone,
+        new Date("2026-11-07T20:21:00.000Z"),
+      ),
+    ).toBe("2026-11-07T20:00:00.000Z");
+  });
+
+  it("does not move today's completed-run timestamp across local midnight", () => {
+    expect(
+      createUtcDateTimeForCompletedDate(
+        createDateOnly("2026-11-07"),
+        createIanaTimeZone("America/Los_Angeles"),
+        new Date("2026-11-07T08:00:30.000Z"),
+      ),
+    ).toBe("2026-11-07T08:00:30.000Z");
   });
 
   it("converts display units to whole meters", () => {

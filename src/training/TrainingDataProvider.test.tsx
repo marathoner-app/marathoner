@@ -814,6 +814,46 @@ describe("TrainingDataProvider", () => {
     expect(directCreate).not.toHaveBeenCalled();
   });
 
+  it("does not show recovery UI while the original run save is still in flight", async () => {
+    await repositories.shoes.create({ name: "Daily Trainer" });
+    let finishSubmission!: (result: RunCompletionClientResult) => void;
+    vi.mocked(completedRunCommandClient.submitCompletion).mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          finishSubmission = resolve;
+        }),
+    );
+    const user = userEvent.setup();
+    renderProvider(<RunCommandProbe />);
+    const source = await waitForSource();
+    await publishRepositories(source);
+
+    await user.click(screen.getByRole("button", { name: "Create unplanned run" }));
+
+    await waitFor(() =>
+      expect(completedRunCommandClient.submitCompletion).toHaveBeenCalledOnce(),
+    );
+    expect(screen.getByText("Command: pending")).toBeInTheDocument();
+    expect(screen.getByText("Pending run save: no")).toBeInTheDocument();
+    expect(pendingRunSaveStore.write).toHaveBeenCalledWith(
+      userId,
+      "run-complete-test-command",
+    );
+
+    await act(async () => {
+      finishSubmission({
+        status: "run_completed",
+        commandId: "run-complete-test-command",
+        completedRunId: createCompletedRunId("run-in-flight-confirmed"),
+        completedRunUpdatedAt: timestamp,
+        completedPlannedWorkout: null,
+      });
+    });
+
+    expect(await screen.findByText("Command: success")).toBeInTheDocument();
+    expect(screen.getByText("Pending run save: no")).toBeInTheDocument();
+  });
+
   it("surfaces an offline completion failure without a direct write or retry", async () => {
     await repositories.shoes.create({ name: "Daily Trainer" });
     const directCreate = vi.spyOn(repositories.runs, "create");

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { render, screen, waitFor, within } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import {
@@ -562,6 +562,53 @@ describe("ShoeTracker", () => {
     expect(screen.getByText("Total: 5 mi")).toBeInTheDocument();
     expect(screen.getByText(/Starting: 0 mi/)).toBeInTheDocument();
     expect(screen.getByText(/Recorded by Marathoner: 5 mi/)).toBeInTheDocument();
+  });
+
+  it("never submits today's run with a future timestamp", async () => {
+    vi.useFakeTimers();
+    const now = new Date("2026-11-07T11:21:00.000Z");
+    vi.setSystemTime(now);
+    try {
+      const shoe: Shoe = {
+        id: createShoeId("shoe-1"),
+        userId,
+        name: "Daily Trainer",
+        startingDistance: createDistanceMeters(0),
+        status: "active",
+        createdAt: timestamp,
+        updatedAt: timestamp,
+      };
+      const onCreateRunCall = vi.fn();
+      render(
+        <Harness
+          initialShoes={[shoe]}
+          onCreateRunCall={onCreateRunCall}
+        />,
+      );
+      const form = screen.getByRole("form", { name: "Log a completed run" });
+
+      fireEvent.change(
+        within(form).getByRole("spinbutton", { name: "Distance (miles)" }),
+        { target: { value: "1" } },
+      );
+      fireEvent.change(
+        within(form).getByRole("spinbutton", { name: "Elapsed time minutes" }),
+        { target: { value: "10" } },
+      );
+      fireEvent.change(
+        within(form).getByRole("combobox", { name: "Running shoes" }),
+        { target: { value: "shoe-1" } },
+      );
+      await act(async () => {
+        fireEvent.submit(form);
+      });
+
+      expect(onCreateRunCall).toHaveBeenCalledOnce();
+      const [submittedRun] = onCreateRunCall.mock.calls[0];
+      expect(Date.parse(submittedRun.startedAt)).toBeLessThanOrEqual(now.getTime());
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it("rejects an empty elapsed duration before creating a run", async () => {

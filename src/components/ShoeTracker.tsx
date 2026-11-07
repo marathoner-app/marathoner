@@ -15,7 +15,7 @@ import {
   createShoeId,
   createTrainingPlanId,
   createIanaTimeZone,
-  createUtcDateTimeAtLocalNoon,
+  createUtcDateTimeForCompletedDate,
   getRunLocalDate,
   kilometersToMeters,
   metersToKilometers,
@@ -246,7 +246,7 @@ function parseCompletedRunDate(date: string, timeZone: IanaTimeZone) {
     throw new Error("A completed run date cannot be in the future.");
   }
 
-  return createUtcDateTimeAtLocalNoon(localDate, timeZone);
+  return createUtcDateTimeForCompletedDate(localDate, timeZone);
 }
 
 function formatDuration(totalSeconds: number): string {

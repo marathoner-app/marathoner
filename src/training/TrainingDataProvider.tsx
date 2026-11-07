@@ -343,7 +343,6 @@ export default function TrainingDataProvider({
     (commandId: string, input?: CreateCompletedRunInput) => {
       pendingRunCompletionRef.current = { commandId, input };
       pendingRunSaveStore.write(userId, commandId);
-      setPendingRunSaveCommandId(commandId);
     },
     [pendingRunSaveStore, userId],
   );
@@ -634,6 +633,8 @@ export default function TrainingDataProvider({
           }
           if (result.status !== "outcome_unknown") {
             clearPendingRunSave();
+          } else {
+            setPendingRunSaveCommandId(submission.commandId);
           }
           throw completionFailure(result);
         },
