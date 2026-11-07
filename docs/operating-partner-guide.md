@@ -1,7 +1,7 @@
 # Operating partner start-here guide
 
 - **Status:** Active orientation guide
-- **Last reviewed:** October 30, 2026
+- **Last reviewed:** November 7, 2026
 - **Audience:** Marathoner's operating partner and other first-time strategic
   reviewers
 - **Tracking issue:**
@@ -15,9 +15,9 @@ and how to recommend changes without first reconstructing the full issue
 history.
 
 The operating-partner description in this repository records a working role,
-not an equity, officer, or legal co-owner designation. The current entity plan
-still assumes a single-member LLC. Any change to ownership or formal authority
-requires its own private professional review and a separate governance update.
+not an equity, officer, or legal co-owner designation. A California LLC is
+deferred for the closed beta; any later entity, ownership, or formal-authority
+decision requires its own private professional review and governance update.
 
 ## How to read repository truth
 
@@ -56,7 +56,10 @@ conflict.
    [internal-first resource-sequencing decision](internal-first-resource-sequencing.md)
    also defers material external spending until practical implementation and
    internal-validation predecessors are complete and the dependency is
-   becoming a real blocker.
+   becoming a real blocker. The
+   [closed-beta decision](closed-beta-gate-decision.md) selects an individual
+   Apple membership and provisional methodology for the first five to eight
+   known testers while preserving the non-spend gates.
 
 4. **Learn the exact beta promise.** Read the
    [zero-to-beta plan](zero-to-beta-plan.md), especially the supported
@@ -99,9 +102,10 @@ conflict.
 9. **Understand the methodology and safety boundary.** Read the
    [methodology review protocol](methodology/README.md) and its
    [beta review inventory](methodology/beta-review-inventory.md). Marathoner
-   cannot present unreviewed training, adaptation, pain, fueling, hydration, or
-   recovery rules as approved guidance. Field feedback cannot replace qualified
-   review.
+   cannot present provisional training, adaptation, pain, fueling, hydration,
+   or recovery rules as professionally approved guidance. The first closed
+   cohort receives explicit provisional-methodology disclosure; field feedback
+   does not itself become qualified review.
 
 10. **Understand privacy, security, and access.** Read
     [governance](../GOVERNANCE.md), [contribution](../CONTRIBUTING.md), and
@@ -124,7 +128,7 @@ conflict.
 
 ## Current snapshot
 
-As of October 30, 2026:
+As of November 7, 2026:
 
 - Marathoner is a deployed, responsive pre-beta web application with a
   production-shaped Capacitor iOS shell. It is not open for public signup or
@@ -134,11 +138,12 @@ As of October 30, 2026:
   boundaries exist. Owner-only internal rehearsal now exercises saved-profile
   plan generation, unsupported results, start-date choice, session activation,
   live-history adaptation, recommendation decisions, authored draft guidance,
-  and conservative draft safety outcomes. Draft methodology remains unapproved
-  and excluded from participant production builds.
+  and conservative draft safety outcomes. Draft methodology remains
+  professionally unapproved and excluded from current participant builds until
+  the guarded beta-enablement work in #680 lands.
 - The reviewed beta callable exports are deployed, but normal Track run
   mutations have not switched to them. Valid-client observation,
-  organization-signed iPhone App Attest proof, command-provider migration,
+  paid-team iPhone App Attest proof, command-provider migration,
   staged enforcement, external TestFlight distribution, and beta operations
   remain incomplete.
 - Waves 00 and 01 are recorded as passed. Intake/initial-plan, adaptation,
@@ -150,18 +155,18 @@ As of October 30, 2026:
   tester's watch and recording ecosystem must have a verified path before an
   invitation. Android, payments, AI planning, live GPS recording, broad public
   signup, and large-scale paid acquisition remain outside that path.
-- Important external or authority-dependent gates include qualified methodology
-  review
-  ([#191](https://github.com/marathoner-app/marathoner/issues/191)), entity and
-  Apple organization enrollment
-  ([#281](https://github.com/marathoner-app/marathoner/issues/281)), App Check
+- Important external or authority-dependent gates include individual Apple
+  Developer Program enrollment and external TestFlight App Review
+  ([#122](https://github.com/marathoner-app/marathoner/issues/122)), App Check
   observation and rollback
   ([#205](https://github.com/marathoner-app/marathoner/issues/205)), and an
-  external-testable iOS build
-  ([#122](https://github.com/marathoner-app/marathoner/issues/122)).
-  Prepared methodology and entity paths remain inactive until the internal-
-  first activation criteria pass; deferral changes timing, not those release
-  requirements.
+  external-testable iOS build. Professional methodology review
+  ([#191](https://github.com/marathoner-app/marathoner/issues/191)) and entity/
+  Apple organization migration
+  ([#281](https://github.com/marathoner-app/marathoner/issues/281)) are deferred
+  until an expansion trigger in the closed-beta decision. Provisional rules
+  still require disclosure, versioning, conservative safety behavior, and
+  explicit implementation proof.
 
 ## Operating role
 

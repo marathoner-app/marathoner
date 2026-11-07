@@ -1,9 +1,11 @@
-# Legal entity and Apple organization enrollment
+# Deferred legal-entity and Apple-organization migration path
 
-- **Status:** Approved direction; paid execution deferred under the internal-first policy
+- **Status:** Deferred future migration path; no longer a first closed-beta gate
 - **Decision date:** October 21, 2026
 - **Sequencing update:** October 26, 2026;
   [internal-first resource sequencing](../internal-first-resource-sequencing.md)
+- **Superseding beta decision:** November 7, 2026;
+  [individual TestFlight enrollment and provisional methodology](../closed-beta-gate-decision.md)
 - **Planning issue:** [#280](https://github.com/marathoner-app/marathoner/issues/280)
 - **Execution issue:** [#281](https://github.com/marathoner-app/marathoner/issues/281)
 - **App Attest rollout:** [#281](https://github.com/marathoner-app/marathoner/issues/281)
@@ -14,9 +16,27 @@ This record is an operating decision, not legal, tax, or trademark advice. It
 keeps the repository honest about the chosen path, its cost, its external
 dependencies, and the evidence that may safely be recorded in public.
 
-## Decision
+## Current decision
 
-Marathoner will form a **California single-member limited liability company**
+For the first five-to-eight-person closed beta, Marathoner will use an
+**individual Apple Developer Program membership under Kevin's legal name**.
+The individual seller identity is accepted for this phase. The account holder
+pays Apple directly; any private cost sharing with the operating partner occurs
+separately. The paid Apple membership, distribution signing, App Attest proof,
+external TestFlight App Review, and non-owner rehearsal remain gates.
+
+California entity formation and Apple organization enrollment are deferred.
+They return for explicit review before a public organization-branded App Store
+release, meaningful revenue or contracts, shared ownership or equity,
+institutional financing, or another trigger in the November 7 decision.
+
+The remainder of this document preserves the October 21 organization path and
+research as future planning evidence. Reconfirm every legal, tax, cost, address,
+transfer, and platform assumption before acting on it.
+
+## Superseded October 21 direction
+
+The October 21 decision said Marathoner would form a **California single-member limited liability company**
 and enroll that legal entity in the Apple Developer Program as an organization.
 The preferred filing name is **Marathoner Technologies LLC**. **Marathoner App
 LLC** is the fallback if the preferred name is unavailable when the filing is
@@ -37,11 +57,9 @@ investors or counsel recommend a corporation.
 can own more than one product and does not require an entity-name change if the
 consumer brand changes. It still makes the relationship to Marathoner clear.
 
-The direction is settled, but formation is not required merely because the
-path is prepared. Continue ordinary web and Personal Team development first.
-Activate the filing and organization-enrollment sequence when seller identity,
-App Attest, or external distribution is within the next four to six weeks of
-becoming the real blocker and the owner approves the exact current cost.
+That organization path is no longer settled for the first beta. Preserve it as
+an option and activate a fresh decision only when a re-evaluation trigger is
+reached and the owner approves the exact current cost and obligations.
 
 ## Preliminary name and trademark screen
 
@@ -77,9 +95,9 @@ paid acquisition, or a public launch whose name would be expensive to change,
 either obtain a qualified trademark clearance or explicitly accept the risk
 and preserve a rebrand path.
 
-## Formation and enrollment sequence
+## Future formation and migration sequence
 
-Issue #281 owns execution in this order:
+If a later decision selects this path, issue #281 owns a revalidated sequence:
 
 1. Repeat the California search immediately before filing. Use
    `Marathoner Technologies LLC` unless filing review rejects it; use
@@ -109,13 +127,16 @@ Issue #281 owns execution in this order:
     requires a legal entity, D-U-N-S Number, legal authority to bind it, public
     website, organization email, two-factor authentication, and the $99 annual
     membership fee. Apple displays the legal entity name as the seller.
-14. After enrollment, enable App Attest for the explicit App ID, regenerate the
-    development and distribution profiles, complete #205's beta signed-device
-    proof and observation window, and resume #122's external TestFlight work.
+14. After enrollment, confirm the current Apple transfer or migration path,
+    regenerate affected profiles, re-prove App Attest as required, and update
+    App Store Connect ownership without assuming the original beta artifacts
+    transfer automatically.
 
 Apple does not accept a DBA, trade name, or branch as the organization being
 enrolled. Its [program-enrollment requirements](https://developer.apple.com/help/account/membership/program-enrollment/)
-are why a real entity—not just a branded domain—is on the critical path.
+are why a real entity—not just a branded domain—is required for a future
+organization enrollment. It is not required for the selected individual beta
+membership.
 
 ## Cost and elapsed-time model
 
@@ -124,11 +145,12 @@ are why a real entity—not just a branded domain—is on the critical path.
 | California Articles of Organization | $70 once | Required to create the entity |
 | California Statement of Information | $20 initially and biennially | Initial filing due within 90 days |
 | California annual LLC tax | $800 per year | Applies even with no business; the temporary first-year exemption no longer applies to a 2026 formation |
-| Apple Developer Program | $99 per year | Required for organization distribution and the capabilities used by the selected App Attest design |
+| Apple Developer Program | $99 per year | Required for the selected individual beta path and later organization distribution; confirm Apple's migration and renewal treatment before changing account type |
 | IRS EIN | $0 | Obtain only through the IRS after formation |
 | D-U-N-S Number | $0 | Request through Apple's documented D&B path |
 
-The minimum first-year public fixed cost is therefore **$989**, excluding an
+The former organization-path minimum first-year public fixed cost was therefore
+**$989**, excluding an
 optional registered-agent or address service, name reservation, legal advice,
 tax preparation, bookkeeping, and payment-processing or banking costs. Confirm
 fees again at the moment of filing.
@@ -138,14 +160,15 @@ a new D-U-N-S record can take up to five business days and then up to two more
 business days to become available to Apple. Organization verification and any
 follow-up add an unguaranteed wait. Keep **one to three calendar weeks after
 accepted formation** as the planning allowance, not as a service promise, and
-activate #281 early enough to absorb that wait once the internal-first spending
-test passes.
+activate a revalidated #281 early enough to absorb that wait only after a
+re-evaluation trigger and new owner approval.
 
-The LLC and organization enrollment do not block ordinary web development or
-all owner-only local iPhone work. They do block the intended organization
-seller identity, a paid-team profile containing App Attest, and external
-TestFlight distribution. Product work can proceed in parallel, but those gates
-cannot be declared passed without the organization account.
+The LLC and organization enrollment do not block the selected individual
+TestFlight beta. They block an organization seller identity and any capability
+that Apple specifically reserves to organization enrollment. The paid
+individual membership must still prove the actual App Attest, signing, archive,
+TestFlight, and recovery requirements; this decision does not assume those
+proofs will pass.
 
 ## Public evidence and private records
 

@@ -90,11 +90,13 @@ command in issue #72.
   validation issues.
 
 Reason codes are stable identifiers, not user-visible prose. Issue #70 may emit
-only codes from the exact approved ruleset; issue #135 owns reviewed runner
-explanations. The contract validators accept a correctly formatted draft
-artifact version because they validate structure, not approval status. A
-participant-facing generator must separately reject draft, unknown, retired,
-conditional, or rejected artifacts as required by the methodology protocol.
+only codes from the exact active pinned ruleset; issue #135 owns version-matched
+runner explanations. The contract validators accept a correctly formatted
+draft artifact version because they validate structure, not eligibility. A
+participant-facing generator must separately reject unknown, retired,
+conditional, or rejected artifacts. It may accept a draft version only through
+the guarded provisional closed-beta path owned by #680; otherwise draft
+artifacts remain ineligible.
 
 ## Internal support evaluation
 

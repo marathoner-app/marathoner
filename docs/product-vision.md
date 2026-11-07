@@ -2,7 +2,7 @@
 
 **Status:** Active direction
 
-**Last updated:** October 30, 2026
+**Last updated:** November 7, 2026
 
 **Product owner:** Kevin Tulloch
 
@@ -43,8 +43,11 @@ preparing for a marathon:
 
 That experience provides the product insight and empathy for the intended user.
 It does not replace professional coaching, sports-medicine, or nutrition
-expertise. Public training rules and educational guidance must be reviewed by
-qualified experts before they are treated as production-ready.
+expertise. The first small closed experience beta may use clearly disclosed,
+versioned provisional rules under the
+[closed-beta decision](closed-beta-gate-decision.md). Public or broader training
+rules and educational guidance still require the professional-review decision
+to be revisited before they are treated as production-ready.
 
 Marathoner will develop original, expert-reviewed methodology. It will not
 depend on reproducing a proprietary plan or presenting the founder as a
@@ -84,7 +87,8 @@ can follow once the first experience is validated.
 The founding beta intentionally serves a narrower first user: an
 English-speaking adult in the United States who already runs consistently and
 is preparing for a first marathon. The exact recent-running, race-horizon, and
-progression thresholds require qualified approval before invitations.
+progression thresholds are pinned provisional methodology for the first closed
+cohort and are not professionally approved.
 
 Starting from no running, returning after an inconsistent period, and broader
 base building remain part of the product destination. They are excluded from
@@ -128,11 +132,11 @@ interviews or refundable-payment tests are required. Category spending,
 competitor success, and acquisition precedents make the hypothesis plausible;
 they do not prove Marathoner-specific demand.
 
-Live product use remains limited to the qualified-review-approved beta segment.
+Live product use remains limited to the pinned provisional closed-beta segment.
 Optional later commercial discovery may include a broader
 first-time-marathon segment when it provides no individualized training advice.
 Evidence that the current draft segment is too advanced may trigger a new
-methodology-review question; it cannot silently weaken eligibility or safety
+methodology question; it cannot silently weaken eligibility or safety
 boundaries.
 
 ## Product promise
@@ -171,9 +175,10 @@ The runner should understand meaningful plan changes and approve them.
 Marathoner should not quietly transform the goal, mileage progression, or
 training phase.
 
-### Deterministic and expert-reviewed planning
+### Deterministic, reviewable, and versioned planning
 
-Training progression is produced by versioned, testable, approved rules.
+Training progression is produced by versioned, testable rules whose
+provisional or professionally reviewed status is explicit.
 Artificial intelligence may help explain a recommendation, but it must operate
 inside those rules and must not independently decide training load or
 intensity.
@@ -229,7 +234,7 @@ The duration of this phase depends on the starting point and target race date.
 
 ### 4. Train for the marathon
 
-The runner enters an expert-reviewed marathon-specific progression with long
+The runner enters a versioned marathon-specific progression with long
 runs, easy running, appropriate quality work, recovery, cutback periods, and a
 taper.
 
@@ -261,10 +266,10 @@ The initial onboarding inputs are expected to include:
 - current completion goal.
 
 Sensitive or unnecessary personal information should not be collected merely
-because it might be available. Expert review will determine which additional
-inputs are genuinely required.
+because it might be available. Beta evidence and later professional review will
+determine which additional inputs are genuinely required.
 
-Plan generation selects and configures approved phases rather than asking a
+Plan generation selects and configures pinned phases rather than asking a
 generative model to invent workouts.
 
 ## Feedback and adaptation
@@ -279,7 +284,7 @@ effort:
 - much harder than expected.
 
 A secondary optional check asks whether the runner experienced unusual pain or
-discomfort. Marathoner does not diagnose injuries. It provides reviewed
+discomfort. Marathoner does not diagnose injuries. It provides conservative
 escalation guidance when a response indicates that the runner may need to stop,
 rest, or consult a qualified professional.
 
@@ -354,7 +359,7 @@ without using alarmist presentation or shame.
 ## Platform strategy
 
 Marathoner is one product with multiple clients that share accounts, training
-data, and approved domain rules.
+data, and versioned domain rules.
 
 ### Public website
 
@@ -434,18 +439,20 @@ applications, or integrations.
 - a reusable plan for later interviews, reservations, and concierge evidence
   if commercial validation becomes an active priority.
 
-Security, privacy, deletion, evidence-integrity, and qualified-review work may
-continue because they enable trustworthy product use and future participants.
+Security, privacy, deletion, evidence-integrity, and professional-review
+preparation may continue because they enable trustworthy product use and future
+participants.
 The [commercial proof sprint](commercial-proof-sprint.md) is dormant and does
 not gate the functional free beta. Product payments remain deferred; the
-bounded adaptation engine depends on qualified review and product evidence.
+bounded adaptation engine depends on guarded provisional-methodology controls
+and product evidence.
 
 ### Intake and initial plan: November 2026
 
 - persistent runner profiles and first-marathon intake;
 - eligibility and race feasibility for the consistent-runner beta segment;
 - honest rejection of deferred or unsupported starting points;
-- one reviewed, deterministic, versioned first-marathon plan family;
+- one pinned, provisional, deterministic, versioned first-marathon plan family;
 - plan review, approval, and persistence; and
 - the next workout visible through supported clients.
 
@@ -454,7 +461,7 @@ bounded adaptation engine depends on qualified review and product evidence.
 - completed-run and perceived-effort feedback;
 - pattern-based deterministic adaptation;
 - authored explanations and adjustment approval;
-- timely first-version educational guidance;
+- timely first-version provisional educational guidance;
 - an end-to-end daily loop on a physical iPhone; and
 - an installable internal or TestFlight candidate.
 
@@ -465,17 +472,16 @@ snapshot and includes the automatic-import scope accepted in #616.
 
 ### Invite-only external beta: after the invitation gates pass
 
-The first invitation batch contains five to eight allowlisted,
+The closed experience beta contains five to eight allowlisted,
 English-speaking adults in the United States who already run consistently and
-are preparing for a first marathon. No more than eight may be active before the
-two-week operating review. A passing review may permit expansion to at most
-twelve concurrently active participants and fifteen accepted invitations
-through the eight-week review.
+are preparing for a first marathon. No more than eight may be active without a
+new recorded expansion decision and re-evaluation of the professional-review,
+entity, support, safety, and privacy triggers.
 
 January 15, 2027 remains a scope-or-date decision checkpoint, not a
 capacity-backed invitation date. Current optimistic, likely, and conservative
 dates live in the capacity forecast and must not override an unmet safety,
-integrity, privacy, methodology, or release gate.
+integrity, privacy, provisional-methodology, or release gate.
 
 The proposed recruitment sequence, participant offer, and early learning gates
 are described in the
@@ -484,7 +490,7 @@ Optional commercial discovery and refundable reservations, if reactivated,
 remain separate from founding-beta invitations.
 
 The beta requires iOS and preserves the responsive web application. Material
-writes require a network connection, and adaptation is limited to reviewed
+writes require a network connection, and adaptation is limited to provisional
 reschedule, hold, repeat, or no-change outcomes. It also requires a verified
 automatic completed-run path for every invited participant's actual device
 ecosystem. The beta does not promise Android external distribution, advanced
@@ -520,14 +526,15 @@ The initial external beta includes:
 - account creation and persistent data;
 - intake for adults already running consistently;
 - eligibility and race-date feasibility with honest unsupported results;
-- one reviewed deterministic plan family or a small set of approved variants;
+- one pinned provisional deterministic plan family or a small set of pinned
+  variants;
 - automatic completed-run import through a verified HealthKit or Garmin path;
 - manual run logging for missing, unsupported, or corrected activities;
 - perceived-effort feedback;
 - reschedule, hold, repeat, or no-change recommendations and approvals;
 - shoe-mileage tracking;
-- essential reviewed educational guidance;
-- reviewed safety escalation; and
+- essential provisional educational guidance;
+- conservative symptom escalation that is explicitly not clinical advice; and
 - structured feedback.
 
 The beta does not require:
@@ -583,8 +590,9 @@ payments remain out of beta scope, and automatic renewal remains off.
 
 ## Risks and dependencies
 
-- The exact founding-beta methodology and guidance require qualified approval
-  before invitations; new segments require additional review.
+- The exact closed-beta methodology and guidance require the provisional
+  controls in the November 7 decision; broader use and new segments trigger
+  re-evaluation of qualified review.
 - Health, privacy, accessibility, and consumer-protection requirements require
   deliberate review before public launch.
 - Garmin and other provider integrations depend on external approval and

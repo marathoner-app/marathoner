@@ -232,7 +232,8 @@ claiming a production rehearsal.
   recruitment, tell affected participants not to rely on it, and avoid giving
   replacement coaching through support.
 - **Correct:** Trace rule, content, evidence, and client versions. Require the
-  applicable qualified review before re-enabling changed guidance.
+  applicable provisional change control and owner approval; if the change
+  crosses an expansion trigger, require qualified review before re-enabling it.
 - **Resume:** Only after deterministic fixtures, displayed language, approval
   evidence, device behavior, and participant communication pass.
 

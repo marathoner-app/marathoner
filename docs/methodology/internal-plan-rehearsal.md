@@ -161,7 +161,9 @@ development, production web, iOS development, iOS beta, and Functions builds do
 not include these surfaces, the frozen eligible profile, or either draft packet.
 The distributable build commands scan their output and fail if any appears.
 
-Independent methodology review remains required before the rules or generated
-plans can be used by real-world participants. Reviewer changes can be applied
-to the pinned packet and exercised through this same rehearsal flow before any
-participant-facing activation is authorized.
+The November 7 [closed-beta decision](../closed-beta-gate-decision.md) permits
+five to eight known testers to use a pinned provisional packet after a separate
+guarded beta deployment adds disclosure, consent, version identification,
+unsupported-result behavior, conservative symptom handling, and proof. These
+internal surfaces do not provide that deployment. Reviewer changes can still be
+applied to the pinned packet and exercised here before later broader use.

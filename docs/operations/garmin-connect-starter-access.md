@@ -22,17 +22,17 @@ recorded after connection and the full #624 proof matrix remain open.
 Marathoner is a founder-operated, pre-beta marathon-training product. It has
 two internal owner/partner accounts today, no public account registration, no
 public beta, no current revenue, and no public-production Garmin integration. The
-planned founding cohort is five to eight invited adults, bounded to at most 12
-concurrent participants and 15 accepted participants during validation.
+planned closed experience cohort is five to eight invited adults, with no
+expansion beyond eight without a new recorded decision.
 
 The Garmin integration is active only for allowlisted closed-beta accounts. It
 is not a public production integration and does not open signup or invitations.
 
-The California LLC and Apple organization enrollment described in the
-[legal-entity decision](legal-entity-and-apple-enrollment.md) are intentionally
-deferred. The application must therefore use the current legal owner/business
+The [closed-beta decision](../closed-beta-gate-decision.md) selects an
+individual Apple membership and defers California LLC and Apple organization
+enrollment. The application must therefore use the current legal owner/business
 posture. It must not use the planned `Marathoner Technologies LLC` name or
-imply that the LLC, an Apple organization team, or outside beta already exists.
+imply that an LLC or Apple organization team already exists.
 
 ## Requested access and exclusions
 

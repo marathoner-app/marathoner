@@ -2,13 +2,14 @@
 
 - **Artifact:** `beta-guidance@0.1.0-draft`
 - **Issue:** [#544](https://github.com/marathoner-app/marathoner/issues/544)
-- **State:** Internal draft; disabled and not approved for runner use
+- **State:** Internal draft; disabled today and not professionally approved
 
 This trace records the authoritative inputs used to prepare Marathoner's first
 complete guidance draft. A credible source supports authoring, but it does not
-replace the qualified review required by the
-[methodology protocol](README.md). The exact draft stays disabled until the
-required reviewer approves a pinned non-draft version.
+create professional approval under the [methodology protocol](README.md). The
+exact draft stays disabled in participant builds until #680 implements the
+guarded provisional closed-beta path. Broader use still triggers the later
+qualified-review decision.
 
 ## Source map
 

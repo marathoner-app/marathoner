@@ -90,7 +90,7 @@ In the #202 slice, the plugin was linked into the iOS target but was not importe
 or invoked by the application. That slice's simulator launch therefore proved
 only the dependency graph. Issue #203 subsequently added distinct development
 and beta native registrations plus fail-closed configuration selection, and
-#204 closed the implemented invocation and development proof. #281 and #205 now
+#204 closed the implemented invocation and development proof. #122 and #205 now
 own the remaining paid-team profile and beta proof.
 
 ## Native dependency footprint

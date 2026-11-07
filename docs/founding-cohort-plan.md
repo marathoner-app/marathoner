@@ -1,7 +1,7 @@
 # Founding cohort recruitment and validation plan
 
 - **Status:** Active founding-beta plan
-- **Last updated:** October 30, 2026
+- **Last updated:** November 7, 2026
 - **Product owner:** Kevin Tulloch
 - **Related issue:** [#35](https://github.com/marathoner-app/marathoner/issues/35)
 - **Invitation milestone:** [06A Founding Cohort Invitations](https://github.com/marathoner-app/marathoner/milestone/2)
@@ -13,8 +13,8 @@
 - **Product strategy:** [Product-first free-beta decision](product-first-beta-decision.md)
 - **Data-integrity evidence:**
   [Firestore rules acceptance record](security/firestore-rules-acceptance.md)
-- **Methodology decision:**
-  [Independent review required](methodology/founding-beta-review-decision.md)
+- **Closed-beta decision:**
+  [Individual TestFlight enrollment and provisional methodology](closed-beta-gate-decision.md)
 - **Optional commercial discovery:** [Dormant commercial proof sprint](commercial-proof-sprint.md)
 
 ## Purpose
@@ -67,15 +67,15 @@ and responsibility gates pass.
 ## Product use before commercial proof
 
 The [product-first decision](product-first-beta-decision.md) allows founding
-beta invitations after the functional, methodology, safety, privacy, security,
-integrity, support, and distribution gates pass. Formal interviews,
+beta invitations after the functional, provisional-methodology, safety,
+privacy, security, integrity, support, and distribution gates pass. Formal interviews,
 refundable reservations, and a paid concierge experiment are optional future
 commercial research, not prerequisites for the cohort.
 
 Relationship building and non-prescriptive field discovery may begin before
 the cohort. Those conversations may test problems, language, expectations,
 prototype comprehension, and channel fit, but they do not count as beta use,
-qualified methodology review, demand proof, or a release gate. Identifiable or
+professional methodology review, demand proof, or a release gate. Identifiable or
 systematically collected responses require the approved private operating and
 consent boundary.
 
@@ -83,7 +83,8 @@ The live cohort supplies product evidence: defects, onboarding completion,
 comprehension, usefulness, adaptation trust, safety signals, engagement, and
 support burden. It does not by itself prove willingness to pay, repeatable
 acquisition, or product-market fit. Any later commercial study remains separate
-from beta eligibility and cannot authorize an unreviewed training boundary.
+from beta eligibility and cannot turn a provisional training boundary into
+professional approval.
 
 ## Founding participant
 
@@ -91,10 +92,9 @@ The initial participant must be an English-speaking adult in the United States
 who:
 
 - is preparing for a first marathon within approximately six to twelve months;
-- already runs consistently under the eligibility boundary approved through
-  issue #119;
+- already runs consistently under the pinned provisional eligibility boundary;
 - has recent training, availability, and a race horizon supported by the
-  approved plan family;
+  provisional plan family;
 - wants structured guidance rather than only an activity tracker;
 - is willing to log training and complete brief check-ins;
 - is willing to discuss confusing, unhelpful, or missing parts of the product;
@@ -104,24 +104,24 @@ who:
 
 The founding beta does not support runners starting from no running, returning
 after an inconsistent period, presenting a pain or unusual-symptom escalation,
-or requesting a race horizon outside the approved rules. Those runners receive
+or requesting a race horizon outside the provisional rules. Those runners receive
 an honest unsupported result and may join later research; they do not receive
 an improvised beta plan.
 
-The cohort should include variation inside the approved segment without trying
+The cohort should include variation inside the provisional segment without trying
 to represent every future Marathoner user. Numeric mileage, frequency,
-duration, and progression thresholds are methodology decisions that require
-qualified approval before invitations.
+duration, and progression thresholds are methodology decisions governed by the
+disclosure, versioning, test, and change-control requirements in the closed-beta
+decision.
 
 ## Cohort size and expansion
 
 - Invite five to eight allowlisted participants in the first batch.
 - Keep no more than eight participants active before the two-week operating
   review.
-- Expand only after that review records a passing safety, integrity, trust, and
-  support-capacity decision.
-- Before the eight-week review, cap the cohort at twelve concurrently active
-  participants and fifteen accepted invitations.
+- Keep the closed experience beta at no more than eight active participants.
+- Expansion requires a new recorded decision and re-evaluation of professional
+  review, entity, support, safety, and privacy triggers.
 - Pause invitations whenever a critical recommendation, privacy,
   data-integrity, safety, or support-capacity threshold fails.
 
@@ -154,18 +154,17 @@ Participant invitations should not begin until Marathoner can:
   discomfort; and
 - explain how feedback and training data will be used.
 
-Before invitations open, a qualified role must provide dated approval for the
-exact supported eligibility, progression, hold/repeat, race-date rejection,
-pain escalation, fueling, hydration, sleep, and recovery slice. Marathoner must
-also avoid medical or guaranteed-outcome claims, explain material
+Before invitations open, the exact provisional eligibility, progression,
+hold/repeat, race-date rejection, pain escalation, fueling, hydration, sleep,
+and recovery slice must be pinned, source-backed, versioned, tested, disclosed,
+and covered by the closed-beta change-control and retirement path. Marathoner
+must also avoid medical or guaranteed-outcome claims, explain material
 recommendations, support participant withdrawal, and provide a process for
 pausing recruitment or disabling unsafe guidance.
 
-If that approval is unavailable, the only allowed fallback is a
+If that guarded provisional path is unavailable, the fallback is a
 non-prescriptive research beta using participant-supplied or individually
-human-reviewed plans. Experimental labeling alone does not authorize
-algorithmic training, adaptation, pain, fueling, hydration, or recovery
-recommendations.
+human-reviewed plans.
 
 ## Supported beta clients
 
@@ -175,14 +174,14 @@ recommendations.
   analysis.
 - The iOS application is primary for session recovery, today's workout, manual
   fallback, automatic completed-run import, perceived effort, optional notes,
-  shoes, reviewed guidance, bounded recommendation decisions, support, and
+  shoes, provisional guidance, bounded recommendation decisions, support, and
   deletion initiation.
 - Every participant's actual device ecosystem must have a verified automatic
   import path before invitation. HealthKit and direct Garmin are the intended
   paths; a Garmin-to-Apple-Health summary bridge may cover only a specifically
   verified bounded iPhone case while direct access is pending.
 - Both clients may expose support, withdrawal, deletion initiation, the daily
-  loop, and approved-plan context when doing so does not create conflicting
+  loop, and provisional-plan context when doing so does not create conflicting
   records.
 - Material writes require a network connection. The clients must say when the
   runner must reconnect rather than appearing to save an offline mutation.
@@ -191,14 +190,14 @@ recommendations.
 
 ## Supported planning and adaptation
 
-- Use one qualified-review-approved first-marathon plan family or a small set
-  of deterministic variants for the eligible segment.
-- Limit beta adaptation to rescheduling an approved workout, holding
-  progression, repeating an approved period, or making no change.
+- Use one pinned provisional first-marathon plan family or a small set of
+  deterministic variants for the eligible segment.
+- Limit beta adaptation to rescheduling a provisional workout, holding
+  progression, repeating a provisional period, or making no change.
 - Require runner approval before a material plan revision.
 - Do not autonomously increase intensity or training load, change the race or
   goal, predict a finish time, diagnose injury, or improvise outside the
-  reviewed rules.
+  pinned rules.
 - Deliver automatic completed-run import through #617. Defer Android external
   distribution, payments, AI planning, live GPS recording, push notifications,
   Android Health Connect, and all-day health data.
@@ -326,9 +325,8 @@ benchmark or growth quota:
 | Stage | Initial target |
 | --- | ---: |
 | First invitation batch | 5–8 |
-| Maximum active before the two-week review | 8 |
-| Maximum accepted before the eight-week review | 15 |
-| Maximum concurrently active before the eight-week review | 12 |
+| Maximum active during the closed experience beta | 8 |
+| Expansion above eight | New recorded decision required |
 
 Every difference from these numbers is evidence. High interest with poor
 onboarding indicates a product or expectation problem, while weak commitment
@@ -440,7 +438,8 @@ their name.
 
 ## Open questions
 
-- Which qualified experts will review the training rules and safety guidance?
+- What beta evidence should shape the later professional review packet, and
+  which qualified experts should review it before broader use?
 - When should the current private research boundary expand beyond one operator,
   and what access, consent, retention, and live-product controls must be proved
   first?

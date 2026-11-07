@@ -2,13 +2,13 @@
 
 - **Status:** #204 implementation closeout complete; owner-only development
   browser and iPhone debug proof passed; paid-team beta App Attest, observation,
-  and enforcement remain in #281 and #205–#206
+  and enforcement remain in #122 and #205–#206
 - **Implementation date:** 2026-10-06
 - **Implementation issue:**
   [#204](https://github.com/marathoner-app/marathoner/issues/204) (closed
   October 22, 2026)
 - **Remaining rollout:**
-  [#281](https://github.com/marathoner-app/marathoner/issues/281) and
+  [#122](https://github.com/marathoner-app/marathoner/issues/122) and
   [#205–#206](https://github.com/marathoner-app/marathoner/issues/205)
 - **Hardening issue:**
   [#270](https://github.com/marathoner-app/marathoner/issues/270)
@@ -157,9 +157,10 @@ The 2026-10-06 App Attest signed-device build stopped before compilation
 because the current Personal Team provisioning profile does not contain App
 Attest. This remains expected for Release and beta. A Marathoner Apple
 Developer Program team must enable the capability and issue a new profile
-before the physical-iPhone App Attest acceptance test can pass. The approved
-[entity and Apple organization-enrollment path](../operations/legal-entity-and-apple-enrollment.md)
-is tracked in [#281](https://github.com/marathoner-app/marathoner/issues/281).
+before the physical-iPhone App Attest acceptance test can pass. The selected
+individual enrollment and TestFlight path is tracked in
+[#122](https://github.com/marathoner-app/marathoner/issues/122). Future
+organization migration is deferred in #281.
 The development Debug workflow can support owner dogfooding, but it is not App
 Attest evidence and cannot satisfy #205, TestFlight, or an external-beta gate.
 
@@ -201,7 +202,7 @@ The paid-team beta rollout still requires:
 5. reconfirm Authentication, Firestore, and Functions enforcement remains off
    through the #205 observation and rollback window.
 
-Issue #281 owns the paid-team provisioning dependency, #205 owns the remaining
+Issue #122 owns the paid-team provisioning dependency, #205 owns the remaining
 beta token evidence plus observation and rollback rehearsal, and #206 alone may
 enable beta enforcement after that evidence passes. Closing #204 recorded the
 implemented fail-closed bootstrap and supported development evidence; it did
