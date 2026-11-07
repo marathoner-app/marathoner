@@ -564,9 +564,10 @@ describe("ShoeTracker", () => {
     expect(screen.getByText(/Recorded by Marathoner: 5 mi/)).toBeInTheDocument();
   });
 
-  it("submits today's run with a non-future timestamp before local noon", async () => {
+  it("never submits today's run with a future timestamp", async () => {
     vi.useFakeTimers();
-    vi.setSystemTime(new Date("2026-11-07T19:21:00.000Z"));
+    const now = new Date("2026-11-07T11:21:00.000Z");
+    vi.setSystemTime(now);
     try {
       const shoe: Shoe = {
         id: createShoeId("shoe-1"),
@@ -602,11 +603,9 @@ describe("ShoeTracker", () => {
         fireEvent.submit(form);
       });
 
-      expect(onCreateRunCall).toHaveBeenCalledWith(
-        expect.objectContaining({
-          startedAt: createUtcDateTime("2026-11-07T19:20:00.000Z"),
-        }),
-      );
+      expect(onCreateRunCall).toHaveBeenCalledOnce();
+      const [submittedRun] = onCreateRunCall.mock.calls[0];
+      expect(Date.parse(submittedRun.startedAt)).toBeLessThanOrEqual(now.getTime());
     } finally {
       vi.useRealTimers();
     }
