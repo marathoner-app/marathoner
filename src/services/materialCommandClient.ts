@@ -12,6 +12,7 @@ export interface MaterialCommandTransport {
 export interface MaterialCommandClientOptions {
   isOnline: () => boolean
   transport: MaterialCommandTransport
+  retryIdempotentSubmissionsOnce?: boolean
 }
 
 function errorCode(error: unknown): string | null {
@@ -19,6 +20,33 @@ function errorCode(error: unknown): string | null {
     return null
   }
   return typeof error.code === 'string' ? error.code : null
+}
+
+function isDefinitiveTransportFailure(error: unknown): boolean {
+  const code = errorCode(error)
+  return (
+    code === 'functions/unauthenticated' ||
+    code === 'functions/permission-denied' ||
+    code === 'functions/invalid-argument' ||
+    code === 'functions/failed-precondition'
+  )
+}
+
+async function submitWithOneSafeRetry(
+  transport: MaterialCommandTransport,
+  command: MaterialCommandEnvelope,
+): Promise<unknown> {
+  try {
+    return await transport.submit(command)
+  } catch (error) {
+    if (isDefinitiveTransportFailure(error)) throw error
+
+    // Material commands are idempotent by command ID. Retrying this exact
+    // envelope can recover a pre-request App Check/network failure or retrieve
+    // the existing receipt when the first response was lost, without creating
+    // the operation twice.
+    return transport.submit(command)
+  }
 }
 
 function offlineResult(commandId: string): MaterialCommandResult {
@@ -78,7 +106,9 @@ export function createMaterialCommandClient(
       if (!options.isOnline()) return offlineResult(command.commandId)
       try {
         return validatedResult(
-          await options.transport.submit(command),
+          await (options.retryIdempotentSubmissionsOnce
+            ? submitWithOneSafeRetry(options.transport, command)
+            : options.transport.submit(command)),
           command.commandId,
         )
       } catch (error) {

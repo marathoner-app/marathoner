@@ -29,6 +29,7 @@ import type {
 import ShoeTracker, {
   type ShoeTrackerInitialFocusTarget,
 } from "./ShoeTracker";
+import type { PendingRunSaveCheckResult } from "../training/pendingRunSave";
 
 const userId = createUserId("runner-1");
 const timestamp = createUtcDateTime("2026-08-05T14:00:00Z");
@@ -48,6 +49,8 @@ function Harness({
   distanceUnit = "mile",
   onCreateShoeCall = () => undefined,
   onCreateRunCall = () => undefined,
+  hasPendingRunSave = false,
+  onCheckPendingRunSave = async () => ({ status: "none" }),
   onUpdateRunCall = () => undefined,
   onDeleteRunCall = () => undefined,
   onRetireShoeCall = () => undefined,
@@ -59,6 +62,8 @@ function Harness({
   distanceUnit?: DistanceUnit;
   onCreateShoeCall?: (input: CreateShoeInput) => void | Promise<void>;
   onCreateRunCall?: (input: CreateCompletedRunInput) => void | Promise<void>;
+  hasPendingRunSave?: boolean;
+  onCheckPendingRunSave?: () => Promise<PendingRunSaveCheckResult>;
   onUpdateRunCall?: (
     id: CompletedRun["id"],
     changes: UpdateCompletedRunInput,
@@ -69,6 +74,7 @@ function Harness({
 }) {
   const [shoes, setShoes] = useState(initialShoes);
   const [runs, setRuns] = useState(initialRuns);
+  const [pendingRunSave, setPendingRunSave] = useState(hasPendingRunSave);
 
   const createShoe = async (input: CreateShoeInput) => {
     await onCreateShoeCall(input);
@@ -139,6 +145,14 @@ function Harness({
     setRuns((current) => current.filter((run) => run.id !== id));
   };
 
+  const checkPendingRunSave = async () => {
+    const result = await onCheckPendingRunSave();
+    if (result.status === "confirmed" || result.status === "failed") {
+      setPendingRunSave(false);
+    }
+    return result;
+  };
+
   const retireShoe = async (id: ShoeId, retiredOn: DateOnly) => {
     const existing = shoes.find((shoe) => shoe.id === id);
     if (existing === undefined) throw new Error("Shoe not found");
@@ -164,6 +178,8 @@ function Harness({
       onCreateShoe={createShoe}
       onRetireShoe={retireShoe}
       onCreateRun={createRun}
+      hasPendingRunSave={pendingRunSave}
+      onCheckPendingRunSave={checkPendingRunSave}
       onUpdateRun={updateRun}
       onDeleteRun={deleteRun}
       initialFocusTarget={initialFocusTarget}
@@ -280,6 +296,58 @@ describe("ShoeTracker", () => {
     expect(
       screen.getByRole("textbox", { name: "Run notes (optional)" }),
     ).toBeInTheDocument();
+  });
+
+  it("keeps an uncertain run protected behind a plain-language status check", async () => {
+    const onCheckPendingRunSave = vi
+      .fn<() => Promise<PendingRunSaveCheckResult>>()
+      .mockResolvedValue({ status: "still_unconfirmed" });
+    const user = userEvent.setup();
+    render(
+      <Harness
+        hasPendingRunSave
+        onCheckPendingRunSave={onCheckPendingRunSave}
+      />,
+    );
+
+    expect(
+      screen.getByRole("heading", { name: "Confirm your last run" }),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/couldn't confirm whether this run finished saving/i))
+      .toBeInTheDocument();
+    expect(screen.queryByText(/command id/i)).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Log Run" })).toBeDisabled();
+
+    await user.click(screen.getByRole("button", { name: "Check save status" }));
+
+    expect(onCheckPendingRunSave).toHaveBeenCalledOnce();
+    expect(
+      await screen.findByText(/original run is protected from duplication/i),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Log Run" })).toBeDisabled();
+  });
+
+  it("clears the recovery state after the original run is confirmed", async () => {
+    const onCheckPendingRunSave = vi
+      .fn<() => Promise<PendingRunSaveCheckResult>>()
+      .mockResolvedValue({ status: "confirmed" });
+    const user = userEvent.setup();
+    render(
+      <Harness
+        hasPendingRunSave
+        onCheckPendingRunSave={onCheckPendingRunSave}
+      />,
+    );
+
+    await user.click(screen.getByRole("button", { name: "Check save status" }));
+
+    expect(
+      await screen.findByText(/your run was saved/i),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("heading", { name: "Confirm your last run" }),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByText(/command id/i)).not.toBeInTheDocument();
   });
 
   it("gives every run-editor control a persistent visible label", async () => {

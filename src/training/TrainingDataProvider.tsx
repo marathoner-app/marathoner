@@ -47,6 +47,12 @@ import {
   type TrainingDataContextValue,
 } from "./TrainingDataContext";
 import {
+  browserPendingRunSaveStore,
+  PendingRunSaveError,
+  type PendingRunSaveCheckResult,
+  type PendingRunSaveStore,
+} from "./pendingRunSave";
+import {
   createTrainingSynchronizationKernel,
   reduceTrainingSynchronization,
   type SynchronizedTrainingSnapshot,
@@ -81,6 +87,7 @@ type TrainingDataProviderProps = {
   readonly liveReadSourceFactory?: TrainingLiveReadSourceFactory;
   readonly completedRunCommandClientFactory?: CompletedRunCommandClientFactory;
   readonly createCompletedRunCommandId?: CompletedRunCommandIdFactory;
+  readonly pendingRunSaveStore?: PendingRunSaveStore;
 };
 
 const defaultRepositoryFactory: TrainingRepositoryFactory = async (userId) => {
@@ -113,8 +120,8 @@ const defaultCompletedRunCommandId: CompletedRunCommandIdFactory = (
 ) => `run-${operation}-${globalThis.crypto.randomUUID()}`;
 
 type PendingRunCompletion = {
-  readonly input: CreateCompletedRunInput;
-  readonly submission: RunCompletionSubmission;
+  readonly commandId: string;
+  readonly input?: CreateCompletedRunInput;
 };
 
 type PendingRunDeletion = {
@@ -252,7 +259,21 @@ function completionFailure(result: RunCompletionClientResult): Error {
   if (result.status === "run_completed") {
     return new Error("The completed run receipt was handled incorrectly.");
   }
+  if (result.status === "outcome_unknown") {
+    return new PendingRunSaveError();
+  }
   return new Error(result.message);
+}
+
+function runSaveResolutionIsInconclusive(
+  result: RunCompletionClientResult,
+): boolean {
+  return (
+    result.status === "outcome_unknown" ||
+    result.status === "retryable_error" ||
+    result.status === "authentication_error" ||
+    result.status === "authorization_error"
+  );
 }
 
 function deletionFailure(result: RunDeletionClientResult): Error {
@@ -289,12 +310,24 @@ export default function TrainingDataProvider({
   liveReadSourceFactory = defaultLiveReadSourceFactory,
   completedRunCommandClientFactory = defaultCompletedRunCommandClientFactory,
   createCompletedRunCommandId = defaultCompletedRunCommandId,
+  pendingRunSaveStore = browserPendingRunSaveStore,
 }: TrainingDataProviderProps) {
   const userId = useMemo(() => createUserId(rawUserId), [rawUserId]);
+  const initialPendingRunSaveCommandId = useMemo(
+    () => pendingRunSaveStore.read(userId),
+    [pendingRunSaveStore, userId],
+  );
   const repositoryRef = useRef<TrainingRepositories | null>(null);
   const completedRunCommandClientRef =
     useRef<CompletedRunCommandClient | null>(null);
-  const pendingRunCompletionRef = useRef<PendingRunCompletion | null>(null);
+  const pendingRunCompletionRef = useRef<PendingRunCompletion | null>(
+    initialPendingRunSaveCommandId === null
+      ? null
+      : { commandId: initialPendingRunSaveCommandId },
+  );
+  const [pendingRunSaveCommandId, setPendingRunSaveCommandId] = useState(
+    initialPendingRunSaveCommandId,
+  );
   const pendingRunDeletionRef = useRef<PendingRunDeletion | null>(null);
   const pendingRunUpdateRef = useRef<PendingRunUpdate | null>(null);
   const unsubscribeRef = useRef<(() => void) | null>(null);
@@ -306,6 +339,28 @@ export default function TrainingDataProvider({
     }),
   );
 
+  const rememberPendingRunSave = useCallback(
+    (commandId: string, input?: CreateCompletedRunInput) => {
+      pendingRunCompletionRef.current = { commandId, input };
+      pendingRunSaveStore.write(userId, commandId);
+      setPendingRunSaveCommandId(commandId);
+    },
+    [pendingRunSaveStore, userId],
+  );
+
+  const clearPendingRunSave = useCallback(() => {
+    pendingRunCompletionRef.current = null;
+    pendingRunSaveStore.clear(userId);
+    setPendingRunSaveCommandId(null);
+  }, [pendingRunSaveStore, userId]);
+
+  const restorePendingRunSave = useCallback(() => {
+    const commandId = pendingRunSaveStore.read(userId);
+    pendingRunCompletionRef.current =
+      commandId === null ? null : { commandId };
+    setPendingRunSaveCommandId(commandId);
+  }, [pendingRunSaveStore, userId]);
+
   const startSynchronization = useCallback(async () => {
     const generation = sessionGenerationRef.current + 1;
     sessionGenerationRef.current = generation;
@@ -313,7 +368,7 @@ export default function TrainingDataProvider({
     unsubscribeRef.current = null;
     repositoryRef.current = null;
     completedRunCommandClientRef.current = null;
-    pendingRunCompletionRef.current = null;
+    restorePendingRunSave();
     pendingRunDeletionRef.current = null;
     pendingRunUpdateRef.current = null;
     setSynchronization(
@@ -368,6 +423,7 @@ export default function TrainingDataProvider({
     completedRunCommandClientFactory,
     liveReadSourceFactory,
     repositoryFactory,
+    restorePendingRunSave,
     userId,
   ]);
 
@@ -380,7 +436,6 @@ export default function TrainingDataProvider({
       unsubscribeRef.current = null;
       repositoryRef.current = null;
       completedRunCommandClientRef.current = null;
-      pendingRunCompletionRef.current = null;
       pendingRunDeletionRef.current = null;
       pendingRunUpdateRef.current = null;
     };
@@ -498,6 +553,25 @@ export default function TrainingDataProvider({
     [acknowledgeServerWrites, requireRepositories],
   );
 
+  const checkPendingRunSave = useCallback(async (): Promise<PendingRunSaveCheckResult> => {
+    const pending = pendingRunCompletionRef.current;
+    if (pending === null) return { status: "none" };
+
+    const result = await requireCompletedRunCommandClient().resolveCompletion(
+      pending.commandId,
+    );
+    if (result.status === "run_completed") {
+      clearPendingRunSave();
+      return { status: "confirmed" };
+    }
+    if (runSaveResolutionIsInconclusive(result)) {
+      return { status: "still_unconfirmed" };
+    }
+
+    clearPendingRunSave();
+    return { status: "failed", message: result.message };
+  }, [clearPendingRunSave, requireCompletedRunCommandClient]);
+
   const createRun = useCallback(
     (input: CreateCompletedRunInput) =>
       measureOperation(
@@ -508,16 +582,22 @@ export default function TrainingDataProvider({
 
           if (pending !== null) {
             const resolved = await commandClient.resolveCompletion(
-              pending.submission.commandId,
+              pending.commandId,
             );
             if (resolved.status === "run_completed") {
-              pendingRunCompletionRef.current = null;
-              return completedRunFromReceipt(userId, pending.input, resolved);
+              clearPendingRunSave();
+              if (pending.input !== undefined) {
+                return completedRunFromReceipt(userId, pending.input, resolved);
+              }
+              throw new Error(
+                "Your earlier run was saved. It will appear in Logged Runs when synchronization finishes.",
+              );
             }
-            if (resolved.status !== "outcome_unknown") {
-              pendingRunCompletionRef.current = null;
+            if (!runSaveResolutionIsInconclusive(resolved)) {
+              clearPendingRunSave();
+              throw completionFailure(resolved);
             }
-            throw completionFailure(resolved);
+            throw new PendingRunSaveError();
           }
 
           const plannedWorkout = plannedWorkoutReference(
@@ -540,7 +620,7 @@ export default function TrainingDataProvider({
               notes: input.notes,
             },
           };
-          pendingRunCompletionRef.current = { input, submission };
+          rememberPendingRunSave(submission.commandId, input);
 
           let result = await commandClient.submitCompletion(submission);
           if (result.status === "outcome_unknown") {
@@ -549,11 +629,11 @@ export default function TrainingDataProvider({
             );
           }
           if (result.status === "run_completed") {
-            pendingRunCompletionRef.current = null;
+            clearPendingRunSave();
             return completedRunFromReceipt(userId, input, result);
           }
           if (result.status !== "outcome_unknown") {
-            pendingRunCompletionRef.current = null;
+            clearPendingRunSave();
           }
           throw completionFailure(result);
         },
@@ -566,7 +646,9 @@ export default function TrainingDataProvider({
           }),
       ),
     [
+      clearPendingRunSave,
       createCompletedRunCommandId,
+      rememberPendingRunSave,
       requireCompletedRunCommandClient,
       synchronizedSnapshot,
       userId,
@@ -747,7 +829,9 @@ export default function TrainingDataProvider({
       "freshness" in synchronization.state
         ? synchronization.state.freshness.lastServerConfirmedAt
         : null,
+    hasPendingRunSave: pendingRunSaveCommandId !== null,
     reload: startSynchronization,
+    checkPendingRunSave,
     saveProfile,
     createShoe,
     retireShoe,

@@ -170,7 +170,10 @@ function mapUpdateResult(
 export function createCompletedRunCommandClient(
   options: MaterialCommandClientOptions,
 ): CompletedRunCommandClient {
-  const materialCommandClient = createMaterialCommandClient(options)
+  const materialCommandClient = createMaterialCommandClient({
+    ...options,
+    retryIdempotentSubmissionsOnce: true,
+  })
 
   return {
     async submitCompletion(submission) {

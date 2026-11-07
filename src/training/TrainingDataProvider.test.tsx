@@ -39,6 +39,7 @@ import type {
   TrainingSnapshotOrigin,
 } from "./trainingSynchronization";
 import { useTrainingData } from "./useTrainingData";
+import type { PendingRunSaveStore } from "./pendingRunSave";
 
 vi.mock("../diagnostics/slowRunDiagnostics", () => ({
   recordSlowRunDiagnostic: vi.fn(),
@@ -117,6 +118,8 @@ let liveReadSourceFactory: TrainingLiveReadSourceFactory;
 let sources: ControlledLiveReadSource[];
 let completedRunCommandClient: CompletedRunCommandClient;
 let completedRunCommandClientFactory: CompletedRunCommandClientFactory;
+let pendingRunSaveRecords: Map<UserId, string>;
+let pendingRunSaveStore: PendingRunSaveStore;
 
 function unknownCompletion(commandId: string): RunCompletionClientResult {
   return {
@@ -175,6 +178,16 @@ beforeEach(() => {
     })),
   };
   completedRunCommandClientFactory = async () => completedRunCommandClient;
+  pendingRunSaveRecords = new Map();
+  pendingRunSaveStore = {
+    read: vi.fn((ownerId) => pendingRunSaveRecords.get(ownerId) ?? null),
+    write: vi.fn((ownerId, commandId) => {
+      pendingRunSaveRecords.set(ownerId, commandId);
+    }),
+    clear: vi.fn((ownerId) => {
+      pendingRunSaveRecords.delete(ownerId);
+    }),
+  };
 });
 
 async function createNamedRepositories(
@@ -248,6 +261,7 @@ function renderProvider(children = <IntegrationProbe />) {
       createCompletedRunCommandId={(operation) =>
         `run-${operation}-test-command`
       }
+      pendingRunSaveStore={pendingRunSaveStore}
     >
       {children}
     </TrainingDataProvider>,
@@ -362,6 +376,7 @@ function IntegrationProbe() {
 function RunCommandProbe() {
   const training = useTrainingData();
   const [outcome, setOutcome] = useState("idle");
+  const [checkOutcome, setCheckOutcome] = useState("idle");
 
   if (training.status === "loading" || training.status === "error") {
     return <p>{training.status}</p>;
@@ -370,6 +385,7 @@ function RunCommandProbe() {
   return (
     <div>
       <p>Command: {outcome}</p>
+      <p>Pending run save: {training.hasPendingRunSave ? "yes" : "no"}</p>
       <button
         type="button"
         onClick={() => {
@@ -390,6 +406,18 @@ function RunCommandProbe() {
       >
         Create unplanned run
       </button>
+      <button
+        type="button"
+        onClick={() => {
+          setCheckOutcome("pending");
+          void training
+            .checkPendingRunSave()
+            .then((result) => setCheckOutcome(result.status));
+        }}
+      >
+        Check run save
+      </button>
+      <p>Check: {checkOutcome}</p>
     </div>
   );
 }
@@ -871,6 +899,100 @@ describe("TrainingDataProvider", () => {
       "run-complete-test-command",
     );
     expect(directCreate).not.toHaveBeenCalled();
+  });
+
+  it("restores an uncertain completion after reload and checks the original command", async () => {
+    await repositories.shoes.create({ name: "Daily Trainer" });
+    vi.mocked(completedRunCommandClient.submitCompletion).mockResolvedValue(
+      unknownCompletion("run-complete-test-command"),
+    );
+    vi.mocked(completedRunCommandClient.resolveCompletion).mockResolvedValue(
+      unknownCompletion("run-complete-test-command"),
+    );
+    const user = userEvent.setup();
+    const firstView = renderProvider(<RunCommandProbe />);
+    const firstSource = await waitForSource();
+    await publishRepositories(firstSource);
+
+    await user.click(screen.getByRole("button", { name: "Create unplanned run" }));
+
+    expect(
+      await screen.findByText(/Command: Marathoner couldn't confirm/i),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Pending run save: yes")).toBeInTheDocument();
+    expect(pendingRunSaveStore.write).toHaveBeenCalledWith(
+      userId,
+      "run-complete-test-command",
+    );
+    expect(vi.mocked(pendingRunSaveStore.write).mock.calls[0]).toEqual([
+      userId,
+      "run-complete-test-command",
+    ]);
+
+    firstView.unmount();
+    vi.mocked(completedRunCommandClient.resolveCompletion).mockResolvedValue({
+      status: "run_completed",
+      commandId: "run-complete-test-command",
+      completedRunId: createCompletedRunId("run-command-restored"),
+      completedRunUpdatedAt: timestamp,
+      completedPlannedWorkout: null,
+    });
+    renderProvider(<RunCommandProbe />);
+    const restoredSource = await waitForSource();
+    await publishRepositories(restoredSource);
+
+    expect(await screen.findByText("Pending run save: yes")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Check run save" }));
+
+    expect(await screen.findByText("Check: confirmed")).toBeInTheDocument();
+    expect(screen.getByText("Pending run save: no")).toBeInTheDocument();
+    expect(completedRunCommandClient.submitCompletion).toHaveBeenCalledOnce();
+    expect(completedRunCommandClient.resolveCompletion).toHaveBeenLastCalledWith(
+      "run-complete-test-command",
+    );
+    expect(pendingRunSaveStore.clear).toHaveBeenCalledWith(userId);
+  });
+
+  it("clears session recovery after a definitive status failure", async () => {
+    pendingRunSaveRecords.set(userId, "run-complete-test-command");
+    vi.mocked(completedRunCommandClient.resolveCompletion).mockResolvedValue({
+      status: "validation_error",
+      commandId: "run-complete-test-command",
+      code: "invalid-run-completion",
+      message: "That run could not be saved. Review it and try again.",
+    });
+    const user = userEvent.setup();
+    renderProvider(<RunCommandProbe />);
+    const source = await waitForSource();
+    await publishRepositories(source);
+
+    await user.click(screen.getByRole("button", { name: "Check run save" }));
+
+    expect(await screen.findByText("Check: failed")).toBeInTheDocument();
+    expect(screen.getByText("Pending run save: no")).toBeInTheDocument();
+    expect(pendingRunSaveStore.clear).toHaveBeenCalledWith(userId);
+  });
+
+  it("keeps the original command protected when a status check is temporarily unavailable", async () => {
+    pendingRunSaveRecords.set(userId, "run-complete-test-command");
+    vi.mocked(completedRunCommandClient.resolveCompletion).mockResolvedValue({
+      status: "retryable_error",
+      commandId: "run-complete-test-command",
+      code: "temporarily-unavailable",
+      message: "The command service is temporarily unavailable. Retry shortly.",
+    });
+    const user = userEvent.setup();
+    renderProvider(<RunCommandProbe />);
+    const source = await waitForSource();
+    await publishRepositories(source);
+
+    await user.click(screen.getByRole("button", { name: "Check run save" }));
+
+    expect(
+      await screen.findByText("Check: still_unconfirmed"),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Pending run save: yes")).toBeInTheDocument();
+    expect(pendingRunSaveStore.clear).not.toHaveBeenCalled();
   });
 
   it("submits deletion with run and workout revisions and waits for listener removal", async () => {

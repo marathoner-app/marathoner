@@ -11,6 +11,7 @@ import { useAuth } from "./auth/useAuth";
 import TrainingDataProvider from "./training/TrainingDataProvider";
 import { useTrainingData } from "./training/useTrainingData";
 import useDelayedStaleNotice from "./training/useDelayedStaleNotice";
+import { clearBrowserPendingRunSave } from "./training/pendingRunSave";
 import RecommendationEvidenceProvider from "./recommendations/RecommendationEvidenceProvider";
 import RunnerOnboarding from "./onboarding/RunnerOnboarding";
 import { isRunnerProfileOnboardingComplete } from "./onboarding/runnerProfileDraft";
@@ -138,6 +139,7 @@ function App() {
       lastSignedInUserId.current !== signedInUserId
     ) {
       void clearInternalPlanRehearsalSession();
+      clearBrowserPendingRunSave();
     }
     lastSignedInUserId.current = signedInUserId;
   }, [signedInUserId]);
@@ -184,6 +186,7 @@ function App() {
     let active = true;
     setDeletionSignOutError(null);
     void clearInternalPlanRehearsalSession();
+    clearBrowserPendingRunSave();
     void auth.logout().catch(() => {
       if (active) {
         setDeletionSignOutError(
@@ -216,6 +219,7 @@ function App() {
   const handleLogout = () => {
     setLogoutError(null);
     void clearInternalPlanRehearsalSession();
+    clearBrowserPendingRunSave();
     setLogoutPending(true);
   };
 
@@ -791,6 +795,8 @@ function SectionContent({
             onCreateShoe={training.createShoe}
             onRetireShoe={training.retireShoe}
             onCreateRun={training.createRun}
+            hasPendingRunSave={training.hasPendingRunSave}
+            onCheckPendingRunSave={training.checkPendingRunSave}
             onUpdateRun={training.updateRun}
             onDeleteRun={training.deleteRun}
             initialFocusTarget={trackInitialFocusTarget}
