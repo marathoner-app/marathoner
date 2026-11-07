@@ -124,6 +124,26 @@ export interface CompletedRunCommandInputV1 {
   notes?: string
 }
 
+function compactCompletedRunCommandInput(
+  input: CompletedRunCommandInputV1,
+): CompletedRunCommandInputV1 {
+  return {
+    plannedWorkout: input.plannedWorkout,
+    startedAt: input.startedAt,
+    timeZone: input.timeZone,
+    distance: input.distance,
+    duration: input.duration,
+    ...(input.shoeId === undefined ? {} : { shoeId: input.shoeId }),
+    ...(input.perceivedEffort === undefined
+      ? {}
+      : { perceivedEffort: input.perceivedEffort }),
+    ...(input.unusualPain === undefined
+      ? {}
+      : { unusualPain: input.unusualPain }),
+    ...(input.notes === undefined ? {} : { notes: input.notes }),
+  }
+}
+
 export interface RunCompletionCommandEnvelope
   extends MaterialCommandEnvelopeBase {
   command: {
@@ -1958,6 +1978,7 @@ export function createRunCompletionCommand(
   commandId: string,
   input: CompletedRunCommandInputV1,
 ): RunCompletionCommandEnvelope {
+  const compactInput = compactCompletedRunCommandInput(input)
   const parsed = parseMaterialCommand({
     envelopeVersion: MATERIAL_COMMAND_ENVELOPE_VERSION,
     appProtocolVersion: MATERIAL_COMMAND_APP_PROTOCOL_VERSION,
@@ -1965,7 +1986,7 @@ export function createRunCompletionCommand(
     command: {
       type: RUN_COMPLETION_COMMAND_TYPE,
       schemaVersion: RUN_COMPLETION_COMMAND_SCHEMA_VERSION,
-      input,
+      input: compactInput,
     },
   })
   if (!parsed.ok) throw new Error(parsed.result.message)
@@ -1983,6 +2004,7 @@ export function createRunUpdateCommand(
     input: CompletedRunCommandInputV1
   },
 ): RunUpdateCommandEnvelope {
+  const compactInput = compactCompletedRunCommandInput(options.input)
   const parsed = parseMaterialCommand({
     envelopeVersion: MATERIAL_COMMAND_ENVELOPE_VERSION,
     appProtocolVersion: MATERIAL_COMMAND_APP_PROTOCOL_VERSION,
@@ -1993,7 +2015,7 @@ export function createRunUpdateCommand(
       completedRunId: options.completedRunId,
       expectedCompletedRunUpdatedAt:
         options.expectedCompletedRunUpdatedAt,
-      input: options.input,
+      input: compactInput,
     },
   })
   if (!parsed.ok) throw new Error(parsed.result.message)
