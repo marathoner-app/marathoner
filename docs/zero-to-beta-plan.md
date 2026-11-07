@@ -1,7 +1,7 @@
 # Marathoner zero-to-beta plan
 
 - **Status:** Active delivery plan
-- **Last updated:** November 3, 2026
+- **Last updated:** November 7, 2026
 - **Product owner and current implementer:** Kevin Tulloch
 - **Decision checkpoint:** January 15, 2027; it is the optimistic invitation floor, precedes the February 28 likely forecast, and is not a delivery promise
 - **Master tracker:** [GitHub issue #104](https://github.com/marathoner-app/marathoner/issues/104)
@@ -10,6 +10,7 @@
 - **Automatic completed-run import:** [Accepted boundary and delivery order](architecture/automatic-run-import.md)
 - **Capacity forecast:** [Owner-session and gate forecast](capacity-forecast.md)
 - **Legal entity and Apple enrollment:** [Decision and execution path](operations/legal-entity-and-apple-enrollment.md)
+- **Closed-beta gates:** [Individual TestFlight enrollment and provisional methodology](closed-beta-gate-decision.md)
 - **Product strategy:** [Product-first free-beta decision](product-first-beta-decision.md)
 - **Resource sequencing:**
   [Internal-first spending decision](internal-first-resource-sequencing.md)
@@ -21,9 +22,9 @@
 
 Marathoner may invite a small, allowlisted founding cohort only after the
 evidence gates in this plan pass. The beta supports a bounded first-marathon
-loop: intake, a reviewed plan family, daily use, automatic completed-run import
-with manual fallback, completed-run feedback, deterministic
-hold/repeat/reschedule recommendations, timely reviewed guidance, and informed
+loop: intake, a pinned provisional plan family, daily use, automatic
+completed-run import with manual fallback, completed-run feedback, deterministic
+hold/repeat/reschedule recommendations, timely provisional guidance, and informed
 approval of material plan changes.
 
 January 15, 2027 remains the contractual invitation floor and scope-or-date
@@ -47,7 +48,8 @@ The October 8 [product-first decision](product-first-beta-decision.md) removes
 formal interviews, hosted reservations, and a paid concierge experiment from
 the beta critical path. That choice accepts unresolved commercial uncertainty
 so owner attention can go to the functional product. Product payments and live
-unreviewed recommendations remain outside the beta boundary.
+recommendations represented as professionally reviewed remain outside the beta
+boundary.
 
 The October 26
 [resource-sequencing decision](internal-first-resource-sequencing.md) makes
@@ -55,8 +57,15 @@ internal completeness the default predecessor to material external spending.
 Implementation, fixtures, automated tests, emulators, owner accounts, and
 available physical-device development should advance before professional
 review, entity and Apple organization costs, or other significant commitments
-are activated. Each external gate still applies before the behavior or release
-it governs reaches participants.
+are activated.
+
+The November 7 [closed-beta decision](closed-beta-gate-decision.md) now selects
+an individual Apple Developer Program membership and permits a pinned,
+explicitly provisional methodology for the first five to eight known testers.
+It defers independent review and California entity/organization enrollment to
+named expansion triggers. It does not defer TestFlight App Review or the
+privacy, access, integrity, reliability, disclosure, safety, and support gates
+in this plan.
 
 This sequencing accepts that a deliberately deferred external wait may later
 move the invitation date. It does not permit a forecast date to override an
@@ -69,19 +78,20 @@ unmet gate.
 The founding beta supports an English-speaking adult in the United States who:
 
 - is preparing for a first marathon;
-- already runs consistently under the eligibility boundary approved in #119;
+- already runs consistently under the pinned provisional eligibility boundary;
 - has a race horizon, recent training, and availability supported by the
-  approved beta rules;
+  pinned provisional beta rules;
 - is willing to log training and complete brief feedback check-ins; and
 - understands that Marathoner is experimental training support, not medical
   care or an individual professional coach.
 
 The founding beta does not support someone starting from no running, returning
 after an inconsistent period, presenting a pain or unusual-symptom escalation,
-or requesting a race timeline outside the approved rule boundary. Those people
+or requesting a race timeline outside the provisional rule boundary. Those people
 receive an honest unsupported result rather than an improvised plan. Numeric
-mileage, frequency, duration, and progression thresholds are methodology and
-must be approved through #119 before invitations open.
+mileage, frequency, duration, and progression thresholds are provisional
+methodology for this cohort and remain subject to the disclosure, versioning,
+test, and change-control requirements in the November 7 decision.
 
 The broader product vision still includes couch-to-5K and base-building paths.
 They are deferred until the first narrow workflow produces trustworthy safety,
@@ -92,10 +102,9 @@ support, and product evidence.
 - The first invitation batch contains five to eight allowlisted participants.
 - No more than eight participants may be active before the two-week operating
   review.
-- After a passing two-week review, the owner may expand to no more than twelve
-  concurrently active participants and fifteen accepted invitations through
-  the eight-week review.
-- Expansion pauses when support capacity, safety, privacy, recommendation, or
+- Expansion beyond eight requires a new recorded decision and re-evaluation of
+  the professional-review, entity, support, safety, and privacy triggers.
+- Recruitment pauses when support capacity, safety, privacy, recommendation, or
   data-integrity evidence fails its threshold.
 - The beta remains free in exchange for structured feedback.
 
@@ -105,16 +114,16 @@ recorded activation decision; they do not convert the beta into a paid launch.
 
 ### Plan and adaptation boundary
 
-- Use one qualified-review-approved first-marathon plan family or a small set
-  of deterministic variants for the supported runner segment.
+- Use one pinned, source-backed provisional first-marathon plan family or a
+  small set of deterministic variants for the supported runner segment.
 - Generate recommendations from explicit, versioned, tested rules and authored
   explanations. Generative AI is not required.
-- Limit beta adaptation to rescheduling an approved workout, holding
-  progression, repeating an approved period, or making no change.
+- Limit beta adaptation to rescheduling a provisional workout, holding
+  progression, repeating a provisional period, or making no change.
 - Require informed runner approval before a material plan revision.
 - Do not autonomously increase intensity or training load, change the race or
   goal, predict a finish time, diagnose injury, or improvise outside the
-  approved rule set.
+  pinned rule set.
 
 ### Supported clients
 
@@ -126,7 +135,7 @@ recorded activation decision; they do not convert the beta into a paid launch.
 | Today's workout and automatic completed-run import | Review imported records | Primary through HealthKit and verified provider paths |
 | Manual completion and correction | Supported fallback | Supported fallback |
 | Effort, optional notes, and shoe capture | Supported | Primary |
-| Reviewed guidance and bounded adjustment decision | Supported | Primary |
+| Provisional guidance and bounded adjustment decision | Supported | Primary |
 | Support, withdrawal, and deletion initiation | Supported | Required in app |
 
 Both clients use the same owned, versioned records. The web application remains
@@ -155,13 +164,16 @@ No payment or refundable-reservation flow is required for the founding beta.
 Any future payment research requires a separate activation decision and the
 appropriate seller, consent, terms, refund, and private-record controls.
 
-### Methodology fallback
+### Provisional methodology boundary
 
-If qualified approval for the supported beta slice is unavailable, Marathoner
-may run only a non-prescriptive research beta using a participant-supplied or
-individually human-reviewed plan. That fallback may test planning interfaces,
-logging, comprehension, and feedback, but it may not generate algorithmic
-training, adaptation, pain, fueling, hydration, or recovery recommendations.
+The first closed cohort may exercise pinned provisional planning, adaptation,
+and educational guidance only after the guarded deployment, disclosure,
+consent, versioning, unsupported-result, and conservative symptom behavior in
+the [closed-beta decision](closed-beta-gate-decision.md) is implemented and
+proved. Until then, participant builds remain non-prescriptive. If that guarded
+path cannot be made reliable, the fallback is a participant-supplied or
+individually human-reviewed plan used to test interfaces, logging,
+comprehension, and feedback.
 
 ## Product-first validation boundary
 
@@ -169,15 +181,15 @@ The [product-first free-beta decision](product-first-beta-decision.md) makes
 functional and responsible product evidence the prerequisite for invitations.
 The beta must prove the supported account, intake, plan, daily-use, logging,
 bounded-adaptation, support, and deletion journeys on the responsive web and
-iOS clients. It must also pass the methodology, safety, security, privacy,
-integrity, reliability, accessibility, support, and external-distribution
-gates in this plan.
+iOS clients. It must also pass the provisional-methodology controls, safety,
+security, privacy, integrity, reliability, accessibility, support, and
+external-distribution gates in this plan.
 
 The completed #211–#214 materials are retained as optional future commercial
 research infrastructure. No real participant evidence has been collected.
 Issues #126 and #215–#218 do not block the beta or the bounded adaptation work
-permitted by qualified review. Product payments and acquisition-scale work
-remain deferred until a later commercial-priority decision.
+permitted by the closed-beta decision. Product payments and acquisition-scale
+work remain deferred until a later commercial-priority decision.
 
 ## Architecture decision boundary
 
@@ -212,9 +224,9 @@ including automatic completed-run import and external provider timing.
 | --- | --- | --- | --- |
 | 00 Solo Delivery and Beta Contract | October 4, 2026 | [#54](https://github.com/marathoner-app/marathoner/issues/54) | One canonical beta promise, solo delivery workflow, issue hierarchy, and approved scope boundaries. |
 | 01 Shared Mobile Foundation | October 18, 2026 | [#33](https://github.com/marathoner-app/marathoner/issues/33) | A physical iPhone can authenticate and exchange one typed training record with the preserved web application through the approved least-duplicated client boundary. |
-| 02 Intake and Initial Plan | November 15, 2026 | [#65](https://github.com/marathoner-app/marathoner/issues/65) | A representative supported runner can complete intake, receive an approved deterministic plan or honest unsupported result, approve the plan, and identify the next workout. |
+| 02 Intake and Initial Plan | November 15, 2026 | [#65](https://github.com/marathoner-app/marathoner/issues/65) | A representative supported runner can complete intake, receive a pinned provisional deterministic plan or honest unsupported result, approve the plan, and identify the next workout. |
 | 03 Track, Learn, and Adapt | December 6, 2026 | [#105](https://github.com/marathoner-app/marathoner/issues/105), [#106](https://github.com/marathoner-app/marathoner/issues/106) | A runner can log what happened, receive an authored explanation and deterministic adjustment recommendation, and approve or decline a material change. |
-| 04 iOS Daily Companion | December 20, 2026 | [#108](https://github.com/marathoner-app/marathoner/issues/108) | The complete daily loop is usable on a physical iPhone; the organization enrollment in #281 supplies the seller identity and signing capabilities required for App Attest and an internal/TestFlight candidate. |
+| 04 iOS Daily Companion | December 20, 2026 | [#108](https://github.com/marathoner-app/marathoner/issues/108) | The complete daily loop is usable on a physical iPhone; an individual Apple Developer Program membership supplies the paid-team signing path required for App Attest proof and a TestFlight candidate. |
 | 05 Trust and External-Beta Readiness | January 8, 2027 | [#107](https://github.com/marathoner-app/marathoner/issues/107), [#109](https://github.com/marathoner-app/marathoner/issues/109) | Safety boundaries, privacy and deletion, accessibility, reliability, support, consent, instrumentation, and TestFlight operations satisfy the beta checklist. |
 | 06A Founding Cohort Invitations | January 15, 2027 | [#129](https://github.com/marathoner-app/marathoner/issues/129) | Five to eight allowlisted invitations may open only when every invitation blocker passes. |
 | 06B Four-Week Review | February 12, 2027 | [#131](https://github.com/marathoner-app/marathoner/issues/131) | Activation, comprehension, trust, safety, usefulness, and support burden produce a proceed, refine, or pause decision. |
@@ -361,31 +373,31 @@ gate triggers scope or date review before external invitations are promised.
 ### Wave 06: Founding Cohort
 
 - Invite five to eight allowlisted participants initially.
-- Keep no more than eight participants active before the two-week review and no
-  more than twelve concurrently active or fifteen accepted through the
-  eight-week review.
+- Keep no more than eight participants active throughout this closed experience
+  beta.
 - Review activation, comprehension, adaptation trust, safety, and support burden
-  before expanding recruitment.
+  before making a new expansion decision.
 - Pause invitations for unresolved critical recommendation, privacy,
   data-integrity, or safety failures.
 
-## Safety and expert review
+## Safety and methodology status
 
-Qualified review of the full future methodology is not required for the first
-cohort. Dated qualified approval of the exact rules and guidance supported by
-that cohort is required before invitations. A disclaimer is not the safety
-system.
+Independent professional review is deferred for the first five-to-eight-person
+closed experience beta. The exact provisional rules and guidance used by that
+cohort must still be pinned, versioned, deterministic, source-backed, tested,
+and clearly disclosed. A disclaimer is not the safety system.
 
 The [qualified review protocol](methodology/README.md) defines the reviewer
 roles, independence rules, versioning, decision evidence, and change control.
 Its [founding-beta inventory](methodology/beta-review-inventory.md) enumerates
-the complete review surface. The protocol is ready, but every inventory row is
-currently unapproved; #119, #70, and prescriptive invitations remain blocked.
+the future professional-review surface. The protocol is ready, but every
+inventory row is currently unapproved. Closed-beta use under the November 7
+decision does not change those statuses.
 
 Before invitations open, the beta must:
 
-- identify the reviewed ruleset and content versions and describe the bounded
-  beta as experimental;
+- identify the provisional ruleset and content versions and describe the
+  bounded beta as experimental and not professionally reviewed;
 - avoid diagnosis, treatment claims, injury-prevention promises, and guaranteed
   outcomes;
 - use conservative, authored escalation boundaries for pain, unusual symptoms,
@@ -395,9 +407,10 @@ Before invitations open, the beta must:
 - make it possible to stop recruitment and disable unsafe guidance; and
 - give participants a clear support and withdrawal path.
 
-Additional starting segments, rules, and guidance require additional qualified
-approval before they are exposed. Beta evidence may identify what needs review,
-but it does not convert unreviewed guidance into approved guidance.
+Additional starting segments, rules, guidance, or expansion beyond eight known
+testers trigger a new decision and re-evaluation of qualified review. Beta
+evidence may identify what needs review, but it does not convert provisional
+guidance into professionally approved guidance.
 
 ## Creator Radar boundary
 
@@ -417,11 +430,8 @@ The critical path is:
 
 ```text
 beta contract -> iOS/shared foundation -> bounded intake and initial plan
-                                        |                         |
-                                        |                         v
-                                        +-> qualified review -----+
-                                                                  v
-                         tracking and bounded adaptation
+              -> guarded provisional rules and disclosure
+              -> tracking and bounded adaptation
                          -> provider-neutral import -> iOS/HealthKit daily companion
                          -> direct Garmin and cross-provider proof
                          -> trust/readiness -> invitations
@@ -448,8 +458,8 @@ An operating partner now owns a non-engineering lane: in-person relationships,
 potential-participant discovery, recruitment-channel learning, interviews, and
 feedback synthesis. That work can run alongside product delivery and can
 propose changes to any assumption. It does not add engineering throughput to
-the forecast, authorize beta invitations, replace qualified review, or make
-formal commercial proof a release gate.
+the forecast, authorize beta invitations, replace required provisional-
+methodology controls, or make formal commercial proof a release gate.
 
 The plan does not reserve Android or any other area for a hypothetical future
 technical contributor. Android remains a post-founding-beta follow-on rather

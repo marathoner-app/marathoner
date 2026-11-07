@@ -17,6 +17,14 @@ already run consistently and are preparing for a first marathon. The existing
 responsive web application remains the planning and analysis surface; Android
 external release is not on the beta critical path.
 
+The active [closed-beta delivery decision](docs/closed-beta-gate-decision.md)
+uses an individual Apple Developer Program membership for that small TestFlight
+cohort and permits clearly disclosed, versioned provisional methodology during
+the experience beta. California entity formation, Apple organization migration,
+and independent methodology review are deferred to explicit expansion triggers;
+TestFlight App Review and every privacy, access, reliability, safety, support,
+and consent gate remain required.
+
 If you are reviewing Marathoner for the first time, follow the numbered
 [operating partner start-here guide](docs/operating-partner-guide.md). It
 separates implemented behavior, active commitments, dated forecasts, and
@@ -45,8 +53,11 @@ Owner and operating-partner dogfood can map a saved runner profile into the
 pinned draft plan rules, produce supported or unsupported results, choose a
 start date, and review, approve, and persist a provisional plan. Separate
 internal rehearsal surfaces exercise draft adaptations, recommendation,
-guidance, and safety presentation. These paths prove implementation only; they
-do not approve the draft methodology or authorize participant-facing coaching.
+guidance, and safety presentation. The current code still keeps those artifacts
+behind internal paths. Issue
+[#680](https://github.com/marathoner-app/marathoner/issues/680) owns the explicit
+closed-beta transition; the strategy decision does not silently enable a draft
+artifact or represent it as professionally approved.
 
 The visible features share the typed Firestore persistence layer. Follow the
 [open issues](https://github.com/marathoner-app/marathoner/issues) to see what is
@@ -87,7 +98,10 @@ defines how those concepts are screened, facilitated, classified, and reduced
 to privacy-safe directional evidence before any real response is collected.
 The [internal-first resource-sequencing decision](docs/internal-first-resource-sequencing.md)
 keeps implementation and owner-controlled validation moving before material
-external spending, while preserving every gate required before outside use.
+external spending. Its November 7
+[closed-beta update](docs/closed-beta-gate-decision.md) distinguishes gates for
+the five-to-eight-person experience beta from the stronger organization and
+professional-review gates that return before broader use.
 [GitHub issue #104](https://github.com/marathoner-app/marathoner/issues/104)
 is its live execution tracker, and
 [issue #117](https://github.com/marathoner-app/marathoner/issues/117) records
@@ -95,19 +109,20 @@ the founding-beta contract. The
 [committee remediation sprint](docs/committee-remediation-sprint.md) records
 the prioritized work and evidence required to resolve the September 2026
 product, investor, architecture, delivery, and operations review. The
-[qualified methodology review](docs/methodology/README.md) defines who may
-approve the founding-beta training and safety behavior, the versioned review
-inventory, and the evidence required before prescriptive use. The
+[qualified methodology review](docs/methodology/README.md) defines the future
+professional-review protocol, versioned inventory, and approval evidence. The
 [founding-beta methodology-review decision](docs/methodology/founding-beta-review-decision.md)
-records that independent endurance-methodology review is required before
-prescriptive participant use. Its prepared outreach remains deferred until the
-internally testable product is close enough for review to become a real release
-blocker. The
+is superseded for the first closed experience beta: independent review remains
+deferred until an expansion trigger, while provisional status, versioning,
+unsupported results, consent, and conservative safety behavior remain required.
+The
 [founding-beta endurance-rules draft](docs/methodology/artifacts/beta-rules/0.2.0-draft/README.md)
-is the exact unapproved packet awaiting independent endurance-methodology
-review. Participant production builds cannot import it; the owner-only
+is the exact unapproved packet prepared for testing and later independent
+endurance-methodology review. Current participant builds still cannot import it;
+the owner-only
 [internal plan rehearsal](docs/methodology/internal-plan-rehearsal.md) loads it
-only in the explicit `internal-plan-rehearsal` development mode. The
+only in the explicit `internal-plan-rehearsal` development mode until a focused,
+tested beta-enablement change lands. The
 [public prototype access decision](docs/public-prototype-access.md) records why
 open registration is disabled and which trust paths must exist before access
 expands. The
@@ -135,7 +150,7 @@ uses typed repositories backed by Cloud Firestore, and the repository contains
 a bounded Cloud Functions backend for trusted material commands, account
 deletion, and Garmin OAuth and push ingestion. Those reviewed boundaries are
 emulator-proven and deployed to the beta project. The valid-client observation
-window, organization-signed iPhone
+window, paid-team iPhone
 proof, rollback evidence, and staged enforcement remain gated by issue #205
 and its successors. The accepted
 [mobile client ADR](docs/architecture/mobile-client-architecture.md) selects a
@@ -229,13 +244,16 @@ The development/test-only Creator Radar boundary is documented in
 
 - The private development dogfood deployment can generate, approve, and persist
   an owner or operating-partner plan from the exact pinned draft artifact. The
-  artifact remains provisional and visibly unapproved; public or invited beta
-  participants cannot receive it until the qualified-review gate passes. The
+  artifact remains provisional and visibly unapproved; the current beta build
+  cannot receive it until the explicit provisional-artifact deployment and
+  disclosure work in issue #680 lands. Independent review is deferred for the
+  small closed cohort, not falsely represented as complete. The
   participant generation path remains tracked in
   [issue #29](https://github.com/marathoner-app/marathoner/issues/29).
 - The deterministic adaptation evaluator and its recommendation, guidance, and
-  safety presentation remain internal rehearsal behavior. They cannot create
-  participant recommendation records or authorize coaching before review.
+  safety presentation remain internal rehearsal behavior. Moving them into the
+  closed beta requires the explicit guarded deployment, disclosure, and proof
+  work recorded by #680; they remain provisional rather than approved coaching.
 - Owner-scoped real-time training reads, recommendation-evidence reads, and
   memory-only cache isolation are implemented. Normal Track run creation,
   editing, deletion, and provider imports use atomic commands; profile and shoe

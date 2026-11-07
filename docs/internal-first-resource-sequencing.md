@@ -2,6 +2,8 @@
 
 - **Status:** Active operating decision
 - **Effective:** October 26, 2026
+- **Closed-beta application:** November 7, 2026;
+  [individual TestFlight and provisional-methodology decision](closed-beta-gate-decision.md)
 - **Decision owner:** Kevin Tulloch
 - **Tracking issue:** [#439](https://github.com/marathoner-app/marathoner/issues/439)
 - **Related methodology decision:**
@@ -20,10 +22,12 @@ project's current resources. Existing tools and explicitly approved,
 budget-controlled infrastructure may continue when they are needed for active
 development.
 
-This decision changes sequencing, not release standards. It does not authorize
-unreviewed prescriptive guidance, bypass Apple distribution requirements,
-weaken security or privacy gates, or convert internal evidence into external-
-participant evidence.
+The November 7 closed-beta decision applies this principle to a narrower
+release standard: an individual Apple membership and clearly disclosed,
+versioned provisional rules are permitted for five to eight known testers.
+That exception does not bypass TestFlight App Review, weaken security or
+privacy gates, represent provisional methodology as reviewed, or convert
+internal evidence into participant evidence.
 
 ## Work that should happen first
 
@@ -72,8 +76,9 @@ reason as soon as disclosure is safe.
 
 | External commitment | Current posture | Activation point |
 | --- | --- | --- |
-| Independent endurance-methodology review | The combined plan-and-adaptation packet is prepared and pinned. Candidate outreach and paid work are deferred. | The corresponding prescriptive behavior is stable and internally testable, and review availability is becoming a real blocker to external prescriptive beta. |
-| California entity formation and Apple organization enrollment | Preserve the prepared execution path and continue development that works with the current account and Personal Team. | Organization identity, App Attest evidence, or external distribution is approaching the critical path and the exact filing and enrollment costs are approved. |
+| Independent endurance-methodology review | The combined plan-and-adaptation packet is prepared and pinned. The first closed experience beta may use it only as explicitly disclosed provisional methodology after the guarded beta implementation is proved. | Before open invitations, a broader cohort or methodology, professional-review claims, or another trigger in the November 7 decision. |
+| Individual Apple Developer Program enrollment | Selected for the closed TestFlight beta. The account holder pays Apple directly; private cost sharing happens separately. | Enroll when distribution signing and the first external TestFlight candidate are the active dependency. |
+| California entity formation and Apple organization enrollment | Deferred. Preserve the prepared migration path, but do not incur the recurring California obligation merely to run the first closed beta. | Before an organization-branded public App Store release, meaningful revenue/contracts, shared ownership, institutional financing, or another trigger in the November 7 decision. |
 | Commercial interviews, payment tests, paid acquisition, and investor-grade proof | Remain optional and dormant under the product-first decision. | A later recorded commercial-priority decision identifies the specific uncertainty and budget to test. |
 | Development infrastructure | Continue explicitly approved services within their existing budget alerts and operating controls. | A new paid service, higher quota, or materially larger recurring commitment requires its own issue and approval. |
 
@@ -88,4 +93,5 @@ gate has passed.
 If significant spending remains unavailable when an external release gate is
 otherwise reached, Marathoner must wait, reduce the release scope, or use an
 already documented safe fallback. Schedule pressure does not make an
-unapproved or unavailable dependency complete.
+unavailable dependency complete, and a provisional-methodology disclosure does
+not make the rules professionally approved.

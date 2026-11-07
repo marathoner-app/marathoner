@@ -4,7 +4,7 @@
 - **Procedure issue:** [#336](https://github.com/marathoner-app/marathoner/issues/336)
 - **Acceptance issue:** [#140](https://github.com/marathoner-app/marathoner/issues/140)
 - **Current failure-state evidence:** [2026-10-23 owner development rehearsal](evidence/2026-10-23-ios-failure-state-rehearsal.md)
-- **Current signing blocker:** [#281](https://github.com/marathoner-app/marathoner/issues/281)
+- **Current signing blocker:** [#122](https://github.com/marathoner-app/marathoner/issues/122)
 - **Companion setup:** [iOS development](ios-development.md)
 
 ## Purpose and evidence boundary
@@ -23,7 +23,7 @@ non-owner completes the supported journey.
 The owner-only development Debug build may use the development App Check debug
 provider for early physical-device defect discovery. That evidence must be
 identified as internal development evidence and cannot satisfy this external
-candidate checklist. Until #281 supplies an organization-signed, App
+candidate checklist. Until #122 supplies a paid-team-signed, App
 Attest-capable Release build, record the candidate cases as `Blocked`; do not
 substitute the development debug build, browser, or simulator result and call
 it an external-candidate pass.
@@ -45,7 +45,7 @@ automated test. Those results may be linked as supporting evidence.
 
 Before starting a physical session:
 
-- [ ] #281 has supplied a valid organization signing profile with App Attest.
+- [ ] #122 has supplied a valid paid-team signing profile with App Attest.
 - [ ] The candidate commit is on the reviewed branch or `main`, with a clean
       working tree.
 - [ ] `npm run check:ios` passes from a clean dependency installation.

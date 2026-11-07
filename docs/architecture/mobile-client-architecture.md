@@ -217,9 +217,11 @@ the public identities, debug-token custody, and unenforced console state. Issue
 #204 closed after implementing the native provider before the JavaScript
 Firebase clients, a bounded fail-closed startup state, the production App Attest
 entitlement, and supported development proof. Paid-team beta App Attest remains
-blocked until #281 supplies an Apple Developer Program profile with that
-entitlement. Issues #205 and #206 own beta proof, observation, rollback, and
-staged enforcement.
+blocked until the individual Apple Developer Program membership selected in the
+[closed-beta decision](../closed-beta-gate-decision.md) supplies a profile with
+that entitlement. Issue #122 owns enrollment and distribution; issues #205 and
+#206 own beta proof, observation, rollback, and staged enforcement. Future
+organization migration remains deferred in #281.
 
 A custom App Check provider and token-minting backend are outside this decision
 because they create a new security service. Do not build one without a separate

@@ -2,6 +2,8 @@
 
 - **Version:** 1.0
 - **Precommitted:** October 23, 2026
+- **Cohort-cap update:** November 7, 2026;
+  [closed-beta decision](closed-beta-gate-decision.md)
 - **Status:** Active before the first founding-cohort invitation
 - **Owner and final decision authority:** Kevin Tulloch
 - **Field-evidence owner:** Operating partner
@@ -16,9 +18,10 @@ agreement to test, a waitlist entry, or a successful prototype conversation is
 not activation or product-use evidence.
 
 The first invitation batch remains five to eight allowlisted participants. No
-more than eight may be active before the two-week review. A passing review may
-permit at most twelve concurrent participants and fifteen accepted invitations
-through the eight-week review.
+more than eight may be active during this closed experience beta. A passing
+review may support a later expansion decision, but it does not itself raise the
+cap; expansion requires re-evaluation of the professional-review, entity,
+support, safety, and privacy triggers.
 
 ## Evidence and privacy rules
 

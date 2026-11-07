@@ -2,6 +2,8 @@
 
 - **Status:** Active capacity forecast including automatic completed-run import
 - **As of:** November 3, 2026
+- **Gate override:** November 7, 2026;
+  [closed-beta delivery decision](closed-beta-gate-decision.md)
 - **Owner:** Kevin Tulloch
 - **Baseline issue:** [#116](https://github.com/marathoner-app/marathoner/issues/116)
 - **Recalibration issue:** [#208](https://github.com/marathoner-app/marathoner/issues/208)
@@ -16,6 +18,13 @@
 - **Scope:** Marathoner beta critical path; Creator Radar is excluded
 
 ## How to interpret this snapshot
+
+The November 7 decision supersedes this forecast's assumption that California
+entity formation, Apple organization enrollment, and independent methodology
+review block the first five-to-eight-person closed beta. The active path now
+uses an individual Apple membership and guarded provisional methodology. The
+dated effort model remains useful, but its external-gate rows are historical
+and its invitation dates have not yet been recalculated from the new decision.
 
 This forecast preserves the September baseline and October 8 calibration as an
 auditable source, then reconciles issue state through November 3 and adds the
@@ -400,10 +409,10 @@ does not justify material spending.
 
 | External dependency | Planning range | How it is modeled | Stop condition |
 | --- | --- | --- | --- |
-| Qualified reviewer availability | 2–6 calendar weeks to identify and schedule | Keep the combined packet ready; activate #191 when the prescriptive journey is stable and internally testable and the wait is within the next four to six weeks of blocking external beta | If review remains unavailable when internal predecessors are complete, choose the non-prescriptive fallback or move the date |
-| Rules and content review | 1–3 calendar weeks per complete review packet | Owner preparation is in #119, #134, and #135 estimates; reviewer elapsed time is separate | Unapproved high-risk rules or content cannot ship |
+| Qualified reviewer availability | Deferred for the first closed cohort; former 2–6-week planning range retained for later use | Keep the combined packet ready; activate #191 only when a broader-use trigger in the November 7 decision is reached | Closed-beta evidence does not become professional approval; broader use waits or reduces scope if review is unavailable |
+| Rules and content review | Deferred for the first closed cohort; former 1–3-week range per complete packet retained for later use | Owner preparation remains in #119, #134, and #135; #680 owns provisional beta controls | Provisional rules cannot be represented as professionally reviewed, and broader use cannot proceed without the required later decision |
 | Garmin Starter Activity API approval | No published approval-time guarantee; Garmin says a typical integration takes 1–4 weeks after approval | Submit #622 before the wait controls Wave 05; #623 owner work is estimated separately and cannot start until usable access and terms exist | If approval is not usable when #623 reaches the active path, explicitly move the invitation date or approve a cohort limited to ecosystems with a verified automatic path |
-| California entity formation, D-U-N-S synchronization, Apple organization enrollment, signing, and App Store Connect setup | 1–3 calendar weeks after accepted formation as a planning allowance | Preserve the prepared [#281](https://github.com/marathoner-app/marathoner/issues/281) path and continue Personal Team development; activate the paid path when organization identity, App Attest, or external distribution is within the next four to six weeks of becoming the blocker | The Personal Team cannot supply the intended seller identity or App Attest profile; unresolved enrollment blocks #205 beta proof and external distribution |
+| Individual Apple Developer Program enrollment, signing, and App Store Connect setup | Apple-controlled processing time is not promised; start before the TestFlight candidate becomes the blocker | #122 owns individual enrollment, paid-team App Attest, the clean archive, and TestFlight distribution. #281 is deferred future organization migration | No external invitation without the paid-team profile, App Attest proof, signed candidate, and approved TestFlight build |
 | First external TestFlight review | 1 week likely; 2 weeks conservative including correction allowance | Prioritize #122 early enough to overlap review with the remaining iOS work | No external invitation without an approved build |
 | Non-owner device rehearsal | 1–3 calendar weeks to schedule | Book after the first installable candidate exists; owner execution effort is in #122 and #140 | A failed critical journey creates a blocking issue |
 
@@ -484,11 +493,11 @@ The recommended response is therefore:
 3. plan around February 28, 2027 as the likely capacity-backed invitation
    decision and August 8, 2027 as the conservative capacity date, while
    recognizing Garmin approval can move either later;
-4. prioritize the product waves while #191, #281/#205, and #122 advance when
-   their trust and external dependencies permit, and submit #622 before Garmin
+4. prioritize the product waves while #680, #122, and #205 advance on the
+   closed-beta path, and submit #622 before Garmin
    approval controls the critical path;
-5. keep product payments outside beta and condition bounded adaptation on
-   qualified review rather than payment evidence; and
+5. keep product payments outside beta and condition bounded adaptation on the
+   guarded provisional-methodology controls rather than payment evidence; and
 6. preserve the intended HealthKit and direct-Garmin cohort for now. If Garmin
    access becomes the controlling delay, make a separate explicit decision to
    move the date or narrow the cohort; do not fall back silently to manual

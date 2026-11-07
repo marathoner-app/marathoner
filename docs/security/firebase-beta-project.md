@@ -77,7 +77,7 @@ Apple App Check providers are now registered, with public native configuration
 selected by the fail-closed build boundary. Client initialization and its
 automated retry boundary are implemented, and #204 closed after supported
 development proof. Paid-team physical-iPhone App Attest proof plus observation
-and rollback remain in #205 after #281; enforcement remains in #206 before
+and rollback remain in #205 after #122; enforcement remains in #206 before
 external invitations. See the
 [provider registration record](app-check-provider-registration.md).
 
@@ -153,6 +153,6 @@ rebuild path after account recovery.
 ## Remaining participant-activation gates
 
 - Complete paid-team beta App Check proof, observation, enforcement, and
-  rollback in #205 through #206 after #281 supplies the App Attest profile.
+  rollback in #205 through #206 after #122 supplies the App Attest profile.
 - Complete participant-data integrity, deletion, incident, and support controls
   before invitations.

@@ -4,11 +4,13 @@
 - **Effective:** October 8, 2026
 - **Operating-role update:** October 23, 2026
 - **Resource-sequencing update:** October 26, 2026
+- **Closed-beta gate update:** November 7, 2026;
+  [individual TestFlight and provisional-methodology decision](closed-beta-gate-decision.md)
 - **Owner:** Kevin Tulloch
 - **Tracking issue:** [#223](https://github.com/marathoner-app/marathoner/issues/223)
 - **Founding-beta contract:** [#117](https://github.com/marathoner-app/marathoner/issues/117)
 - **Methodology decision:**
-  [Independent review required](methodology/founding-beta-review-decision.md)
+  [Professional review deferred for the first closed experience beta](closed-beta-gate-decision.md)
 - **Resource sequencing:**
   [Build and validate internally before material external spend](internal-first-resource-sequencing.md)
 
@@ -36,26 +38,30 @@ exercise, and stabilize every practical predecessor with existing resources
 before paying for a dependency that does not yet unlock forward progress. The
 [internal-first resource-sequencing decision](internal-first-resource-sequencing.md)
 defines the activation test for professional review, entity and Apple
-enrollment costs, commercial research, and new paid infrastructure.
+organization costs, commercial research, and new paid infrastructure. The
+November 7 closed-beta decision applies that test by selecting the $99/year
+individual Apple path and deferring California LLC formation and professional
+methodology review for the first five-to-eight-person cohort.
 
-Deferring a cost does not remove its release gate. It places the cost near the
-point where its deliverable or external wait becomes the real blocker and
-reduces the chance of paying twice after avoidable product changes.
+Deferring a cost does not remove every gate attached to it forever. The
+closed-beta decision names the narrow scope in which two gates are deferred,
+the controls that replace them temporarily, and the triggers that restore them.
 
 ## Required before the free beta
 
 - a complete supported journey from account access and intake through plan
   approval, daily use, run logging, bounded adaptation, and account deletion;
-- dated qualified review of the supported training methodology and safety
-  content, as required by the October 23 methodology decision, or an explicit
-  later decision reducing the release to the documented non-prescriptive
-  fallback;
+- pinned, deterministic provisional rules with explicit beta disclosure,
+  unsupported-result behavior, conservative symptom handling, and change
+  control; independent professional review returns before the expansion
+  triggers in the November 7 decision;
 - authorization, privacy, consent, deletion, recovery, data-integrity, and
   incident controls appropriate to the small cohort;
 - reliable responsive-web and physical-iPhone behavior, including session,
   reconnect, stale-write, and critical-failure states;
-- an externally testable iOS build and a non-owner rehearsal of the critical
-  journey;
+- an individual Apple Developer Program membership, an externally testable iOS
+  build, the required TestFlight App Review, and a non-owner rehearsal of the
+  critical journey;
 - support and recruitment-pause procedures; and
 - precommitted product-quality, safety, comprehension, and support-burden
   thresholds for the live cohort.
@@ -96,8 +102,8 @@ An operating partner may begin relationship development, in-person problem
 discovery, expectation checks, prototype walkthroughs, and product-feedback
 conversations before the beta is ready. That work can improve language,
 segment assumptions, channel choices, and roadmap priorities. It is an input to
-product judgment, not a substitute for a functional beta, qualified methodology
-review, consent, safety evidence, or observed payment behavior.
+product judgment, not a substitute for a functional beta, transparent
+provisional-methodology consent, safety evidence, or observed payment behavior.
 
 Friendly or informal conversations are not represented as qualified research,
 beta enrollment, demand proof, or willingness-to-pay evidence. Any systematic

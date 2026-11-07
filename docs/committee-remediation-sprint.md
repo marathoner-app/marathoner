@@ -3,14 +3,16 @@
 - **Status:** Active
 - **Started:** September 22, 2026
 - **Owner:** Kevin Tulloch
-- **Current-state header reviewed:** October 30, 2026
+- **Current-state header reviewed:** November 7, 2026
+- **Gate override:** [Closed-beta delivery and methodology decision](closed-beta-gate-decision.md)
 - **Review scope:** The Marathoner product repository, excluding Creator Radar
 - **Parent tracker:** [GitHub issue #104](https://github.com/marathoner-app/marathoner/issues/104)
 - **Current trust slice:** [GitHub issue #205](https://github.com/marathoner-app/marathoner/issues/205)
 - **Strategy realignment:** [GitHub issue #223](https://github.com/marathoner-app/marathoner/issues/223)
-- **Pending external gates:** [GitHub issue #191](https://github.com/marathoner-app/marathoner/issues/191), [GitHub issue #281](https://github.com/marathoner-app/marathoner/issues/281), and [GitHub issue #122](https://github.com/marathoner-app/marathoner/issues/122)
-- **Methodology initiation decision:**
-  [Independent review required](methodology/founding-beta-review-decision.md)
+- **Current external gate:** [Individual Apple enrollment and TestFlight issue #122](https://github.com/marathoner-app/marathoner/issues/122)
+- **Deferred external gates:** [Professional review #191](https://github.com/marathoner-app/marathoner/issues/191) and [organization migration #281](https://github.com/marathoner-app/marathoner/issues/281)
+- **Current methodology decision:**
+  [Provisional rules permitted for the closed experience beta](closed-beta-gate-decision.md)
 - **Related plans:** [Zero-to-beta plan](zero-to-beta-plan.md),
   [product vision](product-vision.md),
   [founding cohort plan](founding-cohort-plan.md),
@@ -18,6 +20,13 @@
   [dormant commercial proof sprint](commercial-proof-sprint.md)
 
 ## Purpose
+
+The September committee findings remain historical evidence. The November 7
+decision supersedes CR-01's independent-review gate, the organization-enrollment
+gate, and expansion above eight for the first closed experience beta. It does
+not mark those remediation items complete: professional review and organization
+migration are deferred, while provisional disclosure, TestFlight App Review,
+privacy, access, reliability, safety, support, and consent remain active gates.
 
 This is the canonical remediation backlog produced from the September 22,
 2026 product, investor, architecture, mobile, delivery, and operations review.

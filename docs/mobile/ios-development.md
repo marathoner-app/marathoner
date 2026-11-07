@@ -24,9 +24,9 @@ and release work remain in #72, #115, #138, #159, #161, #122, and #90.
 - the physical test iPhone and an owner-controlled Apple development identity
   only when recording device evidence
 - the current Personal Team for the owner-only development Debug build
-- an organization-owned Apple Developer Program team for signed Release App
-  Attest and TestFlight gates; follow the
-  [entity and enrollment decision](../operations/legal-entity-and-apple-enrollment.md)
+- an individual Apple Developer Program membership for the first closed beta's
+  signed Release, App Attest, and TestFlight gates; follow the
+  [closed-beta decision](../closed-beta-gate-decision.md)
 - the reviewed development-only iOS Firebase API key
 - the separately reviewed beta-only iOS Firebase API key only when running the
   explicit beta proof
@@ -319,7 +319,7 @@ development account; signup remains disabled.
 Issue #140 uses the dedicated
 [iOS accessibility and critical-failure rehearsal](ios-accessibility-rehearsal.md)
 for VoiceOver, large text, focus, input, motion, failure-state, and non-owner
-evidence. Complete that procedure against an organization-signed,
+evidence. Complete that procedure against a paid-team-signed,
 App Attest-capable candidate; this setup section or a simulator result is not an
 accessibility pass.
 
@@ -327,7 +327,7 @@ Issue #137 uses the dedicated
 [iOS session and account-isolation rehearsal](ios-session-isolation-rehearsal.md)
 for approved, unapproved, offline, revoked-session, account-switch, cold-start,
 late-callback, and unsupported-version evidence. Owner-device Debug checks may
-find session defects early, but they do not replace the organization-signed
+find session defects early, but they do not replace the paid-team-signed
 candidate gates described in that procedure.
 
 ### Launch-continuity acceptance test
@@ -441,8 +441,9 @@ token through a `CustomProvider`, requiring the production App Attest
 entitlement, and recording supported development proof. The current Personal
 Team profile does not contain that capability, so a paid Apple Developer
 Program profile and beta physical-iPhone token proof remain required.
-Issue [#281](https://github.com/marathoner-app/marathoner/issues/281) owns the
-California entity and Apple organization enrollment that unblock that profile.
-Beta proof, observation, and enforcement remain in #205 and #206;
+Issue [#122](https://github.com/marathoner-app/marathoner/issues/122) owns the
+individual enrollment, recovery, archive, TestFlight review, and non-owner
+proof. Future organization migration remains deferred in #281. Beta proof,
+observation, and enforcement remain in #205 and #206;
 implementation or an unsigned compile is not evidence that an API rejects
 missing tokens.

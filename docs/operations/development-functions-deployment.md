@@ -37,8 +37,8 @@ Before any later deployment, the owner must separately approve:
 
 Apple Developer Program enrollment is not a prerequisite. The development iOS
 build uses the existing explicit native App Check debug provider. Real App
-Attest, organization signing, TestFlight, and participant use remain gated by
-[#281](https://github.com/marathoner-app/marathoner/issues/281),
+Attest, paid-team signing, TestFlight, and participant use remain gated by
+[#122](https://github.com/marathoner-app/marathoner/issues/122),
 [#205](https://github.com/marathoner-app/marathoner/issues/205), and
 [#206](https://github.com/marathoner-app/marathoner/issues/206).
 

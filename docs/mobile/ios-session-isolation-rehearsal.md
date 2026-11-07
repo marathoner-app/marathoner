@@ -82,7 +82,7 @@ both Auth users, and the local credential file.
 
 The Personal Team Debug build is suitable for owner-device defect discovery and
 the development checks in this procedure. It does not substitute for the
-organization-signed App Attest candidate required by the release gates.
+paid-team-signed App Attest candidate required by the release gates.
 
 ## Device cases
 

@@ -111,7 +111,8 @@ are test-only and are not exported by the application module.
 
 No participant-facing component imports the manifest. The existing public
 notice remains truthful: Marathoner's training methodology and safety guidance
-are not yet approved.
+are not professionally approved. Issue #680 is the only planned path for
+enabling a pinned provisional version in the first closed experience beta.
 
 ## Downstream ownership
 
