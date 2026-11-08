@@ -19,7 +19,11 @@ vi.mock("../services/authService", () => ({
 const renderPublicLandingPage = () =>
   render(
     <main>
-      <PublicLandingPage supportEmail="support@marathonerapp.com" />
+      <PublicLandingPage
+        interestFormEndpoint="https://app.loops.so/api/newsletter-form/test-form-123"
+        interestMailingListId="public-list-1"
+        supportEmail="support@marathonerapp.com"
+      />
     </main>,
   );
 
@@ -107,11 +111,19 @@ describe("PublicLandingPage", () => {
       screen.getByText("Invitations are not open yet."),
     ).toBeInTheDocument();
     expect(
-      screen.getByText(/No public waitlist or self-service request path/),
+      screen.getByText(/Join the interest list to hear when Marathoner is ready/),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("link", { name: "View current access" }),
-    ).toHaveAttribute("href", "#access-status");
+      screen.getByRole("link", { name: "Get Marathoner updates" }),
+    ).toHaveAttribute("href", "#interest-list");
+    expect(
+      screen.getByRole("heading", {
+        name: "Hear when Marathoner is ready for more runners.",
+      }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Get updates" }),
+    ).toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: /^Log in$/ }),
     ).toBeInTheDocument();
@@ -158,7 +170,7 @@ describe("PublicLandingPage", () => {
 
     await user.tab();
     expect(
-      screen.getByRole("link", { name: "View current access" }),
+      screen.getByRole("link", { name: "Get Marathoner updates" }),
     ).toHaveFocus();
   });
 

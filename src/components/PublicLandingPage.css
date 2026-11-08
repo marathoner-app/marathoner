@@ -887,6 +887,150 @@
   color: var(--landing-accent);
 }
 
+.interest-signup {
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(22rem, 1.1fr);
+  gap: clamp(1.25rem, 3vw, 2.5rem);
+  align-items: center;
+  margin: 1.5rem 0;
+  padding: clamp(1.25rem, 3vw, 2rem);
+  border: 1px solid var(--landing-border);
+  border-radius: 0.85rem;
+  background: var(--landing-banner);
+}
+
+.interest-signup__copy {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.interest-signup__copy > * {
+  margin: 0;
+}
+
+.interest-signup__eyebrow {
+  color: var(--landing-accent);
+  font-size: 0.8rem;
+  font-weight: 750;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.interest-signup__copy h3 {
+  font-size: clamp(1.35rem, 3vw, 1.8rem);
+  letter-spacing: -0.025em;
+}
+
+.interest-signup__copy > p:last-child {
+  color: var(--landing-muted);
+}
+
+.interest-signup__form {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.interest-signup__form > label:first-child {
+  color: var(--landing-ink);
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.interest-signup__controls {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.6rem;
+}
+
+.interest-signup__controls input,
+.interest-signup__controls button {
+  min-height: 3rem;
+  border-radius: 0.6rem;
+  font: inherit;
+}
+
+.interest-signup__controls input {
+  min-width: 0;
+  padding: 0.7rem 0.85rem;
+  border: 1px solid var(--landing-border);
+  background: var(--landing-surface);
+  color: var(--landing-ink);
+}
+
+.interest-signup__controls button {
+  padding: 0.7rem 1.1rem;
+  border: 1px solid var(--landing-ink);
+  background: var(--landing-ink);
+  color: var(--landing-surface);
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.interest-signup__controls button:hover:not(:disabled) {
+  background: var(--landing-accent);
+  border-color: var(--landing-accent);
+}
+
+.interest-signup__controls button:disabled {
+  cursor: wait;
+  opacity: 0.68;
+}
+
+.interest-signup__controls input:focus-visible,
+.interest-signup__controls button:focus-visible,
+.interest-signup__consent input:focus-visible {
+  outline: 3px solid var(--landing-accent);
+  outline-offset: 3px;
+}
+
+.interest-signup__consent {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0.6rem;
+  align-items: start;
+  min-height: 44px;
+  padding-block: 0.2rem;
+  color: var(--landing-muted);
+  cursor: pointer;
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
+.interest-signup__consent input {
+  width: 1.1rem;
+  height: 1.1rem;
+  margin: 0.1rem 0 0;
+  accent-color: var(--landing-accent);
+}
+
+.interest-signup__success,
+.interest-signup__error,
+.interest-signup__unavailable {
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 650;
+}
+
+.interest-signup__success {
+  color: #166534;
+}
+
+.interest-signup__error {
+  color: #991b1b;
+}
+
+.interest-signup__unavailable {
+  padding: 1rem;
+  border: 1px solid var(--landing-border);
+  border-radius: 0.65rem;
+  background: var(--landing-surface);
+  color: var(--landing-muted);
+}
+
+.trust-grid p + p {
+  margin-top: 0.75rem;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .landing-preview__area-buttons button {
     transition: none;
@@ -986,6 +1130,11 @@
   .landing-platforms__cards {
     grid-template-columns: minmax(0, 1fr);
   }
+
+  .interest-signup,
+  .interest-signup__controls {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 @media (min-width: 641px) and (max-width: 1100px) {
@@ -1026,6 +1175,10 @@
   }
 
   .landing-platforms {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .interest-signup {
     grid-template-columns: minmax(0, 1fr);
   }
 }

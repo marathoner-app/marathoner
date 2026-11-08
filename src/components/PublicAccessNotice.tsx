@@ -1,8 +1,14 @@
+import PublicInterestForm from "./PublicInterestForm";
+
 type PublicAccessNoticeProps = {
+  interestFormEndpoint?: string;
+  interestMailingListId?: string;
   supportEmail?: string;
 };
 
 export default function PublicAccessNotice({
+  interestFormEndpoint,
+  interestMailingListId,
   supportEmail,
 }: PublicAccessNoticeProps) {
   const supportHref = supportEmail
@@ -20,6 +26,11 @@ export default function PublicAccessNotice({
         injury, nutrition, or training decisions.
       </p>
 
+      <PublicInterestForm
+        endpoint={interestFormEndpoint}
+        mailingListId={interestMailingListId}
+      />
+
       <nav className="trust-navigation" aria-label="Prototype trust information">
         <a href="#access-status">Access</a>
         <a href="#privacy-data-use">Privacy and data</a>
@@ -30,10 +41,12 @@ export default function PublicAccessNotice({
         <section id="access-status" aria-labelledby="access-status-title">
           <h3 id="access-status-title">Current access</h3>
           <p>
-            There is no public signup, waitlist, or open beta. Existing
-            account holders may sign in. Future invitations will be limited to
-            a small allowlisted group of adults who already run consistently
-            and are preparing for a first marathon.
+            There is no public product signup, access request, or open beta.
+            Existing account holders may sign in. The email interest list is
+            only for occasional updates and does not create a Marathoner
+            account or guarantee an invitation. Future invitations will be
+            limited to a small allowlisted group of adults who already run
+            consistently and are preparing for a first marathon.
           </p>
         </section>
 
@@ -45,6 +58,12 @@ export default function PublicAccessNotice({
             and processed through Google Firebase and Google Cloud. Apple Health
             and Garmin Connect are optional sources for completed workouts;
             each connection requires the account holder&apos;s permission.
+          </p>
+          <p>
+            Email addresses submitted to the public interest list are processed
+            by Loops to record subscription preferences and send Marathoner
+            updates. Interest-list contacts are separate from product accounts
+            and training records and can unsubscribe at any time.
           </p>
           <p>
             With explicit permission, the iPhone app can import completed
