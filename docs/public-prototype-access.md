@@ -8,6 +8,7 @@
   [#79](https://github.com/marathoner-app/marathoner/issues/79),
   [#125](https://github.com/marathoner-app/marathoner/issues/125), and
   [#124](https://github.com/marathoner-app/marathoner/issues/124)
+- **Interest-list decision:** [#683](https://github.com/marathoner-app/marathoner/issues/683)
 
 ## Decision
 
@@ -17,7 +18,10 @@ accounts and presents its readiness, limitations, data use, support,
 withdrawal, and deletion-request information before a visitor can open the
 login form.
 
-There is no public waitlist, open beta, or self-service invitation path. The
+There is no public product signup, open beta, or self-service invitation path.
+The public landing page may collect an email address and explicit consent for
+occasional product and beta-access updates. Joining that interest list does not
+create a product account, request access, or guarantee an invitation. The
 future first invitation batch remains limited to five to eight allowlisted
 adults who already run consistently and are preparing for a first marathon.
 
@@ -27,8 +31,10 @@ The current application is a deployed pre-beta product. Its methodology and
 safety guidance are not approved, participant invitation operations and full
 privacy controls are not complete, and deletion operations have not been
 rehearsed.
-Collecting additional accounts during that state would create privacy and
-support obligations without providing the ratified beta experience.
+Collecting additional product accounts during that state would create privacy
+and support obligations without providing the ratified beta experience. The
+separate interest list collects only an email address and consent, preserves
+unsubscribe state, and does not cross the product authorization boundary.
 
 Removing registration is a clearer and more reversible control than placing a
 disclaimer beside an active signup form. It also avoids implying that public
@@ -41,8 +47,9 @@ access, qualified training guidance, or a production coaching service exists.
 - The production browser bundle no longer imports Firebase's account-creation
   operation through Marathoner's authentication service.
 - Existing-account login remains available and is explicitly labeled as such.
-- The public surface says that Marathoner is a private prototype, has no public
-  waitlist, and has not received qualified methodology or safety approval.
+- The public surface says that Marathoner is a private prototype, distinguishes
+  the interest list from product access, and has not received qualified
+  methodology or safety approval.
 - Privacy and data-use copy describes the current Firebase Authentication and
   training-record boundary and names integrations that are not present.
 - Support, withdrawal, and deletion information appears before login.
@@ -60,6 +67,12 @@ not expose a social feed. A user must not enter another person's information.
 This summary is truthful containment copy, not a replacement for the beta
 privacy notice, consent record, retention policy, or complete data inventory
 required by #78 and #79.
+
+Interest-list email addresses are processed by Loops for subscription
+preferences and product or beta-access updates. They remain separate from
+Firebase product accounts and training records. The landing form does not
+collect a name, phone number, health information, or running history, and each
+contact can unsubscribe through Loops-managed email preferences.
 
 ## Support, withdrawal, and deletion
 

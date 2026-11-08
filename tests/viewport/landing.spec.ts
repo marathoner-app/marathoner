@@ -140,6 +140,26 @@ for (const viewport of viewports) {
     await expect(
       page.getByRole("heading", { name: "New account registration is closed." }),
     ).toBeVisible();
+    const interestSignup = page.locator("#interest-list");
+    await expect(interestSignup).toBeVisible();
+    await expect(
+      interestSignup.getByRole("textbox", { name: "Email address" }),
+    ).toBeVisible();
+    await expect(
+      interestSignup.getByRole("checkbox", {
+        name: /Email me occasional Marathoner product and beta-access updates/i,
+      }),
+    ).toBeVisible();
+    await expect(
+      interestSignup.getByRole("button", { name: "Get updates" }),
+    ).toBeVisible();
+    const updatesLink = page
+      .locator(".landing-hero")
+      .getByRole("link", { name: "Get Marathoner updates" });
+    await expect(updatesLink).toHaveAttribute("href", "#interest-list");
+    await updatesLink.click();
+    await expect(page).toHaveURL(/#interest-list$/);
+    await expect(interestSignup).toBeVisible();
     const accessLink = page.getByRole("link", {
       name: "Current access",
       exact: true,
@@ -241,8 +261,8 @@ for (const viewport of viewports) {
       {
         locator: page
           .locator(".landing-hero")
-          .getByRole("link", { name: "View current access" }),
-        label: "hero access link",
+          .getByRole("link", { name: "Get Marathoner updates" }),
+        label: "hero updates link",
       },
       ...previewAreaButtons.map((locator, index) => ({
         locator,
@@ -255,6 +275,14 @@ for (const viewport of viewports) {
         label: "iOS status link",
       },
       { locator: webLogin, label: "platform login button" },
+      {
+        locator: interestSignup.getByRole("button", { name: "Get updates" }),
+        label: "interest-list submit button",
+      },
+      {
+        locator: interestSignup.locator(".interest-signup__consent"),
+        label: "interest-list consent control",
+      },
       ...["Access", "Privacy and data", "Support and deletion"].map(
         (name) => ({
           locator: page

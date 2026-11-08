@@ -7,11 +7,15 @@ import PublicLandingHowItWorks from "./PublicLandingHowItWorks";
 import PublicLandingPlatforms from "./PublicLandingPlatforms";
 
 type PublicLandingPageProps = {
+  interestFormEndpoint?: string;
+  interestMailingListId?: string;
   supportEmail?: string;
   statusNotice?: string;
 };
 
 export default function PublicLandingPage({
+  interestFormEndpoint = import.meta.env.VITE_LOOPS_FORM_ENDPOINT,
+  interestMailingListId = import.meta.env.VITE_LOOPS_INTEREST_LIST_ID,
   supportEmail,
   statusNotice,
 }: PublicLandingPageProps) {
@@ -62,7 +66,11 @@ export default function PublicLandingPage({
             isLoginOpen={isLoginOpen}
             onLoginOpen={openLogin}
           />
-          <PublicAccessNotice supportEmail={supportEmail} />
+          <PublicAccessNotice
+            interestFormEndpoint={interestFormEndpoint}
+            interestMailingListId={interestMailingListId}
+            supportEmail={supportEmail}
+          />
         </div>
       </div>
       {isLoginOpen && <LoginForm onClose={closeLogin} />}

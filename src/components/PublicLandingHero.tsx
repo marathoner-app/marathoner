@@ -40,10 +40,10 @@ export default function PublicLandingHero() {
           <div className="landing-hero__ios-status">
             <span className="landing-hero__platform">iOS beta</span>
             <p>
-              <strong>Invitations are not open yet.</strong> No public waitlist or
-              self-service request path is available.
+              <strong>Invitations are not open yet.</strong> Join the interest
+              list to hear when Marathoner is ready for more runners.
             </p>
-            <a href="#access-status">View current access</a>
+            <a href="#interest-list">Get Marathoner updates</a>
           </div>
         </div>
       </div>
