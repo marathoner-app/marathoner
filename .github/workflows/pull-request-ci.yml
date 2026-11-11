@@ -130,6 +130,9 @@ jobs:
         env:
           VITE_FIREBASE_ENVIRONMENT: development
 
+      - name: Build the explicit closed-beta application boundary
+        run: npm run build:closed-beta
+
   ios-boundary:
     name: iOS boundary
     runs-on: ubuntu-latest
@@ -160,6 +163,7 @@ jobs:
         env:
           VITE_FIREBASE_ENVIRONMENT: beta
           VITE_FIREBASE_IOS_API_KEY: ci-non-live-beta-ios-key
+          VITE_CLOSED_BETA_PROVISIONAL_METHODOLOGY: true
 
   firestore-tests:
     name: Firestore emulator tests

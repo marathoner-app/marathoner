@@ -6,9 +6,11 @@ import AuthProvider from './auth/AuthProvider.tsx'
 import FirebaseBootstrapGate from './components/FirebaseBootstrapGate.tsx'
 import { registerModulePreloadRecovery } from './deployment/modulePreloadRecovery.ts'
 import { installIosDynamicType } from './services/iosDynamicType.ts'
+import { initializeClosedBetaProvisionalMethodologyBoundary } from './domain/methodology/closedBetaProvisionalMethodologyRegistry.ts'
 
 registerModulePreloadRecovery()
 installIosDynamicType()
+initializeClosedBetaProvisionalMethodologyBoundary()
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
