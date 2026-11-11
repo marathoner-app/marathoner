@@ -46,6 +46,41 @@ interface ProvisionalPlanDogfoodForModeOptions {
   requested: string | undefined
 }
 
+interface ClosedBetaProvisionalMethodologyForModeOptions {
+  mode: string
+  environmentName: FirebaseEnvironmentName
+  requested: string | undefined
+}
+
+export function resolveClosedBetaProvisionalMethodologyForMode({
+  mode,
+  environmentName,
+  requested,
+}: ClosedBetaProvisionalMethodologyForModeOptions): boolean {
+  const normalizedRequest = requested?.trim().toLowerCase()
+  const isClosedBetaMode = mode === 'closed-beta' || mode === 'ios-beta'
+
+  if (!normalizedRequest || normalizedRequest === 'false') {
+    if (isClosedBetaMode) {
+      throw new Error(
+        'The explicit closed-beta build must enable VITE_CLOSED_BETA_PROVISIONAL_METHODOLOGY.',
+      )
+    }
+    return false
+  }
+  if (normalizedRequest !== 'true') {
+    throw new Error(
+      'VITE_CLOSED_BETA_PROVISIONAL_METHODOLOGY must be either "true" or "false".',
+    )
+  }
+  if (!isClosedBetaMode || environmentName !== 'beta') {
+    throw new Error(
+      'Provisional methodology is allowed only in an explicit closed-beta or ios-beta build for the beta Firebase environment.',
+    )
+  }
+  return true
+}
+
 export function resolveProvisionalPlanDogfoodForMode({
   mode,
   environmentName,
@@ -73,6 +108,7 @@ export function assertFirebaseEnvironmentForMode(
   if (
     environmentName === 'beta' &&
     mode !== 'production' &&
+    mode !== 'closed-beta' &&
     mode !== 'ios-beta'
   ) {
     throw new Error(

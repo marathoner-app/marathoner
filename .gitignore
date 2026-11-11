@@ -9,6 +9,7 @@ lerna-debug.log*
 
 node_modules
 dist
+dist-closed-beta
 dist-ios
 dist-ssr
 functions/lib

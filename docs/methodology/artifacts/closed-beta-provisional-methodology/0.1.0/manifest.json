@@ -1,0 +1,42 @@
+{
+  "schemaVersion": 1,
+  "manifestVersion": "closed-beta-provisional-methodology@0.1.0",
+  "reviewState": "provisional_unreviewed",
+  "publicationState": "closed_beta_only",
+  "firebaseEnvironment": "beta",
+  "eligibleCohort": {
+    "kind": "founding_closed_beta",
+    "minimumParticipants": 5,
+    "maximumParticipants": 8
+  },
+  "artifacts": [
+    {
+      "kind": "plan",
+      "version": "beta-rules@0.2.0-draft",
+      "sourcePath": "docs/methodology/artifacts/beta-rules/0.2.0-draft/beta-rules.json",
+      "sha256": "53a8555b59976ecc7d3d290e2c5088bda58cb475de66b5669a27fbd2a6739630",
+      "status": "active"
+    },
+    {
+      "kind": "adaptation",
+      "version": "beta-adaptation@0.2.0-draft",
+      "sourcePath": "docs/methodology/artifacts/beta-adaptation/0.2.0-draft/beta-adaptation.json",
+      "sha256": "5f5d651a527359a847d555478e8f564cece2622935aefb7564437b9ec6c8a6b1",
+      "status": "active"
+    },
+    {
+      "kind": "guidance",
+      "version": "beta-guidance@0.1.0-draft",
+      "sourcePath": "src/domain/guidance/foundingBetaGuidanceManifest.ts",
+      "sha256": "1b8ca576e93b791c2447cd5abbd99569bd529b5d5c7115048610a98003722273",
+      "status": "active"
+    },
+    {
+      "kind": "safety",
+      "version": "beta-safety@0.1.0-draft",
+      "sourcePath": "docs/methodology/artifacts/beta-safety/0.1.0-draft/beta-safety.json",
+      "sha256": "96bd322c8c1dbbbf88775c4c7493a152b4aa39e750e95a50185ec2eb23b79ff9",
+      "status": "active"
+    }
+  ]
+}

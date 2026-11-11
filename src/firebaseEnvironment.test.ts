@@ -6,6 +6,7 @@ import {
 import {
   assertFunctionsEmulatorForMode,
   assertFirebaseEnvironmentForMode,
+  resolveClosedBetaProvisionalMethodologyForMode,
   resolveAppCheckDebugTokenForMode,
   resolveFirebaseEnvironment as resolveFirebaseEnvironmentWithRegistry,
   resolveFirebaseEnvironmentForMode as resolveFirebaseEnvironmentForModeWithRegistry,
@@ -138,6 +139,60 @@ describe('Firebase environment selection', () => {
     ).toBe(true)
     expect(
       resolveProvisionalPlanDogfoodForMode({
+        mode: 'production',
+        environmentName: 'development',
+        requested: undefined,
+      }),
+    ).toBe(false)
+  })
+
+  it.each(['closed-beta', 'ios-beta'] as const)(
+    'allows provisional methodology only in the explicit beta %s build',
+    (mode) => {
+      expect(
+        resolveClosedBetaProvisionalMethodologyForMode({
+          mode,
+          environmentName: 'beta',
+          requested: ' true ',
+        }),
+      ).toBe(true)
+    },
+  )
+
+  it.each([
+    ['production', 'beta'],
+    ['closed-beta', 'development'],
+    ['ios-beta', 'development'],
+    ['dogfood', 'development'],
+  ] as const)(
+    'rejects provisional methodology for %s/%s',
+    (mode, environmentName) => {
+      expect(() =>
+        resolveClosedBetaProvisionalMethodologyForMode({
+          mode,
+          environmentName,
+          requested: 'true',
+        }),
+      ).toThrow('only in an explicit closed-beta or ios-beta build')
+    },
+  )
+
+  it.each(['closed-beta', 'ios-beta'] as const)(
+    'requires an explicit provisional methodology guard in %s mode',
+    (mode) => {
+      expect(() =>
+        resolveClosedBetaProvisionalMethodologyForMode({
+          mode,
+          environmentName: 'beta',
+          requested: undefined,
+        }),
+      ).toThrow('must enable VITE_CLOSED_BETA_PROVISIONAL_METHODOLOGY')
+    },
+  )
+
+  it('keeps provisional methodology out of ordinary builds by default', () => {
+    expect(
+      resolveClosedBetaProvisionalMethodologyForMode({
         mode: 'production',
         environmentName: 'development',
         requested: undefined,

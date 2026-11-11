@@ -1,14 +1,21 @@
 import { readFile, readdir } from 'node:fs/promises'
 import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 
-const provisionalDogfoodBuildText = [
+const sharedPlanAndAdaptationVersionText = [
   'beta-rules@0.2.0-draft',
   'beta-adaptation@0.2.0-draft',
+]
+const provisionalDogfoodBuildText = [
   'generateInternalAdaptationRecommendation',
   'Check recent training against the draft adjustment rules',
 ]
-const forbiddenBuildText = [
+const closedBetaProvisionalBuildText = [
+  'closed-beta-provisional-methodology@0.1.0',
   'beta-safety@0.1.0-draft',
+  'founding_closed_beta',
+]
+const forbiddenBuildText = [
   'Internal draft plan rehearsal',
   'Internal draft adaptation rehearsal',
   'Internal live adaptation history',
@@ -61,13 +68,30 @@ async function collectTextFiles(directory) {
 
 export async function findInternalPlanRehearsalLeaks(
   directory,
-  { allowProvisionalPlanDogfood = false } = {},
+  {
+    allowProvisionalPlanDogfood = false,
+    allowClosedBetaProvisionalMethodology = false,
+  } = {},
 ) {
+  if (allowProvisionalPlanDogfood && allowClosedBetaProvisionalMethodology) {
+    throw new Error(
+      'A build cannot allow both development dogfood and closed-beta methodology artifacts.',
+    )
+  }
+
   const leaks = []
   const files = await collectTextFiles(directory)
-  const forbiddenValues = allowProvisionalPlanDogfood
-    ? forbiddenBuildText
-    : [...provisionalDogfoodBuildText, ...forbiddenBuildText]
+  const forbiddenValues = [
+    ...forbiddenBuildText,
+    ...(allowProvisionalPlanDogfood ||
+    allowClosedBetaProvisionalMethodology
+      ? []
+      : sharedPlanAndAdaptationVersionText),
+    ...(allowProvisionalPlanDogfood ? [] : provisionalDogfoodBuildText),
+    ...(allowClosedBetaProvisionalMethodology
+      ? []
+      : closedBetaProvisionalBuildText),
+  ]
 
   for (const file of files) {
     const contents = await readFile(file, 'utf8')
@@ -81,32 +105,48 @@ export async function findInternalPlanRehearsalLeaks(
   return leaks
 }
 
-const outputDirectory = process.argv[2]
-if (!outputDirectory) {
-  throw new Error(
-    'Pass the production or iOS build output directory to the internal rehearsal boundary check.',
-  )
-}
-
-const resolvedOutputDirectory = path.resolve(outputDirectory)
-const allowProvisionalPlanDogfood =
-  process.argv[3] === '--allow-provisional-plan-dogfood'
-const leaks = await findInternalPlanRehearsalLeaks(resolvedOutputDirectory, {
-  allowProvisionalPlanDogfood,
-})
-
-if (leaks.length > 0) {
-  const details = leaks
-    .map(
-      ({ file, forbiddenText }) =>
-        `${path.relative(process.cwd(), file)} contains ${JSON.stringify(forbiddenText)}`,
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  const outputDirectory = process.argv[2]
+  if (!outputDirectory) {
+    throw new Error(
+      'Pass the production or iOS build output directory to the internal rehearsal boundary check.',
     )
-    .join('\n')
-  throw new Error(
-    `The internal plan rehearsal leaked into a distributable build:\n${details}`,
+  }
+
+  const resolvedOutputDirectory = path.resolve(outputDirectory)
+  const flags = process.argv.slice(3)
+  const supportedFlags = new Set([
+    '--allow-provisional-plan-dogfood',
+    '--allow-closed-beta-provisional-methodology',
+  ])
+  const unknownFlag = flags.find((flag) => !supportedFlags.has(flag))
+  if (unknownFlag) {
+    throw new Error(`Unknown methodology boundary flag: ${unknownFlag}`)
+  }
+  const allowProvisionalPlanDogfood = flags.includes(
+    '--allow-provisional-plan-dogfood',
+  )
+  const allowClosedBetaProvisionalMethodology = flags.includes(
+    '--allow-closed-beta-provisional-methodology',
+  )
+  const leaks = await findInternalPlanRehearsalLeaks(resolvedOutputDirectory, {
+    allowProvisionalPlanDogfood,
+    allowClosedBetaProvisionalMethodology,
+  })
+
+  if (leaks.length > 0) {
+    const details = leaks
+      .map(
+        ({ file, forbiddenText }) =>
+          `${path.relative(process.cwd(), file)} contains ${JSON.stringify(forbiddenText)}`,
+      )
+      .join('\n')
+    throw new Error(
+      `A methodology artifact crossed its allowed build boundary:\n${details}`,
+    )
+  }
+
+  console.log(
+    `Verified the methodology artifact boundary for ${path.relative(process.cwd(), resolvedOutputDirectory)}.`,
   )
 }
-
-console.log(
-  `Verified that ${path.relative(process.cwd(), resolvedOutputDirectory)} excludes the internal methodology rehearsals.`,
-)

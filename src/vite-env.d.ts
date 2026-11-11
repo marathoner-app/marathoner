@@ -9,6 +9,7 @@ interface ImportMetaEnv {
   readonly VITE_LOOPS_FORM_ENDPOINT?: string
   readonly VITE_LOOPS_INTEREST_LIST_ID?: string
   readonly VITE_PROVISIONAL_PLAN_DOGFOOD?: 'true' | 'false'
+  readonly VITE_CLOSED_BETA_PROVISIONAL_METHODOLOGY?: 'true' | 'false'
 }
 
 interface ImportMeta {
@@ -39,4 +40,9 @@ declare module "virtual:internal-safety-escalation-packet" {
     readonly fixturesText: string;
   } | null;
   export default packetText;
+}
+
+declare module "virtual:closed-beta-provisional-methodology-manifest" {
+  const manifestText: string | null;
+  export default manifestText;
 }
