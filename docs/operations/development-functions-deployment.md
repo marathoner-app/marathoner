@@ -110,6 +110,39 @@ redeploying only this callable. If removal is necessary, delete only
 `generateInternalAdaptationRecommendation` from `us-central1` after verifying
 the target project.
 
+If neither ordinary owner account has a legitimately completed planned run,
+do not backdate or alter its training history merely to satisfy the trigger.
+Issue #678 provides a disposable development-only fixture instead:
+
+```sh
+npm run prepare:internal-adaptation-proof -- \
+  --project marathoner-d9bf9 \
+  --confirm CREATE-INTERNAL-ADAPTATION-PROOF-FIXTURE
+```
+
+The manager creates one random verified Auth account, one exact approved
+membership, and a synthetic active plan with completed and upcoming workouts.
+Credentials exist only in the ignored, mode-`0600`
+`.internal-adaptation-proof.local` manifest. Never paste the manifest into
+GitHub, logs, screenshots, or chat. After generation, reload, duplicate, and
+disabled checks are recorded, verify one recommendation and unchanged training
+state without printing identifiers:
+
+```sh
+npm run verify:internal-adaptation-proof -- \
+  --project marathoner-d9bf9 \
+  --confirm VERIFY-INTERNAL-ADAPTATION-PROOF-FIXTURE
+```
+
+Then remove the Auth account, seeded state, generated receipts and
+recommendation evidence, and local manifest:
+
+```sh
+npm run cleanup:internal-adaptation-proof -- \
+  --project marathoner-d9bf9 \
+  --confirm DELETE-INTERNAL-ADAPTATION-PROOF-FIXTURE
+```
+
 ## Predeployment checklist
 
 - [ ] The owner explicitly approved the billing attachment and reviewed its
