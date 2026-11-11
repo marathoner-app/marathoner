@@ -91,6 +91,12 @@ await Promise.all([
     'docs/methodology/artifacts/beta-adaptation/0.2.0-draft/beta-adaptation.json',
     'lib/functions/artifacts/beta-adaptation.json',
   ),
+  requireMatchingFileFromRepository(
+    'docs/methodology/artifacts/closed-beta-provisional-methodology/0.1.0/manifest.json',
+    'lib/functions/artifacts/closed-beta-methodology-manifest.json',
+  ),
 ])
 
-console.log('Functions deployment includes the canonical training contract runtime.')
+console.log(
+  'Functions deployment includes the canonical training contract and pinned methodology manifest.',
+)
