@@ -819,6 +819,11 @@ describe("founding-beta membership rules", () => {
     ],
     ["feature controls", "operatorControls/featureControls", "feature-controls@1"],
     [
+      "closed beta methodology",
+      "operatorControls/closedBetaMethodology",
+      "closed-beta-methodology-control@1",
+    ],
+    [
       "minimum client version",
       "operatorControls/minimumClientVersion",
       "minimum-client-version@1",
