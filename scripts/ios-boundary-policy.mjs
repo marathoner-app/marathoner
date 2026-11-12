@@ -284,6 +284,15 @@ export function findIosProjectViolations({
     '<key>NSHealthUpdateUsageDescription</key>',
     'Info.plist',
   )
+  if (
+    !/<key>\s*ITSAppUsesNonExemptEncryption\s*<\/key>\s*<false\s*\/>/.test(
+      infoPlist,
+    )
+  ) {
+    violations.push(
+      'Info.plist must declare ITSAppUsesNonExemptEncryption as false',
+    )
+  }
   requireText(
     violations,
     launchStoryboard,

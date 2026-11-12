@@ -12,9 +12,11 @@ and validate the corresponding public native Firebase configuration. Beta and
 Release initialize App Attest before JavaScript Firebase services; the
 development Debug workflow uses a private fixed debug token. Paid-team Debug
 and Release signing, the production App Attest entitlement, physical-device
-installation, and launch passed on November 12, 2026. Live App Attest token
+installation, and launch passed on November 12, 2026. App Store Connect has
+processed version 1.0 build 2, and its export-compliance answer is recorded;
+the build is ready to submit to TestFlight review. Live App Attest token
 acceptance and enforcement remain open, as do migrated material mobile
-workflows, TestFlight, and Android. The
+workflows, TestFlight review, tester installation, and Android. The
 local command foundation is proved in #158; workflow migration, live reads,
 and release work remain in #72, #115, #138, #159, #161, #122, and #90.
 
@@ -115,7 +117,9 @@ That command:
 7. validates both native Firebase registrations, selects development, and
    proves the Xcode resource is byte-equivalent to that source; and
 8. verifies Debug omits the production App Attest entitlement while Release
-   retains it.
+   retains it; and
+9. verifies that `Info.plist` declares
+   `ITSAppUsesNonExemptEncryption = false`.
 
 Open Xcode with `npm run open:ios`, choose the **Debug** configuration and the
 physical owner iPhone, then run. This build is owner-controlled and must not be
@@ -135,6 +139,21 @@ configuration.
 
 The normal `npm run build` remains the GitHub Pages build with the custom
 domain's root `/` base. It does not read the iOS key.
+
+## Export-compliance declaration
+
+The checked-in `Info.plist` sets `ITSAppUsesNonExemptEncryption` to `false`.
+That matches the November 12, 2026 App Store Connect answer **None of the
+algorithms mentioned above**. Marathoner relies on encryption supplied by
+Apple and service platforms, such as HTTPS transport, and uses SHA-256 hashing
+for identifiers; it does not implement a proprietary cipher or a standard
+encryption algorithm outside Apple's operating system.
+
+This is a build boundary, not a permanent legal conclusion. Reassess the App
+Store Connect answer and this plist value before adding custom cryptography,
+end-to-end encryption, VPN behavior, a password vault, or another
+non-Apple cryptographic implementation. The iOS boundary test intentionally
+fails if the reviewed Boolean declaration disappears or changes.
 
 ## Recorded owner-only development proof
 
@@ -318,10 +337,13 @@ and TestFlight remain open under #122 and #205.
 The first App Store Connect archive and upload followed on November 12, 2026.
 Version 1.0 build 2 uploaded successfully and entered Apple processing after a
 missing HealthKit privacy-purpose string was corrected and protected by the
-iOS boundary policy. See the
+iOS boundary policy. Apple later completed processing; after the export-
+compliance answer was recorded, the build advanced to **Ready to Submit**.
+See the
 [dated archive and upload evidence](evidence/2026-11-12-app-store-connect-archive-upload.md).
-Processing completion, TestFlight review, tester access, and the non-owner
-journey remain open; an accepted upload is not a TestFlight distribution pass.
+TestFlight review, tester access, and the non-owner journey remain open; a
+processed upload that is ready to submit is not a TestFlight distribution
+pass.
 
 After `npm run check:ios` and local signing configuration:
 
