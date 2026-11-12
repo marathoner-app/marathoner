@@ -40,6 +40,12 @@ invalid inputs use danger surfaces, and confirmed activation uses success.
 Long proposals keep the schedule in ordinary document flow with compact,
 repeatable week cards rather than a separate visual system.
 
+Plan browsing uses a quiet banner and neutral summary cards, with blue reserved
+for ordinary scheduled status, selection, and focus. Completed workouts use
+success, skipped workouts recede on neutral dashed surfaces, and restrained
+workout-type rails preserve the distinction between easy, quality, long or
+race, and rest days. Workout details use the shared dialog surface.
+
 Analyze uses the neutral card hierarchy for recorded facts and reserves blue
 for chart series, disclosure controls, and focus. Perceived-effort history uses
 the shared success, accent, warning, and neutral surfaces so meaning remains
