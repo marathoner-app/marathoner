@@ -84,11 +84,11 @@ test("uses the shared canvas, banner, and card surface hierarchy", async ({
 
   await expect(page.locator("main")).toHaveCSS(
     "background-color",
-    "rgb(248, 250, 252)",
+    "rgb(245, 245, 247)",
   );
   await expect(page.locator(".session-controls")).toHaveCSS(
     "background-color",
-    "rgb(231, 236, 248)",
+    "rgb(233, 238, 248)",
   );
   await expect(page.locator(".next-workout-summary")).toHaveCSS(
     "background-color",
@@ -97,14 +97,14 @@ test("uses the shared canvas, banner, and card surface hierarchy", async ({
 
   await page.getByRole("button", { name: "Plan", exact: true }).click();
   const panel = page.locator(".section-panel");
-  await expect(panel).toHaveCSS("background-color", "rgb(248, 250, 252)");
+  await expect(panel).toHaveCSS("background-color", "rgb(245, 245, 247)");
   await expect
     .poll(() =>
       panel.evaluate((element) =>
         window.getComputedStyle(element, "::before").backgroundColor,
       ),
     )
-    .toBe("rgb(231, 236, 248)");
+    .toBe("rgb(233, 238, 248)");
 });
 
 test("keeps the signed-in home in normal flow at phone width", async ({ page }) => {
@@ -222,7 +222,7 @@ test("keeps the desktop signed-in banner in normal flow", async ({ page }) => {
   await expect(controls).toHaveCSS("position", "static");
   await expect(controls).toHaveCSS(
     "background-color",
-    "rgb(231, 236, 248)",
+    "rgb(233, 238, 248)",
   );
   await expectBefore(controls, title, "desktop account banner and brand");
   await expect(

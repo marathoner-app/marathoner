@@ -1,0 +1,45 @@
+# Signed-in visual system
+
+This is the implementation reference for Marathoner's signed-in experience.
+It is intentionally small: the goal is to make each new surface feel like the
+same product without freezing the design before daily beta use exposes what
+needs to change.
+
+## Direction
+
+- Use a soft neutral canvas with white content surfaces and a slightly blue-gray
+  application banner.
+- Use near-black for hierarchy and primary actions. Reserve Marathoner blue for
+  selection, links, focus, and small points of emphasis.
+- Prefer thin neutral borders, restrained corner radii, subtle depth, and
+  generous spacing over heavy outlines or decorative shadows.
+- Use the system font stack so the web and iOS wrapper feel native and crisp.
+- Preserve semantic colors for errors, warnings, success, workout types, and
+  workout completion. The visual system must not turn meaning into decoration.
+
+## Shared tokens
+
+The semantic tokens live in `src/styles/global.css`. Feature styles should use
+the `--app-*` tokens instead of introducing a new near-duplicate color, radius,
+shadow, or transition value.
+
+The first implementation layer is `src/styles/signed-in-theme.css`. It loads
+after feature CSS and unifies recurring signed-in surfaces while existing
+feature layouts remain independent. Later slices should move stable decisions
+into their owning component styles rather than growing an unlimited override
+file.
+
+## Interaction rules
+
+- Primary actions are near-black; active navigation, focus, and links are blue.
+- Secondary actions are white with a neutral border.
+- Keyboard focus uses both a solid outline and a soft outer ring.
+- Mobile navigation remains fixed, thumb-friendly, and safe-area aware.
+- Motion is brief and functional, and collapses under `prefers-reduced-motion`.
+
+## Responsive checks
+
+Every visual-system slice should exercise the signed-in home and representative
+Plan, Track, and Analyze states at phone and desktop widths. Check safe areas,
+large text, keyboard focus, scrolling, and reduced-motion behavior before the
+slice is considered complete.

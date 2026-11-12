@@ -1,16 +1,29 @@
 :root {
-  --app-canvas: #f8fafc;
+  --app-canvas: #f5f5f7;
   --app-surface: #ffffff;
-  --app-banner: #e7ecf8;
-  --app-subtle-surface: #f5f7fb;
-  --app-ink: #0f172a;
-  --app-muted: #475569;
-  --app-accent: #1d4ed8;
-  --app-border: #cbd5e1;
+  --app-banner: #e9eef8;
+  --app-subtle-surface: #f9f9fb;
+  --app-ink: #1d1d1f;
+  --app-muted: #626267;
+  --app-accent: #1468cc;
+  --app-accent-hover: #0b55a8;
+  --app-border: #d2d2d7;
+  --app-border-strong: #a9a9af;
+  --app-danger: #a12620;
+  --app-warning: #7c4a03;
+  --app-success: #17663a;
+  --app-focus-ring: rgb(20 104 204 / 28%);
+  --app-radius-small: 0.625rem;
+  --app-radius-medium: 0.875rem;
+  --app-radius-large: 1.25rem;
+  --app-shadow-small: 0 1px 2px rgb(0 0 0 / 4%), 0 6px 18px rgb(0 0 0 / 5%);
+  --app-shadow-medium: 0 18px 50px rgb(0 0 0 / 9%);
+  --app-motion-fast: 140ms;
+  --app-motion-standard: 220ms;
 
-  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif;
   font-weight: 400;
-  line-height: 3.5;
+  line-height: 1.5;
   color: var(--app-ink);
   background-color: var(--app-canvas);
   font-synthesis: none;
@@ -37,22 +50,38 @@ body {
 
 button {
   border: none;
-  border-radius: 8px;
-  background-color: black;
+  border-radius: var(--app-radius-small);
+  background-color: var(--app-ink);
   color: white;
   font-family: inherit;
   font-size: 1em;
   font-weight: 500;
   cursor: pointer;
-  transition: background 0.2s, border-color 0.25s;
+  transition:
+    background-color var(--app-motion-fast) ease,
+    border-color var(--app-motion-fast) ease,
+    box-shadow var(--app-motion-fast) ease,
+    color var(--app-motion-fast) ease,
+    transform var(--app-motion-fast) ease;
 }
 
 button:hover {
-  border-color: #646cff;
-  background-color: rgb(16, 13, 66);
+  background-color: #38383b;
 }
 
-button:focus,
 button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
+  outline: 3px solid var(--app-accent);
+  outline-offset: 3px;
+  box-shadow: 0 0 0 5px var(--app-focus-ring);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
 }
