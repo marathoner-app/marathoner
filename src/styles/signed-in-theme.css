@@ -24,7 +24,6 @@
 .runner-profile-entry button,
 .onboarding-close,
 .onboarding-secondary-action,
-.confirmation-cancel,
 .garmin-disconnect {
   min-height: 2.75rem;
   border: 1px solid var(--app-border-strong);
@@ -39,7 +38,6 @@
 .runner-profile-entry button:hover,
 .onboarding-close:hover,
 .onboarding-secondary-action:hover,
-.confirmation-cancel:hover,
 .garmin-disconnect:hover {
   border-color: var(--app-ink);
   background: var(--app-surface);
@@ -60,8 +58,6 @@
 }
 
 .next-workout-summary,
-.entry,
-.shoe-tracking,
 .plan-week-summary > div,
 .onboarding-question,
 .onboarding-actions,
@@ -83,7 +79,6 @@
 .latest-run-eyebrow,
 .plan-name,
 .onboarding-eyebrow,
-.confirmation-eyebrow,
 .account-settings-eyebrow {
   color: var(--app-accent);
 }
@@ -99,8 +94,6 @@
 }
 
 .plan-container,
-.entry,
-.shoe-tracking,
 .plan-day,
 .plan-modal-content {
   color: var(--app-ink);
@@ -117,14 +110,6 @@
   box-shadow: var(--app-shadow-small);
 }
 
-.entry,
-.shoe-tracking {
-  padding: clamp(1.25rem, 3vw, 1.75rem);
-}
-
-.tracker input,
-.tracker select,
-.tracker textarea,
 .onboarding-question input[type="text"],
 .onboarding-question input[type="date"],
 .onboarding-question input[type="number"],
@@ -138,9 +123,6 @@
   color: var(--app-ink);
 }
 
-.tracker input:focus-visible,
-.tracker select:focus-visible,
-.tracker textarea:focus-visible,
 .onboarding-question input:focus-visible,
 .onboarding-question select:focus-visible,
 .onboarding-question textarea:focus-visible,
@@ -163,9 +145,7 @@
 
 .training-home-status,
 .training-stale,
-.training-error,
-.run-save-recovery,
-.run-save-confirmation {
+.training-error {
   border-radius: var(--app-radius-medium);
 }
 
@@ -179,10 +159,6 @@
   color: var(--app-danger);
 }
 
-.run-save-confirmation {
-  color: var(--app-success);
-}
-
 @media (max-width: 768px) {
   .session-controls {
     padding-top: max(0.75rem, env(safe-area-inset-top));
@@ -190,10 +166,5 @@
 
   .next-workout-summary {
     width: calc(100% - 2rem);
-  }
-
-  .tracker {
-    gap: 1rem;
-    padding: 0;
   }
 }

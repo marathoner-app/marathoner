@@ -45,6 +45,12 @@ for chart series, disclosure controls, and focus. Perceived-effort history uses
 the shared success, accent, warning, and neutral surfaces so meaning remains
 visible without turning every analytics heading into an accent.
 
+Track keeps run entry and shoe management on equal neutral surfaces, while
+saved runs and shoes use quieter inset cards. Uncertain saves use warning,
+confirmed saves and active-shoe badges use success, and read-only imported run
+facts use the accent surface. Editing remains neutral; retirement is cautionary
+and permanent run deletion is the only destructive action.
+
 ## Interaction rules
 
 - Primary actions are near-black; active navigation, focus, and links are blue.

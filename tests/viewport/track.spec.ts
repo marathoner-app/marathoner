@@ -372,3 +372,35 @@ test("keeps uncertain run recovery clear and usable at phone width", async ({
   await expectNoHorizontalOverflow(page, "Track", "with run-save recovery open");
   await expectTrackerCardsToContainControls(page, "run-save recovery");
 });
+
+test("uses the shared visual hierarchy for Track states", async ({ page }) => {
+  await page.goto("tests/viewport/track.html?pending-run-save=1");
+
+  await expect(page.locator(".entry")).toHaveCSS(
+    "background-color",
+    "rgb(255, 255, 255)",
+  );
+  await expect(page.locator(".shoe-tracking")).toHaveCSS(
+    "border-radius",
+    "20px",
+  );
+  await expect(page.locator(".run-save-recovery")).toHaveCSS(
+    "background-color",
+    "rgb(255, 248, 232)",
+  );
+  await expect(page.locator(".run-save-recovery")).toHaveCSS(
+    "color",
+    "rgb(124, 74, 3)",
+  );
+
+  await page.goto("tests/viewport/track.html?imported=1");
+  await page.getByRole("button", { name: /Add details to run from/ }).click();
+  await expect(page.locator(".imported-run-facts")).toHaveCSS(
+    "background-color",
+    "rgb(238, 245, 253)",
+  );
+  await expect(page.locator(".imported-run-source")).toHaveCSS(
+    "color",
+    "rgb(20, 104, 204)",
+  );
+});
