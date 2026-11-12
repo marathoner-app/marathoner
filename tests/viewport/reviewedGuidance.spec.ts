@@ -52,3 +52,27 @@ test("keeps reviewed guidance usable with 200% text", async ({ page }) => {
     .toBe("32px");
   await exerciseReviewedGuidance(page, "200% text");
 });
+
+test("keeps non-dismissible safety guidance usable at phone width and 200% text", async ({
+  page,
+}) => {
+  await page.goto("tests/viewport/reviewedGuidance.html?safety");
+  await page.addStyleTag({
+    content: ":root { font-size: 200% !important; }",
+  });
+
+  await expect(
+    page.getByRole("heading", { name: "Pause training and get urgent help" }),
+  ).toBeVisible();
+  await expect(page.getByRole("note")).toContainText(
+    "Safety rules beta-safety@0.1.0-draft",
+  );
+  await expect(page.getByRole("button", { name: "Dismiss guidance" })).toHaveCount(
+    0,
+  );
+  await expectNoHorizontalOverflow(
+    page,
+    "Safety guidance",
+    "with 200% text",
+  );
+});

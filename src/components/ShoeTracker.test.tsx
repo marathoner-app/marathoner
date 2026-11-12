@@ -73,7 +73,9 @@ function Harness({
   initialFocusTarget?: ShoeTrackerInitialFocusTarget | null;
 }) {
   const [shoes, setShoes] = useState(initialShoes);
-  const [runs, setRuns] = useState(initialRuns);
+  const [runs, setRuns] = useState<CompletedRun[]>(
+    initialRuns.map((run) => ({ unusualPain: false, ...run })),
+  );
   const [pendingRunSave, setPendingRunSave] = useState(hasPendingRunSave);
 
   const createShoe = async (input: CreateShoeInput) => {
@@ -131,6 +133,7 @@ function Harness({
         changes.perceivedEffort === null
           ? undefined
           : changes.perceivedEffort ?? existing.perceivedEffort,
+      unusualPain: changes.unusualPain ?? existing.unusualPain,
       notes:
         changes.notes === null ? undefined : changes.notes ?? existing.notes,
     };
@@ -208,6 +211,12 @@ async function enterElapsedDuration(
     legend?: string;
   },
 ) {
+  const painQuestion = screen.queryByRole("combobox", {
+    name: "Did pain or unusual symptoms affect this run?",
+  });
+  if (painQuestion instanceof HTMLSelectElement && painQuestion.value === "") {
+    await user.selectOptions(painQuestion, "no");
+  }
   const group = screen.getByRole("group", { name: legend });
   const entries = { hours, minutes, seconds };
 
@@ -293,6 +302,11 @@ describe("ShoeTracker", () => {
     expect(
       screen.getByRole("combobox", { name: "Perceived effort (optional)" }),
     ).toBeInTheDocument();
+    expect(
+      screen.getByRole("combobox", {
+        name: "Did pain or unusual symptoms affect this run?",
+      }),
+    ).toBeRequired();
     expect(
       screen.getByRole("textbox", { name: "Run notes (optional)" }),
     ).toBeInTheDocument();
@@ -599,6 +613,12 @@ describe("ShoeTracker", () => {
         within(form).getByRole("combobox", { name: "Running shoes" }),
         { target: { value: "shoe-1" } },
       );
+      fireEvent.change(
+        within(form).getByRole("combobox", {
+          name: "Did pain or unusual symptoms affect this run?",
+        }),
+        { target: { value: "no" } },
+      );
       await act(async () => {
         fireEvent.submit(form);
       });
@@ -897,6 +917,7 @@ describe("ShoeTracker", () => {
       plannedWorkoutId: workout.id,
       shoeId: shoe.id,
       perceivedEffort: "about_right",
+      unusualPain: false,
       notes: "Felt relaxed after the first mile.",
     });
     expect(screen.getByText(/Effort: About as expected/)).toBeVisible();

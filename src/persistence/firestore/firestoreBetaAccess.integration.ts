@@ -831,6 +831,25 @@ describe("founding-beta membership rules", () => {
     await assertFails(deleteDoc(doc(ownerDatabase, consentPath)));
   });
 
+  it("keeps guidance presentation and dismissal history server-owned", async () => {
+    const historyPath = `users/${firstUserId}/guidanceHistory/presentation-1`;
+    await testEnvironment.withSecurityRulesDisabled(async (context) => {
+      await setDoc(doc(context.firestore(), historyPath), {
+        schemaVersion: "closed-beta-guidance-history@1",
+        userId: firstUserId,
+        guidanceId: "founding-beta.easy-effort",
+        artifactVersion: "beta-guidance@0.1.0-draft",
+        presentedAt: new Date("2026-11-11T22:00:00.000Z"),
+        dismissible: true,
+      });
+    });
+
+    const ownerDatabase = authenticatedContext(firstUserId).firestore();
+    await assertFails(getDoc(doc(ownerDatabase, historyPath)));
+    await assertFails(setDoc(doc(ownerDatabase, historyPath), {}));
+    await assertFails(deleteDoc(doc(ownerDatabase, historyPath)));
+  });
+
   it.each([
     [
       "recommendation activation",
@@ -842,6 +861,11 @@ describe("founding-beta membership rules", () => {
       "closed beta methodology",
       "operatorControls/closedBetaMethodology",
       "closed-beta-methodology-control@1",
+    ],
+    [
+      "closed beta guidance",
+      "operatorControls/closedBetaGuidance",
+      "closed-beta-guidance-control@1",
     ],
     [
       "minimum client version",

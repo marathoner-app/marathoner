@@ -50,6 +50,29 @@ describe("ReviewedGuidanceCard", () => {
     );
   });
 
+  it("labels safety content with the pinned safety artifact", () => {
+    render(
+      <ReviewedGuidanceCard
+        {...props({
+          model: {
+            ...model,
+            contentState: "reviewed",
+            dismissible: false,
+            methodologyKind: "safety",
+          },
+          methodologyManifest: closedBetaMethodologyManifestFixture,
+        })}
+      />,
+    );
+
+    expect(screen.getByRole("note")).toHaveTextContent(
+      "Safety rules beta-safety@0.1.0-draft",
+    );
+    expect(
+      screen.queryByRole("button", { name: "Dismiss guidance" }),
+    ).not.toBeInTheDocument();
+  });
+
   it("presents synthetic guidance with context and explicit limitations", () => {
     render(<ReviewedGuidanceCard {...props()} />);
 

@@ -43,6 +43,7 @@ import {
   stopHealthKitImportMonitoring,
 } from "./services/healthKitImport";
 import ClosedBetaMethodologyConsentGate from "./components/ClosedBetaMethodologyConsentGate";
+import { getClosedBetaProvisionalMethodologyManifest } from "./domain/methodology/closedBetaProvisionalMethodologyRegistry";
 
 const publicSupportEmail = "kevin@marathonerapp.com";
 const BetaRunCommandRehearsal = isBetaRunCommandRehearsalMode(
@@ -73,6 +74,9 @@ const InternalAdaptationDogfood = isInternalAdaptationDogfoodEnabled({
 })
   ? lazy(() => import("./components/InternalAdaptationDogfoodLive"))
   : null;
+const ClosedBetaGuidanceSurface = lazy(
+  () => import("./components/ClosedBetaGuidanceSurface"),
+);
 
 async function clearInternalPlanRehearsalSession(): Promise<void> {
   if (InternalPlanProposalRehearsal === null) return;
@@ -402,6 +406,8 @@ function AuthenticatedExperience({
   onRegisterTrigger,
 }: AuthenticatedExperienceProps) {
   const training = useTrainingData();
+  const closedBetaMethodologyManifest =
+    getClosedBetaProvisionalMethodologyManifest();
   const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
   const [onboardingDeferred, setOnboardingDeferred] = useState(false);
   const [sessionDraftPlan, setSessionDraftPlan] =
@@ -437,6 +443,40 @@ function AuthenticatedExperience({
           ),
     [planSurfaceData, training.profile],
   );
+  const latestRun = useMemo(
+    () =>
+      [...training.runs].sort((left, right) =>
+        right.startedAt.localeCompare(left.startedAt),
+      )[0] ?? null,
+    [training.runs],
+  );
+  const guidanceTriggerCodes = useMemo(() => {
+    const triggers: string[] = [];
+    if (planSurfaceData.activePlan !== null) {
+      triggers.push("PLAN-REVIEWED-LIMITATIONS", "TRAINING-WEEK-STARTED-SLEEP");
+    }
+    if (nextWorkout?.kind === "run" && nextWorkout.purpose === "easy") {
+      triggers.push("EASY-WORKOUT-UPCOMING");
+    }
+    if (
+      nextWorkout !== null &&
+      nextWorkout.kind !== "rest" &&
+      nextWorkout.targetDistance !== undefined &&
+      nextWorkout.targetDistance >= 12_000
+    ) {
+      triggers.push(
+        "LONG-WORKOUT-UPCOMING-FUELING",
+        "LONG-WORKOUT-UPCOMING-HYDRATION",
+      );
+    }
+    if (training.shoes.some(({ status }) => status === "active")) {
+      triggers.push("SHOE-TRACKING-STARTED");
+    }
+    if (training.runs.length >= 3) {
+      triggers.push("COMPLETED-RUN-PATTERN-RECORDED");
+    }
+    return triggers;
+  }, [nextWorkout, planSurfaceData.activePlan, training.runs.length, training.shoes]);
   const hasReadableTraining =
     training.status === "current" || training.status === "stale";
   const hasOtherStaleReason =
@@ -539,6 +579,26 @@ function AuthenticatedExperience({
             distanceUnit={training.profile?.preferredDistanceUnit ?? "mile"}
             onOpenPlan={() => onOpenSection("plan")}
           />
+          {closedBetaMethodologyManifest !== null && (
+            <Suspense
+              fallback={
+                <p className="training-status" role="status">
+                  Loading runner guidance…
+                </p>
+              }
+            >
+              <ClosedBetaGuidanceSurface
+                ownerId={ownerId}
+                activeTriggerCodes={guidanceTriggerCodes}
+                safetyState={
+                  latestRun?.unusualPain === true ? "reported" : "none_reported"
+                }
+                otherConcerningOrPersistentSymptoms={
+                  latestRun?.unusualPain === true
+                }
+              />
+            </Suspense>
+          )}
           {InternalSessionTodayComparison &&
             sessionPlanProjection &&
             training.profile && (

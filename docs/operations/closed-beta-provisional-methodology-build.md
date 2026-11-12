@@ -76,3 +76,36 @@ Creating or enabling the control is an explicit deployment operation. The
 runtime code in #687 does not seed or silently enable it. The later
 capability-specific slices must call this shared decision before producing a
 plan, adaptation, or guidance result.
+
+## Guidance and safety runtime control
+
+Issue #689 adds a second server-owned control for presenting the pinned
+guidance and safety content after the shared eligibility decision succeeds.
+Create `operatorControls/closedBetaGuidance` with this exact shape only as an
+explicit closed-beta deployment operation:
+
+```json
+{
+  "schemaVersion": "closed-beta-guidance-control@1",
+  "revision": 1,
+  "enabled": true,
+  "artifactVersions": [
+    "beta-guidance@0.1.0-draft",
+    "beta-safety@0.1.0-draft"
+  ],
+  "disabledGuidanceIds": [],
+  "updatedAt": "2026-11-11T20:00:00.000Z"
+}
+```
+
+The callable boundary records presentations under the participant's
+server-only `guidanceHistory` collection. A dismissal suppresses that exact
+content version; a replacement version starts with new history. Safety
+escalations are never dismissible and take precedence over ordinary training
+guidance.
+
+To stop all participant guidance immediately, set `enabled` to `false`,
+increment `revision`, and update `updatedAt`. To retire one item, add its exact
+ID to `disabledGuidanceIds` and increment the control revision. Disabling the
+shared `closedBetaMethodology` control remains the bundle-wide kill switch.
+Clients cannot read or write either control or guidance history.

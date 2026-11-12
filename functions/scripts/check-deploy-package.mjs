@@ -95,6 +95,10 @@ await Promise.all([
     'docs/methodology/artifacts/closed-beta-provisional-methodology/0.1.0/manifest.json',
     'lib/functions/artifacts/closed-beta-methodology-manifest.json',
   ),
+  requireMatchingFileFromRepository(
+    'docs/methodology/artifacts/beta-safety/0.1.0-draft/beta-safety.json',
+    'lib/functions/artifacts/beta-safety.json',
+  ),
 ])
 
 console.log(

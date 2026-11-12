@@ -516,6 +516,10 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
+    match /users/{userId}/guidanceHistory/{presentationId} {
+      allow read, write: if false;
+    }
+
     match /users/{userId}/recommendationEvidence/{recommendationId} {
       allow read: if isSignedInAs(userId);
       allow write: if false;
