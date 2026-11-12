@@ -181,6 +181,49 @@ describe('internal adaptation recommendation evaluation', () => {
     expect(outcome.result).toMatchObject({ status: 'no_change' })
   })
 
+  it('does not turn one harder run into a material plan change', () => {
+    const outcome = evaluateInternalAdaptationRecommendation(
+      command(),
+      snapshot([
+        'about_right',
+        'about_right',
+        'harder_than_expected',
+        'about_right',
+      ]),
+      artifacts,
+      createUtcDateTime('2026-10-31T20:00:00.000Z'),
+    )
+
+    expect(outcome.evidence).toBeNull()
+    expect(outcome.result).toMatchObject({
+      status: 'no_change',
+      explanationKey: 'adaptation.no_change.single_hard_effort',
+    })
+  })
+
+  it('suppresses adaptation when a completed run reports unusual pain', () => {
+    const state = snapshot()
+    const outcome = evaluateInternalAdaptationRecommendation(
+      command(),
+      {
+        ...state,
+        runs: state.runs.map((item, index) =>
+          index === state.runs.length - 1
+            ? { ...item, unusualPain: true }
+            : item,
+        ),
+      },
+      artifacts,
+      createUtcDateTime('2026-10-31T20:00:00.000Z'),
+    )
+
+    expect(outcome.evidence).toBeNull()
+    expect(outcome.result).toMatchObject({
+      status: 'refused',
+      code: 'ADAPT-REFUSE-SAFETY-GATE',
+    })
+  })
+
   it('refuses an active plan created from a different ruleset without evidence', () => {
     const outcome = evaluateInternalAdaptationRecommendation(
       command(),

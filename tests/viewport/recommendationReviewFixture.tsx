@@ -21,7 +21,7 @@ createRoot(root).render(
         "Repeat the current week’s planned targets once before progressing.",
       impact:
         "The race date and every later training week remain unchanged in this preview.",
-      contentState: "reviewed",
+      contentState: "provisional",
     }}
     methodologyManifest={closedBetaMethodologyManifestFixture}
     state={{ kind: "ready" }}

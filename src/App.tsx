@@ -29,6 +29,7 @@ import {
 } from "./domain/training";
 import NextWorkoutSummary from "./components/NextWorkoutSummary";
 import RecommendationDecisionSurface from "./components/RecommendationDecisionSurface";
+import ClosedBetaAdaptationSurface from "./components/ClosedBetaAdaptationSurface";
 import TrainingSectionNavigation from "./components/TrainingSectionNavigation";
 import {
   trainingSections,
@@ -619,9 +620,19 @@ function AuthenticatedExperience({
                 />
               </Suspense>
             )}
-          {InternalAdaptationDogfood === null && (
+          {InternalAdaptationDogfood === null &&
+            closedBetaMethodologyManifest === null && (
             <RecommendationDecisionSurface />
           )}
+          {InternalAdaptationDogfood === null &&
+            closedBetaMethodologyManifest !== null && (
+              <ClosedBetaAdaptationSurface
+                manifest={closedBetaMethodologyManifest}
+                activePlanState={training.activePlanState}
+                workouts={training.workouts}
+                runs={training.runs}
+              />
+            )}
           {InternalAdaptationDogfood && onboardingComplete && (
             <Suspense
               fallback={

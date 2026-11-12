@@ -1027,6 +1027,109 @@ describe('material-command handler', () => {
     expect(JSON.stringify(boundary.log.mock.calls)).not.toContain(reason)
   })
 
+  it('allows the exact draft artifact only through the closed-beta eligibility gate', async () => {
+    const draftArtifactVersion = 'beta-adaptation@0.2.0-draft'
+    const evidence: RecommendationEvidenceReader = {
+      read: vi.fn(async () => ({
+        evaluationInput: { adaptationArtifactVersion: draftArtifactVersion },
+      }) as RecommendationEvidenceV2),
+    }
+    const decisionStore = new InMemoryRecommendationDecisionStore()
+    const activationGate = {
+      evaluate: vi.fn(async (): Promise<ActivationDecision> => ({
+        allowed: false,
+        reason: 'draft_artifact',
+      })),
+    }
+    const closedBetaEligibility = {
+      projectId: 'marathonerapp-beta',
+      evaluate: vi.fn(async () => ({ status: 'allowed' as const })),
+    }
+    const boundary = dependencies(
+      new InMemoryMaterialCommandStore(),
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      {
+        activationGate,
+        closedBetaEligibility,
+        evidence,
+        store: decisionStore,
+      },
+    )
+
+    await expect(
+      executeMaterialCommand(
+        {
+          appCheckVerified: true,
+          authenticatedUserId: ownerId,
+          data: recommendationDecisionCommand,
+        },
+        boundary,
+      ),
+    ).resolves.toEqual(recommendationReceipt)
+    expect(closedBetaEligibility.evaluate).toHaveBeenCalledWith({
+      ownerId,
+      projectId: 'marathonerapp-beta',
+      capability: 'adaptation',
+      serverArtifactVersion: draftArtifactVersion,
+      inputDisposition: 'supported',
+    })
+    expect(decisionStore.commit).toHaveBeenCalledWith({
+      authorizedAdaptationArtifactVersion: draftArtifactVersion,
+      envelope: recommendationDecisionCommand,
+      ownerId,
+    })
+  })
+
+  it('keeps a draft decision out of persistence when closed-beta eligibility is denied', async () => {
+    const evidence: RecommendationEvidenceReader = {
+      read: vi.fn(async () => ({
+        evaluationInput: {
+          adaptationArtifactVersion: 'beta-adaptation@0.2.0-draft',
+        },
+      }) as RecommendationEvidenceV2),
+    }
+    const decisionStore = new InMemoryRecommendationDecisionStore()
+    const boundary = dependencies(
+      new InMemoryMaterialCommandStore(),
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      {
+        activationGate: {
+          evaluate: vi.fn(async (): Promise<ActivationDecision> => ({
+            allowed: false,
+            reason: 'draft_artifact',
+          })),
+        },
+        closedBetaEligibility: {
+          projectId: 'marathonerapp-beta',
+          evaluate: vi.fn(async () => ({ status: 'denied' as const })),
+        },
+        evidence,
+        store: decisionStore,
+      },
+    )
+
+    await expect(
+      executeMaterialCommand(
+        {
+          appCheckVerified: true,
+          authenticatedUserId: ownerId,
+          data: recommendationDecisionCommand,
+        },
+        boundary,
+      ),
+    ).resolves.toMatchObject({
+      status: 'authorization_error',
+      code: 'recommendation-decisions-not-enabled',
+    })
+    expect(decisionStore.commit).not.toHaveBeenCalled()
+  })
+
   it('returns an existing receipt or conflict before reevaluating activation', async () => {
     const evidence = new InMemoryRecommendationEvidenceReader()
     const decisionStore = new InMemoryRecommendationDecisionStore()

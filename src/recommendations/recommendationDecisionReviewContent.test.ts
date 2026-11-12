@@ -6,9 +6,11 @@ import {
 } from "../domain/guidance";
 import type { RecommendationEvidenceV2 } from "../domain/recommendations";
 import { createUtcDateTime } from "../domain/training";
+import { closedBetaMethodologyManifestFixture } from "../test/closedBetaMethodologyManifest";
 import {
   createDraftRecommendationDecisionContent,
   productionRecommendationDecisionContent,
+  resolveClosedBetaRecommendationDecisionReviewModel,
   resolveInternalRecommendationDecisionReviewModel,
   resolveRecommendationDecisionReviewModel,
   type RecommendationDecisionContentKey,
@@ -328,5 +330,49 @@ describe("resolveInternalRecommendationDecisionReviewModel", () => {
         adaptationArtifactVersion,
       }),
     ).toEqual([]);
+  });
+});
+
+describe("resolveClosedBetaRecommendationDecisionReviewModel", () => {
+  it("resolves exact provisional copy only for the pinned closed-beta manifest", () => {
+    const provisionalEvidence = {
+      evaluationInput: {
+        basePlanArtifactVersion: "beta-rules@0.2.0-draft",
+        adaptationArtifactVersion: "beta-adaptation@0.2.0-draft",
+      },
+      evaluationResult: {
+        action: "hold_progression",
+        reasonCode: "ADAPT-HOLD-REPEATED-HARD-EFFORT",
+        explanationKey: "adaptation.hold.repeated_hard_effort",
+        provenance: {
+          basePlanArtifactVersion: "beta-rules@0.2.0-draft",
+          adaptationArtifactVersion: "beta-adaptation@0.2.0-draft",
+        },
+      },
+    } as unknown as RecommendationEvidenceV2;
+
+    expect(
+      resolveClosedBetaRecommendationDecisionReviewModel(
+        provisionalEvidence,
+        closedBetaMethodologyManifestFixture,
+      ),
+    ).toMatchObject({
+      title: "Give next week another steady pass",
+      contentState: "provisional",
+    });
+  });
+
+  it("fails closed when the manifest pins another adaptation artifact", () => {
+    expect(
+      resolveClosedBetaRecommendationDecisionReviewModel(evidence, {
+        ...closedBetaMethodologyManifestFixture,
+        artifacts: closedBetaMethodologyManifestFixture.artifacts.map(
+          (artifact) =>
+            artifact.kind === "adaptation"
+              ? { ...artifact, version: "beta-adaptation@9.9.9-draft" }
+              : artifact,
+        ),
+      }),
+    ).toBeNull();
   });
 });

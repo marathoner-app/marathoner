@@ -194,6 +194,16 @@ export interface RecommendationDecisionStore {
 
 export interface RecommendationDecisionHandlerDependencies {
   activationGate: Pick<OperatorActivationGate, 'evaluate'>
+  closedBetaEligibility?: {
+    readonly projectId: string
+    readonly evaluate: (request: {
+      readonly ownerId: string | null
+      readonly projectId: string
+      readonly capability: 'adaptation'
+      readonly serverArtifactVersion: string
+      readonly inputDisposition: 'supported'
+    }) => Promise<{ readonly status: string }>
+  }
   evidence: RecommendationEvidenceReader
   store: RecommendationDecisionStore
 }
@@ -771,16 +781,32 @@ export async function executeMaterialCommand(
         commandProtocolVersion: parsed.envelope.envelopeVersion,
       })
       if (!activationDecision.allowed) {
-        const result = recommendationDecisionNotEnabledResult(
-          parsed.envelope.commandId,
-        )
-        logResult(
-          dependencies,
-          'material-command-result',
-          result,
-          parsed.envelope.command.type,
-        )
-        return result
+        const provisionalEligibility =
+          recommendationDecision.closedBetaEligibility
+        const provisionalDecision = provisionalEligibility
+          ? await provisionalEligibility.evaluate({
+              ownerId: options.authenticatedUserId,
+              projectId: provisionalEligibility.projectId,
+              capability: 'adaptation',
+              serverArtifactVersion: authorizedAdaptationArtifactVersion,
+              inputDisposition: 'supported',
+            })
+          : null
+        if (provisionalDecision?.status === 'allowed') {
+          // The exact draft artifact is authorized only by the closed-beta
+          // project, membership, consent, manifest, and operator-control gate.
+        } else {
+          const result = recommendationDecisionNotEnabledResult(
+            parsed.envelope.commandId,
+          )
+          logResult(
+            dependencies,
+            'material-command-result',
+            result,
+            parsed.envelope.command.type,
+          )
+          return result
+        }
       }
     } catch {
       const result = recommendationDecisionNotEnabledResult(

@@ -231,6 +231,50 @@ describe('Firestore internal adaptation recommendation command', () => {
     ).toBe(3)
   })
 
+  it('reuses one matching pending recommendation for a fresh command on the same plan revision', async () => {
+    await seedState()
+    const firstCommand = command()
+    const secondCommand = command({
+      commandId: 'internal-adaptation-emulator-0002',
+    })
+    const execute = (request: InternalAdaptationRecommendationCommand) =>
+      store.execute({
+        command: request,
+        ownerId,
+        evaluate: (snapshot) =>
+          evaluateInternalAdaptationRecommendation(
+            request,
+            snapshot,
+            artifacts,
+            createUtcDateTime('2026-10-31T20:00:00.000Z'),
+          ),
+      })
+
+    const first = await execute(firstCommand)
+    const second = await execute(secondCommand)
+    expect(first).toMatchObject({
+      kind: 'completed',
+      result: { status: 'pending_recommendation_created' },
+    })
+    expect(second).toMatchObject({
+      kind: 'completed',
+      result: {
+        status: 'pending_recommendation_created',
+        commandId: secondCommand.commandId,
+        recommendationId:
+          first.kind === 'completed' &&
+          first.result.status === 'pending_recommendation_created'
+            ? first.result.recommendationId
+            : '',
+      },
+    })
+    expect(
+      (
+        await database.collection(`users/${ownerId}/recommendationEvidence`).get()
+      ).size,
+    ).toBe(1)
+  })
+
   it('refuses missing membership before loading or writing owner outcomes', async () => {
     await seedState()
     await database.doc(`betaMemberships/${ownerId}`).delete()
