@@ -76,6 +76,13 @@ import {
   getClosedBetaMethodologyConsent as executeGetClosedBetaMethodologyConsent,
 } from './closedBetaMethodologyConsentHandler.js'
 import { FirestoreClosedBetaMethodologyConsentStore } from './firestoreClosedBetaMethodologyConsentStore.js'
+import { FirestoreClosedBetaMethodologyEligibilityStore } from './firestoreClosedBetaMethodologyEligibilityStore.js'
+import {
+  dismissClosedBetaGuidance as executeDismissClosedBetaGuidance,
+  getClosedBetaGuidance as executeGetClosedBetaGuidance,
+} from './closedBetaGuidanceHandler.js'
+import { FirestoreClosedBetaGuidanceStore } from './firestoreClosedBetaGuidanceStore.js'
+import { loadPinnedClosedBetaSafetyArtifact } from './pinnedClosedBetaSafetyArtifact.js'
 
 if (getApps().length === 0) initializeApp()
 
@@ -151,6 +158,13 @@ const internalAdaptationStore =
 const closedBetaMethodologyManifest = loadPinnedClosedBetaMethodologyManifest()
 const closedBetaMethodologyConsentStore =
   new FirestoreClosedBetaMethodologyConsentStore(database)
+const closedBetaMethodologyEligibilityStore =
+  new FirestoreClosedBetaMethodologyEligibilityStore(
+    database,
+    closedBetaMethodologyManifest,
+  )
+const closedBetaGuidanceStore = new FirestoreClosedBetaGuidanceStore(database)
+const closedBetaSafetyArtifact = loadPinnedClosedBetaSafetyArtifact()
 
 const dependencies = {
   store: new FirestoreMaterialCommandStore(database),
@@ -383,6 +397,38 @@ export const acceptClosedBetaMethodologyConsent = onCall(
       closedBetaMethodologyConsentCaller(request),
       request.data,
       closedBetaMethodologyConsentDependencies,
+    ),
+)
+
+const closedBetaGuidanceDependencies = {
+  projectId: gcloudProject.value(),
+  guidanceArtifactVersion:
+    closedBetaMethodologyManifest.artifacts.find(
+      ({ kind }) => kind === 'guidance',
+    )?.version ?? '',
+  safetyArtifact: closedBetaSafetyArtifact,
+  eligibility: closedBetaMethodologyEligibilityStore,
+  store: closedBetaGuidanceStore,
+  now: () => new Date(),
+}
+
+export const getClosedBetaGuidance = onCall(
+  { enforceAppCheck: false, invoker: 'public' },
+  (request) =>
+    executeGetClosedBetaGuidance(
+      closedBetaMethodologyConsentCaller(request),
+      request.data,
+      closedBetaGuidanceDependencies,
+    ),
+)
+
+export const dismissClosedBetaGuidance = onCall(
+  { enforceAppCheck: false, invoker: 'public' },
+  (request) =>
+    executeDismissClosedBetaGuidance(
+      closedBetaMethodologyConsentCaller(request),
+      request.data,
+      closedBetaGuidanceDependencies,
     ),
 )
 

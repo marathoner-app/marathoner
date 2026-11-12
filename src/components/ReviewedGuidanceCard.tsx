@@ -2,6 +2,7 @@ import { useEffect, useId, useRef } from "react";
 
 import "./ReviewedGuidanceCard.css";
 import type { ClosedBetaProvisionalMethodologyManifest } from "../domain/methodology/closedBetaProvisionalMethodology";
+import type { ClosedBetaProvisionalArtifactKind } from "../domain/methodology/closedBetaProvisionalMethodology";
 import { getClosedBetaProvisionalMethodologyManifest } from "../domain/methodology/closedBetaProvisionalMethodologyRegistry";
 import ProvisionalMethodologyStatus from "./ProvisionalMethodologyStatus";
 
@@ -11,6 +12,8 @@ export interface ReviewedGuidanceCardModel {
   readonly limitations: readonly string[];
   readonly contextLabel?: string;
   readonly contentState: "internal_preview" | "reviewed";
+  readonly dismissible?: boolean;
+  readonly methodologyKind?: ClosedBetaProvisionalArtifactKind;
 }
 
 export type ReviewedGuidanceCardState =
@@ -47,7 +50,8 @@ export default function ReviewedGuidanceCard({
   const outcomeRef = useRef<HTMLDivElement>(null);
   const pending = state.kind === "dismiss_pending";
   const internalPreview = model.contentState === "internal_preview";
-  const dismissalAvailable = state.kind === "ready" || pending;
+  const dismissalAvailable =
+    model.dismissible !== false && (state.kind === "ready" || pending);
 
   useEffect(() => {
     if (state.kind === "error" || state.kind === "unavailable") {
@@ -68,7 +72,7 @@ export default function ReviewedGuidanceCard({
       {methodologyManifest !== null && (
         <ProvisionalMethodologyStatus
           manifest={methodologyManifest}
-          kind="guidance"
+          kind={model.methodologyKind ?? "guidance"}
           prominence="context"
         />
       )}

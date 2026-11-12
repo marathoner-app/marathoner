@@ -215,6 +215,12 @@ function parseRunNotes(value: FormDataEntryValue | null) {
   return notes;
 }
 
+function parseUnusualPain(value: FormDataEntryValue | null): boolean {
+  if (value === "yes") return true;
+  if (value === "no") return false;
+  throw new Error("Record whether pain or unusual symptoms affected this run.");
+}
+
 function currentTimeZone() {
   const value = Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
   return createIanaTimeZone(value);
@@ -543,6 +549,7 @@ export default function ShoeTracker({
         distance: parseDistance(String(formData.get("distance")), distanceUnit),
         duration: readElapsedDuration(formData, "duration"),
         perceivedEffort: parsePerceivedEffort(formData.get("perceivedEffort")),
+        unusualPain: parseUnusualPain(formData.get("unusualPain")),
         notes: parseRunNotes(formData.get("notes")),
       });
       form.reset();
@@ -607,6 +614,7 @@ export default function ShoeTracker({
           aria-busy={pendingAction === "create-run"}
           onSubmit={handleRunSubmit}
           className="space-y-3 run-entry-form"
+          noValidate
         >
           <label>
             Run date
@@ -661,6 +669,16 @@ export default function ShoeTracker({
                   {option.label}
                 </option>
               ))}
+            </select>
+          </label>
+          <label>
+            Did pain or unusual symptoms affect this run?
+            <select name="unusualPain" required defaultValue="">
+              <option value="" disabled>
+                Choose yes or no
+              </option>
+              <option value="no">No</option>
+              <option value="yes">Yes</option>
             </select>
           </label>
           <label>
@@ -760,6 +778,9 @@ export default function ShoeTracker({
                                   }),
                               perceivedEffort:
                                 parsePerceivedEffort(data.get("perceivedEffort")) ?? null,
+                              unusualPain: parseUnusualPain(
+                                data.get("unusualPain"),
+                              ),
                               notes: parseRunNotes(data.get("notes")) ?? null,
                             });
                             setActionStatus(`Run from ${selectedDate} updated.`);
@@ -903,6 +924,26 @@ export default function ShoeTracker({
                                 {option.label}
                               </option>
                             ))}
+                          </select>
+                        </label>
+                        <label>
+                          Did pain or unusual symptoms affect this run?
+                          <select
+                            name="unusualPain"
+                            defaultValue={
+                              run.unusualPain === undefined
+                                ? ""
+                                : run.unusualPain
+                                  ? "yes"
+                                  : "no"
+                            }
+                            required
+                          >
+                            <option value="" disabled>
+                              Choose yes or no
+                            </option>
+                            <option value="no">No</option>
+                            <option value="yes">Yes</option>
                           </select>
                         </label>
                         <label>

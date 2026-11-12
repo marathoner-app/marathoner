@@ -144,6 +144,12 @@ export interface GuidancePresentationContextV1 {
   readonly activeTriggerCodes: readonly GuidanceTriggerCode[];
   readonly presentationHistory: readonly GuidancePresentationRecordV1[];
   readonly remoteDisableRules: readonly GuidanceDisableRuleV1[];
+  /**
+   * Exact draft artifact authorized by the trusted closed-beta boundary.
+   * Ordinary callers omit this, so draft and disabled content still fails
+   * closed everywhere else.
+   */
+  readonly provisionalArtifactVersion?: GuidanceArtifactVersion;
 }
 
 export type GuidanceSuppressionReason =
@@ -602,10 +608,14 @@ export function evaluateGuidancePresentation(
   if (item.reviewState === "retired") {
     return { eligible: false, reason: "retired" };
   }
-  if (item.reviewState !== "approved") {
+  const provisionalClosedBetaAccess =
+    context.provisionalArtifactVersion === item.contentVersion &&
+    item.reviewState === "draft" &&
+    item.publicationState === "disabled";
+  if (item.reviewState !== "approved" && !provisionalClosedBetaAccess) {
     return { eligible: false, reason: "review_not_approved" };
   }
-  if (item.publicationState !== "published") {
+  if (item.publicationState !== "published" && !provisionalClosedBetaAccess) {
     return { eligible: false, reason: "publication_disabled" };
   }
   if (isRemotelyDisabled(item, context.remoteDisableRules)) {

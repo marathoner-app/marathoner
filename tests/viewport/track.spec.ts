@@ -126,6 +126,9 @@ async function exerciseTrackWorkflow(page: Page, textSizeLabel: string) {
   const perceivedEffort = page.getByRole("combobox", {
     name: "Perceived effort (optional)",
   });
+  const unusualPain = page.getByRole("combobox", {
+    name: "Did pain or unusual symptoms affect this run?",
+  });
   const runNotes = page.getByRole("textbox", { name: "Run notes (optional)" });
   const logRun = page.getByRole("button", { name: "Log Run" });
   await expectMinimumTouchTargets([
@@ -143,6 +146,7 @@ async function exerciseTrackWorkflow(page: Page, textSizeLabel: string) {
     { locator: runningShoes, label: `running shoes at ${textSizeLabel}` },
     { locator: plannedWorkout, label: `planned workout at ${textSizeLabel}` },
     { locator: perceivedEffort, label: `perceived effort at ${textSizeLabel}` },
+    { locator: unusualPain, label: `pain or symptom answer at ${textSizeLabel}` },
     { locator: runNotes, label: `run notes at ${textSizeLabel}` },
     { locator: logRun, label: `log run at ${textSizeLabel}` },
   ]);
@@ -153,6 +157,7 @@ async function exerciseTrackWorkflow(page: Page, textSizeLabel: string) {
   await runningShoes.selectOption({
     label: "Daily Trainer (0 mi)",
   });
+  await unusualPain.selectOption("no");
   await expect(logRun).toBeVisible();
   await logRun.click();
 
@@ -213,6 +218,12 @@ async function exerciseTrackWorkflow(page: Page, textSizeLabel: string) {
         name: "Edit perceived effort (optional)",
       }),
       label: `edit perceived effort at ${textSizeLabel}`,
+    },
+    {
+      locator: editForm.getByRole("combobox", {
+        name: "Did pain or unusual symptoms affect this run?",
+      }),
+      label: `edit pain or symptom answer at ${textSizeLabel}`,
     },
     {
       locator: editForm.getByRole("textbox", {

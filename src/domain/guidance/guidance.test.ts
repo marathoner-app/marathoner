@@ -157,6 +157,26 @@ describe("guidance presentation decisions", () => {
     ).toEqual({ eligible: false, reason: "remotely_disabled" });
   });
 
+  it("allows only the exact pinned draft through an explicit provisional boundary", () => {
+    const draft = foundingBetaGuidanceManifest[0];
+    const context = createContext({
+      activeTriggerCodes: draft.triggers.map(({ code }) => code),
+      provisionalArtifactVersion: draft.contentVersion,
+    });
+
+    expect(evaluateGuidancePresentation(draft, context)).toEqual({
+      eligible: true,
+    });
+    expect(
+      evaluateGuidancePresentation(draft, {
+        ...context,
+        provisionalArtifactVersion: createGuidanceArtifactVersion(
+          "beta-guidance@0.2.0-draft",
+        ),
+      }),
+    ).toEqual({ eligible: false, reason: "review_not_approved" });
+  });
+
   it("applies cooldown and the per-version presentation limit deterministically", () => {
     const recentPresentation = {
       guidanceId,

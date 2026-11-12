@@ -17,7 +17,11 @@
     "src/**/*.ts",
     "../src/domain/materialCommands/**/*.ts",
     "../src/domain/methodology/closedBetaProvisionalMethodology.ts",
-    "../src/domain/methodology/closedBetaMethodologyConsent.ts"
+    "../src/domain/methodology/closedBetaMethodologyConsent.ts",
+    "../src/domain/guidance/closedBetaGuidance.ts",
+    "../src/domain/guidance/guidance.ts",
+    "../src/domain/guidance/foundingBetaGuidanceManifest.ts",
+    "../src/domain/safety/safetyEscalation.ts"
   ],
   "exclude": [
     "src/**/*.test.ts",

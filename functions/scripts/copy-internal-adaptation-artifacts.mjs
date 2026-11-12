@@ -44,4 +44,11 @@ await Promise.all([
     closedBetaManifest,
     new URL('closed-beta-methodology-manifest.json', targetRoot),
   ),
+  copyFile(
+    new URL(
+      'docs/methodology/artifacts/beta-safety/0.1.0-draft/beta-safety.json',
+      repositoryRoot,
+    ),
+    new URL('beta-safety.json', targetRoot),
+  ),
 ])
