@@ -796,7 +796,7 @@ describe('App training sections', () => {
     expect(
       screen.queryByRole('navigation', { name: 'Training sections' })
     ).not.toBeInTheDocument()
-    for (const sectionName of ['Plan', 'Track', 'Analyze']) {
+    for (const sectionName of ['Home', 'Plan', 'Track', 'Analyze']) {
       expect(
         screen.queryByRole('button', { name: sectionName })
       ).not.toBeInTheDocument()
@@ -885,10 +885,14 @@ describe('App training sections', () => {
     expect(
       screen.getByText('Welcome to your training companion')
     ).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Home' })).toHaveAttribute(
+      'aria-current',
+      'page'
+    )
     expect(screen.getByRole('button', { name: 'Plan' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Track' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Analyze' })).toBeInTheDocument()
-    for (const sectionName of ['Plan', 'Track', 'Analyze']) {
+    for (const sectionName of ['Home', 'Plan', 'Track', 'Analyze']) {
       const sectionTrigger = screen.getByRole('button', { name: sectionName })
       expect(sectionTrigger).not.toHaveAttribute('aria-expanded')
       expect(sectionTrigger).not.toHaveAttribute('aria-controls')
@@ -1077,8 +1081,14 @@ describe('App training sections', () => {
     const user = userEvent.setup()
     renderSignedInApp()
 
+    const homeTrigger = screen.getByRole('button', { name: 'Home' })
+    expect(homeTrigger).toHaveAttribute('aria-current', 'page')
+
     await user.click(screen.getByRole('button', { name: 'Plan' }))
 
+    expect(
+      screen.getByRole('button', { name: 'Home' })
+    ).not.toHaveAttribute('aria-current')
     expect(screen.getByRole('button', { name: 'Plan' })).toHaveAttribute(
       'aria-current',
       'page'
@@ -1102,6 +1112,18 @@ describe('App training sections', () => {
     expect(
       screen.getByRole('region', { name: 'Track Your Runs' })
     ).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'Home' }))
+
+    const currentHomeTrigger = screen.getByRole('button', { name: 'Home' })
+    expect(currentHomeTrigger).toHaveAttribute('aria-current', 'page')
+    expect(currentHomeTrigger).toHaveFocus()
+    expect(
+      screen.getByRole('heading', { name: 'Marathoner.' })
+    ).toBeInTheDocument()
+    expect(
+      screen.queryByRole('region', { name: 'Track Your Runs' })
+    ).not.toBeInTheDocument()
   })
 
   it('opens and closes a section with the keyboard', async () => {

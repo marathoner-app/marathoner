@@ -112,6 +112,8 @@ function App() {
   );
   const [deletionSignOutAttempt, setDeletionSignOutAttempt] = useState(0);
   const lastActiveSection = useRef<Section | null>(null);
+  const homeTriggerRef = useRef<HTMLButtonElement | null>(null);
+  const restoreHomeFocus = useRef(false);
   const accountSettingsTriggerRef = useRef<HTMLButtonElement | null>(null);
   const restoreAccountSettingsFocus = useRef(false);
   const lastSignedInUserId = useRef<string | null>(null);
@@ -122,6 +124,11 @@ function App() {
   });
 
   useEffect(() => {
+    if (!activeSection && restoreHomeFocus.current) {
+      homeTriggerRef.current?.focus();
+      restoreHomeFocus.current = false;
+      return;
+    }
     if (!activeSection && lastActiveSection.current) {
       triggerRefs.current[lastActiveSection.current]?.focus();
       lastActiveSection.current = null;
@@ -220,6 +227,14 @@ function App() {
   const closeSection = () => {
     setActiveSection(null);
     setTrackInitialFocusTarget(null);
+  };
+
+  const selectHome = () => {
+    if (activeSection !== null) {
+      restoreHomeFocus.current = true;
+      lastActiveSection.current = null;
+    }
+    closeSection();
   };
 
   const handleLogout = () => {
@@ -351,7 +366,11 @@ function App() {
                 trackInitialFocusTarget={trackInitialFocusTarget}
                 reduceMotion={Boolean(reduceMotion)}
                 onOpenSection={openSection}
+                onSelectHome={selectHome}
                 onCloseSection={closeSection}
+                onRegisterHomeTrigger={(element) => {
+                  homeTriggerRef.current = element;
+                }}
                 onRegisterTrigger={(section, element) => {
                   triggerRefs.current[section] = element;
                 }}
@@ -389,7 +408,9 @@ type AuthenticatedExperienceProps = {
     section: Section,
     initialFocusTarget?: ShoeTrackerInitialFocusTarget | null,
   ) => void;
+  onSelectHome: () => void;
   onCloseSection: () => void;
+  onRegisterHomeTrigger: (element: HTMLButtonElement | null) => void;
   onRegisterTrigger: (
     section: Section,
     element: HTMLButtonElement | null,
@@ -403,7 +424,9 @@ function AuthenticatedExperience({
   trackInitialFocusTarget,
   reduceMotion,
   onOpenSection,
+  onSelectHome,
   onCloseSection,
+  onRegisterHomeTrigger,
   onRegisterTrigger,
 }: AuthenticatedExperienceProps) {
   const training = useTrainingData();
@@ -652,6 +675,8 @@ function AuthenticatedExperience({
             <TrainingSectionNavigation
               activeSection={null}
               transitionDuration={sectionTransitionDuration}
+              onSelectHome={onSelectHome}
+              onRegisterHomeTrigger={onRegisterHomeTrigger}
               onSelect={onOpenSection}
               onRegisterTrigger={onRegisterTrigger}
             />
@@ -723,10 +748,12 @@ function AuthenticatedExperience({
         </motion.section>
       )}
 
-      {activeSection && hasReadableTraining && onboardingComplete && (
+      {activeSection && hasReadableTraining && onboardingComplete && !showOnboarding && (
         <TrainingSectionNavigation
           activeSection={activeSection}
           transitionDuration={sectionTransitionDuration}
+          onSelectHome={onSelectHome}
+          onRegisterHomeTrigger={onRegisterHomeTrigger}
           onSelect={onOpenSection}
           onRegisterTrigger={onRegisterTrigger}
         />
