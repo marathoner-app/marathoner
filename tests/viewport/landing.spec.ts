@@ -308,6 +308,23 @@ for (const viewport of viewports) {
       name: "Existing account login",
     });
     await expect(loginDialog).toBeVisible();
+    await expect(loginDialog).toHaveCSS("background-color", "rgb(255, 255, 255)");
+    await expect(loginDialog).toHaveCSS("border-color", "rgb(210, 210, 215)");
+    await expect(loginDialog).toHaveCSS("border-radius", "20px");
+    await expect(loginDialog.getByRole("heading")).toHaveCSS(
+      "color",
+      "rgb(29, 29, 31)",
+    );
+    await expect(loginDialog.getByLabel("Email")).toHaveCSS(
+      "border-color",
+      "rgb(169, 169, 175)",
+    );
+    await expect(
+      loginDialog.getByRole("button", { name: "Log in", exact: true }),
+    ).toHaveCSS("background-color", "rgb(20, 104, 204)");
+    await expect(
+      loginDialog.getByRole("button", { name: "Forgot password?" }),
+    ).toHaveCSS("color", "rgb(20, 104, 204)");
     const dialogBounds = await loginDialog.boundingBox();
     expect(dialogBounds, "login dialog should have visible bounds").not.toBeNull();
     if (dialogBounds) {
@@ -331,6 +348,42 @@ for (const viewport of viewports) {
     await expect(webLogin).toBeFocused();
   });
 }
+
+test("uses semantic authentication feedback and keeps password reset in the same dialog", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("tests/viewport/landing.html");
+
+  await page
+    .locator(".landing-header")
+    .getByRole("button", { name: "Log in" })
+    .click();
+  const loginDialog = page.getByRole("dialog", {
+    name: "Existing account login",
+  });
+  await loginDialog
+    .getByRole("button", { name: "Log in", exact: true })
+    .click();
+
+  const error = loginDialog.getByRole("alert");
+  await expect(error).toHaveText("Enter a valid email address.");
+  await expect(error).toHaveCSS("background-color", "rgb(255, 242, 241)");
+  await expect(error).toHaveCSS("border-color", "rgb(228, 170, 166)");
+  await expect(error).toHaveCSS("color", "rgb(161, 38, 32)");
+
+  await loginDialog.getByRole("button", { name: "Forgot password?" }).click();
+  const resetDialog = page.getByRole("dialog", {
+    name: "Reset your password",
+  });
+  await expect(resetDialog).toBeVisible();
+  await expect(resetDialog.getByLabel("Email", { exact: true })).toBeFocused();
+  await expectNoHorizontalOverflow(
+    page,
+    "Public landing page",
+    "with the password-reset dialog open",
+  );
+});
 
 test("keeps the surrounding page fixed during the automatic preview walkthrough", async ({
   page,
