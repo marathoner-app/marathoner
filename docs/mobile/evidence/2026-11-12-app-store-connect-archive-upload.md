@@ -1,11 +1,13 @@
 # 2026-11-12 App Store Connect archive and upload
 
-- **Tracking issue:** [#702](https://github.com/marathoner-app/marathoner/issues/702)
+- **Tracking issues:** [#702](https://github.com/marathoner-app/marathoner/issues/702),
+  [#718](https://github.com/marathoner-app/marathoner/issues/718)
 - **Parent TestFlight issue:** [#122](https://github.com/marathoner-app/marathoner/issues/122)
 - **Outcome:** The App Store Connect record exists and Marathoner 1.0 build 2
-  archived, exported, and uploaded successfully. Apple reports the uploaded
-  package as processing. TestFlight review, tester access, and a non-owner
-  journey remain open.
+  archived, exported, uploaded, and processed successfully. Its export-
+  compliance answer is recorded and Apple reports the build as **Ready to
+  Submit**. TestFlight review, tester access, and a non-owner journey remain
+  open.
 
 ## Boundary exercised
 
@@ -36,8 +38,14 @@ evidence record.
 8. The exported IPA contained both HealthKit privacy strings, production App
    Attest, HealthKit, HealthKit background delivery, TestFlight reporting, and
    no debug entitlement.
-9. Apple completed the upload and reported that the package is processing.
-10. `npm run lint`, `npm test`, and `npm run build` passed.
+9. Apple completed the upload and processing.
+10. App Store Connect accepted **None of the algorithms mentioned above** for
+    the current build and advanced build 2 from **Missing Compliance** to
+    **Ready to Submit**.
+11. The versioned `Info.plist` now records
+    `ITSAppUsesNonExemptEncryption = false`, and the iOS boundary policy rejects
+    a missing or different value.
+12. `npm run lint`, `npm test`, and `npm run build` passed.
 
 After the successful upload result, Xcode also reported that an account
 credential used for an additional validation request had expired and skipped
@@ -47,10 +55,14 @@ the next archive workflow if the warning recurs.
 
 ## Remaining boundary
 
-Upload acceptance is not TestFlight availability. Apple must finish processing
-build 2 before it can be selected for testing. This evidence does not claim
-export-compliance completion, beta App Review approval, tester invitation,
-installation from TestFlight, or a non-owner end-to-end journey.
+Upload processing and export-compliance completion are not TestFlight
+availability. This evidence does not claim beta App Review approval, tester
+invitation, installation from TestFlight, or a non-owner end-to-end journey.
+
+The declaration matches the current app boundary: Marathoner uses Apple and
+platform encryption and SHA-256 hashing but does not implement proprietary or
+non-Apple encryption algorithms. Reassess it before adding custom
+cryptography, end-to-end encryption, VPN functionality, or a password vault.
 
 Issue #122 remains open for those distribution and human-journey gates. The
 repository change that records this proof does not submit the build for review

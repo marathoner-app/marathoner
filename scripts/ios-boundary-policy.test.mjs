@@ -26,7 +26,7 @@ const validProject = {
   capacitorConfig: `appId: 'com.marathonerapp.marathoner'\nappName: 'Marathoner'\nwebDir: 'dist-ios'\nbackgroundColor: '#ffffff'\ncontentInset: 'always'\nerrorPath: 'startup-error.html'\nlaunchAutoHide: true\nlaunchShowDuration: 10_000\nbackgroundColor: '#ffffffff'\n'@capacitor-firebase/app-check'\nsymlink: true`,
   debugConfig: '#include? "local.xcconfig"',
   infoPlist:
-    '<string>Marathoner</string><key>UIUserInterfaceStyle</key><string>Light</string><key>NSHealthShareUsageDescription</key><key>NSHealthUpdateUsageDescription</key>',
+    '<string>Marathoner</string><key>UIUserInterfaceStyle</key><string>Light</string><key>NSHealthShareUsageDescription</key><key>NSHealthUpdateUsageDescription</key><key>ITSAppUsesNonExemptEncryption</key><false/>',
   launchStoryboard:
     '<view><label text="Marathoner."/><label text="Loading your session..."/><color key="backgroundColor" white="1"/></view>',
   mainStoryboard:
@@ -174,6 +174,20 @@ describe('iOS boundary policy', () => {
       }),
     ).toContain(
       'Info.plist is missing <key>NSHealthUpdateUsageDescription</key>',
+    )
+  })
+
+  it('rejects an iOS app without the reviewed export-compliance declaration', () => {
+    expect(
+      findIosProjectViolations({
+        ...validProject,
+        infoPlist: validProject.infoPlist.replace(
+          '<key>ITSAppUsesNonExemptEncryption</key><false/>',
+          '<key>ITSAppUsesNonExemptEncryption</key><true/>',
+        ),
+      }),
+    ).toContain(
+      'Info.plist must declare ITSAppUsesNonExemptEncryption as false',
     )
   })
 
