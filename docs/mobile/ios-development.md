@@ -10,8 +10,10 @@ explicit beta proof below verifies environment selection without changing the
 development, CI, Pages, or production-web defaults. Both workflows now select
 and validate the corresponding public native Firebase configuration. Beta and
 Release initialize App Attest before JavaScript Firebase services; the
-development Debug workflow uses a private fixed debug token. Live App Attest
-token proof and enforcement remain open, as do migrated material mobile
+development Debug workflow uses a private fixed debug token. Paid-team Debug
+and Release signing, the production App Attest entitlement, physical-device
+installation, and launch passed on November 12, 2026. Live App Attest token
+acceptance and enforcement remain open, as do migrated material mobile
 workflows, TestFlight, and Android. The
 local command foundation is proved in #158; workflow migration, live reads,
 and release work remain in #72, #115, #138, #159, #161, #122, and #90.
@@ -23,7 +25,7 @@ and release work remain in #72, #115, #138, #159, #161, #122, and #90.
 - an iOS simulator for unsigned compilation
 - the physical test iPhone and an owner-controlled Apple development identity
   only when recording device evidence
-- the current Personal Team for the owner-only development Debug build
+- the current paid individual team for signed physical-device builds
 - an individual Apple Developer Program membership for the first closed beta's
   signed Release, App Attest, and TestFlight gates; follow the
   [closed-beta decision](../closed-beta-gate-decision.md)
@@ -304,6 +306,14 @@ npx cap run ios --target <simulator-id>
 ```
 
 ## Physical iPhone proof
+
+The first paid-team signing proof passed on November 12, 2026. Debug and beta
+Release builds signed successfully; the signed Release app contained the
+production App Attest and required HealthKit entitlements, then installed on
+and launched from the physical test iPhone. See the
+[dated evidence record](evidence/2026-11-12-paid-team-signing-and-release-proof.md).
+Live App Attest token acceptance, the signed-in beta journey, archive and
+upload, and TestFlight remain open under #122 and #205.
 
 After `npm run check:ios` and local signing configuration:
 

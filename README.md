@@ -151,16 +151,16 @@ uses typed repositories backed by Cloud Firestore, and the repository contains
 a bounded Cloud Functions backend for trusted material commands, account
 deletion, and Garmin OAuth and push ingestion. Those reviewed boundaries are
 emulator-proven and deployed to the beta project. The valid-client observation
-window, paid-team iPhone
-proof, rollback evidence, and staged enforcement remain gated by issue #205
-and its successors. The accepted
+window, live App Attest token proof, rollback evidence, and staged enforcement
+remain gated by issue #205 and its successors. The accepted
 [mobile client ADR](docs/architecture/mobile-client-architecture.md) selects a
 thin Capacitor iOS shell around this root application. The committed shell is a
-development foundation. App Check gates Firebase client startup in code and an
-owner-only development browser and iPhone debug path has passed, but monitored
-beta traffic and a paid Apple Developer Program profile carrying App Attest
-remain unproved; beta activation, daily-use behavior, accessibility, and
-TestFlight are still explicit release gates.
+development foundation. App Check gates Firebase client startup in code. An
+owner-only development browser and iPhone debug path has passed, and paid-team
+Debug and Release signing, the production App Attest entitlement, physical
+iPhone installation, and launch passed on November 12, 2026. Monitored beta
+traffic, live token acceptance, beta activation, daily-use behavior,
+accessibility, and TestFlight are still explicit release gates.
 
 | Path | Responsibility |
 | --- | --- |
