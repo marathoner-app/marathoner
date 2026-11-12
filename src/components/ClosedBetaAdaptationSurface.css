@@ -3,9 +3,11 @@
   gap: 0.85rem;
   margin: 1rem 0;
   padding: clamp(1rem, 4vw, 1.5rem);
-  border: 1px solid var(--color-border, #d7dce4);
-  border-radius: 1rem;
-  background: var(--color-surface, #fff);
+  border: 1px solid var(--app-border);
+  border-radius: var(--app-radius-large);
+  background: var(--app-surface);
+  box-shadow: var(--app-shadow-small);
+  color: var(--app-ink);
 }
 
 .closed-beta-adaptation-surface h2,
@@ -14,7 +16,7 @@
 }
 
 .closed-beta-adaptation-eyebrow {
-  color: var(--color-text-muted, #526078);
+  color: var(--app-accent);
   font-size: 0.78rem;
   font-weight: 700;
   letter-spacing: 0.08em;

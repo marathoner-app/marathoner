@@ -61,7 +61,9 @@ export default function ReviewedGuidanceCard({
 
   return (
     <section
-      className="reviewed-guidance-card"
+      className={`reviewed-guidance-card${
+        model.methodologyKind === "safety" ? " safety" : ""
+      }`}
       aria-labelledby={`${idPrefix}-title`}
       aria-busy={pending}
     >

@@ -7,17 +7,27 @@
   --app-muted: #626267;
   --app-accent: #1468cc;
   --app-accent-hover: #0b55a8;
+  --app-accent-surface: #eef5fd;
+  --app-overlay: rgb(29 29 31 / 64%);
   --app-border: #d2d2d7;
   --app-border-strong: #a9a9af;
   --app-danger: #a12620;
+  --app-danger-hover: #7f1d19;
+  --app-danger-surface: #fff2f1;
+  --app-danger-border: #e4aaa6;
   --app-warning: #7c4a03;
+  --app-warning-surface: #fff8e8;
+  --app-warning-border: #d8ad58;
   --app-success: #17663a;
+  --app-success-surface: #eef8f1;
+  --app-success-border: #8ab69b;
   --app-focus-ring: rgb(20 104 204 / 28%);
   --app-radius-small: 0.625rem;
   --app-radius-medium: 0.875rem;
   --app-radius-large: 1.25rem;
   --app-shadow-small: 0 1px 2px rgb(0 0 0 / 4%), 0 6px 18px rgb(0 0 0 / 5%);
   --app-shadow-medium: 0 18px 50px rgb(0 0 0 / 9%);
+  --app-shadow-dialog: 0 1.5rem 4rem rgb(0 0 0 / 24%);
   --app-motion-fast: 140ms;
   --app-motion-standard: 220ms;
 

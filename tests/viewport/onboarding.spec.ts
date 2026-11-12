@@ -56,4 +56,13 @@ test("keeps runner setup cards usable with 200% text", async ({ page }) => {
       `Runner setup question ${index + 1} should contain its heading and controls`,
     ).toEqual([]);
   }
+
+  const finalQuestionBounds = await questions.last().boundingBox();
+  const actionsBounds = await page.locator(".onboarding-actions").boundingBox();
+  expect(finalQuestionBounds).not.toBeNull();
+  expect(actionsBounds).not.toBeNull();
+  expect(
+    actionsBounds!.y,
+    "Runner setup actions should remain after the form instead of covering it",
+  ).toBeGreaterThanOrEqual(finalQuestionBounds!.y + finalQuestionBounds!.height);
 });

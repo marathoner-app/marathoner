@@ -64,6 +64,7 @@ test("keeps non-dismissible safety guidance usable at phone width and 200% text"
   await expect(
     page.getByRole("heading", { name: "Pause training and get urgent help" }),
   ).toBeVisible();
+  await expect(page.locator(".reviewed-guidance-card")).toHaveClass(/safety/);
   await expect(page.getByRole("note")).toContainText(
     "Safety rules beta-safety@0.1.0-draft",
   );
