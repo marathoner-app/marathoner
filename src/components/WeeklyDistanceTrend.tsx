@@ -111,6 +111,12 @@ export default function WeeklyDistanceTrend({
   useEffect(() => {
     if (chartRef.current === null || !hasRecentRuns) return;
 
+    const container = chartContainerRef.current;
+    if (container === null) return;
+    const styles = window.getComputedStyle(container);
+    const accentColor = styles.getPropertyValue("--app-accent").trim();
+    const borderColor = styles.getPropertyValue("--app-border").trim();
+    const mutedColor = styles.getPropertyValue("--app-muted").trim();
     const unitLabel = distanceUnit === "mile" ? "Miles" : "Kilometers";
     const option: WeeklyDistanceChartOption = {
       animation: !reduceMotion,
@@ -134,20 +140,29 @@ export default function WeeklyDistanceTrend({
       xAxis: {
         type: "category",
         data: points.map((point) => point.label),
-        axisLabel: { interval: 0, rotate: points.length > 6 ? 35 : 0 },
+        axisLabel: {
+          color: mutedColor,
+          interval: 0,
+          rotate: points.length > 6 ? 35 : 0,
+        },
+        axisLine: { lineStyle: { color: borderColor } },
       },
       yAxis: {
         type: "value",
         min: 0,
         name: unitLabel,
+        nameTextStyle: { color: mutedColor },
         minInterval: 1,
+        axisLabel: { color: mutedColor },
+        axisLine: { lineStyle: { color: borderColor } },
+        splitLine: { lineStyle: { color: borderColor } },
       },
       series: [
         {
           name: "Weekly distance",
           type: "bar",
           data: points.map((point) => point.distance),
-          itemStyle: { color: "#007bff", borderRadius: [4, 4, 0, 0] },
+          itemStyle: { color: accentColor, borderRadius: [4, 4, 0, 0] },
         },
       ],
     };

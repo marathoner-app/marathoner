@@ -40,6 +40,11 @@ invalid inputs use danger surfaces, and confirmed activation uses success.
 Long proposals keep the schedule in ordinary document flow with compact,
 repeatable week cards rather than a separate visual system.
 
+Analyze uses the neutral card hierarchy for recorded facts and reserves blue
+for chart series, disclosure controls, and focus. Perceived-effort history uses
+the shared success, accent, warning, and neutral surfaces so meaning remains
+visible without turning every analytics heading into an accent.
+
 ## Interaction rules
 
 - Primary actions are near-black; active navigation, focus, and links are blue.

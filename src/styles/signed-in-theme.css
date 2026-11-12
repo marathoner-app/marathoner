@@ -62,11 +62,6 @@
 .next-workout-summary,
 .entry,
 .shoe-tracking,
-.latest-run-summary,
-.analyze-card,
-.weekly-trend,
-.pace-trend,
-.effort-pattern,
 .plan-week-summary > div,
 .onboarding-question,
 .onboarding-actions,
@@ -104,7 +99,6 @@
 }
 
 .plan-container,
-.analyze-container,
 .entry,
 .shoe-tracking,
 .plan-day,
@@ -121,45 +115,6 @@
 .plan-day:hover {
   border-color: var(--app-border-strong);
   box-shadow: var(--app-shadow-small);
-}
-
-.latest-run-summary h2,
-.latest-run-details dd,
-.effort-pattern-item span {
-  color: var(--app-ink);
-}
-
-.latest-run-eyebrow,
-.latest-run-details dt,
-.weekly-trend-context,
-.pace-trend-context,
-.effort-pattern-context,
-.effort-pattern-item time {
-  color: var(--app-muted);
-}
-
-.analyze-cards {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
-  align-items: stretch;
-  width: min(100%, 56rem);
-  margin: 0 auto;
-}
-
-.analyze-card {
-  width: auto;
-  min-width: 0;
-  padding: 1rem;
-}
-
-.analyze-card h2,
-.weekly-trend h2,
-.pace-trend h2,
-.effort-pattern h2,
-.weekly-trend-data summary,
-.pace-trend-data summary,
-.effort-pattern-data summary {
-  color: var(--app-accent);
 }
 
 .entry,
@@ -200,8 +155,7 @@
 .onboarding-choice-row label,
 .onboarding-option-grid label,
 .onboarding-day-grid label,
-.onboarding-confirmation,
-.effort-pattern-item {
+.onboarding-confirmation {
   border-color: var(--app-border);
   background: var(--app-subtle-surface);
   color: var(--app-ink);
