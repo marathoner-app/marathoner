@@ -3,8 +3,9 @@
 - **Tracking issue:** [#700](https://github.com/marathoner-app/marathoner/issues/700)
 - **Parent TestFlight issue:** [#122](https://github.com/marathoner-app/marathoner/issues/122)
 - **Outcome:** Paid-team signing, the production App Attest entitlement,
-  physical-device installation, and launch passed. Live token acceptance and
-  TestFlight remain open.
+  physical-device installation, and launch passed. A later proof completed the
+  App Store Connect record, archive, and upload; live token acceptance and
+  TestFlight distribution remain open.
 
 ## Boundary exercised
 
@@ -40,7 +41,10 @@ This proof does not claim live Firebase App Attest token acceptance, completion
 of the signed-in beta journey, archive or upload success, TestFlight review, or
 a non-owner tester pass.
 
-Issue #122 remains open for the App Store Connect record, archive and upload,
-export-compliance and listing metadata, TestFlight review, replacement or pause
-rehearsal, and a non-owner journey. Issue #205 and its successors own live App
-Attest token acceptance, observation, rollback, and any staged enforcement.
+The later
+[App Store Connect archive and upload evidence](2026-11-12-app-store-connect-archive-upload.md)
+records version 1.0 build 2 as uploaded and processing. Issue #122 remains open
+for processing completion, export-compliance and listing metadata, TestFlight
+review, replacement or pause rehearsal, and a non-owner journey. Issue #205 and
+its successors own live App Attest token acceptance, observation, rollback, and
+any staged enforcement.
