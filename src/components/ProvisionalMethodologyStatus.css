@@ -1,0 +1,18 @@
+.provisional-methodology-status {
+  overflow-wrap: anywhere;
+  color: #475569;
+  font-size: 0.85rem;
+  font-weight: 650;
+  line-height: 1.45;
+}
+
+.provisional-methodology-status.decision {
+  margin: 1rem 0 0;
+  padding: 0.75rem 0.9rem;
+  border-left: 0.25rem solid #9a6a00;
+  background: #fffaf0;
+}
+
+.provisional-methodology-status.context {
+  margin: 0.7rem 0 0;
+}

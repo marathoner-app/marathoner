@@ -3,6 +3,7 @@ import {
   type ClosedBetaProvisionalArtifactKind,
   type ClosedBetaProvisionalMethodologyManifest,
 } from '../../src/domain/methodology/closedBetaProvisionalMethodology.js'
+import { CLOSED_BETA_METHODOLOGY_CONSENT_VERSION } from '../../src/domain/methodology/closedBetaMethodologyConsent.js'
 
 export const CLOSED_BETA_PROJECT_ID = 'marathonerapp-beta'
 export const CLOSED_BETA_METHODOLOGY_CONTROL_PATH =
@@ -48,7 +49,14 @@ export interface ClosedBetaMethodologyEligibilityEvidence {
   >
   readonly capability: ClosedBetaProvisionalArtifactKind
   readonly artifactVersion: string
+  readonly consentVersion: typeof CLOSED_BETA_METHODOLOGY_CONSENT_VERSION
+  readonly consentAcceptedAt: string
 }
+
+export type ClosedBetaMethodologyConsentEligibility =
+  | { readonly status: 'current'; readonly acceptedAt: string }
+  | { readonly status: 'missing' }
+  | { readonly status: 'stale' }
 
 export type ClosedBetaMethodologyEligibilityDecision =
   | {
@@ -62,6 +70,7 @@ export type ClosedBetaMethodologyEligibilityDecision =
         | 'authentication-required'
         | 'closed-beta-access-required'
         | 'closed-beta-methodology-disabled'
+        | 'closed-beta-methodology-consent-required'
         | 'unsupported-methodology-input'
         | 'symptom-escalation-required'
     }
@@ -75,7 +84,9 @@ export type ClosedBetaMethodologyEligibilityDecision =
     }
   | {
       readonly status: 'stale_version'
-      readonly code: 'methodology-manifest-version-stale'
+      readonly code:
+        | 'methodology-manifest-version-stale'
+        | 'methodology-consent-version-stale'
     }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -152,6 +163,7 @@ export function evaluateClosedBetaMethodologyEligibility(options: {
   readonly membershipApproved: boolean
   readonly control: unknown
   readonly manifest: ClosedBetaProvisionalMethodologyManifest | null
+  readonly consent: ClosedBetaMethodologyConsentEligibility
 }): ClosedBetaMethodologyEligibilityDecision {
   const { request } = options
   if (request.ownerId === null || request.ownerId.trim().length === 0) {
@@ -176,6 +188,24 @@ export function evaluateClosedBetaMethodologyEligibility(options: {
   }
   if (control.manifestVersion !== manifest.manifestVersion) {
     return { status: 'stale_version', code: 'methodology-manifest-version-stale' }
+  }
+  if (options.consent.status === 'missing') {
+    return {
+      status: 'denied',
+      code: 'closed-beta-methodology-consent-required',
+    }
+  }
+  if (options.consent.status === 'stale') {
+    return {
+      status: 'stale_version',
+      code: 'methodology-consent-version-stale',
+    }
+  }
+  if (!isUtcDateTime(options.consent.acceptedAt)) {
+    return {
+      status: 'denied',
+      code: 'closed-beta-methodology-consent-required',
+    }
   }
 
   const artifactVersions = artifactVersionsFromManifest(manifest)
@@ -211,6 +241,8 @@ export function evaluateClosedBetaMethodologyEligibility(options: {
       artifactVersions,
       capability: request.capability,
       artifactVersion: request.serverArtifactVersion,
+      consentVersion: CLOSED_BETA_METHODOLOGY_CONSENT_VERSION,
+      consentAcceptedAt: options.consent.acceptedAt,
     },
   }
 }

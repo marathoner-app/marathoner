@@ -7,6 +7,7 @@ import ReviewedGuidanceCard, {
   type ReviewedGuidanceCardModel,
   type ReviewedGuidanceCardProps,
 } from "./ReviewedGuidanceCard";
+import { closedBetaMethodologyManifestFixture } from "../test/closedBetaMethodologyManifest";
 
 const model: ReviewedGuidanceCardModel = {
   title: "Use effort, not pace, on easy days",
@@ -33,6 +34,22 @@ function props(
 }
 
 describe("ReviewedGuidanceCard", () => {
+  it("keeps concise pinned beta context with ordinary guidance", () => {
+    render(
+      <ReviewedGuidanceCard
+        {...props({
+          model: { ...model, contentState: "reviewed" },
+          methodologyManifest: closedBetaMethodologyManifestFixture,
+        })}
+      />,
+    );
+    const context = screen.getByRole("note");
+    expect(context).toHaveTextContent("Guidance beta-guidance@0.1.0-draft");
+    expect(context).not.toHaveTextContent(
+      "Stop and seek qualified help",
+    );
+  });
+
   it("presents synthetic guidance with context and explicit limitations", () => {
     render(<ReviewedGuidanceCard {...props()} />);
 

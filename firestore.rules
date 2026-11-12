@@ -512,6 +512,10 @@ service cloud.firestore {
       }
     }
 
+    match /users/{userId}/methodologyConsents/{consentId} {
+      allow read, write: if false;
+    }
+
     match /users/{userId}/recommendationEvidence/{recommendationId} {
       allow read: if isSignedInAs(userId);
       allow write: if false;

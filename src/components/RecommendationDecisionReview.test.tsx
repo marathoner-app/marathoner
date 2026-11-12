@@ -7,6 +7,7 @@ import RecommendationDecisionReview, {
   type RecommendationDecisionReviewModel,
   type RecommendationDecisionReviewProps,
 } from "./RecommendationDecisionReview";
+import { closedBetaMethodologyManifestFixture } from "../test/closedBetaMethodologyManifest";
 
 const model: RecommendationDecisionReviewModel = {
   title: "Give next week another steady pass",
@@ -35,6 +36,20 @@ function props(
 }
 
 describe("RecommendationDecisionReview", () => {
+  it("shows the pinned provisional adaptation version before a participant decision", () => {
+    render(
+      <RecommendationDecisionReview
+        {...props({
+          model: { ...model, contentState: "reviewed" },
+          methodologyManifest: closedBetaMethodologyManifestFixture,
+        })}
+      />,
+    );
+    expect(screen.getByRole("note")).toHaveTextContent(
+      "Adaptation rules beta-adaptation@0.2.0-draft",
+    );
+  });
+
   it("presents the recommendation as an ordered, explicitly synthetic review", () => {
     render(<RecommendationDecisionReview {...props()} />);
 

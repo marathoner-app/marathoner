@@ -2,6 +2,7 @@ import { createRoot } from "react-dom/client";
 
 import ReviewedGuidanceCard from "../../src/components/ReviewedGuidanceCard";
 import "../../src/index.css";
+import { closedBetaMethodologyManifestFixture } from "../../src/test/closedBetaMethodologyManifest";
 
 const root = document.querySelector("#root");
 if (root === null) {
@@ -19,8 +20,9 @@ createRoot(root).render(
         "Stop and seek qualified help for pain or unusual symptoms.",
       ],
       contextLabel: "After an easy run",
-      contentState: "internal_preview",
+      contentState: "reviewed",
     }}
+    methodologyManifest={closedBetaMethodologyManifestFixture}
     state={{ kind: "ready" }}
     onDismiss={() => undefined}
     onRetry={() => undefined}

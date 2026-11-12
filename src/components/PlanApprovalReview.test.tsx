@@ -18,6 +18,7 @@ import type {
 import PlanApprovalReview, {
   type PlanApprovalReviewProps,
 } from "./PlanApprovalReview";
+import { closedBetaMethodologyManifestFixture } from "../test/closedBetaMethodologyManifest";
 
 function fixture(fixtureId: string): PlanGenerationContractFixtureV1 & {
   result: GeneratedPlanResultV1;
@@ -75,6 +76,23 @@ async function continueToConfirmation(user: ReturnType<typeof userEvent.setup>) 
 }
 
 describe("PlanApprovalReview", () => {
+  it("shows the pinned provisional plan version before activation", async () => {
+    const user = userEvent.setup();
+    render(
+      <PlanApprovalReview
+        {...baseProps()}
+        methodologyManifest={closedBetaMethodologyManifestFixture}
+      />,
+    );
+    await continueToConfirmation(user);
+    expect(screen.getByRole("note")).toHaveTextContent(
+      "Plan rules beta-rules@0.2.0-draft",
+    );
+    expect(screen.getByRole("note")).toHaveTextContent(
+      "independently unreviewed",
+    );
+  });
+
   it("explains activation, moves focus, and allows backing out without submitting", async () => {
     const user = userEvent.setup();
     const props = baseProps();

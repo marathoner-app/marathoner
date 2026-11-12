@@ -9,6 +9,10 @@ import {
   type ClosedBetaMethodologyEligibilityRequest,
 } from './closedBetaMethodologyEligibility.js'
 import type { ClosedBetaProvisionalMethodologyManifest } from '../../src/domain/methodology/closedBetaProvisionalMethodology.js'
+import {
+  closedBetaMethodologyConsentAcceptanceFromDocument,
+  closedBetaMethodologyConsentPath,
+} from './firestoreClosedBetaMethodologyConsentStore.js'
 
 export class FirestoreClosedBetaMethodologyEligibilityStore {
   constructor(
@@ -29,19 +33,34 @@ export class FirestoreClosedBetaMethodologyEligibilityStore {
         membershipApproved: false,
         control: null,
         manifest: this.manifest,
+        consent: { status: 'missing' },
       })
     }
 
     const ownerId = request.ownerId
     return this.database.runTransaction(async (transaction) => {
-      const [membership, control] = await Promise.all([
+      const [membership, control, consent] = await Promise.all([
         transaction.get(
           this.database.doc(`betaMemberships/${ownerId}`),
         ),
         transaction.get(
           this.database.doc(CLOSED_BETA_METHODOLOGY_CONTROL_PATH),
         ),
+        transaction.get(
+          this.database.doc(closedBetaMethodologyConsentPath(ownerId)),
+        ),
       ])
+      const acceptance =
+        closedBetaMethodologyConsentAcceptanceFromDocument(
+          consent.data(),
+          ownerId,
+        )
+      const consentEligibility =
+        acceptance === null
+          ? { status: consent.exists ? 'stale' as const : 'missing' as const }
+          : acceptance.manifestVersion === this.manifest?.manifestVersion
+            ? { status: 'current' as const, acceptedAt: acceptance.acceptedAt }
+            : { status: 'stale' as const }
       return evaluateClosedBetaMethodologyEligibility({
         request,
         membershipApproved: isApprovedBetaMembership(
@@ -50,6 +69,7 @@ export class FirestoreClosedBetaMethodologyEligibilityStore {
         ),
         control: control.data(),
         manifest: this.manifest,
+        consent: consentEligibility,
       })
     })
   }

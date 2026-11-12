@@ -70,6 +70,12 @@ import {
 } from './internalAdaptationRecommendationActivation.js'
 import { executeInternalAdaptationRecommendation } from './internalAdaptationRecommendationHandler.js'
 import { loadPinnedInternalAdaptationArtifacts } from './pinnedInternalAdaptationArtifacts.js'
+import { loadPinnedClosedBetaMethodologyManifest } from './pinnedClosedBetaMethodologyManifest.js'
+import {
+  acceptClosedBetaMethodologyConsent as executeAcceptClosedBetaMethodologyConsent,
+  getClosedBetaMethodologyConsent as executeGetClosedBetaMethodologyConsent,
+} from './closedBetaMethodologyConsentHandler.js'
+import { FirestoreClosedBetaMethodologyConsentStore } from './firestoreClosedBetaMethodologyConsentStore.js'
 
 if (getApps().length === 0) initializeApp()
 
@@ -142,6 +148,9 @@ const operatorActivationGate = new OperatorActivationGate(
 const internalAdaptationArtifacts = loadPinnedInternalAdaptationArtifacts()
 const internalAdaptationStore =
   new FirestoreInternalAdaptationRecommendationStore(database)
+const closedBetaMethodologyManifest = loadPinnedClosedBetaMethodologyManifest()
+const closedBetaMethodologyConsentStore =
+  new FirestoreClosedBetaMethodologyConsentStore(database)
 
 const dependencies = {
   store: new FirestoreMaterialCommandStore(database),
@@ -340,6 +349,41 @@ export const generateInternalAdaptationRecommendation = onCall(
         },
       },
     }),
+)
+
+function closedBetaMethodologyConsentCaller(request: {
+  app?: unknown
+  auth?: { uid: string }
+}) {
+  return {
+    appCheckVerified: request.app !== undefined || functionsEmulator,
+    ownerId: request.auth?.uid ?? null,
+  }
+}
+
+const closedBetaMethodologyConsentDependencies = {
+  projectId: gcloudProject.value(),
+  manifest: closedBetaMethodologyManifest,
+  store: closedBetaMethodologyConsentStore,
+}
+
+export const getClosedBetaMethodologyConsent = onCall(
+  { enforceAppCheck: false, invoker: 'public' },
+  (request) =>
+    executeGetClosedBetaMethodologyConsent(
+      closedBetaMethodologyConsentCaller(request),
+      closedBetaMethodologyConsentDependencies,
+    ),
+)
+
+export const acceptClosedBetaMethodologyConsent = onCall(
+  { enforceAppCheck: false, invoker: 'public' },
+  (request) =>
+    executeAcceptClosedBetaMethodologyConsent(
+      closedBetaMethodologyConsentCaller(request),
+      request.data,
+      closedBetaMethodologyConsentDependencies,
+    ),
 )
 
 // The verified request.app value is enforced inside the handler so unsupported

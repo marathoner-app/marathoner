@@ -2,6 +2,7 @@ import { createRoot } from "react-dom/client";
 
 import RecommendationDecisionReview from "../../src/components/RecommendationDecisionReview";
 import "../../src/index.css";
+import { closedBetaMethodologyManifestFixture } from "../../src/test/closedBetaMethodologyManifest";
 
 const root = document.querySelector("#root");
 if (root === null) {
@@ -20,8 +21,9 @@ createRoot(root).render(
         "Repeat the current week’s planned targets once before progressing.",
       impact:
         "The race date and every later training week remain unchanged in this preview.",
-      contentState: "internal_preview",
+      contentState: "reviewed",
     }}
+    methodologyManifest={closedBetaMethodologyManifestFixture}
     state={{ kind: "ready" }}
     onKeep={() => undefined}
     onApply={() => undefined}
