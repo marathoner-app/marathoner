@@ -5,6 +5,24 @@ const phoneViewport = { width: 390, height: 844 };
 
 test.use({ viewport: phoneViewport });
 
+test("uses the shared Analyze surface and semantic effort hierarchy", async ({
+  page,
+}) => {
+  await page.goto("tests/viewport/analyze.html");
+
+  await expect(page.locator(".latest-run-summary")).toHaveCSS(
+    "background-color",
+    "rgb(233, 238, 248)",
+  );
+  await expect(page.locator(".analyze-card").first()).toHaveCSS(
+    "background-color",
+    "rgb(255, 255, 255)",
+  );
+  await expect(
+    page.locator(".effort-pattern-item--harder_than_expected"),
+  ).toHaveCSS("background-color", "rgb(255, 248, 232)");
+});
+
 async function exerciseAnalyzeFeedback(page: Page, textSizeLabel: string) {
   const latestRun = page.locator(".latest-run-summary");
   await expect(latestRun.getByText("Latest run")).toBeVisible();

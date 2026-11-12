@@ -99,6 +99,12 @@ export default function RecentRunPaceTrend({
   useEffect(() => {
     if (chartRef.current === null || !hasTrend) return;
 
+    const container = chartContainerRef.current;
+    if (container === null) return;
+    const styles = window.getComputedStyle(container);
+    const accentColor = styles.getPropertyValue("--app-accent").trim();
+    const borderColor = styles.getPropertyValue("--app-border").trim();
+    const mutedColor = styles.getPropertyValue("--app-muted").trim();
     const unitLabel = distanceUnit === "mile" ? "Pace per mile" : "Pace per kilometer";
     const option: RecentRunPaceChartOption = {
       animation: !reduceMotion,
@@ -123,17 +129,23 @@ export default function RecentRunPaceTrend({
         type: "category",
         data: displayPoints.map((point) => point.dateLabel),
         axisLabel: {
+          color: mutedColor,
           interval: 0,
           rotate: displayPoints.length > 6 ? 35 : 0,
         },
+        axisLine: { lineStyle: { color: borderColor } },
       },
       yAxis: {
         type: "value",
         name: unitLabel,
+        nameTextStyle: { color: mutedColor },
         min: "dataMin",
         axisLabel: {
+          color: mutedColor,
           formatter: (value: number) => formatPace(value, distanceUnit),
         },
+        axisLine: { lineStyle: { color: borderColor } },
+        splitLine: { lineStyle: { color: borderColor } },
       },
       series: [
         {
@@ -142,8 +154,8 @@ export default function RecentRunPaceTrend({
           data: displayPoints.map((point) => point.secondsPerUnit),
           smooth: false,
           symbolSize: 8,
-          lineStyle: { color: "#005fcc", width: 3 },
-          itemStyle: { color: "#005fcc" },
+          lineStyle: { color: accentColor, width: 3 },
+          itemStyle: { color: accentColor },
         },
       ],
     };
