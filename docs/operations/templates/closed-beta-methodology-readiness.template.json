@@ -1,0 +1,64 @@
+{
+  "schemaVersion": "closed-beta-methodology-readiness@1",
+  "recordedOn": "PENDING",
+  "candidate": {
+    "releaseIdentifier": "PENDING",
+    "manifestVersion": "closed-beta-provisional-methodology@0.1.0",
+    "artifactVersions": {
+      "plan": "beta-rules@0.2.0-draft",
+      "adaptation": "beta-adaptation@0.2.0-draft",
+      "guidance": "beta-guidance@0.1.0-draft",
+      "safety": "beta-safety@0.1.0-draft"
+    }
+  },
+  "clients": {
+    "responsiveWeb": {
+      "candidate": "PENDING",
+      "releaseIdentifier": "PENDING",
+      "recordedAt": "PENDING",
+      "tester": "PENDING",
+      "states": {
+        "allowed": { "status": "pending", "evidence": "" },
+        "denied": { "status": "pending", "evidence": "" },
+        "stale_version": { "status": "pending", "evidence": "" },
+        "unavailable_artifact": { "status": "pending", "evidence": "" },
+        "unsupported": { "status": "pending", "evidence": "" },
+        "symptom_escalation": { "status": "pending", "evidence": "" },
+        "disabled": { "status": "pending", "evidence": "" },
+        "recovery": { "status": "pending", "evidence": "" }
+      }
+    },
+    "physicalIos": {
+      "candidate": "PENDING",
+      "releaseIdentifier": "PENDING",
+      "physicalDevice": false,
+      "recordedAt": "PENDING",
+      "tester": "PENDING",
+      "states": {
+        "allowed": { "status": "pending", "evidence": "" },
+        "denied": { "status": "pending", "evidence": "" },
+        "stale_version": { "status": "pending", "evidence": "" },
+        "unavailable_artifact": { "status": "pending", "evidence": "" },
+        "unsupported": { "status": "pending", "evidence": "" },
+        "symptom_escalation": { "status": "pending", "evidence": "" },
+        "disabled": { "status": "pending", "evidence": "" },
+        "recovery": { "status": "pending", "evidence": "" }
+      }
+    }
+  },
+  "controls": {
+    "kill_switch": { "status": "pending", "evidence": "" },
+    "artifact_retirement": { "status": "pending", "evidence": "" },
+    "rollback": { "status": "pending", "evidence": "" },
+    "recovery": { "status": "pending", "evidence": "" }
+  },
+  "operations": {
+    "limitations": { "status": "pending", "evidence": "" },
+    "support": { "status": "pending", "evidence": "" },
+    "incident": { "status": "pending", "evidence": "" },
+    "privacy": { "status": "pending", "evidence": "" },
+    "release_checklist": { "status": "pending", "evidence": "" }
+  },
+  "invitationDecision": "not_ready",
+  "decisionOwner": "PENDING"
+}

@@ -306,10 +306,11 @@ states, while status and alert regions announce asynchronous changes.
 
 The component accepts an injected approval client and reload callback. Its
 tests use only the checked-in synthetic contract fixtures. Ordinary builds do
-not mount a generated proposal. The private development dogfood build can mount
-the one pinned provisional artifact only when both the client flag and trusted
-server policy agree; invited-participant use remains blocked on an approved
-methodology and generator.
+not mount a generated proposal. Development dogfood and the explicit closed-
+beta build have separate guards. The closed-beta path accepts only the pinned
+provisional set when membership, consent, environment, artifact, and operator-
+control checks agree; broader participant use remains blocked on approved
+methodology and generator evidence.
 
 `firebaseMaterialCommandClient.ts` is the browser transport. It attaches the
 current Firebase Authentication token through the callable SDK. Local browser

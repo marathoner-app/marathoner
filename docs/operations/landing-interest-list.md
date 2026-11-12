@@ -64,7 +64,8 @@ and required sender footer enabled even though the authored body is plain text.
 ## Public build configuration
 
 The provider Form endpoint and mailing-list ID are public identifiers, not
-credentials. The GitHub Pages dogfood build reads:
+credentials. Both the current dogfood mode and the explicit closed-beta mode
+carry:
 
 ```text
 VITE_LOOPS_FORM_ENDPOINT=https://app.loops.so/api/newsletter-form/<form-id>

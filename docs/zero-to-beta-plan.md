@@ -368,6 +368,10 @@ gate triggers scope or date review before external invitations are promised.
   or private research notes in the public repository.
 - Complete the TestFlight metadata, review, tester, feedback, and release
   checklist with schedule buffer.
+- Require the machine-checked
+  [closed-beta methodology parity record](operations/closed-beta-methodology-parity-and-readiness.md)
+  so missing physical-iPhone evidence, rollback proof, or mismatched artifact
+  versions block invitations rather than becoming an informal exception.
 - Run accessibility, reliability, security-rules, and critical-flow checks.
 
 ### Wave 06: Founding Cohort

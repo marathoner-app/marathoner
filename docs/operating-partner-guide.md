@@ -135,12 +135,11 @@ As of November 7, 2026:
   founding-beta invitations.
 - Plan, Track, Analyze, runner setup, authentication, owner-scoped live reads,
   recommendation-evidence reads, account deletion, and trusted-command
-  boundaries exist. Owner-only internal rehearsal now exercises saved-profile
-  plan generation, unsupported results, start-date choice, session activation,
-  live-history adaptation, recommendation decisions, authored draft guidance,
-  and conservative draft safety outcomes. Draft methodology remains
-  professionally unapproved and excluded from current participant builds until
-  the guarded beta-enablement work in #680 lands.
+  boundaries exist. Explicit closed-beta builds can exercise the pinned
+  provisional plan, unsupported results, guidance, conservative safety path,
+  and bounded adaptation for eligible, consented accounts. The methodology
+  remains professionally unapproved, and #691 keeps invitations blocked until
+  cross-client and rollback evidence passes.
 - The reviewed beta callable exports are deployed, but normal Track run
   mutations have not switched to them. Valid-client observation,
   paid-team iPhone App Attest proof, command-provider migration,

@@ -36,10 +36,11 @@ not professionally reviewed, individualized coaching, or medical advice.
 Review remains a gate before the broader uses listed below.
 
 This is a release-scope decision, not permission to bypass current code guards.
-The repository still restricts draft artifacts to internal development paths.
-A separate implementation issue, #680, must deliberately enable a pinned
-provisional artifact in the beta environment, add the required disclosure and
-consent, and prove the resulting behavior before an invitation.
+Issue #680 deliberately enables one pinned provisional set only in explicit
+closed-beta builds for eligible accounts. The implementation does not make the
+cohort invitation-ready: the
+[cross-client parity and readiness rehearsal](operations/closed-beta-methodology-parity-and-readiness.md)
+must still produce one passing dated record before an invitation.
 
 ## Required disclosure and safety behavior
 
