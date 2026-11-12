@@ -8,6 +8,41 @@ const phoneViewport = { width: 390, height: 844 };
 
 test.use({ viewport: phoneViewport });
 
+test("uses the shared Plan surface and workout hierarchy", async ({ page }) => {
+  await page.goto("tests/viewport/plan.html");
+
+  await expect(page.locator(".plan-header")).toHaveCSS(
+    "background-color",
+    "rgb(233, 238, 248)",
+  );
+  await expect(page.locator(".plan-week-summary > div").first()).toHaveCSS(
+    "background-color",
+    "rgb(255, 255, 255)",
+  );
+  await expect(page.locator(".plan-day-status.completed")).toHaveCSS(
+    "background-color",
+    "rgb(238, 248, 241)",
+  );
+  await expect(page.locator(".plan-day.tempo-run")).toHaveCSS(
+    "border-left-color",
+    "rgb(163, 107, 0)",
+  );
+
+  await page
+    .getByRole("button", {
+      name: "Thu, Oct 29 Tempo run 5 mi · 45 min Scheduled",
+    })
+    .click();
+  await expect(page.getByRole("dialog", { name: "Tempo run" })).toHaveCSS(
+    "background-color",
+    "rgb(255, 255, 255)",
+  );
+  await expect(page.locator(".plan-modal-overlay")).toHaveCSS(
+    "background-color",
+    "rgba(29, 29, 31, 0.64)",
+  );
+});
+
 async function exercisePlan(page: Page, textSizeLabel: string) {
   await expect(
     page.getByRole("heading", { name: "Week 1 of 3" }),

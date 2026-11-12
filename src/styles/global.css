@@ -21,6 +21,10 @@
   --app-success: #17663a;
   --app-success-surface: #eef8f1;
   --app-success-border: #8ab69b;
+  --app-workout-easy: #278b57;
+  --app-workout-quality: #a36b00;
+  --app-workout-long: #b54747;
+  --app-workout-rest: #718096;
   --app-focus-ring: rgb(20 104 204 / 28%);
   --app-radius-small: 0.625rem;
   --app-radius-medium: 0.875rem;

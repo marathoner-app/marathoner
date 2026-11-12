@@ -1,12 +1,13 @@
 .next-workout-summary {
-  width: min(100%, 42rem);
+  width: min(calc(100% - 2rem), 46rem);
   box-sizing: border-box;
-  margin: 1.25rem auto;
-  padding: 1.25rem;
+  margin: 0 auto 1.5rem;
+  padding: clamp(1.25rem, 3vw, 1.75rem);
   border: 1px solid var(--app-border);
-  border-radius: 0.9rem;
+  border-radius: var(--app-radius-large);
   background: var(--app-surface);
-  color: #16202a;
+  box-shadow: var(--app-shadow-small);
+  color: var(--app-ink);
   line-height: 1.5;
   text-align: left;
 }
@@ -28,7 +29,7 @@
 }
 
 .next-workout-label {
-  color: #315866;
+  color: var(--app-accent);
   font-size: 0.78rem;
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -43,4 +44,10 @@
   min-height: 2.75rem;
   margin-top: 1rem;
   padding: 0.6rem 1rem;
+}
+
+@media (max-width: 768px) {
+  .next-workout-summary {
+    width: calc(100% - 2rem);
+  }
 }

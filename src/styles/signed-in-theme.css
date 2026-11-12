@@ -57,8 +57,6 @@
   color: var(--app-muted);
 }
 
-.next-workout-summary,
-.plan-week-summary > div,
 .onboarding-question,
 .onboarding-actions,
 .account-settings-dialog {
@@ -69,21 +67,12 @@
   color: var(--app-ink);
 }
 
-.next-workout-summary {
-  width: min(calc(100% - 2rem), 46rem);
-  margin: 0 auto 1.5rem;
-  padding: clamp(1.25rem, 3vw, 1.75rem);
-}
-
-.next-workout-label,
 .latest-run-eyebrow,
-.plan-name,
 .onboarding-eyebrow,
 .account-settings-eyebrow {
   color: var(--app-accent);
 }
 
-.plan-header,
 .onboarding-header {
   border-color: var(--app-border);
   border-radius: var(--app-radius-large);
@@ -93,29 +82,11 @@
   box-shadow: var(--app-shadow-small);
 }
 
-.plan-container,
-.plan-day,
-.plan-modal-content {
-  color: var(--app-ink);
-}
-
-.plan-day {
-  border-color: var(--app-border);
-  border-radius: var(--app-radius-medium);
-  box-shadow: 0 1px 1px rgb(0 0 0 / 3%);
-}
-
-.plan-day:hover {
-  border-color: var(--app-border-strong);
-  box-shadow: var(--app-shadow-small);
-}
-
 .onboarding-question input[type="text"],
 .onboarding-question input[type="date"],
 .onboarding-question input[type="number"],
 .onboarding-question select,
 .onboarding-question textarea,
-.week-selector,
 .account-settings-dialog textarea {
   border: 1px solid var(--app-border-strong);
   border-radius: var(--app-radius-small);
@@ -126,7 +97,6 @@
 .onboarding-question input:focus-visible,
 .onboarding-question select:focus-visible,
 .onboarding-question textarea:focus-visible,
-.week-selector:focus-visible,
 .account-settings-dialog textarea:focus-visible {
   border-color: var(--app-accent);
   outline: 3px solid var(--app-accent);
@@ -162,9 +132,5 @@
 @media (max-width: 768px) {
   .session-controls {
     padding-top: max(0.75rem, env(safe-area-inset-top));
-  }
-
-  .next-workout-summary {
-    width: calc(100% - 2rem);
   }
 }
