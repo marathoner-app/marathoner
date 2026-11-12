@@ -2,7 +2,7 @@
   box-sizing: border-box;
   width: min(100%, 54rem);
   margin: 0 auto;
-  color: #17202a;
+  color: var(--app-ink);
   line-height: 1.5;
   text-align: left;
 }
@@ -21,7 +21,7 @@
 
 .plan-proposal-eyebrow {
   margin: 0;
-  color: #475569;
+  color: var(--app-accent);
   font-size: 0.82rem;
   font-weight: 750;
   letter-spacing: 0.08em;
@@ -31,10 +31,10 @@
 .plan-proposal-boundary {
   margin: 1rem 0 1.5rem;
   padding: 0.8rem 1rem;
-  border: 1px solid #a8b9ca;
-  border-radius: 0.65rem;
-  background: #f2f6fa;
-  color: #334155;
+  border: 1px solid var(--app-warning-border);
+  border-radius: var(--app-radius-medium);
+  background: var(--app-warning-surface);
+  color: var(--app-warning);
   font-size: 0.92rem;
 }
 
@@ -49,9 +49,10 @@
 .plan-proposal-safety {
   margin: 0;
   padding: clamp(1rem, 3vw, 1.5rem);
-  border: 1px solid #d7dde4;
-  border-radius: 0.85rem;
-  background: #ffffff;
+  border: 1px solid var(--app-border);
+  border-radius: var(--app-radius-large);
+  background: var(--app-surface);
+  box-shadow: var(--app-shadow-small);
 }
 
 .plan-proposal-start-dates legend,
@@ -64,12 +65,12 @@
 .plan-proposal-start-dates p,
 .plan-proposal-safety p {
   margin: 0;
-  color: #475569;
+  color: var(--app-muted);
 }
 
 .plan-proposal-start-dates .plan-proposal-field-error,
 .plan-proposal-safety .plan-proposal-field-error {
-  color: #9f1239;
+  color: var(--app-danger);
   font-weight: 700;
 }
 
@@ -85,20 +86,31 @@
   align-items: flex-start;
   min-width: 0;
   padding: 0.85rem;
-  border: 1px solid #cbd5e1;
-  border-radius: 0.7rem;
+  border: 1px solid var(--app-border);
+  border-radius: var(--app-radius-medium);
+  background: var(--app-subtle-surface);
   cursor: pointer;
+  transition:
+    border-color var(--app-motion-fast) ease,
+    background-color var(--app-motion-fast) ease,
+    box-shadow var(--app-motion-fast) ease;
+}
+
+.plan-proposal-choice-grid label:hover {
+  border-color: var(--app-border-strong);
+  background: var(--app-surface);
 }
 
 .plan-proposal-choice-grid label:has(input:checked) {
-  border-color: #1d5f9f;
-  background: #edf6ff;
-  box-shadow: 0 0 0 1px #1d5f9f;
+  border-color: var(--app-accent);
+  background: var(--app-accent-surface);
+  box-shadow: 0 0 0 1px var(--app-accent);
 }
 
 .plan-proposal-choice-grid input {
   flex: 0 0 auto;
   margin-top: 0.25rem;
+  accent-color: var(--app-accent);
 }
 
 .plan-proposal-choice-grid span {
@@ -108,7 +120,7 @@
 }
 
 .plan-proposal-choice-grid small {
-  color: #475569;
+  color: var(--app-muted);
 }
 
 .plan-proposal-safety-choices {
@@ -122,8 +134,29 @@
   gap: 0.45rem;
   align-items: center;
   min-height: 2.75rem;
+  padding: 0.5rem 0.8rem;
+  border: 1px solid var(--app-border);
+  border-radius: var(--app-radius-small);
+  background: var(--app-subtle-surface);
   font-weight: 700;
   cursor: pointer;
+}
+
+.plan-proposal-safety-choices label:has(input:checked) {
+  border-color: var(--app-accent);
+  background: var(--app-accent-surface);
+  box-shadow: 0 0 0 1px var(--app-accent);
+}
+
+.plan-proposal-safety-choices input {
+  accent-color: var(--app-accent);
+}
+
+.plan-proposal-choice-grid input:focus-visible,
+.plan-proposal-safety-choices input:focus-visible {
+  outline: 3px solid var(--app-accent);
+  outline-offset: 3px;
+  box-shadow: 0 0 0 5px var(--app-focus-ring);
 }
 
 .plan-proposal-actions {
@@ -140,16 +173,17 @@
 }
 
 .plan-proposal-actions .secondary {
-  border: 1px solid #17202a;
-  background: #ffffff;
-  color: #17202a;
+  border: 1px solid var(--app-border-strong);
+  background: var(--app-surface);
+  color: var(--app-ink);
 }
 
 .plan-proposal-unavailable {
   padding: clamp(1.25rem, 4vw, 2rem);
-  border: 1px solid #d7dde4;
-  border-radius: 0.85rem;
-  background: #f8fafc;
+  border: 1px solid var(--app-border);
+  border-radius: var(--app-radius-large);
+  background: var(--app-surface);
+  box-shadow: var(--app-shadow-small);
   text-align: center;
 }
 

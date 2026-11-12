@@ -34,6 +34,12 @@ surfaces now own their stable visual-system rules. Use the shared accent,
 warning, success, and danger surface tokens so these states stay recognizable
 without relying on text alone.
 
+Plan creation and activation use the same language: selected dates use the
+accent surface, provisional and uncertain results use warning surfaces,
+invalid inputs use danger surfaces, and confirmed activation uses success.
+Long proposals keep the schedule in ordinary document flow with compact,
+repeatable week cards rather than a separate visual system.
+
 ## Interaction rules
 
 - Primary actions are near-black; active navigation, focus, and links are blue.
