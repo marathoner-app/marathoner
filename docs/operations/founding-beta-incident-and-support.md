@@ -1,13 +1,13 @@
 # Founding-beta incident and support playbook
 
-- **Status:** Prepared for internal tabletop use; live-system rehearsal remains
-  blocked by [#161](https://github.com/marathoner-app/marathoner/issues/161)
+- **Status:** Prepared for internal tabletop use; methodology-control rehearsal
+  remains tracked by [#691](https://github.com/marathoner-app/marathoner/issues/691)
 - **Owner and incident commander:** Kevin Tulloch
 - **Field-support role:** Marathoner operating partner
 - **Participant support:** `kevin@marathonerapp.com`
 - **Tracking issue:**
   [#498](https://github.com/marathoner-app/marathoner/issues/498)
-- **Last reviewed:** October 27, 2026
+- **Last reviewed:** November 12, 2026
 
 ## Purpose and limits
 
@@ -132,8 +132,13 @@ The following controls are available before a complete remote-control system:
 - follow the scoped Functions rollback procedure after callable Functions have
   been deployed.
 
-Independent generation, guidance, and adaptation kill switches plus minimum-
-client-version enforcement remain owned by
+The closed-beta methodology control now stops provisional plan, guidance, and
+adaptation eligibility as one bundle. The guidance control can retire one
+guidance item independently. Their implementation does not count as a live
+rollback rehearsal; follow the
+[methodology parity and readiness procedure](closed-beta-methodology-parity-and-readiness.md)
+and keep invitations blocked until its dated record passes. Other product
+feature controls and minimum-client-version enforcement remain owned by
 [#120](https://github.com/marathoner-app/marathoner/issues/120). App Check
 rollback and enforcement remain owned by
 [#205](https://github.com/marathoner-app/marathoner/issues/205) and

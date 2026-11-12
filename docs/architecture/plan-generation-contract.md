@@ -202,10 +202,11 @@ The support-evaluator tests additionally load the exact pinned draft packet,
 translate its fixture inputs into real date and availability values, verify
 every frozen supported and unsupported case, and cover upper boundaries that
 the packet's minimum fixture set does not repeat. This is implementation
-evidence only; it is not approval evidence. The closed development dogfood
-build may exercise the exact draft through the separately guarded provisional
-server policy, but that does not make the artifact eligible for external
-participant use.
+evidence only; it is not professional approval evidence. Development dogfood
+may exercise the exact draft through its separate policy. The five-to-eight-
+person closed beta may use the pinned provisional version only through the
+membership, consent, build, disclosure, control, and readiness boundary in
+#680–#691; broader participant use remains blocked.
 
 The deterministic-generator tests reuse that packet adapter. They verify all
 frozen result summaries, the complete lead-in and core distance table, weekday
@@ -214,9 +215,10 @@ ordered unsupported results, provenance, and contract validity.
 
 ## Downstream gates
 
-- **#70:** the deterministic core exists behind injected rules. The closed
-  development dogfood build may use the pinned provisional artifact; external
-  participant use remains blocked until the exact artifact is approved.
+- **#70:** the deterministic core exists behind injected rules. Development
+  dogfood and the explicit closed-beta build may use the pinned provisional
+  artifact through separate guards. Broader participant use remains blocked
+  until the exact artifact is professionally approved.
 - **#71:** the normal Plan surface renders and reviews a proposal without
   exposing technical artifact metadata as runner-facing content.
 - **#72:** the material-command boundary atomically persists an approved or

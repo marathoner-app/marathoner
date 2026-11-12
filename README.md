@@ -37,8 +37,9 @@ Marathoner is currently a deployed pre-beta product under active development.
 It is not open for public signup or founding-beta invitations. The existing
 experience includes:
 
-- **Plan:** use the private owner-dogfood path to build, review, approve, and
-  persist a provisional plan, then browse training weeks and workout details.
+- **Plan:** explicit closed-beta builds can generate, review, approve, and
+  persist a plan from the pinned provisional rules for eligible, consented
+  accounts; ordinary public builds cannot import those artifacts.
 - **Track:** import completed runs from Apple Health or Garmin, retain manual
   entry as a fallback, associate runs with planned workouts, and enrich, edit,
   or delete completed runs.
@@ -49,15 +50,16 @@ experience includes:
   through Firebase email/password authentication. Public account creation is
   disabled while the beta trust and access controls are incomplete.
 
-Owner and operating-partner dogfood can map a saved runner profile into the
-pinned draft plan rules, produce supported or unsupported results, choose a
-start date, and review, approve, and persist a provisional plan. Separate
-internal rehearsal surfaces exercise draft adaptations, recommendation,
-guidance, and safety presentation. The current code still keeps those artifacts
-behind internal paths. Issue
-[#680](https://github.com/marathoner-app/marathoner/issues/680) owns the explicit
-closed-beta transition; the strategy decision does not silently enable a draft
-artifact or represent it as professionally approved.
+Explicit closed-beta web and iOS builds can map a saved runner profile into the
+pinned provisional plan rules, produce supported or unsupported results,
+present guarded guidance and conservative symptom escalation, and require
+approval for a bounded material adaptation. Eligibility, current consent,
+exact artifact versions, and server-owned controls are rechecked at the trusted
+boundary. Ordinary builds still exclude the artifacts, and development
+rehearsal remains separate. Issue
+[#691](https://github.com/marathoner-app/marathoner/issues/691) owns the dated
+cross-client, rollback, and invitation-readiness proof; implemented behavior is
+not represented as professionally approved or invitation-ready.
 
 The visible features share the typed Firestore persistence layer. Follow the
 [open issues](https://github.com/marathoner-app/marathoner/issues) to see what is
@@ -118,11 +120,10 @@ unsupported results, consent, and conservative safety behavior remain required.
 The
 [founding-beta endurance-rules draft](docs/methodology/artifacts/beta-rules/0.2.0-draft/README.md)
 is the exact unapproved packet prepared for testing and later independent
-endurance-methodology review. Current participant builds still cannot import it;
-the owner-only
-[internal plan rehearsal](docs/methodology/internal-plan-rehearsal.md) loads it
-only in the explicit `internal-plan-rehearsal` development mode until a focused,
-tested beta-enablement change lands. The
+endurance-methodology review. Only explicit closed-beta builds may import the
+pinned set, and only eligible, consented accounts may receive its results. The
+owner-only [internal plan rehearsal](docs/methodology/internal-plan-rehearsal.md)
+continues to load the same plan artifact in a separate development mode. The
 [public prototype access decision](docs/public-prototype-access.md) records why
 open registration is disabled and which trust paths must exist before access
 expands. The
@@ -170,7 +171,7 @@ TestFlight are still explicit release gates.
 | `src/domain/training/` | Defines shared training entities, identifiers, units, validation, and calculations without React or Firebase dependencies. |
 | `src/domain/guidance/` | Defines the shared versioned guidance, review, trigger, suppression, correction, and fail-closed presentation contract. |
 | `src/domain/recommendations/` | Defines complete, versioned recommendation evidence and accepted/declined decision invariants. |
-| `src/domain/safety/` | Defines the draft-only conservative safety-escalation contract used by internal rehearsal. |
+| `src/domain/safety/` | Defines the conservative safety-escalation contract used by internal rehearsal and the guarded provisional closed beta. |
 | `src/persistence/` | Defines typed training repositories, Firestore conversion, storage paths, ownership integration tests, and recoverable persistence errors. |
 | `src/training/` | Owns authenticated training-data loading, shared feature state, and cross-feature mutations. |
 | `src/recommendations/` | Owns recommendation-evidence loading and the fail-closed decision-review content boundary. |
@@ -242,18 +243,16 @@ The development/test-only Creator Radar boundary is documented in
 
 ## Current data limitations
 
-- The private development dogfood deployment can generate, approve, and persist
-  an owner or operating-partner plan from the exact pinned draft artifact. The
-  artifact remains provisional and visibly unapproved; the current beta build
-  cannot receive it until the explicit provisional-artifact deployment and
-  disclosure work in issue #680 lands. Independent review is deferred for the
-  small closed cohort, not falsely represented as complete. The
-  participant generation path remains tracked in
-  [issue #29](https://github.com/marathoner-app/marathoner/issues/29).
-- The deterministic adaptation evaluator and its recommendation, guidance, and
-  safety presentation remain internal rehearsal behavior. Moving them into the
-  closed beta requires the explicit guarded deployment, disclosure, and proof
-  work recorded by #680; they remain provisional rather than approved coaching.
+- Explicit closed-beta builds can serve the exact pinned provisional plan,
+  guidance, safety, and bounded-adaptation set to eligible, consented accounts.
+  They fail closed on an ordinary environment, stale or unavailable artifacts,
+  unsupported inputs, disabled controls, or missing access. The set remains
+  unreviewed and cannot appear in an ordinary public build.
+- Dated responsive-web and physical-iPhone parity, kill-switch, retirement,
+  rollback, and recovery evidence is still missing. The machine-checked
+  [invitation-readiness rehearsal](docs/operations/closed-beta-methodology-parity-and-readiness.md)
+  keeps invitations blocked until that evidence and an explicit owner decision
+  exist.
 - Owner-scoped real-time training reads, recommendation-evidence reads, and
   memory-only cache isolation are implemented. Normal Track run creation,
   editing, deletion, and provider imports use atomic commands; profile and shoe
@@ -268,11 +267,11 @@ The development/test-only Creator Radar boundary is documented in
   connection Garmin run and the full duplicate/disconnect/relaunch matrix remain
   open in issues #623 and #624.
 - The Track flow captures date, distance, elapsed time, shoe, optional planned-
-  workout association, perceived effort, and notes. A complete draft guidance
-  set, recommendation explanations, source trace, review gallery, and safety
-  escalation packet exist for internal review. The production approved-content
-  registry remains empty, so no participant-facing coaching or safety guidance
-  is approved or rendered.
+  workout association, perceived effort, and notes. The production
+  professionally approved-content registry remains empty. The distinct
+  closed-beta path may render only its exact pinned, visibly provisional
+  guidance and safety set; that does not convert the content into approved
+  coaching.
 - Firestore structure and security behavior are documented in
   [`docs/architecture/training-data-persistence.md`](docs/architecture/training-data-persistence.md).
 - The external-beta negative cases, remaining client writes, command-migration
@@ -347,9 +346,9 @@ authenticated UID as its ownership boundary.
 
 The committed registry contains visibly distinct development and founding-beta
 projects. `.env`, local development, CI, the selected iOS development build,
-and GitHub Pages remain pinned to development. Beta requires an explicit production-mode
-`VITE_FIREBASE_ENVIRONMENT=beta` selection and does not become a deployment
-default merely because its public identifiers are present.
+and GitHub Pages remain pinned to development. Beta requires an explicit
+production-mode `VITE_FIREBASE_ENVIRONMENT=beta` selection and does not become
+a deployment default merely because its public identifiers are present.
 
 Firebase web configuration identifies a Firebase project; it is not a server
 credential and must not be treated as authorization. Protect any future
@@ -381,6 +380,8 @@ and
 | `npm run check:ios` | Build, sync, and inspect the development iOS boundary. |
 | `npm run check:ios:beta` | Build, sync, and inspect the explicit beta iOS boundary without signing or distribution. |
 | `npm run verify:beta-boundary -- --project marathonerapp-beta --confirm CREATE-TEST-AND-DELETE-BETA-FIXTURES` | Operator-only live check that creates and removes fixed fictional beta fixtures. |
+| `npm run verify:closed-beta-methodology-readiness -- --record <evidence.json>` | Block invitations unless one dated record proves exact cross-client methodology versions, states, controls, operations, and physical-iPhone evidence. |
+| `npm run manage:closed-beta-methodology-controls -- status --project marathonerapp-beta` | Inspect the two server-owned provisional-methodology controls through the dedicated beta operator account; mutations require action-specific confirmation phrases documented in the rehearsal. |
 | `npm run test:watch` | Keep the test runner open and rerun affected tests after changes. |
 | `npm run build` | Run TypeScript project checks and create a production build in `dist/`. |
 | `npm run preview` | Serve the production build locally for a final browser check. |

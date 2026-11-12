@@ -33,7 +33,10 @@ Do not change a pinned artifact in place. A content change must:
 3. Recompute and review each SHA-256 digest.
 4. Update the explicit build import only after the new manifest is accepted for the closed beta.
 
-This slice only establishes the immutable build boundary. Participant eligibility, disclosure and consent, runtime guidance, adaptation approval, rollback, and invitation-readiness proofs remain tracked by #687 through #691.
+The immutable build boundary, participant eligibility, disclosure and consent,
+runtime guidance, and bounded adaptation approval are implemented through
+#686–#690. Dated cross-client, rollback, and invitation-readiness proof remains
+tracked by #691.
 
 ## Runtime eligibility control
 
@@ -73,16 +76,21 @@ symptom inputs may reach only the pinned safety capability; plan, adaptation,
 and guidance capabilities return a typed escalation decision instead.
 
 Creating or enabling the control is an explicit deployment operation. The
-runtime code in #687 does not seed or silently enable it. The later
-capability-specific slices must call this shared decision before producing a
-plan, adaptation, or guidance result.
+runtime code in #687 does not seed or silently enable it. The operator command
+documented in the [parity rehearsal](closed-beta-methodology-parity-and-readiness.md)
+creates both controls disabled and refuses overwrites, project drift, operator
+drift, version drift, and stale concurrent updates. The capability-specific
+slices call this shared decision before producing a plan, adaptation, or
+guidance result.
 
 ## Guidance and safety runtime control
 
 Issue #689 adds a second server-owned control for presenting the pinned
 guidance and safety content after the shared eligibility decision succeeds.
-Create `operatorControls/closedBetaGuidance` with this exact shape only as an
-explicit closed-beta deployment operation:
+The following is its enabled state. The reviewed operator command initially
+creates `operatorControls/closedBetaGuidance` with `enabled: false`, then
+atomically enables it with the shared methodology control only as an explicit
+closed-beta deployment operation:
 
 ```json
 {
