@@ -280,6 +280,12 @@ export function findIosProjectViolations({
   )
   requireText(
     violations,
+    infoPlist,
+    '<key>NSHealthUpdateUsageDescription</key>',
+    'Info.plist',
+  )
+  requireText(
+    violations,
     launchStoryboard,
     'text="Marathoner."',
     'LaunchScreen.storyboard',

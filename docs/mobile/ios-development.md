@@ -312,8 +312,16 @@ Release builds signed successfully; the signed Release app contained the
 production App Attest and required HealthKit entitlements, then installed on
 and launched from the physical test iPhone. See the
 [dated evidence record](evidence/2026-11-12-paid-team-signing-and-release-proof.md).
-Live App Attest token acceptance, the signed-in beta journey, archive and
-upload, and TestFlight remain open under #122 and #205.
+Live App Attest token acceptance, the signed-in beta journey, Apple processing,
+and TestFlight remain open under #122 and #205.
+
+The first App Store Connect archive and upload followed on November 12, 2026.
+Version 1.0 build 2 uploaded successfully and entered Apple processing after a
+missing HealthKit privacy-purpose string was corrected and protected by the
+iOS boundary policy. See the
+[dated archive and upload evidence](evidence/2026-11-12-app-store-connect-archive-upload.md).
+Processing completion, TestFlight review, tester access, and the non-owner
+journey remain open; an accepted upload is not a TestFlight distribution pass.
 
 After `npm run check:ios` and local signing configuration:
 
