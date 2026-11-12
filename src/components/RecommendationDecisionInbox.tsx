@@ -123,7 +123,10 @@ export default function RecommendationDecisionInbox({
     model = null;
   }
 
-  if (model?.contentState !== "reviewed") {
+  if (
+    model?.contentState !== "reviewed" &&
+    model?.contentState !== "provisional"
+  ) {
     return (
       <InboxState
         kind="alert"

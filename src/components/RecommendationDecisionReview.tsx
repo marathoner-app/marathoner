@@ -11,7 +11,7 @@ export interface RecommendationDecisionReviewModel {
   readonly meaning: string;
   readonly recommendation: string;
   readonly impact: string;
-  readonly contentState: "internal_preview" | "reviewed";
+  readonly contentState: "internal_preview" | "provisional" | "reviewed";
 }
 
 export type RecommendationDecisionReviewState =

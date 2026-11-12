@@ -192,6 +192,7 @@ export class FirestoreInternalAdaptationRecommendationStore
       }
       const outcome: InternalAdaptationEvaluationOutcome =
         options.evaluate(snapshot)
+      let result = outcome.result
 
       if (outcome.evidence !== null) {
         if (
@@ -206,18 +207,55 @@ export class FirestoreInternalAdaptationRecommendationStore
             'The pending recommendation no longer matches the active plan revision.',
           )
         }
-        const evidenceReference = this.database.doc(
-          recommendationEvidencePath(ownerId, outcome.evidence.recommendationId),
+        const recommendationCollection = this.database.collection(
+          `users/${ownerId}/recommendationEvidence`,
         )
-        const evidenceSnapshot = await transaction.get(evidenceReference)
-        if (evidenceSnapshot.exists) {
-          const existing = recommendationEvidenceFromDocument(
-            evidenceSnapshot.data(),
+        const recommendationSnapshots = await transaction.get(
+          recommendationCollection,
+        )
+        const sameRevision = recommendationSnapshots.docs
+          .map((snapshot) =>
+            recommendationEvidenceFromDocument(snapshot.data()),
           )
-          if (!isDeepStrictEqual(existing, outcome.evidence)) {
+          .filter(
+            (existing) =>
+              existing.evaluatedPlanId === outcome.evidence?.evaluatedPlanId &&
+              existing.evaluationInput.evaluatedPlanRevision ===
+                outcome.evidence?.evaluationInput.evaluatedPlanRevision,
+          )
+        if (sameRevision.length > 1) {
+          return { kind: 'conflict' as const }
+        }
+        const existing = sameRevision[0]
+        if (existing !== undefined) {
+          const sameRecommendation =
+            isDeepStrictEqual(
+              existing.evaluationInput,
+              outcome.evidence.evaluationInput,
+            ) &&
+            isDeepStrictEqual(
+              existing.evaluationResult,
+              outcome.evidence.evaluationResult,
+            ) &&
+            isDeepStrictEqual(
+              existing.planAdjustment,
+              outcome.evidence.planAdjustment,
+            )
+          if (!sameRecommendation || existing.decision !== 'pending') {
             return { kind: 'conflict' as const }
           }
+          result = {
+            status: 'pending_recommendation_created',
+            commandId: options.command.commandId,
+            recommendationId: existing.recommendationId,
+          }
         } else {
+          const evidenceReference = this.database.doc(
+            recommendationEvidencePath(
+              ownerId,
+              outcome.evidence.recommendationId,
+            ),
+          )
           transaction.create(evidenceReference, outcome.evidence)
         }
       }
@@ -225,10 +263,10 @@ export class FirestoreInternalAdaptationRecommendationStore
       transaction.create(receiptReference, {
         schemaVersion: RECEIPT_SCHEMA_VERSION,
         signature,
-        result: outcome.result,
+        result,
         createdAt: Timestamp.fromDate(this.now()),
       } satisfies StoredReceipt)
-      return { kind: 'completed' as const, result: outcome.result }
+      return { kind: 'completed' as const, result }
     })
   }
 }

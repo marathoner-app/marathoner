@@ -69,6 +69,7 @@ import {
   shouldEnableInternalAdaptationRecommendations,
 } from './internalAdaptationRecommendationActivation.js'
 import { executeInternalAdaptationRecommendation } from './internalAdaptationRecommendationHandler.js'
+import { executeClosedBetaAdaptationRecommendation } from './closedBetaAdaptationRecommendationHandler.js'
 import { loadPinnedInternalAdaptationArtifacts } from './pinnedInternalAdaptationArtifacts.js'
 import { loadPinnedClosedBetaMethodologyManifest } from './pinnedClosedBetaMethodologyManifest.js'
 import {
@@ -77,6 +78,7 @@ import {
 } from './closedBetaMethodologyConsentHandler.js'
 import { FirestoreClosedBetaMethodologyConsentStore } from './firestoreClosedBetaMethodologyConsentStore.js'
 import { FirestoreClosedBetaMethodologyEligibilityStore } from './firestoreClosedBetaMethodologyEligibilityStore.js'
+import type { ClosedBetaMethodologyEligibilityRequest } from './closedBetaMethodologyEligibility.js'
 import {
   dismissClosedBetaGuidance as executeDismissClosedBetaGuidance,
   getClosedBetaGuidance as executeGetClosedBetaGuidance,
@@ -183,6 +185,11 @@ const dependencies = {
   },
   recommendationDecision: {
     activationGate: operatorActivationGate,
+    closedBetaEligibility: {
+      projectId: gcloudProject.value(),
+      evaluate: (request: ClosedBetaMethodologyEligibilityRequest) =>
+        closedBetaMethodologyEligibilityStore.evaluate(request),
+    },
     evidence: new FirestoreRecommendationEvidenceStore(database),
     store: new FirestoreRecommendationDecisionStore(database),
   },
@@ -360,6 +367,28 @@ export const generateInternalAdaptationRecommendation = onCall(
         store: internalAdaptationStore,
         log: (entry) => {
           logger.info('Internal adaptation recommendation event', entry)
+        },
+      },
+    }),
+)
+
+export const generateClosedBetaAdaptationRecommendation = onCall(
+  { enforceAppCheck: false, invoker: 'public' },
+  (request) =>
+    executeClosedBetaAdaptationRecommendation({
+      caller: {
+        appCheckVerified: request.app !== undefined || functionsEmulator,
+        ownerId: request.auth?.uid ?? null,
+      },
+      data: request.data,
+      dependencies: {
+        projectId: gcloudProject.value(),
+        manifest: closedBetaMethodologyManifest,
+        artifacts: internalAdaptationArtifacts,
+        eligibility: closedBetaMethodologyEligibilityStore,
+        store: internalAdaptationStore,
+        log: (entry) => {
+          logger.info('Closed-beta adaptation recommendation event', entry)
         },
       },
     }),

@@ -9,6 +9,7 @@ import type {
   RecommendationAction,
   RecommendationEvidenceV2,
 } from "../domain/recommendations";
+import type { ClosedBetaProvisionalMethodologyManifest } from "../domain/methodology/closedBetaProvisionalMethodology";
 import { isUtcDateTime } from "../domain/training";
 import { isIdentifierValue } from "../domain/training/identifiers";
 import type { RecommendationDecisionReviewModel } from "../components/RecommendationDecisionReview";
@@ -245,4 +246,39 @@ export function resolveInternalRecommendationDecisionReviewModel(
     ...matches[0]!.model,
     contentState: "internal_preview",
   };
+}
+
+export function resolveClosedBetaRecommendationDecisionReviewModel(
+  evidence: RecommendationEvidenceV2,
+  manifest: ClosedBetaProvisionalMethodologyManifest,
+): RecommendationDecisionReviewModel | null {
+  const evidenceKey = contentKeyFromEvidence(evidence);
+  if (evidenceKey === null) return null;
+
+  const artifacts = Object.fromEntries(
+    manifest.artifacts.map(({ kind, version }) => [kind, version]),
+  );
+  if (
+    manifest.reviewState !== "provisional_unreviewed" ||
+    manifest.publicationState !== "closed_beta_only" ||
+    artifacts.plan !== evidenceKey.basePlanArtifactVersion ||
+    artifacts.adaptation !== evidenceKey.adaptationArtifactVersion
+  ) {
+    return null;
+  }
+
+  const registry = createDraftRecommendationDecisionContent({
+    basePlanArtifactVersion: evidenceKey.basePlanArtifactVersion,
+    adaptationArtifactVersion: evidenceKey.adaptationArtifactVersion,
+  });
+  const matches = registry.filter(
+    (content) =>
+      isInternalDraftContent(content) &&
+      hasCompleteModel(content.model) &&
+      content.contentVersion === artifacts.guidance &&
+      contentKeysMatch(content, evidenceKey),
+  );
+
+  if (matches.length !== 1) return null;
+  return { ...matches[0]!.model, contentState: "provisional" };
 }

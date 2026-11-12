@@ -109,3 +109,35 @@ increment `revision`, and update `updatedAt`. To retire one item, add its exact
 ID to `disabledGuidanceIds` and increment the control revision. Disabling the
 shared `closedBetaMethodology` control remains the bundle-wide kill switch.
 Clients cannot read or write either control or guidance history.
+
+## Adaptation recommendation and approval boundary
+
+Issue #690 connects the pinned adaptation artifact to the closed-beta client
+without changing the development-only rehearsal. A participant can explicitly
+check the latest completed planned workout. The client sends the exact bundled
+manifest and adaptation versions; the callable rejects a stale build before it
+loads training state.
+
+Before generating evidence, the server reuses the shared methodology decision
+and therefore requires the beta project, approved membership, current consent,
+enabled `operatorControls/closedBetaMethodology`, and the exact active
+adaptation artifact. The deterministic evaluator may create one pending
+recommendation, return no change, or refuse the input. A single hard-effort
+answer does not create a material change, and any reported pain or unusual
+symptom suppresses adaptation.
+
+The participant review states the observation, meaning, exact recommendation,
+expected impact, provisional status, and pinned artifact version. Declining
+records an immutable decision without changing the plan. Approval passes
+through `recommendation.decide`; immediately before the transaction, the
+server rechecks the same closed-beta eligibility rather than treating the draft
+artifact as professionally approved. The existing transaction then verifies
+the active revision, snapshots the prior plan, applies the bounded workout
+projection, advances exactly one revision, finalizes evidence, and writes the
+receipt atomically.
+
+Disabling `operatorControls/closedBetaMethodology`, retiring or replacing the
+manifest artifact, revoking membership, or requiring new consent stops new
+generation and decisions without a client release. Exact command retries remain
+idempotent, and ambiguous client responses are resolved with the original
+command identifier instead of creating another recommendation or decision.
