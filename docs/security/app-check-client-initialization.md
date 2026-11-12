@@ -150,19 +150,18 @@ The application target includes `App.entitlements` with
 Firebase does not accept App Attest sandbox tokens. The Xcode Release
 configuration must reference this entitlement for beta and distribution. The
 Debug configuration intentionally does not reference it, allowing an
-owner-controlled Personal Team development build to use the development-only
+owner-controlled development build to use the development-only
 debug provider. The iOS boundary test rejects the inverse configuration.
 
-The 2026-10-06 App Attest signed-device build stopped before compilation
-because the current Personal Team provisioning profile does not contain App
-Attest. This remains expected for Release and beta. A Marathoner Apple
-Developer Program team must enable the capability and issue a new profile
-before the physical-iPhone App Attest acceptance test can pass. The selected
-individual enrollment and TestFlight path is tracked in
-[#122](https://github.com/marathoner-app/marathoner/issues/122). Future
-organization migration is deferred in #281.
-The development Debug workflow can support owner dogfooding, but it is not App
-Attest evidence and cannot satisfy #205, TestFlight, or an external-beta gate.
+The free Personal Team provisioning block was removed on November 12, 2026,
+after the individual Apple Developer Program membership became active. A clean
+beta Release build signed, installed, and launched on the physical test iPhone;
+the signed app carried the production App Attest entitlement. See the
+[dated paid-team evidence](../mobile/evidence/2026-11-12-paid-team-signing-and-release-proof.md).
+That result proves signing and entitlement configuration, not live App Attest
+token acceptance, TestFlight, or a signed-in external-tester journey. Issues
+#122 and #205 remain open for those gates. Future organization migration is
+deferred in #281.
 
 ## Evidence and remaining proof
 
@@ -187,19 +186,17 @@ sign-in, and reached the Firestore-backed onboarding state. No token value,
 credential, device identifier, or beta configuration was recorded. This proves
 the #351 development exception only; it is not App Attest evidence.
 
-The paid-team beta rollout still requires:
+The beta rollout still requires:
 
-1. enroll or select an Apple Developer Program team, enable App Attest for the
-   explicit App ID, and regenerate the development profile;
-2. run the release-shaped build on a physical iPhone and prove App Attest token,
+1. run the release-shaped build on a physical iPhone and prove App Attest token,
    sign-in, Firestore read, sign-out, persistence, cold start, and the bounded
    failure/retry state;
-3. create a separately custodied development-local browser debug token only if
+2. create a separately custodied development-local browser debug token only if
    localhost smoke testing is required, or perform the browser smoke test from
    a registered GitHub Pages origin;
-4. confirm live browser Auth and Firestore traffic carries valid App Check
+3. confirm live browser Auth and Firestore traffic carries valid App Check
    tokens; and
-5. reconfirm Authentication, Firestore, and Functions enforcement remains off
+4. reconfirm Authentication, Firestore, and Functions enforcement remains off
    through the #205 observation and rollback window.
 
 Issue #122 owns the paid-team provisioning dependency, #205 owns the remaining
