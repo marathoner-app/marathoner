@@ -30,7 +30,7 @@ async function expectMobileBottomNavigation(page: Page) {
   ).toBeCloseTo(await page.evaluate(() => window.innerHeight), 0);
 
   const triggerBounds = [];
-  for (const name of ["Plan", "Track", "Analyze"]) {
+  for (const name of ["Home", "Plan", "Track", "Analyze"]) {
     const trigger = page.getByRole("button", { name, exact: true });
     await expectMinimumTouchTarget(trigger, `${name} mobile navigation destination`);
     triggerBounds.push(await trigger.boundingBox());
@@ -38,13 +38,16 @@ async function expectMobileBottomNavigation(page: Page) {
 
   expect(triggerBounds.every((bounds) => bounds !== null)).toBe(true);
   if (triggerBounds.some((bounds) => bounds === null)) return;
-  const [planBounds, trackBounds, analyzeBounds] = triggerBounds as [
+  const [homeBounds, planBounds, trackBounds, analyzeBounds] = triggerBounds as [
+    NonNullable<(typeof triggerBounds)[number]>,
     NonNullable<(typeof triggerBounds)[number]>,
     NonNullable<(typeof triggerBounds)[number]>,
     NonNullable<(typeof triggerBounds)[number]>,
   ];
+  expect(homeBounds.width).toBeCloseTo(planBounds.width, 0);
   expect(planBounds.width).toBeCloseTo(trackBounds.width, 0);
   expect(trackBounds.width).toBeCloseTo(analyzeBounds.width, 0);
+  expect(homeBounds.x).toBeLessThan(planBounds.x);
   expect(planBounds.x).toBeLessThan(trackBounds.x);
   expect(trackBounds.x).toBeLessThan(analyzeBounds.x);
 }
@@ -73,6 +76,10 @@ async function expectHomeVisible(page: Page) {
   await expect(page.getByRole("button", { name: "Edit runner profile" })).toBeVisible();
   await expect(page.getByRole("heading", { level: 2, name: "No active plan yet" })).toBeVisible();
   await expect(page.getByRole("navigation", { name: "Training sections" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Home", exact: true })).toHaveAttribute(
+    "aria-current",
+    "page",
+  );
 }
 
 test("uses the shared canvas, banner, and card surface hierarchy", async ({
@@ -130,6 +137,7 @@ test("keeps the signed-in home in normal flow at phone width", async ({ page }) 
     "Log out",
     "Edit runner profile",
     "Open Plan",
+    "Home",
     "Plan",
     "Track",
     "Analyze",
@@ -199,7 +207,7 @@ test("hides training destinations until runner setup is complete", async ({
   await expect(
     page.getByRole("navigation", { name: "Training sections" }),
   ).toHaveCount(0);
-  for (const name of ["Plan", "Track", "Analyze"]) {
+  for (const name of ["Home", "Plan", "Track", "Analyze"]) {
     await expect(
       page.getByRole("button", { name, exact: true }),
     ).toHaveCount(0);
@@ -257,6 +265,14 @@ test("keeps mobile navigation available while switching sections", async ({
     page.getByRole("button", { name: "Track", exact: true }),
   ).toHaveAttribute("aria-current", "page");
 
+  await page.getByRole("button", { name: "Analyze", exact: true }).click();
+  await expect(
+    page.getByRole("region", { name: "Analyze Your Progress" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Analyze", exact: true }),
+  ).toHaveAttribute("aria-current", "page");
+
   const finalAction = page.getByRole("button", { name: "Final section action" });
   await finalAction.scrollIntoViewIfNeeded();
   await expect(finalAction).toBeInViewport();
@@ -269,6 +285,14 @@ test("keeps mobile navigation available while switching sections", async ({
     page,
     "signed-in training section",
     "after mobile tab switching",
+  );
+
+  await page.getByRole("button", { name: "Home", exact: true }).click();
+  await expectHomeVisible(page);
+  await expectNoHorizontalOverflow(
+    page,
+    "signed-in home",
+    "after returning from mobile tabs",
   );
 });
 

@@ -7,6 +7,8 @@ import {
 type TrainingSectionNavigationProps = {
   activeSection: TrainingSection | null;
   transitionDuration: number;
+  onSelectHome: () => void;
+  onRegisterHomeTrigger?: (element: HTMLButtonElement | null) => void;
   onSelect: (section: TrainingSection) => void;
   onRegisterTrigger?: (
     section: TrainingSection,
@@ -14,7 +16,9 @@ type TrainingSectionNavigationProps = {
   ) => void;
 };
 
-function TrainingSectionIcon({ section }: { section: TrainingSection }) {
+type TrainingDestination = "home" | TrainingSection;
+
+function TrainingSectionIcon({ section }: { section: TrainingDestination }) {
   return (
     <svg
       className="section-trigger-icon"
@@ -22,6 +26,12 @@ function TrainingSectionIcon({ section }: { section: TrainingSection }) {
       aria-hidden="true"
       focusable="false"
     >
+      {section === "home" && (
+        <>
+          <path d="M3 11.5 12 4l9 7.5" />
+          <path d="M5.5 10.5V20h13v-9.5M9.5 20v-6h5v6" />
+        </>
+      )}
       {section === "plan" && (
         <>
           <rect x="3" y="5" width="18" height="16" rx="2" />
@@ -47,11 +57,26 @@ function TrainingSectionIcon({ section }: { section: TrainingSection }) {
 export default function TrainingSectionNavigation({
   activeSection,
   transitionDuration,
+  onSelectHome,
+  onRegisterHomeTrigger,
   onSelect,
   onRegisterTrigger,
 }: TrainingSectionNavigationProps) {
   return (
     <nav className="section-navigation" aria-label="Training sections">
+      <motion.button
+        ref={onRegisterHomeTrigger}
+        type="button"
+        className="section-trigger"
+        aria-current={activeSection === null ? "page" : undefined}
+        onClick={onSelectHome}
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: transitionDuration }}
+      >
+        <TrainingSectionIcon section="home" />
+        <span className="section-trigger-label">Home</span>
+      </motion.button>
       {trainingSections.map(({ id, label }) => (
         <motion.button
           key={id}

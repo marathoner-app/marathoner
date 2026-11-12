@@ -56,6 +56,7 @@ export function SignedInHomeFixture() {
             <TrainingSectionNavigation
               activeSection={null}
               transitionDuration={0}
+              onSelectHome={() => setActiveSection(null)}
               onSelect={setActiveSection}
             />
           )}
@@ -110,6 +111,7 @@ export function SignedInHomeFixture() {
         <TrainingSectionNavigation
           activeSection={activeSection}
           transitionDuration={0}
+          onSelectHome={() => setActiveSection(null)}
           onSelect={setActiveSection}
         />
       )}
