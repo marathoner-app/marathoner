@@ -2,11 +2,11 @@
   width: min(100%, 44rem);
   margin: 0 auto;
   padding: clamp(1.25rem, 3vw, 2rem);
-  border: 1px solid #cbd5e1;
-  border-radius: 1.25rem;
-  background: #f8fafc;
-  color: #17202a;
-  box-shadow: 0 1rem 2.5rem rgb(15 23 42 / 8%);
+  border: 1px solid var(--app-border);
+  border-radius: var(--app-radius-large);
+  background: var(--app-surface);
+  color: var(--app-ink);
+  box-shadow: var(--app-shadow-small);
 }
 
 .recommendation-decision-inbox-state h2 {
@@ -24,7 +24,7 @@
 
 .recommendation-decision-inbox-eyebrow {
   margin: 0;
-  color: #315866;
+  color: var(--app-accent);
   font-size: 0.78rem;
   font-weight: 800;
   letter-spacing: 0.11em;

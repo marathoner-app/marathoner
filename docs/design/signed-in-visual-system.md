@@ -29,12 +29,24 @@ feature layouts remain independent. Later slices should move stable decisions
 into their owning component styles rather than growing an unlimited override
 file.
 
+Runner setup, account and data-import settings, guidance, and recommendation
+surfaces now own their stable visual-system rules. Use the shared accent,
+warning, success, and danger surface tokens so these states stay recognizable
+without relying on text alone.
+
 ## Interaction rules
 
 - Primary actions are near-black; active navigation, focus, and links are blue.
 - Secondary actions are white with a neutral border.
 - Keyboard focus uses both a solid outline and a soft outer ring.
 - Mobile navigation remains fixed, thumb-friendly, and safe-area aware.
+- Long setup flows keep their completion actions anchored within the form while
+  preserving normal document space and safe-area padding.
+- Routine account controls use neutral surfaces. Diagnostics remain secondary,
+  and irreversible account deletion has a distinct danger surface.
+- Safety guidance keeps danger emphasis; ordinary guidance and recommended
+  choices use the blue accent surface; provisional content uses the warning
+  surface; confirmed outcomes use the success surface.
 - Motion is brief and functional, and collapses under `prefers-reduced-motion`.
 
 ## Responsive checks

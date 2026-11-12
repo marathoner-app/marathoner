@@ -5,7 +5,7 @@
   box-sizing: border-box;
   overflow-y: auto;
   background: var(--app-canvas);
-  color: #111827;
+  color: var(--app-ink);
   line-height: 1.5;
   text-align: left;
 }
@@ -15,7 +15,8 @@
   width: min(100%, 70rem);
   min-height: 100%;
   margin: 0 auto;
-  padding: clamp(1rem, 4vw, 3rem);
+  padding: clamp(1rem, 4vw, 3rem) clamp(1rem, 4vw, 3rem)
+    max(1rem, env(safe-area-inset-bottom));
 }
 
 .onboarding-header {
@@ -36,7 +37,7 @@
 
 .onboarding-eyebrow {
   margin: 0 0 0.35rem;
-  color: #1d4ed8;
+  color: var(--app-accent);
   font-size: 0.8rem;
   font-weight: 800;
   letter-spacing: 0.08em;
@@ -49,28 +50,35 @@
   line-height: 1.05;
 }
 
+.onboarding-header h1:focus {
+  outline: none;
+  text-decoration: underline 0.12em var(--app-focus-ring);
+  text-underline-offset: 0.12em;
+}
+
 .onboarding-header p:not(.onboarding-eyebrow) {
   max-width: 44rem;
   margin: 0.8rem 0 0;
-  color: #374151;
+  color: var(--app-muted);
 }
 
 .onboarding-close {
   flex: 0 0 auto;
   min-height: 2.75rem;
   padding: 0.65rem 1rem;
-  border: 1px solid #94a3b8;
+  border: 1px solid var(--app-border-strong);
+  border-radius: var(--app-radius-small);
   background: var(--app-surface);
-  color: #111827;
+  color: var(--app-ink);
 }
 
 .onboarding-error-summary {
   margin-bottom: 1rem;
   padding: 0.85rem 1rem;
-  border: 1px solid #b91c1c;
-  border-radius: 0.65rem;
-  background: #fef2f2;
-  color: #7f1d1d;
+  border: 1px solid var(--app-danger-border);
+  border-radius: var(--app-radius-medium);
+  background: var(--app-danger-surface);
+  color: var(--app-danger);
   font-weight: 650;
 }
 
@@ -85,8 +93,9 @@
   margin: 0;
   padding: clamp(16px, 1.15rem, 20px);
   border: 1px solid var(--app-border);
-  border-radius: 0.85rem;
+  border-radius: var(--app-radius-large);
   background: var(--app-surface);
+  box-shadow: var(--app-shadow-small);
 }
 
 .onboarding-question-wide {
@@ -97,7 +106,7 @@
 .onboarding-question legend {
   max-width: 100%;
   padding: 0;
-  color: #111827;
+  color: var(--app-ink);
   font-size: 1.05rem;
   font-weight: 750;
   line-height: 1.3;
@@ -116,14 +125,14 @@
 
 .onboarding-question label span,
 .onboarding-question legend span {
-  color: #475569;
+  color: var(--app-muted);
   font-size: 0.9rem;
   font-weight: 500;
 }
 
 .onboarding-question > p:not(.onboarding-field-error, .onboarding-character-count) {
   margin: 0.35rem 0 0.8rem;
-  color: #475569;
+  color: var(--app-muted);
   font-size: 0.92rem;
 }
 
@@ -138,10 +147,10 @@
   min-width: 0;
   min-height: 2.75rem;
   padding: 0.6rem 0.7rem;
-  border: 1px solid #64748b;
-  border-radius: 0.45rem;
-  background: #fff;
-  color: #111827;
+  border: 1px solid var(--app-border-strong);
+  border-radius: var(--app-radius-small);
+  background: var(--app-surface);
+  color: var(--app-ink);
   font: inherit;
   line-height: 1.3;
 }
@@ -170,7 +179,7 @@
 .onboarding-question input[aria-invalid="true"],
 .onboarding-question select[aria-invalid="true"],
 .onboarding-question textarea[aria-invalid="true"] {
-  border-color: #b91c1c;
+  border-color: var(--app-danger);
 }
 
 .onboarding-question input:focus-visible,
@@ -178,8 +187,9 @@
 .onboarding-question textarea:focus-visible,
 .onboarding-close:focus-visible,
 .onboarding-actions button:focus-visible {
-  outline: 3px solid #2563eb;
+  outline: 3px solid var(--app-accent);
   outline-offset: 2px;
+  box-shadow: 0 0 0 5px var(--app-focus-ring);
 }
 
 .onboarding-choice-row,
@@ -204,11 +214,32 @@
   gap: 0.55rem;
   min-height: 2.75rem;
   padding: 0.45rem 0.7rem;
-  border: 1px solid #cbd5e1;
-  border-radius: 0.55rem;
-  background: #f8fafc;
-  color: #1f2937;
+  border: 1px solid var(--app-border);
+  border-radius: var(--app-radius-small);
+  background: var(--app-subtle-surface);
+  color: var(--app-ink);
   cursor: pointer;
+  transition:
+    border-color var(--app-motion-fast) ease,
+    background-color var(--app-motion-fast) ease,
+    box-shadow var(--app-motion-fast) ease;
+}
+
+.onboarding-choice-row label:hover,
+.onboarding-option-grid label:hover,
+.onboarding-day-grid label:hover,
+.onboarding-confirmation:hover {
+  border-color: var(--app-border-strong);
+  background: var(--app-surface);
+}
+
+.onboarding-choice-row label:has(input:checked),
+.onboarding-option-grid label:has(input:checked),
+.onboarding-day-grid label:has(input:checked),
+.onboarding-confirmation:has(input:checked) {
+  border-color: var(--app-accent);
+  background: var(--app-accent-surface);
+  box-shadow: 0 0 0 1px var(--app-accent);
 }
 
 .onboarding-choice-row input,
@@ -219,6 +250,7 @@
   width: 1.15rem;
   height: 1.15rem;
   margin: 0;
+  accent-color: var(--app-accent);
 }
 
 .onboarding-inline-field {
@@ -226,7 +258,7 @@
   gap: 0.35rem;
   max-width: 20rem;
   margin-top: 1rem;
-  color: #1f2937;
+  color: var(--app-ink);
   font-weight: 650;
 }
 
@@ -247,20 +279,20 @@
   display: grid;
   gap: 0.35rem;
   min-width: 0;
-  color: #1f2937;
+  color: var(--app-ink);
   font-weight: 650;
 }
 
 .onboarding-field-error {
   margin: 0.55rem 0 0;
-  color: #9f1d1d;
+  color: var(--app-danger);
   font-size: 0.9rem;
   font-weight: 650;
 }
 
 .onboarding-character-count {
   margin: 0.25rem 0 0;
-  color: #64748b;
+  color: var(--app-muted);
   font-size: 0.8rem;
   text-align: right;
 }
@@ -273,13 +305,14 @@
   margin-top: 1.25rem;
   padding: 1rem;
   border: 1px solid var(--app-border);
-  border-radius: 0.85rem;
+  border-radius: var(--app-radius-large);
   background: var(--app-surface);
+  box-shadow: var(--app-shadow-small);
 }
 
 .onboarding-actions p {
   margin: 0;
-  color: #475569;
+  color: var(--app-muted);
   font-size: 0.9rem;
 }
 
@@ -295,9 +328,9 @@
 }
 
 .onboarding-secondary-action {
-  border: 1px solid #64748b;
-  background: #fff;
-  color: #111827;
+  border: 1px solid var(--app-border-strong);
+  background: var(--app-surface);
+  color: var(--app-ink);
 }
 
 .onboarding-actions button:disabled,
@@ -316,16 +349,16 @@
 
 .runner-profile-entry p {
   margin: 0;
-  color: #475569;
+  color: var(--app-muted);
   font-size: 0.9rem;
 }
 
 .runner-profile-entry button {
   min-height: 2.75rem;
   padding: 0.6rem 1rem;
-  border: 1px solid #64748b;
+  border: 1px solid var(--app-border-strong);
   background: var(--app-surface);
-  color: #111827;
+  color: var(--app-ink);
 }
 
 .training-home-status {
@@ -341,7 +374,7 @@
 }
 
 .training-home-status.training-error {
-  color: #9f1d1d;
+  color: var(--app-danger);
 }
 
 @media (max-width: 768px) {
