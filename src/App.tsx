@@ -42,6 +42,7 @@ import {
   resumeHealthKitImportMonitoring,
   stopHealthKitImportMonitoring,
 } from "./services/healthKitImport";
+import ClosedBetaMethodologyConsentGate from "./components/ClosedBetaMethodologyConsentGate";
 
 const publicSupportEmail = "kevin@marathonerapp.com";
 const BetaRunCommandRehearsal = isBetaRunCommandRehearsalMode(
@@ -333,24 +334,26 @@ function App() {
         )}
 
       {!deletionReceipt && !logoutPending && auth.status === "signedIn" && (
-        <TrainingDataProvider key={auth.user.uid} userId={auth.user.uid}>
-          <RecommendationEvidenceProvider
-            ownerId={createUserId(auth.user.uid)}
-          >
-            <AuthenticatedExperience
+        <ClosedBetaMethodologyConsentGate ownerId={auth.user.uid}>
+          <TrainingDataProvider key={auth.user.uid} userId={auth.user.uid}>
+            <RecommendationEvidenceProvider
               ownerId={createUserId(auth.user.uid)}
-              activeSection={activeSection}
-              activeSectionDetails={activeSectionDetails}
-              trackInitialFocusTarget={trackInitialFocusTarget}
-              reduceMotion={Boolean(reduceMotion)}
-              onOpenSection={openSection}
-              onCloseSection={closeSection}
-              onRegisterTrigger={(section, element) => {
-                triggerRefs.current[section] = element;
-              }}
-            />
-          </RecommendationEvidenceProvider>
-        </TrainingDataProvider>
+            >
+              <AuthenticatedExperience
+                ownerId={createUserId(auth.user.uid)}
+                activeSection={activeSection}
+                activeSectionDetails={activeSectionDetails}
+                trackInitialFocusTarget={trackInitialFocusTarget}
+                reduceMotion={Boolean(reduceMotion)}
+                onOpenSection={openSection}
+                onCloseSection={closeSection}
+                onRegisterTrigger={(section, element) => {
+                  triggerRefs.current[section] = element;
+                }}
+              />
+            </RecommendationEvidenceProvider>
+          </TrainingDataProvider>
+        </ClosedBetaMethodologyConsentGate>
       )}
 
       {!deletionReceipt &&

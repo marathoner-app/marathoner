@@ -811,6 +811,26 @@ describe("founding-beta membership rules", () => {
     }
   });
 
+  it("keeps methodology consent acceptance server-owned and unreadable to clients", async () => {
+    await seedMembership(firstUserId);
+    const consentPath =
+      `users/${firstUserId}/methodologyConsents/closed-beta`;
+    await testEnvironment.withSecurityRulesDisabled(async (context) => {
+      await setDoc(doc(context.firestore(), consentPath), {
+        schemaVersion: 1,
+        userId: firstUserId,
+        consentVersion: "closed-beta-methodology-consent@1.0.0",
+        manifestVersion: "closed-beta-provisional-methodology@0.1.0",
+        acceptedAt: new Date("2026-11-11T22:00:00.000Z"),
+      });
+    });
+
+    const ownerDatabase = authenticatedContext(firstUserId).firestore();
+    await assertFails(getDoc(doc(ownerDatabase, consentPath)));
+    await assertFails(setDoc(doc(ownerDatabase, consentPath), {}));
+    await assertFails(deleteDoc(doc(ownerDatabase, consentPath)));
+  });
+
   it.each([
     [
       "recommendation activation",

@@ -16,7 +16,8 @@
   "include": [
     "src/**/*.ts",
     "../src/domain/materialCommands/**/*.ts",
-    "../src/domain/methodology/closedBetaProvisionalMethodology.ts"
+    "../src/domain/methodology/closedBetaProvisionalMethodology.ts",
+    "../src/domain/methodology/closedBetaMethodologyConsent.ts"
   ],
   "exclude": [
     "src/**/*.test.ts",

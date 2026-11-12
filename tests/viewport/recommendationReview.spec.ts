@@ -13,7 +13,9 @@ async function exerciseRecommendationReview(page: Page, textSizeLabel: string) {
   await expect(
     page.getByRole("heading", { name: "Give next week another steady pass" }),
   ).toBeVisible();
-  await expect(page.getByRole("note")).toContainText("Internal preview");
+  await expect(page.getByRole("note")).toContainText(
+    "Adaptation rules beta-adaptation@0.2.0-draft",
+  );
 
   for (const heading of [
     "Observation",

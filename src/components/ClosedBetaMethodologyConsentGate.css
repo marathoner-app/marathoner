@@ -1,0 +1,93 @@
+.methodology-consent-status,
+.methodology-consent-gate {
+  box-sizing: border-box;
+  width: min(calc(100% - 2rem), 44rem);
+  margin: 1.5rem auto;
+  color: #17202a;
+  text-align: left;
+}
+
+.methodology-consent-status {
+  padding: 1rem;
+  text-align: center;
+}
+
+.methodology-consent-gate {
+  padding: clamp(1.25rem, 4vw, 2rem);
+  border: 1px solid #cbd5e1;
+  border-radius: 0.9rem;
+  background: #ffffff;
+  line-height: 1.55;
+}
+
+.methodology-consent-gate h2,
+.methodology-consent-gate p {
+  margin: 0;
+}
+
+.methodology-consent-gate h2 {
+  margin-top: 0.25rem;
+  font-size: clamp(1.6rem, 5vw, 2.4rem);
+  line-height: 1.15;
+}
+
+.methodology-consent-gate h2:focus {
+  outline: 3px solid #2e6fbb;
+  outline-offset: 0.25rem;
+}
+
+.methodology-consent-gate > p:not(:first-child) {
+  margin-top: 1rem;
+}
+
+.methodology-consent-eyebrow {
+  color: #315866;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.methodology-consent-changed {
+  padding: 0.8rem 1rem;
+  border-left: 0.3rem solid #9a6a00;
+  background: #fffaf0;
+}
+
+.methodology-consent-version {
+  overflow-wrap: anywhere;
+  color: #475569;
+  font-size: 0.85rem;
+  font-weight: 650;
+}
+
+.methodology-consent-agreement {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0.75rem;
+  align-items: start;
+  margin-top: 1.25rem;
+  padding: 1rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 0.65rem;
+  background: #f8fafc;
+  font-weight: 650;
+}
+
+.methodology-consent-agreement input {
+  width: 1.35rem;
+  height: 1.35rem;
+  margin: 0.1rem 0 0;
+}
+
+.methodology-consent-gate button {
+  min-height: 2.75rem;
+  margin-top: 1.25rem;
+  padding: 0.65rem 1rem;
+}
+
+@media (max-width: 600px) {
+  .methodology-consent-gate button {
+    width: 100%;
+  }
+}

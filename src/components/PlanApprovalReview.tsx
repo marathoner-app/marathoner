@@ -13,6 +13,9 @@ import type {
   PlanApprovalSubmission,
 } from "../services/planApprovalClient";
 import ProposedPlanSummary from "./ProposedPlanSummary";
+import ProvisionalMethodologyStatus from "./ProvisionalMethodologyStatus";
+import type { ClosedBetaProvisionalMethodologyManifest } from "../domain/methodology/closedBetaProvisionalMethodology";
+import { getClosedBetaProvisionalMethodologyManifest } from "../domain/methodology/closedBetaProvisionalMethodologyRegistry";
 
 type ReviewScreen = "proposal" | "confirmation" | "approved";
 type ApprovalOperation = "idle" | "submitting" | "resolving" | "reloading";
@@ -41,6 +44,7 @@ export interface PlanApprovalReviewProps {
   readonly onReviewInputs: () => void;
   readonly onApproved: (receipt: PlanApprovalReceiptResult) => void;
   readonly createCommandId?: () => string;
+  readonly methodologyManifest?: ClosedBetaProvisionalMethodologyManifest | null;
 }
 
 function defaultCommandId(): string {
@@ -169,6 +173,7 @@ export default function PlanApprovalReview({
   onReviewInputs,
   onApproved,
   createCommandId = defaultCommandId,
+  methodologyManifest = getClosedBetaProvisionalMethodologyManifest(),
 }: PlanApprovalReviewProps) {
   const idPrefix = useId();
   const confirmationHeadingRef = useRef<HTMLHeadingElement>(null);
@@ -398,6 +403,12 @@ export default function PlanApprovalReview({
         Approving makes this exact reviewed proposal your active training plan
         and adds its workouts to your calendar.
       </p>
+      {methodologyManifest !== null && (
+        <ProvisionalMethodologyStatus
+          manifest={methodologyManifest}
+          kind="plan"
+        />
+      )}
       {expectedActivePlanRevision !== null && (
         <p>Your current active plan will be archived when this one is approved.</p>
       )}

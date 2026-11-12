@@ -10,6 +10,11 @@ import {
   type ClosedBetaMethodologyEligibilityRequest,
 } from './closedBetaMethodologyEligibility.js'
 import { FirestoreClosedBetaMethodologyEligibilityStore } from './firestoreClosedBetaMethodologyEligibilityStore.js'
+import {
+  CLOSED_BETA_METHODOLOGY_CONSENT_SCHEMA_VERSION,
+  CLOSED_BETA_METHODOLOGY_CONSENT_VERSION,
+} from '../../src/domain/methodology/closedBetaMethodologyConsent.js'
+import { closedBetaMethodologyConsentPath } from './firestoreClosedBetaMethodologyConsentStore.js'
 import { loadPinnedClosedBetaMethodologyManifest } from './pinnedClosedBetaMethodologyManifest.js'
 
 const emulatorProjectId = 'demo-marathoner'
@@ -65,6 +70,13 @@ async function seedMembershipAndControl() {
       manifestVersion: manifest.manifestVersion,
       artifactVersions,
       updatedAt: '2026-11-11T20:00:00.000Z',
+    }),
+    database.doc(closedBetaMethodologyConsentPath(ownerId)).set({
+      schemaVersion: CLOSED_BETA_METHODOLOGY_CONSENT_SCHEMA_VERSION,
+      userId: ownerId,
+      consentVersion: CLOSED_BETA_METHODOLOGY_CONSENT_VERSION,
+      manifestVersion: manifest.manifestVersion,
+      acceptedAt: Timestamp.fromDate(new Date('2026-11-11T19:30:00.000Z')),
     }),
   ])
 }
@@ -125,6 +137,27 @@ describe('Firestore closed-beta methodology eligibility', () => {
     await expect(store.evaluate(request())).resolves.toEqual({
       status: 'denied',
       code: 'closed-beta-methodology-disabled',
+    })
+  })
+
+  it('fails closed when consent is missing or belongs to an older manifest', async () => {
+    await seedMembershipAndControl()
+    await database.doc(closedBetaMethodologyConsentPath(ownerId)).delete()
+    await expect(store.evaluate(request())).resolves.toEqual({
+      status: 'denied',
+      code: 'closed-beta-methodology-consent-required',
+    })
+
+    await database.doc(closedBetaMethodologyConsentPath(ownerId)).set({
+      schemaVersion: CLOSED_BETA_METHODOLOGY_CONSENT_SCHEMA_VERSION,
+      userId: ownerId,
+      consentVersion: CLOSED_BETA_METHODOLOGY_CONSENT_VERSION,
+      manifestVersion: 'closed-beta-provisional-methodology@0.0.9',
+      acceptedAt: Timestamp.fromDate(new Date('2026-11-11T19:30:00.000Z')),
+    })
+    await expect(store.evaluate(request())).resolves.toEqual({
+      status: 'stale_version',
+      code: 'methodology-consent-version-stale',
     })
   })
 })

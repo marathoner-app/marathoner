@@ -14,6 +14,10 @@ import { loadPinnedClosedBetaMethodologyManifest } from './pinnedClosedBetaMetho
 
 const manifest = loadPinnedClosedBetaMethodologyManifest()
 const artifactVersions = artifactVersionsFromManifest(manifest)
+const currentConsent = {
+  status: 'current' as const,
+  acceptedAt: '2026-11-11T21:00:00.000Z',
+}
 
 function control(
   overrides: Partial<ClosedBetaMethodologyControl> = {},
@@ -47,6 +51,7 @@ function evaluate(options: {
   membershipApproved?: boolean
   control?: unknown
   manifestOverride?: typeof manifest | null
+  consent?: Parameters<typeof evaluateClosedBetaMethodologyEligibility>[0]['consent']
 } = {}) {
   return evaluateClosedBetaMethodologyEligibility({
     request: options.request ?? request(),
@@ -56,6 +61,7 @@ function evaluate(options: {
       options.manifestOverride === undefined
         ? manifest
         : options.manifestOverride,
+    consent: options.consent ?? currentConsent,
   })
 }
 
@@ -76,6 +82,8 @@ describe('closed-beta methodology eligibility', () => {
         artifactVersions,
         capability: 'plan',
         artifactVersion: artifactVersions.plan,
+        consentVersion: 'closed-beta-methodology-consent@1.0.0',
+        consentAcceptedAt: currentConsent.acceptedAt,
       },
     })
   })
@@ -139,6 +147,17 @@ describe('closed-beta methodology eligibility', () => {
     ).toEqual({
       status: 'stale_version',
       code: 'methodology-manifest-version-stale',
+    })
+  })
+
+  it('requires current consent for the exact pinned methodology version', () => {
+    expect(evaluate({ consent: { status: 'missing' } })).toEqual({
+      status: 'denied',
+      code: 'closed-beta-methodology-consent-required',
+    })
+    expect(evaluate({ consent: { status: 'stale' } })).toEqual({
+      status: 'stale_version',
+      code: 'methodology-consent-version-stale',
     })
   })
 

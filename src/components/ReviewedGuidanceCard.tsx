@@ -1,6 +1,9 @@
 import { useEffect, useId, useRef } from "react";
 
 import "./ReviewedGuidanceCard.css";
+import type { ClosedBetaProvisionalMethodologyManifest } from "../domain/methodology/closedBetaProvisionalMethodology";
+import { getClosedBetaProvisionalMethodologyManifest } from "../domain/methodology/closedBetaProvisionalMethodologyRegistry";
+import ProvisionalMethodologyStatus from "./ProvisionalMethodologyStatus";
 
 export interface ReviewedGuidanceCardModel {
   readonly title: string;
@@ -30,6 +33,7 @@ export interface ReviewedGuidanceCardProps {
   readonly state: ReviewedGuidanceCardState;
   readonly onDismiss: () => void;
   readonly onRetry: () => void;
+  readonly methodologyManifest?: ClosedBetaProvisionalMethodologyManifest | null;
 }
 
 export default function ReviewedGuidanceCard({
@@ -37,6 +41,7 @@ export default function ReviewedGuidanceCard({
   state,
   onDismiss,
   onRetry,
+  methodologyManifest = getClosedBetaProvisionalMethodologyManifest(),
 }: ReviewedGuidanceCardProps) {
   const idPrefix = useId();
   const outcomeRef = useRef<HTMLDivElement>(null);
@@ -59,6 +64,13 @@ export default function ReviewedGuidanceCard({
       <p className="reviewed-guidance-eyebrow">Runner guidance</p>
       {model.contextLabel && (
         <p className="reviewed-guidance-context">{model.contextLabel}</p>
+      )}
+      {methodologyManifest !== null && (
+        <ProvisionalMethodologyStatus
+          manifest={methodologyManifest}
+          kind="guidance"
+          prominence="context"
+        />
       )}
       <h2 id={`${idPrefix}-title`}>{model.title}</h2>
 

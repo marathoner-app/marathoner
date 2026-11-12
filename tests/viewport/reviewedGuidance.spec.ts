@@ -13,7 +13,9 @@ async function exerciseReviewedGuidance(page: Page, textSizeLabel: string) {
   await expect(
     page.getByRole("heading", { name: "Use effort, not pace, on easy days" }),
   ).toBeVisible();
-  await expect(page.getByRole("note")).toContainText("Internal preview");
+  await expect(page.getByRole("note")).toContainText(
+    "Guidance beta-guidance@0.1.0-draft",
+  );
   await expect(page.getByText("After an easy run")).toBeVisible();
   await expect(page.getByRole("heading", { name: "Keep in mind" })).toBeVisible();
 

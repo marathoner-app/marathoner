@@ -1,6 +1,9 @@
 import { useEffect, useId, useRef } from "react";
 
 import "./RecommendationDecisionReview.css";
+import type { ClosedBetaProvisionalMethodologyManifest } from "../domain/methodology/closedBetaProvisionalMethodology";
+import { getClosedBetaProvisionalMethodologyManifest } from "../domain/methodology/closedBetaProvisionalMethodologyRegistry";
+import ProvisionalMethodologyStatus from "./ProvisionalMethodologyStatus";
 
 export interface RecommendationDecisionReviewModel {
   readonly title: string;
@@ -39,6 +42,7 @@ export interface RecommendationDecisionReviewProps {
   readonly onApply: () => void;
   readonly onRetry: () => void;
   readonly interactionMode?: "participant" | "internal_rehearsal";
+  readonly methodologyManifest?: ClosedBetaProvisionalMethodologyManifest | null;
 }
 
 export default function RecommendationDecisionReview({
@@ -48,6 +52,7 @@ export default function RecommendationDecisionReview({
   onApply,
   onRetry,
   interactionMode = "participant",
+  methodologyManifest = getClosedBetaProvisionalMethodologyManifest(),
 }: RecommendationDecisionReviewProps) {
   const idPrefix = useId();
   const outcomeRef = useRef<HTMLDivElement>(null);
@@ -76,6 +81,13 @@ export default function RecommendationDecisionReview({
     >
       <p className="recommendation-review-eyebrow">Plan recommendation</p>
       <h2 id={`${idPrefix}-title`}>{model.title}</h2>
+
+      {methodologyManifest !== null && (
+        <ProvisionalMethodologyStatus
+          manifest={methodologyManifest}
+          kind="adaptation"
+        />
+      )}
 
       {internalPreview && (
         <div className="recommendation-review-preview" role="note">
