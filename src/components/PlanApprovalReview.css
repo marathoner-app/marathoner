@@ -3,17 +3,19 @@
   width: min(100%, 44rem);
   margin: 0 auto;
   padding: clamp(1.25rem, 4vw, 2rem);
-  border: 1px solid #d7dde4;
-  border-radius: 0.75rem;
-  background: #f8fafc;
-  color: #17202a;
+  border: 1px solid var(--app-border);
+  border-radius: var(--app-radius-large);
+  background: var(--app-surface);
+  box-shadow: var(--app-shadow-small);
+  color: var(--app-ink);
   line-height: 1.5;
   text-align: left;
 }
 
 .plan-approval-state.approved {
-  border-color: #28754d;
-  background: #f2fbf6;
+  border-color: var(--app-success-border);
+  background: var(--app-success-surface);
+  color: var(--app-success);
   text-align: center;
 }
 
@@ -22,15 +24,19 @@
   line-height: 1.25;
 }
 
-.plan-approval-state h2:focus,
 .plan-approval-outcome:focus {
-  outline: 3px solid #2e6fbb;
+  outline: 3px solid var(--app-accent);
   outline-offset: 0.25rem;
+  box-shadow: 0 0 0 5px var(--app-focus-ring);
+}
+
+.plan-approval-state h2:focus {
+  outline: none;
 }
 
 .plan-approval-eyebrow {
   margin: 0;
-  color: #475569;
+  color: var(--app-accent);
   font-size: 0.85rem;
   font-weight: 700;
   letter-spacing: 0.04em;
@@ -46,12 +52,13 @@
 
 .plan-approval-summary div {
   padding: 0.75rem;
-  border: 1px solid #d7dde4;
-  border-radius: 0.5rem;
-  background: #ffffff;
+  border: 1px solid var(--app-border);
+  border-radius: var(--app-radius-medium);
+  background: var(--app-subtle-surface);
 }
 
 .plan-approval-summary dt {
+  color: var(--app-muted);
   font-size: 0.85rem;
   font-weight: 700;
 }
@@ -64,16 +71,17 @@
 .plan-approval-outcome {
   margin: 1rem 0 0;
   padding: 0.85rem 1rem;
-  border-radius: 0.5rem;
+  border-radius: var(--app-radius-medium);
 }
 
 .plan-approval-pending {
-  background: #eef4fb;
+  background: var(--app-accent-surface);
 }
 
 .plan-approval-outcome {
-  border: 1px solid #9a6a00;
-  background: #fffaf0;
+  border: 1px solid var(--app-warning-border);
+  background: var(--app-warning-surface);
+  color: var(--app-warning);
 }
 
 .plan-approval-outcome h3,
@@ -99,9 +107,9 @@
 }
 
 .plan-approval-actions .secondary {
-  border: 1px solid #17202a;
-  background: #ffffff;
-  color: #17202a;
+  border: 1px solid var(--app-border-strong);
+  background: var(--app-surface);
+  color: var(--app-ink);
 }
 
 @media (max-width: 600px) {

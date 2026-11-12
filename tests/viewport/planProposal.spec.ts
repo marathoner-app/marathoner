@@ -41,6 +41,36 @@ async function exerciseProposal(page: Page, textSizeLabel: string) {
     "Generated plan proposal",
     textSizeLabel,
   );
+
+  const continueReview = page.getByRole("button", { name: "Continue review" });
+  await expectMinimumTouchTarget(
+    continueReview,
+    `continue proposal review at ${textSizeLabel}`,
+  );
+  await continueReview.click();
+
+  await expect(
+    page.getByRole("heading", {
+      name: "Activate Founding beta completion plan?",
+    }),
+  ).toBeVisible();
+  const approve = page.getByRole("button", { name: "Approve and activate" });
+  await expectMinimumTouchTarget(approve, `approve plan at ${textSizeLabel}`);
+  await expectNoHorizontalOverflow(
+    page,
+    "Plan approval confirmation",
+    textSizeLabel,
+  );
+
+  await approve.click();
+  await expect(
+    page.getByRole("heading", { name: "Approval was not completed" }),
+  ).toBeVisible();
+  await expectNoHorizontalOverflow(
+    page,
+    "Plan approval retry state",
+    textSizeLabel,
+  );
 }
 
 test("keeps plan creation usable at phone width", async ({ page }) => {
