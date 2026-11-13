@@ -345,10 +345,11 @@ Public account creation is disabled. The training-data provider uses the
 authenticated UID as its ownership boundary.
 
 The committed registry contains visibly distinct development and founding-beta
-projects. `.env`, local development, CI, the selected iOS development build,
-and GitHub Pages remain pinned to development. Beta requires an explicit
-production-mode `VITE_FIREBASE_ENVIRONMENT=beta` selection and does not become
-a deployment default merely because its public identifiers are present.
+projects. `.env`, local development, CI, and the selected iOS development build
+remain pinned to development. GitHub Pages and the TestFlight build explicitly
+select the founding-beta project so both clients share approved accounts and
+owner-scoped training data. Beta does not become a local or CI default merely
+because its public identifiers are present.
 
 Firebase web configuration identifies a Firebase project; it is not a server
 credential and must not be treated as authorization. Protect any future
@@ -382,6 +383,7 @@ and
 | `npm run verify:beta-boundary -- --project marathonerapp-beta --confirm CREATE-TEST-AND-DELETE-BETA-FIXTURES` | Operator-only live check that creates and removes fixed fictional beta fixtures. |
 | `npm run verify:closed-beta-methodology-readiness -- --record <evidence.json>` | Block invitations unless one dated record proves exact cross-client methodology versions, states, controls, operations, and physical-iPhone evidence. |
 | `npm run manage:closed-beta-methodology-controls -- status --project marathonerapp-beta` | Inspect the two server-owned provisional-methodology controls through the dedicated beta operator account; mutations require action-specific confirmation phrases documented in the rehearsal. |
+| `npm run migrate:founding-beta-member -- inspect --email <email> --source-project marathoner-d9bf9 --target-project marathonerapp-beta` | Preflight one verified founder account and its allowlisted training records before an explicitly confirmed UID-preserving beta migration. |
 | `npm run test:watch` | Keep the test runner open and rerun affected tests after changes. |
 | `npm run build` | Run TypeScript project checks and create a production build in `dist/`. |
 | `npm run preview` | Serve the production build locally for a final browser check. |
@@ -405,16 +407,17 @@ while the Pages custom-domain setting is active. Do not publish a second copy
 there. DNS, Firebase allowlists, verification, and rollback steps are recorded
 in the [custom-domain runbook](docs/operations/github-pages-custom-domain.md).
 
-The deployment workflow installs the locked dependencies, runs the production
-build, uploads `dist` as a Pages artifact, and deploys that artifact through the
-`github-pages` environment. The repository's Pages source must remain set to
-**GitHub Actions**.
+The deployment workflow installs the locked dependencies, runs the explicit
+closed-beta build, verifies that its artifact contains the beta identity and no
+development identity, uploads `dist-closed-beta`, and deploys that artifact
+through the `github-pages` environment. The repository's Pages source must
+remain set to **GitHub Actions**.
 
 Before publishing, verify the production build locally:
 
 ```bash
-npm run build
-npm run preview
+npm run build:closed-beta
+npx vite preview --outDir dist-closed-beta
 ```
 
 Open the root URL printed by Vite and confirm that the page and its assets load.

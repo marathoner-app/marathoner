@@ -218,7 +218,7 @@ export function resolveFirebaseEnvironment(
 
   if (!environmentName) {
     throw new Error(
-      'VITE_FIREBASE_ENVIRONMENT is required. Use "development" for local, CI, and the current GitHub Pages prototype.',
+      'VITE_FIREBASE_ENVIRONMENT is required. Use "development" for local and CI work; deployed beta clients use an explicit beta mode.',
     )
   }
 

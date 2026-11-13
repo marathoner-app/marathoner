@@ -37,8 +37,8 @@ DKIM, Google verification, or email-routing records during a web cutover.
 
 ## Application and Firebase boundary
 
-The Pages workflow deliberately selects the `development` Firebase environment
-until a separate beta-activation change is approved. On October 21, 2026,
+The Pages workflow now selects the explicit closed-beta Firebase environment so
+the web and TestFlight clients share accounts and training data. On October 21, 2026,
 `marathonerapp.com` and `www.marathonerapp.com` were added to all three
 development-web controls and the saved settings were reopened to verify them:
 
@@ -53,9 +53,10 @@ its owner-scoped Firestore data after the browser-key change. The root-path
 build subsequently deployed at the canonical custom domain, and the legacy
 project URL now redirects there.
 
-The beta browser and App Check keys already name the two custom-domain hosts,
-but the beta project remains an explicit non-default environment. Domain
-publication does not activate beta or migrate accounts or data.
+The beta browser and App Check keys name the two custom-domain hosts. The
+workflow verifies the beta identity and rejects development markers before
+upload. Domain publication does not create accounts or migrate data; selected
+founders move through the guarded migration runbook.
 
 Firebase password-reset emails currently use the project's default hosted
 action handler because `requestPasswordReset` supplies no custom action URL.
@@ -75,7 +76,7 @@ Firebase-domain, or asset-base change:
    and icons return successfully without `/marathoner/` asset paths;
 4. load `www` and the legacy GitHub Pages URL and confirm both converge on the
    apex rather than exposing divergent content;
-5. sign in with an existing development account, load an owner-scoped
+5. sign in with an approved beta account, load an owner-scoped
    Firestore view, sign out, and confirm the signed-out state survives refresh;
 6. request a password-reset message for a controlled account and confirm the
    hosted action link is valid without publishing its token; and

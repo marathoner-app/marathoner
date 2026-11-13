@@ -31,7 +31,7 @@ would not turn them into secrets.
 | Surface | Live evidence | Disposition |
 | --- | --- | --- |
 | Firebase project | The committed project ID, app ID, sender ID, auth domain, and storage-bucket name identify `marathoner-d9bf9`. | This remains the development/prototype side of the separated environment boundary. |
-| Environment selector | Web, CI defaults, Pages, and the selected iOS development build select the audited project as `development`; the distinct beta registration is available only to an explicit production web build or separately keyed `ios-beta` mode. | The [environment selection contract](firebase-environment-selection.md) and [beta project record](firebase-beta-project.md) define the verified boundary. App Check and participant activation remain separate gates. |
+| Environment selector | Local web, CI defaults, and the selected iOS development build select `development`; Pages uses the explicit `closed-beta` mode and TestFlight uses `ios-beta`, both targeting `marathonerapp-beta`. | The [environment selection contract](firebase-environment-selection.md) and [beta project record](firebase-beta-project.md) define the verified boundary. App Check and participant activation remain separate gates. |
 | Browser API key | The committed value exactly matches the only `Browser key (auto created by Firebase)` in the project without printing or copying the value into this record. | It is an intentionally public Firebase client identifier. Rotation is not required solely because it appears in source or a browser bundle. |
 | API allowlist | The key is restricted to the eight APIs listed below. Generative Language and the previously allowed unused AI, SQL, Storage, Realtime Database, distribution, hosting, messaging, ML, and Remote Config APIs are not allowed. | Keep this inventory narrow. A later feature must deliberately update this record before adding an API. |
 | Application restriction | The key accepts browser requests only from the legacy GitHub Pages host, the apex and `www` custom-domain hosts, `localhost`, and `127.0.0.1`, using the exact patterns below. | Retain the legacy host through cutover and keep the local origins only on development. Remove an origin only after the supported deployment and recovery path no longer require it. |
@@ -39,7 +39,7 @@ would not turn them into secrets.
 | Selected iOS beta key | `marathoner-ios-beta` belongs only to `marathonerapp-beta` and permits Cloud Firestore API, Identity Toolkit API, and Token Service API. | The real beta bundle and physical approved/denied evidence passed. Its value exists only in `.env.ios-beta.local`. |
 | iOS application restriction | The iOS shell currently uses the Firebase JavaScript SDK inside a Capacitor WebView, so the key cannot use an iOS bundle restriction and has no application restriction. | The narrow API allowlist limits the key's reach. Issue #161 must complete live token proof, observation, and staged App Check enforcement before external invitations. |
 | Sign-in providers | Email/Password is enabled and Google is disabled. The application implements only Email/Password, and the five visible legacy accounts all use the Email provider. | Keep Email/Password until the beta identity decision changes it. Do not migrate the legacy account list wholesale into beta. |
-| Authorized domains | `localhost`, the two Firebase default hosts, `marathoner-app.github.io`, `marathonerapp.com`, and `www.marathonerapp.com` are authorized in development. | The active Pages build remains pinned to development. Beta authorization remains a separate activation decision rather than an effect of publishing the domain. |
+| Authorized domains | Development retains its local and historical hosts; beta authorizes `marathonerapp.com` and `www.marathonerapp.com`. | Pages now uses the beta registration. Keep localhost and the legacy GitHub host unavailable to the beta key. |
 | Cloud Firestore | The default `nam5` database is active. The current tracked development rules were deployed and live-verified on October 28, 2026. The beta membership boundary was deployed and verified separately, but later beta exact-shape changes are not claimed as live until another reviewed beta deployment records that evidence. | The tracked development and beta rules enforce the boundary summarized in the [Firestore rules acceptance record](firestore-rules-acceptance.md). #72 and #115 still own removal of transitional material client writes. |
 | Realtime Database | The console offers **Create Database**; no database exists. | Remain disabled. |
 | Cloud Storage | Storage is not configured and the Spark project cannot enable it without billing. | Remain disabled unless a future approved feature and ruleset require it. |
@@ -224,8 +224,9 @@ Alert #2 reports the separate beta Firebase browser key introduced with issue
 not a mobile-spike environment file or administrative credential. The beta key
 is restricted to the same eight required Firebase APIs and only
 `marathonerapp.com` and `www.marathonerapp.com`; it is unavailable from
-localhost and GitHub Pages. The beta project remains an explicit, non-default
-selection with membership-gated Firestore rules.
+localhost and the legacy GitHub Pages host. The beta project is selected only
+by the explicit Pages and TestFlight build modes and remains protected by
+membership-gated Firestore rules.
 
 Alerts #3 and #4 report the beta and development API keys inside the versioned
 Apple `GoogleService-Info.plist` files added by #203. Each location matches one
