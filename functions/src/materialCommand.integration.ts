@@ -50,9 +50,11 @@ import {
   createAdaptationReasonCode,
 } from '../../src/domain/training/adaptationEvaluation.js'
 import {
+  createDateOnly,
   createIanaTimeZone,
   createUtcDateTime,
 } from '../../src/domain/training/dates.js'
+import { generateDeterministicPlan } from '../../src/domain/training/deterministicPlanGenerator.js'
 import {
   createCompletedRunId,
   createPlannedWorkoutId,
@@ -62,6 +64,7 @@ import {
 import {
   PLAN_GENERATION_RESULT_SCHEMA_VERSION,
   type GeneratedPlanV1,
+  type PlanGenerationInputV1,
 } from '../../src/domain/training/planGeneration.js'
 import { planGenerationContractFixtures } from '../../src/domain/training/planGenerationFixtures.js'
 import {
@@ -78,6 +81,7 @@ import {
   type MaterialCommandTransport,
 } from '../../src/services/materialCommandClient.js'
 import type { PlanApprovalArtifactPolicyRecord } from './planApprovalArtifactPolicy.js'
+import { loadPinnedInternalAdaptationArtifacts } from './pinnedInternalAdaptationArtifacts.js'
 import { OPERATOR_ACTIVATION_CONTROL_PATH } from './firestoreOperatorActivationControlStore.js'
 import { FirestorePlanApprovalStore } from './firestorePlanApprovalStore.js'
 import { FirestoreRunCompletionStore } from './firestoreRunCompletionStore.js'
@@ -301,6 +305,52 @@ function approvalCommand(
     expectedActivePlanRevision,
     input: generatedFixture.input,
     proposal,
+  })
+}
+
+function experiencedRunnerApprovalCommand(commandId: string) {
+  const ruleSet = loadPinnedInternalAdaptationArtifacts().basePlan
+  const input: PlanGenerationInputV1 = {
+    schemaVersion: 'plan-generation-input@1',
+    rulesetVersion: ruleSet.rules.rulesetVersion,
+    planStartDate: createDateOnly('2026-11-15'),
+    runner: {
+      experienceLevel: 'consistent',
+      consistentRunningWeeks: 40,
+      targetRace: {
+        kind: 'date',
+        date: createDateOnly('2027-04-03'),
+      },
+      currentWeeklyDistance: createDistanceMeters(48_280),
+      currentRunningFrequencyDaysPerWeek: 7,
+      longestRecentRunDistance: createDistanceMeters(25_750),
+      availableTrainingDays: [
+        'monday',
+        'tuesday',
+        'wednesday',
+        'thursday',
+        'friday',
+        'saturday',
+        'sunday',
+      ],
+      preferredLongRunDay: 'sunday',
+      completionGoal: 'complete_first_marathon',
+      safetySignal: 'none_reported',
+    },
+  }
+  const generated = generateDeterministicPlan({
+    input,
+    cohortEligibilityConfirmed: true,
+    generatorVersion: ruleSet.generatorVersion,
+    rules: ruleSet.rules,
+  })
+  if (generated.kind !== 'generated') {
+    throw new Error('Expected the experienced-runner proposal to generate.')
+  }
+  return createPlanApprovalCommand(commandId, {
+    expectedActivePlanRevision: null,
+    input,
+    proposal: generated.plan,
   })
 }
 
@@ -1225,6 +1275,43 @@ describe('material-command emulator boundary', () => {
     await expect(database.doc(collidingWorkoutPath).get()).resolves.toEqual(
       expect.objectContaining({ exists: true }),
     )
+  })
+
+  it('atomically persists the live experienced-runner proposal accepted by the beta rules', async () => {
+    const command = experiencedRunnerApprovalCommand(
+      'approve-plan-emulator-experienced-runner',
+    )
+    const store = new FirestorePlanApprovalStore(database, {
+      createPlanId: () => 'plan-experienced-runner',
+      now: () => new Date('2026-11-13T20:00:00.000Z'),
+    })
+
+    const stored = await store.commit({
+      artifactPolicyRecord: {
+        supportedScopeId: 'founding-closed-beta@1',
+        inputSchemaVersion: command.command.input.schemaVersion,
+        generatorVersion: command.command.proposal.provenance.generatorVersion,
+        rulesetVersion: command.command.input.rulesetVersion,
+        generatedPlanSchemaVersion: command.command.proposal.schemaVersion,
+        resultSchemaVersion: PLAN_GENERATION_RESULT_SCHEMA_VERSION,
+        reviewState: 'provisional_closed_beta',
+      },
+      envelope: command,
+      ownerId,
+    })
+
+    expect(stored.kind).toBe('approved')
+    if (stored.kind !== 'approved') return
+    expect(stored.result.status).toBe('plan_approved')
+    expect(stored.result.activePlanRevision).toBe(1)
+    await expect(
+      database
+        .collection(`users/${ownerId}/plans/${stored.result.planId}/workouts`)
+        .get(),
+    ).resolves.toEqual(expect.objectContaining({ size: 87 }))
+    await expect(
+      database.doc(`users/${ownerId}/planState/active`).get(),
+    ).resolves.toEqual(expect.objectContaining({ exists: true }))
   })
 
   it('atomically completes a planned run once and replays the exact receipt', async () => {

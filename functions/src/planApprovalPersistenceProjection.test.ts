@@ -197,6 +197,34 @@ describe('plan-approval persistence projection', () => {
     expect(JSON.stringify(projected)).not.toContain('runner-two')
   })
 
+  it('records closed-beta activation as provisional rather than approved', () => {
+    const rulesetVersion = createPlanGenerationArtifactVersion(
+      'fixture-rules@1.0.0-draft',
+    )
+    const command = approvalCommand(
+      'approve-closed-beta-projection-0001',
+      {
+        ...distanceFixture.result.plan,
+        provenance: {
+          ...distanceFixture.result.plan.provenance,
+          rulesetVersion,
+        },
+      },
+      { ...distanceFixture.input, rulesetVersion },
+    )
+    const projected = projectApprovedPlan({
+      ...options(command),
+      artifactPolicyRecord: {
+        ...policyRecord(command),
+        reviewState: 'provisional_closed_beta',
+      },
+    })
+
+    expect(projected.provenance.record.artifactReviewState).toBe(
+      'provisional_closed_beta',
+    )
+  })
+
   it('preserves duration targets, walk-run values, recovery dates, and every audit reason code', () => {
     const command = approvalCommand(
       'approve-plan-projection-0002',
