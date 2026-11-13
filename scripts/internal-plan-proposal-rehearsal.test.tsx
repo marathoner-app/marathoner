@@ -482,7 +482,7 @@ describe("InternalPlanProposalRehearsal", () => {
 
     expect(onSessionActivationChange).toHaveBeenLastCalledWith(null);
     expect(
-      screen.getByText("Proposed plan — not active"),
+      screen.getByText("Proposed plan, not active"),
     ).toBeInTheDocument();
   });
 

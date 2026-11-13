@@ -118,7 +118,7 @@ describe("PlanGenerationResultView", () => {
     );
 
     expect(screen.getByRole("status")).toHaveTextContent(
-      "Proposed plan — not active",
+      "Proposed plan, not active",
     );
     await user.click(screen.getByRole("button", { name: "Continue review" }));
 
