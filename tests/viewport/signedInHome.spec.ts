@@ -296,6 +296,29 @@ test("keeps mobile navigation available while switching sections", async ({
   );
 });
 
+test("keeps mobile navigation anchored at the document scroll boundary", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("tests/viewport/signedInHome.html");
+
+  await expect(page.locator("html")).toHaveCSS("overscroll-behavior-y", "none");
+  await expect(page.locator("body")).toHaveCSS("overscroll-behavior-y", "none");
+
+  const layout = await page.evaluate(() => ({
+    viewportHeight: window.innerHeight,
+    documentHeight: document.documentElement.scrollHeight,
+  }));
+  expect(layout.documentHeight).toBeGreaterThan(layout.viewportHeight);
+
+  await page.evaluate(() => {
+    window.scrollTo(0, document.documentElement.scrollHeight);
+  });
+  expect(await page.evaluate(() => window.scrollY)).toBeGreaterThan(0);
+
+  await expectMobileBottomNavigation(page);
+});
+
 test("keeps overflowing signed-in content reachable at desktop width", async ({
   page,
 }) => {
