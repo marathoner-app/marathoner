@@ -10,6 +10,7 @@ import {
   createInitialControlDocuments,
   parseControlArguments,
   transitionControlDocuments,
+  upgradeControlDocuments,
 } from './manage-closed-beta-methodology-controls.mjs'
 
 const manifest = {
@@ -17,6 +18,15 @@ const manifest = {
   artifacts: [
     { kind: 'plan', version: 'plan@1' },
     { kind: 'adaptation', version: 'adaptation@1' },
+    { kind: 'guidance', version: 'guidance@1' },
+    { kind: 'safety', version: 'safety@1' },
+  ],
+}
+const previousManifest = {
+  manifestVersion: 'closed-beta-provisional-methodology@0.1.0',
+  artifacts: [
+    { kind: 'plan', version: 'plan@0' },
+    { kind: 'adaptation', version: 'adaptation@0' },
     { kind: 'guidance', version: 'guidance@1' },
     { kind: 'safety', version: 'safety@1' },
   ],
@@ -104,8 +114,101 @@ describe('closed-beta methodology control manager', () => {
       ]),
     ).toThrow(CONTROL_CONFIRMATIONS.prepare)
     expect(() =>
+      parseControlArguments([
+        'upgrade',
+        '--project',
+        'marathonerapp-beta',
+        '--confirm',
+        'yes',
+      ]),
+    ).toThrow(CONTROL_CONFIRMATIONS.upgrade)
+    expect(() =>
       parseControlArguments(['status', '--project', 'marathoner-d9bf9']),
     ).toThrow('Refusing controls')
+  })
+
+  it('upgrades only the exact predecessor while preserving live state', () => {
+    const previousControls = createInitialControlDocuments(
+      previousManifest,
+      firstTimestamp,
+    )
+    previousControls[METHODOLOGY_CONTROL_PATH].enabled = true
+    previousControls[METHODOLOGY_CONTROL_PATH].revision = 8
+    previousControls[GUIDANCE_CONTROL_PATH].enabled = true
+    previousControls[GUIDANCE_CONTROL_PATH].revision = 6
+    previousControls[GUIDANCE_CONTROL_PATH].disabledGuidanceIds = [
+      'guidance.long-run',
+    ]
+
+    const upgraded = upgradeControlDocuments(
+      previousControls,
+      previousManifest,
+      manifest,
+      nextTimestamp,
+    )
+
+    expect(upgraded[METHODOLOGY_CONTROL_PATH]).toEqual({
+      ...previousControls[METHODOLOGY_CONTROL_PATH],
+      revision: 9,
+      manifestVersion: manifest.manifestVersion,
+      artifactVersions: {
+        plan: 'plan@1',
+        adaptation: 'adaptation@1',
+        guidance: 'guidance@1',
+        safety: 'safety@1',
+      },
+      updatedAt: nextTimestamp,
+    })
+    expect(upgraded[GUIDANCE_CONTROL_PATH]).toEqual({
+      ...previousControls[GUIDANCE_CONTROL_PATH],
+      revision: 7,
+      artifactVersions: ['guidance@1', 'safety@1'],
+      updatedAt: nextTimestamp,
+    })
+
+    const writes = createControlCommitWrites({
+      controls: upgraded,
+      existing: {
+        [METHODOLOGY_CONTROL_PATH]: {
+          updateTime: '2026-11-12T18:01:00.000Z',
+        },
+        [GUIDANCE_CONTROL_PATH]: {
+          updateTime: '2026-11-12T18:02:00.000Z',
+        },
+      },
+      projectId: 'marathonerapp-beta',
+    })
+    expect(writes).toHaveLength(2)
+    expect(writes.map(({ currentDocument }) => currentDocument)).toEqual([
+      { updateTime: '2026-11-12T18:01:00.000Z' },
+      { updateTime: '2026-11-12T18:02:00.000Z' },
+    ])
+  })
+
+  it('refuses unknown drift and repeated manifest upgrades', () => {
+    const previousControls = createInitialControlDocuments(
+      previousManifest,
+      firstTimestamp,
+    )
+    previousControls[METHODOLOGY_CONTROL_PATH].artifactVersions.plan =
+      'plan@unknown'
+    expect(() =>
+      upgradeControlDocuments(
+        previousControls,
+        previousManifest,
+        manifest,
+        nextTimestamp,
+      ),
+    ).toThrow('does not match the pinned manifest')
+
+    expect(() =>
+      upgradeControlDocuments(
+        controls(),
+        previousManifest,
+        manifest,
+        nextTimestamp,
+      ),
+    ).toThrow('does not match the pinned manifest')
   })
 
   it('enables both controls together and disables only the shared kill switch', () => {

@@ -19,6 +19,7 @@ export const METHODOLOGY_CONTROL_PATH =
 export const GUIDANCE_CONTROL_PATH = 'operatorControls/closedBetaGuidance'
 export const CONTROL_CONFIRMATIONS = Object.freeze({
   prepare: 'CREATE-DISABLED-CLOSED-BETA-METHODOLOGY-CONTROLS',
+  upgrade: 'UPGRADE-CLOSED-BETA-METHODOLOGY',
   enable: 'ENABLE-CLOSED-BETA-METHODOLOGY',
   disable: 'DISABLE-CLOSED-BETA-METHODOLOGY',
   restore: 'RESTORE-CLOSED-BETA-METHODOLOGY',
@@ -34,6 +35,10 @@ const repositoryRoot = path.dirname(
 const manifestPath = path.join(
   repositoryRoot,
   'docs/methodology/artifacts/closed-beta-provisional-methodology/0.2.0/manifest.json',
+)
+const previousManifestPath = path.join(
+  repositoryRoot,
+  'docs/methodology/artifacts/closed-beta-provisional-methodology/0.1.0/manifest.json',
 )
 
 function isRecord(value) {
@@ -257,6 +262,43 @@ export function transitionControlDocuments(
   }
 }
 
+export function upgradeControlDocuments(
+  controls,
+  previousManifest,
+  manifest,
+  updatedAt,
+) {
+  const methodology = assertMethodologyControl(
+    controls[METHODOLOGY_CONTROL_PATH],
+    previousManifest,
+  )
+  const guidance = assertGuidanceControl(
+    controls[GUIDANCE_CONTROL_PATH],
+    previousManifest,
+  )
+  if (!isExactUtcDateTime(updatedAt)) {
+    throw new Error('Control updatedAt must be an exact UTC timestamp.')
+  }
+  if (previousManifest.manifestVersion === manifest.manifestVersion) {
+    throw new Error('The target manifest must differ from its predecessor.')
+  }
+  return {
+    [METHODOLOGY_CONTROL_PATH]: {
+      ...methodology,
+      revision: methodology.revision + 1,
+      manifestVersion: manifest.manifestVersion,
+      artifactVersions: exactArtifactVersions(manifest),
+      updatedAt,
+    },
+    [GUIDANCE_CONTROL_PATH]: {
+      ...guidance,
+      revision: guidance.revision + 1,
+      artifactVersions: exactGuidanceVersions(manifest),
+      updatedAt,
+    },
+  }
+}
+
 export function parseControlArguments(argv) {
   const [action, ...pairs] = argv
   if (!ACTIONS.includes(action)) {
@@ -471,8 +513,9 @@ async function operatorAccessToken(projectId) {
 
 async function run() {
   const options = parseControlArguments(process.argv.slice(2))
-  const [manifest, accessToken] = await Promise.all([
+  const [manifest, previousManifest, accessToken] = await Promise.all([
     readFile(manifestPath, 'utf8').then(JSON.parse),
+    readFile(previousManifestPath, 'utf8').then(JSON.parse),
     operatorAccessToken(options.projectId),
   ])
   const existing = Object.fromEntries(
@@ -523,17 +566,26 @@ async function run() {
     if (Object.values(existing).some((snapshot) => snapshot === null)) {
       throw new Error('Both controls must exist before a transition.')
     }
-    nextControls = transitionControlDocuments(
-      options.action,
-      Object.fromEntries(
-        Object.entries(existing).map(([documentPath, snapshot]) => [
-          documentPath,
-          snapshot.data,
-        ]),
-      ),
-      manifest,
-      { guidanceId: options.guidanceId, updatedAt },
+    const currentControls = Object.fromEntries(
+      Object.entries(existing).map(([documentPath, snapshot]) => [
+        documentPath,
+        snapshot.data,
+      ]),
     )
+    nextControls =
+      options.action === 'upgrade'
+        ? upgradeControlDocuments(
+            currentControls,
+            previousManifest,
+            manifest,
+            updatedAt,
+          )
+        : transitionControlDocuments(
+            options.action,
+            currentControls,
+            manifest,
+            { guidanceId: options.guidanceId, updatedAt },
+          )
   }
 
   await commitControls({
