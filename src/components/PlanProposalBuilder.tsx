@@ -30,6 +30,7 @@ interface PlanProposalBuilderProps {
   readonly profile: UserProfile | null;
   readonly generatorVersion: PlanGenerationArtifactVersion;
   readonly rules: DeterministicPlanRulesV1;
+  readonly provisionalContext?: "owner_dogfood" | "closed_beta";
   readonly onEditProfile: () => void;
   readonly approval: {
     readonly expectedActivePlanRevision: number | null;
@@ -100,6 +101,7 @@ export default function PlanProposalBuilder({
   profile,
   generatorVersion,
   rules,
+  provisionalContext = "owner_dogfood",
   onEditProfile,
   approval,
   today,
@@ -174,8 +176,9 @@ export default function PlanProposalBuilder({
     return (
       <div className="plan-proposal-builder plan-proposal-result">
         <p className="plan-proposal-boundary" role="note">
-          This owner-dogfood plan uses provisional training rules. It is for
-          internal testing and has not received external methodology review.
+          {provisionalContext === "closed_beta"
+            ? "This closed-beta plan uses provisional training rules and has not received external methodology review."
+            : "This owner-dogfood plan uses provisional training rules. It is for internal testing and has not received external methodology review."}
         </p>
         <PlanGenerationResultView
           input={outcome.input}
@@ -240,8 +243,9 @@ export default function PlanProposalBuilder({
       </header>
 
       <p className="plan-proposal-boundary" role="note">
-        Owner dogfood only. The current training rules are provisional and
-        have not received external methodology review.
+        {provisionalContext === "closed_beta"
+          ? "Closed beta. The current training rules are provisional and have not received external methodology review."
+          : "Owner dogfood only. The current training rules are provisional and have not received external methodology review."}
       </p>
 
       <form className="plan-proposal-form" onSubmit={handleSubmit}>

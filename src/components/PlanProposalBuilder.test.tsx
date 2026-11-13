@@ -89,7 +89,9 @@ const approvalClient: PlanApprovalClient = {
   resolve: vi.fn(),
 };
 
-function renderBuilder() {
+function renderBuilder(
+  provisionalContext: "owner_dogfood" | "closed_beta" = "owner_dogfood",
+) {
   render(
     <PlanProposalBuilder
       profile={profile}
@@ -97,6 +99,7 @@ function renderBuilder() {
         "test-generator@1.0.0",
       )}
       rules={rules}
+      provisionalContext={provisionalContext}
       onEditProfile={vi.fn()}
       approval={{
         expectedActivePlanRevision: null,
@@ -110,6 +113,17 @@ function renderBuilder() {
 }
 
 describe("PlanProposalBuilder", () => {
+  it("labels closed-beta rules as provisional without owner-only language", () => {
+    renderBuilder("closed_beta");
+
+    expect(
+      screen.getByText(
+        "Closed beta. The current training rules are provisional and have not received external methodology review.",
+      ),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/Owner dogfood only/i)).not.toBeInTheDocument();
+  });
+
   it("explains and focuses an unanswered safety question", async () => {
     const user = userEvent.setup();
     renderBuilder();

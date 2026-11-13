@@ -4,14 +4,16 @@ import {
   PLAN_GENERATION_INPUT_SCHEMA_VERSION,
   PLAN_GENERATION_RESULT_SCHEMA_VERSION,
 } from '../../src/domain/training/planGeneration.js'
+import { CLOSED_BETA_PROJECT_ID } from './closedBetaMethodologyEligibility.js'
 
 export const DEVELOPMENT_DOGFOOD_PROJECT_ID = 'marathoner-d9bf9'
 export const DEVELOPMENT_DOGFOOD_PLAN_SCOPE_ID =
   'owner-dogfood-consistent-runner@1'
-export const DEVELOPMENT_DOGFOOD_GENERATOR_VERSION =
+export const PINNED_PROVISIONAL_PLAN_GENERATOR_VERSION =
   'deterministic-plan-generator@1.0.0'
-export const DEVELOPMENT_DOGFOOD_RULESET_VERSION =
+export const PINNED_PROVISIONAL_PLAN_RULESET_VERSION =
   'beta-rules@0.2.0-draft'
+export const CLOSED_BETA_PLAN_SCOPE_ID = 'founding-closed-beta@1'
 
 export const PLAN_APPROVAL_ARTIFACT_REVIEW_STATES = [
   'missing',
@@ -20,6 +22,7 @@ export const PLAN_APPROVAL_ARTIFACT_REVIEW_STATES = [
   'approved',
   'conditional',
   'provisional_dogfood',
+  'provisional_closed_beta',
   'rejected',
   'retired',
 ] as const
@@ -47,11 +50,13 @@ export interface PlanApprovalArtifactPolicyContext {
   supportedScopeId: string | null
   records: readonly PlanApprovalArtifactPolicyRecord[]
   allowProvisionalDogfood?: boolean
+  allowProvisionalClosedBeta?: boolean
 }
 
 export interface InstalledPlanApprovalArtifactPolicy
   extends PlanApprovalArtifactPolicyContext {
   allowProvisionalDogfood: boolean
+  allowProvisionalClosedBeta: boolean
 }
 
 export type PlanApprovalArtifactPolicyDecision =
@@ -76,8 +81,8 @@ export const DEVELOPMENT_DOGFOOD_PLAN_APPROVAL_ARTIFACT_POLICY: readonly PlanApp
     {
       supportedScopeId: DEVELOPMENT_DOGFOOD_PLAN_SCOPE_ID,
       inputSchemaVersion: PLAN_GENERATION_INPUT_SCHEMA_VERSION,
-      generatorVersion: DEVELOPMENT_DOGFOOD_GENERATOR_VERSION,
-      rulesetVersion: DEVELOPMENT_DOGFOOD_RULESET_VERSION,
+      generatorVersion: PINNED_PROVISIONAL_PLAN_GENERATOR_VERSION,
+      rulesetVersion: PINNED_PROVISIONAL_PLAN_RULESET_VERSION,
       generatedPlanSchemaVersion: GENERATED_PLAN_SCHEMA_VERSION,
       resultSchemaVersion: PLAN_GENERATION_RESULT_SCHEMA_VERSION,
       reviewState: 'provisional_dogfood',
@@ -85,9 +90,27 @@ export const DEVELOPMENT_DOGFOOD_PLAN_APPROVAL_ARTIFACT_POLICY: readonly PlanApp
   ])
 
 /**
+ * The beta project may activate the plan artifact pinned by the closed-beta
+ * methodology manifest. Per-user membership, consent, App Check, and the
+ * operator control are evaluated separately before persistence.
+ */
+export const CLOSED_BETA_PLAN_APPROVAL_ARTIFACT_POLICY: readonly PlanApprovalArtifactPolicyRecord[] =
+  Object.freeze([
+    {
+      supportedScopeId: CLOSED_BETA_PLAN_SCOPE_ID,
+      inputSchemaVersion: PLAN_GENERATION_INPUT_SCHEMA_VERSION,
+      generatorVersion: PINNED_PROVISIONAL_PLAN_GENERATOR_VERSION,
+      rulesetVersion: PINNED_PROVISIONAL_PLAN_RULESET_VERSION,
+      generatedPlanSchemaVersion: GENERATED_PLAN_SCHEMA_VERSION,
+      resultSchemaVersion: PLAN_GENERATION_RESULT_SCHEMA_VERSION,
+      reviewState: 'provisional_closed_beta',
+    },
+  ])
+
+/**
  * Selects the live server policy without trusting a client build flag. The
- * provisional artifact is available only when the deployed Functions project
- * is the development project and its operator-controlled parameter is enabled.
+ * dogfood artifact remains parameter-gated in development; beta receives only
+ * the exact closed-beta tuple and still requires its per-user eligibility gate.
  */
 export function selectLivePlanApprovalArtifactPolicy(options: {
   projectId: string
@@ -96,15 +119,21 @@ export function selectLivePlanApprovalArtifactPolicy(options: {
   const dogfoodEnabled =
     options.projectId === DEVELOPMENT_DOGFOOD_PROJECT_ID &&
     options.provisionalDogfoodEnabled
+  const closedBetaEnabled = options.projectId === CLOSED_BETA_PROJECT_ID
 
   return {
     allowProvisionalDogfood: dogfoodEnabled,
+    allowProvisionalClosedBeta: closedBetaEnabled,
     records: dogfoodEnabled
       ? DEVELOPMENT_DOGFOOD_PLAN_APPROVAL_ARTIFACT_POLICY
-      : PRODUCTION_PLAN_APPROVAL_ARTIFACT_POLICY,
+      : closedBetaEnabled
+        ? CLOSED_BETA_PLAN_APPROVAL_ARTIFACT_POLICY
+        : PRODUCTION_PLAN_APPROVAL_ARTIFACT_POLICY,
     supportedScopeId: dogfoodEnabled
       ? DEVELOPMENT_DOGFOOD_PLAN_SCOPE_ID
-      : null,
+      : closedBetaEnabled
+        ? CLOSED_BETA_PLAN_SCOPE_ID
+        : null,
   }
 }
 
@@ -158,6 +187,13 @@ export function evaluatePlanApprovalArtifactPolicy(
 
   const record = exactMatches[0]
   if (record?.reviewState === 'approved' && !commandUsesDraftArtifact) {
+    return { allowed: true, record }
+  }
+  if (
+    record?.reviewState === 'provisional_closed_beta' &&
+    context.allowProvisionalClosedBeta === true &&
+    commandUsesDraftArtifact
+  ) {
     return { allowed: true, record }
   }
   if (

@@ -41,6 +41,7 @@ import {
   type PlanApprovalArtifactPolicyRecord,
 } from './planApprovalArtifactPolicy.js'
 import type { OperatorActivationGate } from './operatorActivationGate.js'
+import type { ClosedBetaMethodologyEligibilityDecision } from './closedBetaMethodologyEligibility.js'
 
 export type MaterialCommandFailureClass =
   | 'persistence-permission-denied'
@@ -159,7 +160,18 @@ export interface PlanApprovalStore {
 
 export interface PlanApprovalHandlerDependencies {
   activationGate: Pick<OperatorActivationGate, 'evaluate'>
+  allowProvisionalClosedBeta?: boolean
   allowProvisionalDogfood?: boolean
+  closedBetaEligibility?: {
+    readonly projectId: string
+    readonly evaluate: (request: {
+      readonly ownerId: string | null
+      readonly projectId: string
+      readonly capability: 'plan'
+      readonly serverArtifactVersion: string
+      readonly inputDisposition: 'supported'
+    }) => Promise<ClosedBetaMethodologyEligibilityDecision>
+  }
   policyRecords: readonly PlanApprovalArtifactPolicyRecord[]
   store: PlanApprovalStore
   supportedScopeId: string | null
@@ -255,6 +267,17 @@ function planActivationNotAvailableResult(
     code: 'plan-activation-not-available',
     message:
       'Plan activation is currently unavailable. No training plan was changed.',
+  }
+}
+
+function planMembershipRequiredResult(
+  commandId: string,
+): MaterialCommandResult {
+  return {
+    status: 'authorization_error',
+    commandId,
+    code: 'approved-beta-membership-required',
+    message: 'An approved beta membership is required to activate this plan.',
   }
 }
 
@@ -414,6 +437,8 @@ export async function executeMaterialCommand(
   if (isPlanApprovalCommandEnvelope(parsed.envelope)) {
     const planApproval = dependencies.planApproval
     const policyDecision = evaluatePlanApprovalArtifactPolicy(parsed.envelope, {
+      allowProvisionalClosedBeta:
+        planApproval?.allowProvisionalClosedBeta ?? false,
       allowProvisionalDogfood:
         planApproval?.allowProvisionalDogfood ?? false,
       supportedScopeId: planApproval?.supportedScopeId ?? null,
@@ -444,6 +469,59 @@ export async function executeMaterialCommand(
           const result = planActivationNotAvailableResult(
             parsed.envelope.commandId,
           )
+          logResult(
+            dependencies,
+            'material-command-result',
+            result,
+            parsed.envelope.command.type,
+          )
+          return result
+        }
+      } catch {
+        const result = planActivationNotAvailableResult(
+          parsed.envelope.commandId,
+        )
+        logResult(
+          dependencies,
+          'material-command-result',
+          result,
+          parsed.envelope.command.type,
+        )
+        return result
+      }
+    }
+
+    if (policyDecision.record.reviewState === 'provisional_closed_beta') {
+      if (options.appCheckVerified !== true) {
+        const result = runCommandAppCheckRequiredResult(
+          parsed.envelope.commandId,
+        )
+        logResult(
+          dependencies,
+          'material-command-result',
+          result,
+          parsed.envelope.command.type,
+        )
+        return result
+      }
+
+      try {
+        const eligibility = planApproval.closedBetaEligibility
+        const eligibilityDecision = eligibility
+          ? await eligibility.evaluate({
+              ownerId: options.authenticatedUserId,
+              projectId: eligibility.projectId,
+              capability: 'plan',
+              serverArtifactVersion:
+                parsed.envelope.command.input.rulesetVersion,
+              inputDisposition: 'supported',
+            })
+          : null
+        if (eligibilityDecision?.status !== 'allowed') {
+          const result =
+            eligibilityDecision?.code === 'closed-beta-access-required'
+              ? planMembershipRequiredResult(parsed.envelope.commandId)
+              : planActivationNotAvailableResult(parsed.envelope.commandId)
           logResult(
             dependencies,
             'material-command-result',

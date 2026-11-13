@@ -26,6 +26,11 @@ declare module "virtual:provisional-plan-dogfood-rules" {
   export default rulesText;
 }
 
+declare module "virtual:closed-beta-provisional-plan-rules" {
+  const rulesText: string | null;
+  export default rulesText;
+}
+
 declare module "virtual:internal-adaptation-rehearsal-packet" {
   const packetText: {
     readonly rulesText: string;
