@@ -12,7 +12,7 @@ import {
 
 const emulatorProjectId = 'demo-marathoner'
 const ownerId = 'methodology-consent-owner'
-const manifestVersion = 'closed-beta-provisional-methodology@0.1.0'
+const manifestVersion = 'closed-beta-provisional-methodology@0.2.0'
 const now = new Date('2026-11-11T22:00:00.000Z')
 const adminApp = initializeApp(
   { projectId: emulatorProjectId },

@@ -3,10 +3,10 @@
   "recordedOn": "PENDING",
   "candidate": {
     "releaseIdentifier": "PENDING",
-    "manifestVersion": "closed-beta-provisional-methodology@0.1.0",
+    "manifestVersion": "closed-beta-provisional-methodology@0.2.0",
     "artifactVersions": {
-      "plan": "beta-rules@0.2.0-draft",
-      "adaptation": "beta-adaptation@0.2.0-draft",
+      "plan": "beta-rules@0.3.0-draft",
+      "adaptation": "beta-adaptation@0.3.0-draft",
       "guidance": "beta-guidance@0.1.0-draft",
       "safety": "beta-safety@0.1.0-draft"
     }

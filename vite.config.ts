@@ -40,7 +40,7 @@ const resolvedClosedBetaProvisionalMethodologyModuleId =
   `\0${closedBetaProvisionalMethodologyModuleId}`
 const closedBetaProvisionalMethodologyManifestPath = path.join(
   repositoryRoot,
-  'docs/methodology/artifacts/closed-beta-provisional-methodology/0.1.0/manifest.json',
+  'docs/methodology/artifacts/closed-beta-provisional-methodology/0.2.0/manifest.json',
 )
 
 function loadClosedBetaProvisionalMethodology() {
@@ -150,7 +150,7 @@ function internalRehearsalArtifactsPlugin(
         const rulesText = readFileSync(
           path.join(
             repositoryRoot,
-            'docs/methodology/artifacts/beta-rules/0.2.0-draft/beta-rules.json',
+            'docs/methodology/artifacts/beta-rules/0.3.0-draft/beta-rules.json',
           ),
           'utf8',
         )
@@ -178,14 +178,14 @@ function internalRehearsalArtifactsPlugin(
       const rulesText = readFileSync(
         path.join(
           repositoryRoot,
-          'docs/methodology/artifacts/beta-adaptation/0.2.0-draft/beta-adaptation.json',
+          'docs/methodology/artifacts/beta-adaptation/0.3.0-draft/beta-adaptation.json',
         ),
         'utf8',
       )
       const fixturesText = readFileSync(
         path.join(
           repositoryRoot,
-          'docs/methodology/artifacts/beta-adaptation/0.2.0-draft/fixtures.json',
+          'docs/methodology/artifacts/beta-adaptation/0.3.0-draft/fixtures.json',
         ),
         'utf8',
       )

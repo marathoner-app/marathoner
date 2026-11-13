@@ -1,5 +1,5 @@
-import draftFixturesText from "../docs/methodology/artifacts/beta-rules/0.2.0-draft/fixtures.json?raw";
-import draftRulesText from "../docs/methodology/artifacts/beta-rules/0.2.0-draft/beta-rules.json?raw";
+import draftFixturesText from "../docs/methodology/artifacts/beta-rules/0.3.0-draft/fixtures.json?raw";
+import draftRulesText from "../docs/methodology/artifacts/beta-rules/0.3.0-draft/beta-rules.json?raw";
 import {
   PLAN_GENERATION_INPUT_SCHEMA_VERSION,
   createDateOnly,
@@ -31,15 +31,12 @@ export interface DraftRulesPacket {
     readonly consistentRunningWeeks: { readonly minimum: number };
     readonly currentWeeklyDistanceMeters: {
       readonly minimum: number;
-      readonly maximum: number;
     };
     readonly currentRunningFrequencyDaysPerWeek: {
       readonly minimum: number;
-      readonly maximum: number;
     };
     readonly longestRecentRunDistanceMeters: {
       readonly minimum: number;
-      readonly maximum: number;
     };
     readonly availableTrainingDays: { readonly minimum: number };
     readonly scheduleConstraints: { readonly supported: "omitted" };

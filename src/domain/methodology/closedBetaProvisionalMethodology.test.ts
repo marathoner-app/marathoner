@@ -10,7 +10,7 @@ import {
 const repositoryRoot = path.resolve(import.meta.dirname, "../../..");
 const manifestPath = path.join(
   repositoryRoot,
-  "docs/methodology/artifacts/closed-beta-provisional-methodology/0.1.0/manifest.json",
+  "docs/methodology/artifacts/closed-beta-provisional-methodology/0.2.0/manifest.json",
 );
 
 async function readPinnedManifest(): Promise<ClosedBetaProvisionalMethodologyManifest> {
@@ -25,7 +25,7 @@ describe("closed beta provisional methodology manifest", () => {
 
     expect(manifest).toMatchObject({
       schemaVersion: 1,
-      manifestVersion: "closed-beta-provisional-methodology@0.1.0",
+      manifestVersion: "closed-beta-provisional-methodology@0.2.0",
       reviewState: "provisional_unreviewed",
       publicationState: "closed_beta_only",
       firebaseEnvironment: "beta",
@@ -73,7 +73,7 @@ describe("closed beta provisional methodology manifest", () => {
       const artifacts = value.artifacts as Record<string, unknown>[];
       artifacts[0] = {
         ...artifacts[0],
-        version: "beta-adaptation@0.2.0-draft",
+        version: "beta-adaptation@0.3.0-draft",
       };
     }],
   ])("rejects a %s", async (_name, mutate) => {

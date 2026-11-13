@@ -64,9 +64,9 @@ const supportReasonCodes = {
 
 const supportRules = {
   minimumConsistentRunningWeeks: 8,
-  currentWeeklyDistanceMeters: { minimum: 40_000, maximum: 45_000 },
-  currentRunningFrequencyDaysPerWeek: { minimum: 4, maximum: 5 },
-  longestRecentRunDistanceMeters: { minimum: 14_000, maximum: 20_000 },
+  currentWeeklyDistanceMeters: { minimum: 40_234 },
+  currentRunningFrequencyDaysPerWeek: { minimum: 4 },
+  longestRecentRunDistanceMeters: { minimum: 14_484 },
   minimumAvailableTrainingDays: 4,
   wholeWeeksFromPlanStartToRace: { minimum: 18, maximum: 22 },
   reasonCodes: supportReasonCodes,
@@ -194,9 +194,9 @@ describe("PlanGenerationResultView", () => {
       ...generatedFixture.input,
       runner: {
         ...generatedFixture.input.runner,
-        currentWeeklyDistance: createDistanceMeters(64_374),
-        currentRunningFrequencyDaysPerWeek: 7,
-        longestRecentRunDistance: createDistanceMeters(25_750),
+        currentWeeklyDistance: createDistanceMeters(32_187),
+        currentRunningFrequencyDaysPerWeek: 3,
+        longestRecentRunDistance: createDistanceMeters(12_875),
       },
     };
 
@@ -212,23 +212,23 @@ describe("PlanGenerationResultView", () => {
     expect(screen.getAllByRole("listitem")).toHaveLength(3);
     expect(
       screen.getByText(
-        "Your saved weekly distance is 40 miles; this plan supports 24.9–28 miles per week.",
+        "Your saved weekly distance is 20 miles; this plan requires at least 25 miles per week.",
       ),
     ).toBeInTheDocument();
     expect(
       screen.getByText(
-        "Your saved running frequency is 7 days per week; this plan supports 4–5.",
+        "Your saved running frequency is 3 days per week; this plan requires at least 4.",
       ),
     ).toBeInTheDocument();
     expect(
       screen.getByText(
-        "Your saved longest recent run is 16 miles; this plan supports 8.7–12.4 miles.",
+        "Your saved longest recent run is 8 miles; this plan requires at least 9 miles.",
       ),
     ).toBeInTheDocument();
     expect(screen.queryByText(/TEST-WEEKLY-DISTANCE/)).not.toBeInTheDocument();
   });
 
-  it("formats supported distance ranges in kilometers", () => {
+  it("formats a minimum distance in kilometers", () => {
     const props = commonProps();
     const result: UnsupportedPlanGenerationResultV1 = {
       ...unsupportedResult(),
@@ -238,7 +238,7 @@ describe("PlanGenerationResultView", () => {
       ...generatedFixture.input,
       runner: {
         ...generatedFixture.input.runner,
-        currentWeeklyDistance: createDistanceMeters(50_000),
+        currentWeeklyDistance: createDistanceMeters(30_000),
       },
     };
 
@@ -253,7 +253,7 @@ describe("PlanGenerationResultView", () => {
 
     expect(
       screen.getByText(
-        "Your saved weekly distance is 50 kilometers; this plan supports 40–45 kilometers per week.",
+        "Your saved weekly distance is 30 kilometers; this plan requires at least 40.2 kilometers per week.",
       ),
     ).toBeInTheDocument();
   });

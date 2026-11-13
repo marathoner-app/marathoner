@@ -1,5 +1,5 @@
-import draftFixturesText from "../docs/methodology/artifacts/beta-adaptation/0.2.0-draft/fixtures.json?raw";
-import draftRulesText from "../docs/methodology/artifacts/beta-adaptation/0.2.0-draft/beta-adaptation.json?raw";
+import draftFixturesText from "../docs/methodology/artifacts/beta-adaptation/0.3.0-draft/fixtures.json?raw";
+import draftRulesText from "../docs/methodology/artifacts/beta-adaptation/0.3.0-draft/beta-adaptation.json?raw";
 import { describe, expect, it } from "vitest";
 import {
   createInternalAdaptationScenarioPacket,
@@ -16,7 +16,7 @@ describe("createInternalAdaptationScenarioPacket", () => {
 
     expect(packet).toMatchObject({
       artifactStatus: "draft_not_approved",
-      artifactVersion: "beta-adaptation@0.2.0-draft",
+      artifactVersion: "beta-adaptation@0.3.0-draft",
       evaluatorVersion: "deterministic-adaptation-evaluator@1.0.0",
     });
     expect(packet.cases).toHaveLength(19);

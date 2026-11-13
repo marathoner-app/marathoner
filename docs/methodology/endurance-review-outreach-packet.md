@@ -70,8 +70,8 @@ review decision does not transfer to another commit or artifact version.
 - Repository commit:
   [`4501497ddcd31f77f029723e97a737c6a85c865d`](https://github.com/marathoner-app/marathoner/tree/4501497ddcd31f77f029723e97a737c6a85c865d)
 - Review protocol: `methodology-review@0.1.0`
-- Base-plan bundle: `beta-rules@0.2.0-draft`
-- Adaptation bundle: `beta-adaptation@0.2.0-draft`
+- Base-plan bundle: `beta-rules@0.3.0-draft`
+- Adaptation bundle: `beta-adaptation@0.3.0-draft`
 - Bundle state: draft, unapproved, and runtime-ineligible
 - Proposed inventory IDs: `ELIG-001`, `ELIG-002`, `FEAS-001`, `PLAN-001`,
   `PROG-001`, `UNSUP-001`, `UNSUP-002`, `ADAPT-001`, `ADAPT-002`,
@@ -167,9 +167,9 @@ was not outcome-contingent.
 
 The reviewer must answer every question or mark it outside their competence.
 
-1. Are eight consecutive consistent-running weeks and the proposed 40–45 km
-   weekly distance, four-to-five-day frequency, and 14–20 km recent-long-run
-   boundaries sufficient and appropriately narrow for this exact segment?
+1. Are eight consecutive consistent-running weeks and the proposed minimum
+   25-mile weekly distance, four-day frequency, and 9-mile recent long run
+   sufficient starting requirements for this exact segment?
 2. Is an exact race date 18–22 whole weeks after plan start an acceptable
    supported horizon, and are earlier, later, windowed, or missing dates
    rejected correctly?
@@ -288,7 +288,7 @@ represents their written decisions.
 | Compensation | `[Blank: unpaid / paid for time, never contingent on outcome]` |
 | Review completed | `[Blank: YYYY-MM-DD]` |
 | Repository commit | `[Blank: assigned by #231 before sending]` |
-| Bundles | `beta-rules@0.2.0-draft`; `beta-adaptation@0.2.0-draft` |
+| Bundles | `beta-rules@0.3.0-draft`; `beta-adaptation@0.3.0-draft` |
 
 ### Inventory decisions
 

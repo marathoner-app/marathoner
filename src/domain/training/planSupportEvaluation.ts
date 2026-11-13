@@ -16,6 +16,10 @@ interface InclusiveRange {
   readonly maximum: number;
 }
 
+interface MinimumThreshold {
+  readonly minimum: number;
+}
+
 export interface PlanSupportReasonCodesV1 {
   readonly cohortGate: PlanGenerationReasonCode;
   readonly experience: PlanGenerationReasonCode;
@@ -34,9 +38,9 @@ export interface PlanSupportRulesV1 {
   readonly rulesetVersion: PlanGenerationArtifactVersion;
   readonly eligibleExperienceLevel: RunningExperienceLevel;
   readonly minimumConsistentRunningWeeks: number;
-  readonly currentWeeklyDistanceMeters: InclusiveRange;
-  readonly currentRunningFrequencyDaysPerWeek: InclusiveRange;
-  readonly longestRecentRunDistanceMeters: InclusiveRange;
+  readonly currentWeeklyDistanceMeters: MinimumThreshold;
+  readonly currentRunningFrequencyDaysPerWeek: MinimumThreshold;
+  readonly longestRecentRunDistanceMeters: MinimumThreshold;
   readonly minimumAvailableTrainingDays: number;
   readonly requiredTrainingDayPositionsRelativeToPreferredLongRunDay: readonly number[];
   readonly scheduleConstraintsSupported: "omitted";
@@ -99,6 +103,10 @@ const MILLISECONDS_PER_DAY = 24 * 60 * 60 * 1_000;
 
 function isOutside(value: number, range: InclusiveRange): boolean {
   return value < range.minimum || value > range.maximum;
+}
+
+function isBelow(value: number, threshold: MinimumThreshold): boolean {
+  return value < threshold.minimum;
 }
 
 function inclusiveDayCount(startDate: string, endDate: string): number {
@@ -184,7 +192,7 @@ export function evaluatePlanSupport(
     failedRules.add(rules.reasonCodes.consistencyDuration);
   }
   if (
-    isOutside(
+    isBelow(
       runner.currentWeeklyDistance,
       rules.currentWeeklyDistanceMeters,
     )
@@ -192,7 +200,7 @@ export function evaluatePlanSupport(
     failedRules.add(rules.reasonCodes.weeklyDistance);
   }
   if (
-    isOutside(
+    isBelow(
       runner.currentRunningFrequencyDaysPerWeek,
       rules.currentRunningFrequencyDaysPerWeek,
     )
@@ -200,7 +208,7 @@ export function evaluatePlanSupport(
     failedRules.add(rules.reasonCodes.runFrequency);
   }
   if (
-    isOutside(
+    isBelow(
       runner.longestRecentRunDistance,
       rules.longestRecentRunDistanceMeters,
     )

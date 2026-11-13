@@ -4,7 +4,7 @@
   record exists yet
 - **Owner:** Kevin Tulloch
 - **Tracking issue:** [#691](https://github.com/marathoner-app/marathoner/issues/691)
-- **Pinned manifest:** `closed-beta-provisional-methodology@0.1.0`
+- **Pinned manifest:** `closed-beta-provisional-methodology@0.2.0`
 - **Applies to:** the responsive web candidate and the same release candidate
   on a physical iPhone
 
@@ -29,9 +29,9 @@ must contain this exact set:
 
 | Kind | Required version |
 | --- | --- |
-| Manifest | `closed-beta-provisional-methodology@0.1.0` |
-| Plan | `beta-rules@0.2.0-draft` |
-| Adaptation | `beta-adaptation@0.2.0-draft` |
+| Manifest | `closed-beta-provisional-methodology@0.2.0` |
+| Plan | `beta-rules@0.3.0-draft` |
+| Adaptation | `beta-adaptation@0.3.0-draft` |
 | Guidance | `beta-guidance@0.1.0-draft` |
 | Safety | `beta-safety@0.1.0-draft` |
 

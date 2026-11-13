@@ -3,8 +3,8 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const sharedPlanAndAdaptationVersionText = [
-  'beta-rules@0.2.0-draft',
-  'beta-adaptation@0.2.0-draft',
+  'beta-rules@0.3.0-draft',
+  'beta-adaptation@0.3.0-draft',
 ]
 const sharedProvisionalPlanBuildText = ['Create plan proposal']
 const provisionalDogfoodBuildText = [
@@ -12,7 +12,7 @@ const provisionalDogfoodBuildText = [
   'Check recent training against the draft adjustment rules',
 ]
 const closedBetaProvisionalBuildText = [
-  'closed-beta-provisional-methodology@0.1.0',
+  'closed-beta-provisional-methodology@0.2.0',
   'beta-safety@0.1.0-draft',
   'founding_closed_beta',
 ]

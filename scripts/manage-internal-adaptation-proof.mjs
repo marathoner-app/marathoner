@@ -21,7 +21,7 @@ const { getAccessToken, getGlobalDefaultAccount } = require(
   'firebase-tools/lib/auth.js',
 )
 const betaRules = require(
-  '../docs/methodology/artifacts/beta-rules/0.2.0-draft/beta-rules.json',
+  '../docs/methodology/artifacts/beta-rules/0.3.0-draft/beta-rules.json',
 )
 
 export const DEVELOPMENT_PROJECT_ID = 'marathoner-d9bf9'

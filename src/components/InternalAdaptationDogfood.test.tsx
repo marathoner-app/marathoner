@@ -102,8 +102,8 @@ function pendingEvidence(
     recommendationId,
     decision: "pending",
     evaluationInput: {
-      basePlanArtifactVersion: "beta-rules@0.2.0-draft",
-      adaptationArtifactVersion: "beta-adaptation@0.2.0-draft",
+      basePlanArtifactVersion: "beta-rules@0.3.0-draft",
+      adaptationArtifactVersion: "beta-adaptation@0.3.0-draft",
       evaluatedPlanRevision: 4,
     },
     evaluationResult: {

@@ -51,24 +51,15 @@ describe("plan support evaluation", () => {
     },
   );
 
-  it.each([
-    {
-      label: "frequency above the upper boundary",
-      changes: { currentRunningFrequencyDaysPerWeek: 6 },
-      expectedReasonCode: "UNSUPPORTED-RUN-FREQUENCY",
-    },
-    {
-      label: "longest run above the upper boundary",
-      changes: { longestRecentRunDistanceMeters: 20_001 },
-      expectedReasonCode: "UNSUPPORTED-LONGEST-RUN",
-    },
-  ])("rejects $label", ({ changes, expectedReasonCode }) => {
-    const result = evaluate({ ...draftFixtures.defaults, ...changes });
-
-    expect(result).toMatchObject({
-      kind: "unsupported",
-      reasonCodes: [expectedReasonCode],
+  it("accepts an experienced runner above every provisional starting baseline", () => {
+    const result = evaluate({
+      ...draftFixtures.defaults,
+      currentWeeklyDistanceMeters: 48_280,
+      currentRunningFrequencyDaysPerWeek: 7,
+      longestRecentRunDistanceMeters: 25_750,
     });
+
+    expect(result).toMatchObject({ kind: "supported", reasonCodes: [] });
   });
 
   it("does not turn upper-bound misalignment into a horizon failure", () => {

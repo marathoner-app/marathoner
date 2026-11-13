@@ -12,7 +12,7 @@ export const DEVELOPMENT_DOGFOOD_PLAN_SCOPE_ID =
 export const PINNED_PROVISIONAL_PLAN_GENERATOR_VERSION =
   'deterministic-plan-generator@1.0.0'
 export const PINNED_PROVISIONAL_PLAN_RULESET_VERSION =
-  'beta-rules@0.2.0-draft'
+  'beta-rules@0.3.0-draft'
 export const CLOSED_BETA_PLAN_SCOPE_ID = 'founding-closed-beta@1'
 
 export const PLAN_APPROVAL_ARTIFACT_REVIEW_STATES = [

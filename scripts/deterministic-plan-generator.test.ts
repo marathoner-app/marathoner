@@ -39,7 +39,7 @@ const planRules: DeterministicPlanRulesV1 = {
   planName: draftRules.planFamily.name,
   planReasonCodes: [
     packetReasonCode("ELIG-CONSISTENT-RUNNER"),
-    packetReasonCode("ELIG-BASE-WITHIN-BOUNDS"),
+    packetReasonCode("ELIG-BASE-MEETS-MINIMUMS"),
     packetReasonCode("FEAS-RACE-HORIZON-SUPPORTED"),
     packetReasonCode("PLAN-COMPLETION-GOAL"),
     packetReasonCode("PLAN-FOUR-DAY-RHYTHM"),
@@ -209,7 +209,7 @@ describe("deterministic plan generator", () => {
   });
 
   it("stores whole-mile training targets and preserves the exact marathon distance", () => {
-    const plan = generatedPlanFor("supported-upper-boundary");
+    const plan = generatedPlanFor("supported-race-horizon-upper-boundary");
     const runs = plan.weeks.flatMap((week) =>
       week.workouts.filter((workout) => workout.kind === "run"),
     );
@@ -244,7 +244,7 @@ describe("deterministic plan generator", () => {
   });
 
   it("uses the exact injected weekday rhythm for every training week", () => {
-    const plan = generatedPlanFor("supported-upper-boundary");
+    const plan = generatedPlanFor("supported-race-horizon-upper-boundary");
     const trainingWeeks = plan.weeks.slice(0, -1);
 
     for (const week of trainingWeeks) {
@@ -262,7 +262,7 @@ describe("deterministic plan generator", () => {
   });
 
   it("copies every injected lead-in and core week without improvising", () => {
-    const plan = generatedPlanFor("supported-upper-boundary");
+    const plan = generatedPlanFor("supported-race-horizon-upper-boundary");
     const trainingWeeks = plan.weeks.slice(0, -1);
     const expectedWeekRules = [
       ...Array.from({ length: 4 }, () => planRules.leadInWeek),
@@ -308,7 +308,7 @@ describe("deterministic plan generator", () => {
 
   it("returns byte-for-byte stable structure and unique workout identifiers", () => {
     const fixture = draftFixtures.cases.find(
-      (entry) => entry.id === "supported-upper-boundary",
+      (entry) => entry.id === "supported-race-horizon-upper-boundary",
     );
     if (fixture === undefined) throw new Error("Missing upper-boundary fixture.");
 

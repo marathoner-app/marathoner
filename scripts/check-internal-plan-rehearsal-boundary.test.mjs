@@ -46,19 +46,19 @@ describe('methodology artifact build boundary', () => {
 
   it('rejects the closed-beta manifest from an ordinary build', async () => {
     const directory = await createBuild(
-      'closed-beta-provisional-methodology@0.1.0',
+      'closed-beta-provisional-methodology@0.2.0',
     )
 
     await expect(findInternalPlanRehearsalLeaks(directory)).resolves.toEqual([
       expect.objectContaining({
-        forbiddenText: 'closed-beta-provisional-methodology@0.1.0',
+        forbiddenText: 'closed-beta-provisional-methodology@0.2.0',
       }),
     ])
   })
 
   it('allows the pinned manifest only at the closed-beta boundary', async () => {
     const directory = await createBuild(
-      'closed-beta-provisional-methodology@0.1.0',
+      'closed-beta-provisional-methodology@0.2.0',
     )
 
     await expect(
@@ -87,7 +87,7 @@ describe('methodology artifact build boundary', () => {
 
   it('keeps the closed-beta manifest out of a dogfood build', async () => {
     const directory = await createBuild(
-      'closed-beta-provisional-methodology@0.1.0',
+      'closed-beta-provisional-methodology@0.2.0',
     )
 
     await expect(
@@ -96,7 +96,7 @@ describe('methodology artifact build boundary', () => {
       }),
     ).resolves.toEqual([
       expect.objectContaining({
-        forbiddenText: 'closed-beta-provisional-methodology@0.1.0',
+        forbiddenText: 'closed-beta-provisional-methodology@0.2.0',
       }),
     ])
   })

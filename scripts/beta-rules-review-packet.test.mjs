@@ -8,7 +8,7 @@ import { describe, expect, it } from 'vitest'
 const repositoryRoot = join(dirname(fileURLToPath(import.meta.url)), '..')
 const packetDirectory = join(
   repositoryRoot,
-  'docs/methodology/artifacts/beta-rules/0.2.0-draft',
+  'docs/methodology/artifacts/beta-rules/0.3.0-draft',
 )
 
 async function readJson(fileName) {
@@ -33,26 +33,17 @@ function evaluateFixture(defaults, fixture, rules) {
   }
 
   const weeklyDistance = rules.eligibility.currentWeeklyDistanceMeters
-  if (
-    input.currentWeeklyDistanceMeters < weeklyDistance.minimum ||
-    input.currentWeeklyDistanceMeters > weeklyDistance.maximum
-  ) {
+  if (input.currentWeeklyDistanceMeters < weeklyDistance.minimum) {
     reasonCodes.push('UNSUPPORTED-WEEKLY-DISTANCE')
   }
 
   const frequency = rules.eligibility.currentRunningFrequencyDaysPerWeek
-  if (
-    input.currentRunningFrequencyDaysPerWeek < frequency.minimum ||
-    input.currentRunningFrequencyDaysPerWeek > frequency.maximum
-  ) {
+  if (input.currentRunningFrequencyDaysPerWeek < frequency.minimum) {
     reasonCodes.push('UNSUPPORTED-RUN-FREQUENCY')
   }
 
   const longestRun = rules.eligibility.longestRecentRunDistanceMeters
-  if (
-    input.longestRecentRunDistanceMeters < longestRun.minimum ||
-    input.longestRecentRunDistanceMeters > longestRun.maximum
-  ) {
+  if (input.longestRecentRunDistanceMeters < longestRun.minimum) {
     reasonCodes.push('UNSUPPORTED-LONGEST-RUN')
   }
   if (input.targetRaceKind !== rules.feasibility.targetRaceKind) {
@@ -111,7 +102,7 @@ describe('founding-beta rules review packet', () => {
 
     expect(rules).toMatchObject({
       schemaVersion: 'beta-rules-review-packet@1',
-      artifactVersion: 'beta-rules@0.2.0-draft',
+      artifactVersion: 'beta-rules@0.3.0-draft',
       status: 'draft_not_approved',
       runtimeUseAllowed: false,
       requiredReviewerRole: 'EMR',
@@ -299,14 +290,14 @@ describe('founding-beta rules review packet', () => {
       const contents = await readFile(file, 'utf8')
       if (file === dogfoodPolicyFile) {
         expect(
-          contents.match(/beta-rules@0\.2\.0-draft/g),
+          contents.match(/beta-rules@0\.3\.0-draft/g),
           file,
         ).toHaveLength(1)
         expect(contents, file).toContain(
           "reviewState: 'provisional_dogfood'",
         )
       } else {
-        expect(contents, file).not.toContain('beta-rules@0.2.0-draft')
+        expect(contents, file).not.toContain('beta-rules@0.3.0-draft')
       }
       expect(contents, file).not.toContain('methodology/artifacts/beta-rules')
     }

@@ -12,6 +12,7 @@ import {
 export interface PinnedInternalAdaptationArtifacts {
   readonly adaptation: DraftAdaptationRuleSet
   readonly basePlan: DraftPlanRuleSet
+  readonly compatibleBasePlans: readonly DraftPlanRuleSet[]
 }
 
 function artifactPath(fileName: string, workspacePath: string): string {
@@ -35,6 +36,15 @@ export function loadPinnedInternalAdaptationArtifacts(): PinnedInternalAdaptatio
     readFileSync(
       artifactPath(
         'beta-rules.json',
+        'beta-rules/0.3.0-draft/beta-rules.json',
+      ),
+      'utf8',
+    ),
+  )
+  const legacyBasePlan = parsePinnedDraftPlanRuleSet(
+    readFileSync(
+      artifactPath(
+        'beta-rules-0.2.0-draft.json',
         'beta-rules/0.2.0-draft/beta-rules.json',
       ),
       'utf8',
@@ -44,7 +54,7 @@ export function loadPinnedInternalAdaptationArtifacts(): PinnedInternalAdaptatio
     readFileSync(
       artifactPath(
         'beta-adaptation.json',
-        'beta-adaptation/0.2.0-draft/beta-adaptation.json',
+        'beta-adaptation/0.3.0-draft/beta-adaptation.json',
       ),
       'utf8',
     ),
@@ -59,5 +69,19 @@ export function loadPinnedInternalAdaptationArtifacts(): PinnedInternalAdaptatio
     )
   }
 
-  return { adaptation, basePlan }
+  const compatibleBasePlans = [legacyBasePlan, basePlan]
+  if (
+    compatibleBasePlans.some(
+      ({ rules }) =>
+        !adaptation.compatibleBasePlanArtifactVersions.some(
+          (version) => String(version) === String(rules.rulesetVersion),
+        ),
+    )
+  ) {
+    throw new Error(
+      'The pinned adaptation artifact does not declare every bundled compatible base-plan artifact.',
+    )
+  }
+
+  return { adaptation, basePlan, compatibleBasePlans }
 }

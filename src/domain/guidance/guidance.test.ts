@@ -171,7 +171,7 @@ describe("guidance presentation decisions", () => {
       evaluateGuidancePresentation(draft, {
         ...context,
         provisionalArtifactVersion: createGuidanceArtifactVersion(
-          "beta-guidance@0.2.0-draft",
+          "beta-guidance@0.3.0-draft",
         ),
       }),
     ).toEqual({ eligible: false, reason: "review_not_approved" });

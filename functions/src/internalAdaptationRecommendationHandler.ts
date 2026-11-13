@@ -3,7 +3,10 @@ import { createHash } from 'node:crypto'
 import { assembleAdaptationEvaluationInput } from '../../src/domain/training/adaptationInputAssembly.js'
 import { deriveAdaptationPlanContext } from '../../src/domain/training/adaptationPlanContext.js'
 import { deriveAdaptationRescheduleCandidates } from '../../src/domain/training/adaptationRescheduleCandidates.js'
-import { evaluateAdaptation } from '../../src/domain/training/adaptationEvaluation.js'
+import {
+  createAdaptationArtifactVersion,
+  evaluateAdaptation,
+} from '../../src/domain/training/adaptationEvaluation.js'
 import { normalizeAdaptationHistory } from '../../src/domain/training/adaptationHistoryNormalization.js'
 import { projectAdaptationFromTrainingSnapshot } from '../../src/domain/training/adaptationTrainingProjection.js'
 import {
@@ -109,12 +112,22 @@ export function evaluateInternalAdaptationRecommendation(
   artifacts: PinnedInternalAdaptationArtifacts,
   recommendedAt: ReturnType<typeof createUtcDateTime>,
 ): InternalAdaptationEvaluationOutcome {
-  if (snapshot.planRulesetVersion !== artifacts.basePlan.rules.rulesetVersion) {
+  const basePlan = artifacts.compatibleBasePlans.find(
+    ({ rules }) =>
+      String(rules.rulesetVersion) === snapshot.planRulesetVersion,
+  )
+  if (basePlan === undefined) {
     return refusal(
       command.commandId,
       'base-plan-artifact-mismatch',
       'The active plan was not created from the pinned internal base-plan artifact.',
     )
+  }
+  const adaptationRules = {
+    ...artifacts.adaptation.rules,
+    basePlanArtifactVersion: createAdaptationArtifactVersion(
+      snapshot.planRulesetVersion,
+    ),
   }
   const week = evidenceWeek(command.evaluationDate)
   const history = normalizeAdaptationHistory({
@@ -127,7 +140,7 @@ export function evaluateInternalAdaptationRecommendation(
     currentWeekStartDate: week.startDate,
     currentWeekEndDate: week.endDate,
     triggerWorkoutId: command.triggerWorkoutId,
-    recentRunWindowSize: artifacts.adaptation.rules.maximumRecentEfforts,
+    recentRunWindowSize: adaptationRules.maximumRecentEfforts,
   })
   if (history.kind !== 'ready') {
     const issue = history.issues[0]
@@ -140,8 +153,8 @@ export function evaluateInternalAdaptationRecommendation(
   const planContext = deriveAdaptationPlanContext({
     plan: snapshot.plan,
     evaluationDate: command.evaluationDate,
-    basePlanRules: artifacts.basePlan,
-    adaptationRules: artifacts.adaptation.rules,
+    basePlanRules: basePlan,
+    adaptationRules,
   })
   if (planContext.kind !== 'ready') {
     return refusal(command.commandId, planContext.code, planContext.message)
@@ -150,7 +163,7 @@ export function evaluateInternalAdaptationRecommendation(
     plan: snapshot.plan,
     workouts: snapshot.workouts,
     evidence: history.evidence,
-    rules: artifacts.adaptation.rules,
+    rules: adaptationRules,
   })
   const selectedCandidate =
     command.confirmedRescheduleTargetDate === null
@@ -182,7 +195,7 @@ export function evaluateInternalAdaptationRecommendation(
       }
   const input = assembleAdaptationEvaluationInput(
     history.evidence,
-    artifacts.adaptation.rules,
+    adaptationRules,
     {
       ...planContext.context,
       rescheduleCandidate,
@@ -192,7 +205,7 @@ export function evaluateInternalAdaptationRecommendation(
   const evaluation = evaluateAdaptation({
     input,
     evaluatorVersion: artifacts.adaptation.evaluatorVersion,
-    rules: artifacts.adaptation.rules,
+    rules: adaptationRules,
   })
   if (evaluation.kind === 'invalid_input') {
     const issue = evaluation.issues[0]

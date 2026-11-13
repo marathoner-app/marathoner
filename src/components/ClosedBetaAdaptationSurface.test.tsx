@@ -86,8 +86,8 @@ describe("ClosedBetaAdaptationSurface", () => {
     expect(client.generate).toHaveBeenCalledWith(
       expect.objectContaining({
         commandId: "closed-beta-adaptation-command-0001",
-        manifestVersion: "closed-beta-provisional-methodology@0.1.0",
-        adaptationArtifactVersion: "beta-adaptation@0.2.0-draft",
+        manifestVersion: "closed-beta-provisional-methodology@0.2.0",
+        adaptationArtifactVersion: "beta-adaptation@0.3.0-draft",
         triggerWorkoutId: workoutId,
         evaluationDate: "2026-11-09",
       }),

@@ -820,7 +820,7 @@ describe("founding-beta membership rules", () => {
         schemaVersion: 1,
         userId: firstUserId,
         consentVersion: "closed-beta-methodology-consent@1.0.0",
-        manifestVersion: "closed-beta-provisional-methodology@0.1.0",
+        manifestVersion: "closed-beta-provisional-methodology@0.2.0",
         acceptedAt: new Date("2026-11-11T22:00:00.000Z"),
       });
     });

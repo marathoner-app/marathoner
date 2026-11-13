@@ -43,7 +43,7 @@ Issue #231 retains the separate authorization boundary. Before any later
 outreach, the product owner must approve the exact recipient, message, timing,
 and compensation posture.
 
-The prepared `beta-rules@0.2.0-draft` artifact remains unapproved and unchanged.
+The prepared `beta-rules@0.3.0-draft` artifact remains unapproved and unchanged.
 It is runtime-ineligible in current participant builds until the separate beta
 enablement work is implemented and proved. Interest or beta use does not turn
 the artifact into professional-review evidence.
