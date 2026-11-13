@@ -84,15 +84,19 @@ if (
 
 await Promise.all([
   requireMatchingFileFromRepository(
-    'docs/methodology/artifacts/beta-rules/0.2.0-draft/beta-rules.json',
+    'docs/methodology/artifacts/beta-rules/0.3.0-draft/beta-rules.json',
     'lib/functions/artifacts/beta-rules.json',
   ),
   requireMatchingFileFromRepository(
-    'docs/methodology/artifacts/beta-adaptation/0.2.0-draft/beta-adaptation.json',
+    'docs/methodology/artifacts/beta-rules/0.2.0-draft/beta-rules.json',
+    'lib/functions/artifacts/beta-rules-0.2.0-draft.json',
+  ),
+  requireMatchingFileFromRepository(
+    'docs/methodology/artifacts/beta-adaptation/0.3.0-draft/beta-adaptation.json',
     'lib/functions/artifacts/beta-adaptation.json',
   ),
   requireMatchingFileFromRepository(
-    'docs/methodology/artifacts/closed-beta-provisional-methodology/0.1.0/manifest.json',
+    'docs/methodology/artifacts/closed-beta-provisional-methodology/0.2.0/manifest.json',
     'lib/functions/artifacts/closed-beta-methodology-manifest.json',
   ),
   requireMatchingFileFromRepository(

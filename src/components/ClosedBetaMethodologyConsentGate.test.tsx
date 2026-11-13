@@ -67,7 +67,7 @@ describe("ClosedBetaMethodologyConsentGate", () => {
     const accept = screen.getByRole("button", { name: "Accept and continue" });
     expect(screen.queryByText("Training app")).not.toBeInTheDocument();
     expect(accept).toBeDisabled();
-    expect(screen.getByText(/closed-beta-provisional-methodology@0.1.0/)).toBeInTheDocument();
+    expect(screen.getByText(/closed-beta-provisional-methodology@0.2.0/)).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Before you use beta training features" })).toHaveFocus();
 
     await user.click(agreement);

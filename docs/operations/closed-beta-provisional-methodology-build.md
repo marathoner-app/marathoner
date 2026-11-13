@@ -4,12 +4,12 @@ Issue #686 pins one provisional methodology set for Marathoner's five-to-eight-p
 
 ## Pinned set
 
-The authoritative manifest is `docs/methodology/artifacts/closed-beta-provisional-methodology/0.1.0/manifest.json`.
+The authoritative manifest is `docs/methodology/artifacts/closed-beta-provisional-methodology/0.2.0/manifest.json`.
 
 | Capability | Pinned version |
 | --- | --- |
-| Plan generation | `beta-rules@0.2.0-draft` |
-| Adaptation | `beta-adaptation@0.2.0-draft` |
+| Plan generation | `beta-rules@0.3.0-draft` |
+| Adaptation | `beta-adaptation@0.3.0-draft` |
 | Guidance | `beta-guidance@0.1.0-draft` |
 | Safety | `beta-safety@0.1.0-draft` |
 
@@ -54,10 +54,10 @@ The operator control has this exact shape:
   "schemaVersion": "closed-beta-methodology-control@1",
   "revision": 1,
   "enabled": true,
-  "manifestVersion": "closed-beta-provisional-methodology@0.1.0",
+  "manifestVersion": "closed-beta-provisional-methodology@0.2.0",
   "artifactVersions": {
-    "plan": "beta-rules@0.2.0-draft",
-    "adaptation": "beta-adaptation@0.2.0-draft",
+    "plan": "beta-rules@0.3.0-draft",
+    "adaptation": "beta-adaptation@0.3.0-draft",
     "guidance": "beta-guidance@0.1.0-draft",
     "safety": "beta-safety@0.1.0-draft"
   },

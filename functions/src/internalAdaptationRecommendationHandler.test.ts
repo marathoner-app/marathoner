@@ -181,6 +181,31 @@ describe('internal adaptation recommendation evaluation', () => {
     expect(outcome.result).toMatchObject({ status: 'no_change' })
   })
 
+  it('keeps evaluating an active plan created from the prior compatible ruleset', () => {
+    const legacyRulesetVersion = artifacts.compatibleBasePlans.find(
+      ({ rules }) =>
+        String(rules.rulesetVersion) === 'beta-rules@0.2.0-draft',
+    )?.rules.rulesetVersion
+    if (legacyRulesetVersion === undefined) {
+      throw new Error('Expected the prior compatible base-plan artifact.')
+    }
+
+    const outcome = evaluateInternalAdaptationRecommendation(
+      command(),
+      { ...snapshot(), planRulesetVersion: legacyRulesetVersion },
+      artifacts,
+      createUtcDateTime('2026-10-31T20:00:00.000Z'),
+    )
+
+    expect(outcome.result).toMatchObject({
+      status: 'pending_recommendation_created',
+    })
+    expect(outcome.evidence?.evaluationInput).toMatchObject({
+      basePlanArtifactVersion: legacyRulesetVersion,
+      adaptationArtifactVersion: 'beta-adaptation@0.3.0-draft',
+    })
+  })
+
   it('does not turn one harder run into a material plan change', () => {
     const outcome = evaluateInternalAdaptationRecommendation(
       command(),

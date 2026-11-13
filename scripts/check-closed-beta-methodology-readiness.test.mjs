@@ -9,10 +9,10 @@ import {
 } from './check-closed-beta-methodology-readiness.mjs'
 
 const manifest = {
-  manifestVersion: 'closed-beta-provisional-methodology@0.1.0',
+  manifestVersion: 'closed-beta-provisional-methodology@0.2.0',
   artifacts: [
-    { kind: 'plan', version: 'beta-rules@0.2.0-draft' },
-    { kind: 'adaptation', version: 'beta-adaptation@0.2.0-draft' },
+    { kind: 'plan', version: 'beta-rules@0.3.0-draft' },
+    { kind: 'adaptation', version: 'beta-adaptation@0.3.0-draft' },
     { kind: 'guidance', version: 'beta-guidance@0.1.0-draft' },
     { kind: 'safety', version: 'beta-safety@0.1.0-draft' },
   ],

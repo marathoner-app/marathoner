@@ -45,6 +45,9 @@ export interface DraftAdaptationRuleSet {
   readonly artifactStatus: "draft_not_approved";
   readonly artifactVersion: string;
   readonly evaluatorVersion: ReturnType<typeof createAdaptationArtifactVersion>;
+  readonly compatibleBasePlanArtifactVersions: readonly ReturnType<
+    typeof createAdaptationArtifactVersion
+  >[];
   readonly rules: AdaptationEvaluationRulesV1;
   readonly outcomeDetails: readonly DraftAdaptationOutcomeDetail[];
 }
@@ -64,15 +67,12 @@ interface DraftPlanPacket {
     readonly consistentRunningWeeks: { readonly minimum: number };
     readonly currentWeeklyDistanceMeters: {
       readonly minimum: number;
-      readonly maximum: number;
     };
     readonly currentRunningFrequencyDaysPerWeek: {
       readonly minimum: number;
-      readonly maximum: number;
     };
     readonly longestRecentRunDistanceMeters: {
       readonly minimum: number;
-      readonly maximum: number;
     };
     readonly availableTrainingDays: { readonly minimum: number };
     readonly scheduleConstraints: { readonly supported: "omitted" };
@@ -112,6 +112,7 @@ interface DraftAdaptationPacket {
   readonly status: string;
   readonly runtimeUseAllowed: boolean;
   readonly basePlanArtifactVersion: string;
+  readonly compatibleBasePlanArtifactVersions: readonly string[];
   readonly scope: {
     readonly supportedPlanStatus: "active";
     readonly supportedCoreWeeks: {
@@ -255,7 +256,13 @@ export function parsePinnedDraftPlanRuleSet(rawRules: string): DraftPlanRuleSet 
       planName: packet.planFamily.name,
       planReasonCodes: [
         reasonCode("ELIG-CONSISTENT-RUNNER"),
-        reasonCode("ELIG-BASE-WITHIN-BOUNDS"),
+        reasonCode(
+          packet.reasonCodes.some(
+            ({ code }) => code === "ELIG-BASE-MEETS-MINIMUMS",
+          )
+            ? "ELIG-BASE-MEETS-MINIMUMS"
+            : "ELIG-BASE-WITHIN-BOUNDS",
+        ),
         reasonCode("FEAS-RACE-HORIZON-SUPPORTED"),
         reasonCode("PLAN-COMPLETION-GOAL"),
         reasonCode("PLAN-FOUR-DAY-RHYTHM"),
@@ -305,6 +312,10 @@ export function parsePinnedDraftAdaptationRuleSet(
     evaluatorVersion: createAdaptationArtifactVersion(
       "deterministic-adaptation-evaluator@1.0.0",
     ),
+    compatibleBasePlanArtifactVersions:
+      packet.compatibleBasePlanArtifactVersions.map(
+        createAdaptationArtifactVersion,
+      ),
     rules: {
       basePlanArtifactVersion: createAdaptationArtifactVersion(
         packet.basePlanArtifactVersion,

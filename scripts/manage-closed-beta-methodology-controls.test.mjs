@@ -13,7 +13,7 @@ import {
 } from './manage-closed-beta-methodology-controls.mjs'
 
 const manifest = {
-  manifestVersion: 'closed-beta-provisional-methodology@0.1.0',
+  manifestVersion: 'closed-beta-provisional-methodology@0.2.0',
   artifacts: [
     { kind: 'plan', version: 'plan@1' },
     { kind: 'adaptation', version: 'adaptation@1' },

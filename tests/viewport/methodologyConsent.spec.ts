@@ -14,8 +14,8 @@ async function exerciseConsent(page: Page, textSizeLabel: string) {
     }),
   ).toBeVisible();
   await expect(page.getByRole("checkbox")).toBeVisible();
-  await expect(page.getByText(/beta-rules@0.2.0-draft/)).toHaveCount(0);
-  await expect(page.getByText(/closed-beta-provisional-methodology@0.1.0/)).toBeVisible();
+  await expect(page.getByText(/beta-rules@0.3.0-draft/)).toHaveCount(0);
+  await expect(page.getByText(/closed-beta-provisional-methodology@0.2.0/)).toBeVisible();
   const action = page.getByRole("button", { name: "Accept and continue" });
   await expectMinimumTouchTarget(action, `consent action at ${textSizeLabel}`);
   await action.scrollIntoViewIfNeeded();

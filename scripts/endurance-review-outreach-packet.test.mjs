@@ -47,16 +47,16 @@ describe('endurance-methodology review outreach packet', () => {
         reviewRole: 'EMR',
         protocolVersion: 'methodology-review@0.1.0',
         pinnedRepositoryCommit:
-          '4501497ddcd31f77f029723e97a737c6a85c865d',
+          '769d66e99b05b99121162bbf693b43f837e59cc3',
         bundles: [
           {
             name: 'beta-rules',
-            version: 'beta-rules@0.2.0-draft',
+            version: 'beta-rules@0.3.0-draft',
             state: 'draft-not-approved-not-runtime-eligible',
           },
           {
             name: 'beta-adaptation',
-            version: 'beta-adaptation@0.2.0-draft',
+            version: 'beta-adaptation@0.3.0-draft',
             state: 'draft-not-approved-not-runtime-eligible',
           },
         ],
@@ -205,7 +205,7 @@ describe('endurance-methodology review outreach packet', () => {
     );
     const rules = JSON.parse(
       await read(
-        'docs/methodology/artifacts/beta-rules/0.2.0-draft/beta-rules.json',
+        'docs/methodology/artifacts/beta-rules/0.3.0-draft/beta-rules.json',
       ),
     );
     const phaseLabel = (week) => {
@@ -232,8 +232,8 @@ describe('endurance-methodology review outreach packet', () => {
     }
 
     expect(workbook).toContain('At least eight consecutive weeks');
-    expect(workbook).toContain('Average 40–45 km');
-    expect(workbook).toContain('14–20 km');
+    expect(workbook).toContain('Average at least 25 miles');
+    expect(workbook).toContain('At least 9 miles');
     expect(workbook).toContain('An exact race date 18–22 weeks');
   });
 });

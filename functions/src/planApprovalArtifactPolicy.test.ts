@@ -67,7 +67,7 @@ describe('plan-approval artifact policy', () => {
       expect.objectContaining({
         supportedScopeId: DEVELOPMENT_DOGFOOD_PLAN_SCOPE_ID,
         generatorVersion: 'deterministic-plan-generator@1.0.0',
-        rulesetVersion: 'beta-rules@0.2.0-draft',
+        rulesetVersion: 'beta-rules@0.3.0-draft',
         reviewState: 'provisional_dogfood',
       }),
     ])

@@ -188,21 +188,23 @@ The current proposal supports only a runner who meets every condition below:
 | Age and location | Adult, English-speaking, and based in the United States |
 | Goal | Complete a first marathon; no pace or finish-time target |
 | Recent consistency | At least eight consecutive weeks of consistent running |
-| Recent weekly distance | Average 40–45 km (about 25–28 miles) during the previous four weeks |
-| Recent frequency | Average four or five running days per week during the previous four weeks |
-| Recent long run | 14–20 km (about 9–12.5 miles) during the previous four weeks |
+| Recent weekly distance | Average at least 25 miles during the previous four weeks |
+| Recent frequency | Average at least four running days per week during the previous four weeks |
+| Recent long run | At least 9 miles during the previous four weeks |
 | Availability | The exact four-day pattern required by the proposed plan |
 | Race timing | An exact race date 18–22 weeks after the plan begins |
 | Safety status | Cleared through a separate, independently reviewed safety process |
 
-If any required condition is missing, conflicting, or outside its approved
-range, the application would decline to generate a plan rather than improvise.
+If any required condition is missing, conflicting, or below its approved
+minimum, the application would decline to generate a plan rather than
+improvise. A stronger starting baseline does not increase the fixed plan's
+frequency, distance, or intensity.
 
 ### Your assessment
 
 1. Is this intended runner defined narrowly and clearly enough?
 2. Are eight consistent weeks and the proposed recent mileage, frequency, and
-   long-run boundaries sufficient for this plan?
+   long-run minimums sufficient for this plan?
 3. Is self-reported recent training enough for a small founding beta, or should
    the application require a recorded training-history window?
 4. Which additional conditions should cause the application to decline?

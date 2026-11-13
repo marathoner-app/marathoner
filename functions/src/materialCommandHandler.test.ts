@@ -1175,7 +1175,7 @@ describe('material-command handler', () => {
   })
 
   it('allows the exact draft artifact only through the closed-beta eligibility gate', async () => {
-    const draftArtifactVersion = 'beta-adaptation@0.2.0-draft'
+    const draftArtifactVersion = 'beta-adaptation@0.3.0-draft'
     const evidence: RecommendationEvidenceReader = {
       read: vi.fn(async () => ({
         evaluationInput: { adaptationArtifactVersion: draftArtifactVersion },
@@ -1234,7 +1234,7 @@ describe('material-command handler', () => {
     const evidence: RecommendationEvidenceReader = {
       read: vi.fn(async () => ({
         evaluationInput: {
-          adaptationArtifactVersion: 'beta-adaptation@0.2.0-draft',
+          adaptationArtifactVersion: 'beta-adaptation@0.3.0-draft',
         },
       }) as RecommendationEvidenceV2),
     }

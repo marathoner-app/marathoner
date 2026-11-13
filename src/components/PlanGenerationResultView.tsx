@@ -109,19 +109,11 @@ function formatDistance(
   return `${formatDistanceValue(distance, unit)} ${distanceUnitLabel(unit)}`;
 }
 
-function formatDistanceRange(
-  range: { readonly minimum: number; readonly maximum: number },
+function formatMinimumDistance(
+  threshold: { readonly minimum: number },
   unit: DistanceUnit,
 ): string {
-  const minimum = formatDistanceValue(
-    createDistanceMeters(range.minimum),
-    unit,
-  );
-  const maximum = formatDistanceValue(
-    createDistanceMeters(range.maximum),
-    unit,
-  );
-  return `${minimum}–${maximum} ${distanceUnitLabel(unit)}`;
+  return formatDistance(createDistanceMeters(threshold.minimum), unit);
 }
 
 function unsupportedPlanReasons(
@@ -155,17 +147,17 @@ function unsupportedPlanReasons(
     [
       rules.reasonCodes.weeklyDistance,
       () =>
-        `Your saved weekly distance is ${formatDistance(runner.currentWeeklyDistance, distanceUnit)}; this plan supports ${formatDistanceRange(rules.currentWeeklyDistanceMeters, distanceUnit)} per week.`,
+        `Your saved weekly distance is ${formatDistance(runner.currentWeeklyDistance, distanceUnit)}; this plan requires at least ${formatMinimumDistance(rules.currentWeeklyDistanceMeters, distanceUnit)} per week.`,
     ],
     [
       rules.reasonCodes.runFrequency,
       () =>
-        `Your saved running frequency is ${runner.currentRunningFrequencyDaysPerWeek} days per week; this plan supports ${rules.currentRunningFrequencyDaysPerWeek.minimum}–${rules.currentRunningFrequencyDaysPerWeek.maximum}.`,
+        `Your saved running frequency is ${runner.currentRunningFrequencyDaysPerWeek} days per week; this plan requires at least ${rules.currentRunningFrequencyDaysPerWeek.minimum}.`,
     ],
     [
       rules.reasonCodes.longestRun,
       () =>
-        `Your saved longest recent run is ${formatDistance(runner.longestRecentRunDistance, distanceUnit)}; this plan supports ${formatDistanceRange(rules.longestRecentRunDistanceMeters, distanceUnit)}.`,
+        `Your saved longest recent run is ${formatDistance(runner.longestRecentRunDistance, distanceUnit)}; this plan requires at least ${formatMinimumDistance(rules.longestRecentRunDistanceMeters, distanceUnit)}.`,
     ],
     [
       rules.reasonCodes.raceDateRequired,

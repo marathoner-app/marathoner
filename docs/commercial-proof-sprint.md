@@ -125,8 +125,8 @@ so one subgroup cannot silently stand in for the whole market.
 ### Live-product segment
 
 Live product use remains constrained by the founding-beta contract and
-qualified methodology approval. The draft 40–45 km weekly-distance,
-four-to-five-day frequency, and 14–20 km long-run boundaries are unapproved
+qualified methodology approval. The draft minimum 25-mile weekly distance,
+four-day frequency, and 9-mile long-run requirements are unapproved
 methodology proposals. They are neither a market definition nor evidence that
 the broader first-time-marathon customer is safe to serve.
 

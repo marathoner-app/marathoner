@@ -46,7 +46,7 @@ describe("RecommendationDecisionReview", () => {
       />,
     );
     expect(screen.getByRole("note")).toHaveTextContent(
-      "Adaptation rules beta-adaptation@0.2.0-draft",
+      "Adaptation rules beta-adaptation@0.3.0-draft",
     );
   });
 

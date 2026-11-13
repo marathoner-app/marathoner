@@ -23,8 +23,8 @@ import {
   type RecommendationEvidenceV2,
 } from "./recommendationEvidence";
 
-const basePlanArtifactVersion = "beta-rules@0.2.0-draft";
-const adaptationArtifactVersion = "beta-adaptation@0.2.0-draft";
+const basePlanArtifactVersion = "beta-rules@0.3.0-draft";
+const adaptationArtifactVersion = "beta-adaptation@0.3.0-draft";
 
 function evaluationInput(): AdaptationEvaluationInputV1 {
   return {
@@ -432,7 +432,7 @@ describe("operator activation control", () => {
       "draft_artifact",
       {
         capability: "adaptation",
-        artifactVersion: "beta-adaptation@0.2.0-draft",
+        artifactVersion: "beta-adaptation@0.3.0-draft",
         appProtocolVersion: 3,
         commandProtocolVersion: 2,
       },
@@ -462,7 +462,7 @@ describe("operator activation control", () => {
         adaptation: {
           enabled: true,
           approvedArtifactVersions: [
-            "beta-adaptation@0.2.0-draft",
+            "beta-adaptation@0.3.0-draft",
             "beta-adaptation@1.0.0",
             "beta-adaptation@1.0.0",
             "not-a-version",

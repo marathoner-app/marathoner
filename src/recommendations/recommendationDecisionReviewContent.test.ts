@@ -24,8 +24,8 @@ const basePlanArtifactVersion = "beta-rules@1.0.0";
 const adaptationArtifactVersion = "beta-adaptation@1.0.0";
 const draftRecommendationDecisionContent =
   createDraftRecommendationDecisionContent({
-    basePlanArtifactVersion: "beta-rules@0.2.0-draft",
-    adaptationArtifactVersion: "beta-adaptation@0.2.0-draft",
+    basePlanArtifactVersion: "beta-rules@0.3.0-draft",
+    adaptationArtifactVersion: "beta-adaptation@0.3.0-draft",
   });
 
 const evidence = {
@@ -337,16 +337,16 @@ describe("resolveClosedBetaRecommendationDecisionReviewModel", () => {
   it("resolves exact provisional copy only for the pinned closed-beta manifest", () => {
     const provisionalEvidence = {
       evaluationInput: {
-        basePlanArtifactVersion: "beta-rules@0.2.0-draft",
-        adaptationArtifactVersion: "beta-adaptation@0.2.0-draft",
+        basePlanArtifactVersion: "beta-rules@0.3.0-draft",
+        adaptationArtifactVersion: "beta-adaptation@0.3.0-draft",
       },
       evaluationResult: {
         action: "hold_progression",
         reasonCode: "ADAPT-HOLD-REPEATED-HARD-EFFORT",
         explanationKey: "adaptation.hold.repeated_hard_effort",
         provenance: {
-          basePlanArtifactVersion: "beta-rules@0.2.0-draft",
-          adaptationArtifactVersion: "beta-adaptation@0.2.0-draft",
+          basePlanArtifactVersion: "beta-rules@0.3.0-draft",
+          adaptationArtifactVersion: "beta-adaptation@0.3.0-draft",
         },
       },
     } as unknown as RecommendationEvidenceV2;

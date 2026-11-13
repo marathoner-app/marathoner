@@ -86,7 +86,7 @@ describe("PlanApprovalReview", () => {
     );
     await continueToConfirmation(user);
     expect(screen.getByRole("note")).toHaveTextContent(
-      "Plan rules beta-rules@0.2.0-draft",
+      "Plan rules beta-rules@0.3.0-draft",
     );
     expect(screen.getByRole("note")).toHaveTextContent(
       "independently unreviewed",

@@ -33,7 +33,7 @@ const repositoryRoot = path.dirname(
 )
 const manifestPath = path.join(
   repositoryRoot,
-  'docs/methodology/artifacts/closed-beta-provisional-methodology/0.1.0/manifest.json',
+  'docs/methodology/artifacts/closed-beta-provisional-methodology/0.2.0/manifest.json',
 )
 
 function isRecord(value) {

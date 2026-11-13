@@ -118,7 +118,7 @@ is superseded for the first closed experience beta: independent review remains
 deferred until an expansion trigger, while provisional status, versioning,
 unsupported results, consent, and conservative safety behavior remain required.
 The
-[founding-beta endurance-rules draft](docs/methodology/artifacts/beta-rules/0.2.0-draft/README.md)
+[founding-beta endurance-rules draft](docs/methodology/artifacts/beta-rules/0.3.0-draft/README.md)
 is the exact unapproved packet prepared for testing and later independent
 endurance-methodology review. Only explicit closed-beta builds may import the
 pinned set, and only eligible, consented accounts may receive its results. The
