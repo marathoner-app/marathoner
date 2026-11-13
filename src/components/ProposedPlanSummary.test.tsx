@@ -31,7 +31,7 @@ describe("ProposedPlanSummary", () => {
     );
 
     expect(screen.getByRole("status")).toHaveTextContent(
-      "Proposed plan — not active",
+      "Proposed plan, not active",
     );
     expect(
       screen.getByRole("heading", { name: "Synthetic contract plan" }),
@@ -46,7 +46,7 @@ describe("ProposedPlanSummary", () => {
     expect(screen.queryByText(/FIXTURE-/)).not.toBeInTheDocument();
   });
 
-  it("lists phases, weeks, and distance or rest workouts", () => {
+  it("lists phases, weekly distance, and weekday-labeled workouts", () => {
     render(
       <ProposedPlanSummary
         result={generatedResult("generated-exact-date-distance-target")}
@@ -58,8 +58,16 @@ describe("ProposedPlanSummary", () => {
     expect(
       screen.getByRole("heading", { name: "Week 1: Base building" }),
     ).toBeInTheDocument();
-    expect(screen.getByText("Easy run")).toBeInTheDocument();
-    expect(screen.getByText("3.1 mi")).toBeInTheDocument();
+    const week = screen.getByRole("region", {
+      name: "Week 1: Base building",
+    });
+    expect(within(week).getByText("Easy run")).toBeInTheDocument();
+    expect(
+      within(week).getByText("Scheduled distance:").parentElement,
+    ).toHaveTextContent("Scheduled distance: 3.1 mi");
+    expect(within(week).getAllByText("3.1 mi")).toHaveLength(2);
+    expect(screen.getByText("Tuesday, Jan 8")).toBeInTheDocument();
+    expect(screen.getByText("Wednesday, Jan 9")).toBeInTheDocument();
     expect(screen.getByText("Rest")).toBeInTheDocument();
   });
 
@@ -78,6 +86,7 @@ describe("ProposedPlanSummary", () => {
 
     expect(screen.getByText("30 min")).toBeInTheDocument();
     expect(screen.getByText("35 min")).toBeInTheDocument();
+    expect(screen.getAllByText("Timed workouts only")).toHaveLength(2);
     expect(screen.getByText("Walk/run")).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "Review inputs" }));

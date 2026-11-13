@@ -18,8 +18,19 @@ const dateFormatter = new Intl.DateTimeFormat("en-US", {
   timeZone: "UTC",
 });
 
+const workoutDateFormatter = new Intl.DateTimeFormat("en-US", {
+  weekday: "long",
+  month: "short",
+  day: "numeric",
+  timeZone: "UTC",
+});
+
 function formatDate(value: string): string {
   return dateFormatter.format(new Date(`${value}T00:00:00.000Z`));
+}
+
+function formatWorkoutDate(value: string): string {
+  return workoutDateFormatter.format(new Date(`${value}T00:00:00.000Z`));
 }
 
 function formatLabel(value: string): string {
@@ -54,6 +65,32 @@ function workoutName(workout: GeneratedWorkoutV1): string {
   return `${formatLabel(workout.purpose)} run`;
 }
 
+function formatWeekDistance(
+  workouts: readonly GeneratedWorkoutV1[],
+): string {
+  let totalMiles = 0;
+  let timedWorkoutCount = 0;
+
+  workouts.forEach((workout) => {
+    if (workout.kind === "rest") return;
+    if (workout.target.kind === "duration") {
+      timedWorkoutCount += 1;
+      return;
+    }
+
+    totalMiles += metersToMiles(workout.target.distance);
+  });
+
+  if (totalMiles === 0 && timedWorkoutCount > 0) {
+    return "Timed workouts only";
+  }
+
+  const formattedMiles = `${Number(totalMiles.toFixed(1))} mi`;
+  return timedWorkoutCount > 0
+    ? `${formattedMiles}, plus timed workouts`
+    : formattedMiles;
+}
+
 function phaseWeekRange(startWeek: number, endWeek: number): string {
   return startWeek === endWeek
     ? `week ${startWeek}`
@@ -77,7 +114,7 @@ export default function ProposedPlanSummary({
     <article className="proposed-plan" aria-labelledby={titleId}>
       <header className="proposed-plan-header">
         <p className="proposed-plan-status" role="status">
-          Proposed plan — not active
+          Proposed plan, not active
         </p>
         <h2 id={titleId}>{plan.name}</h2>
         <p>
@@ -137,11 +174,15 @@ export default function ProposedPlanSummary({
                 <time dateTime={week.startDate}>{formatDate(week.startDate)}</time>{" "}
                 to <time dateTime={week.endDate}>{formatDate(week.endDate)}</time>
               </p>
+              <p className="proposed-plan-week-distance">
+                <strong>Scheduled distance:</strong>{" "}
+                {formatWeekDistance(week.workouts)}
+              </p>
               <ul className="proposed-plan-workouts">
                 {week.workouts.map((workout) => (
                   <li key={workout.id}>
                     <time dateTime={workout.scheduledDate}>
-                      {formatDate(workout.scheduledDate)}
+                      {formatWorkoutDate(workout.scheduledDate)}
                     </time>
                     <span>
                       <strong>{workoutName(workout)}</strong>
