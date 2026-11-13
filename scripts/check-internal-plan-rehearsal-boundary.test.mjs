@@ -25,6 +25,25 @@ afterEach(async () => {
 })
 
 describe('methodology artifact build boundary', () => {
+  it('keeps the provisional plan builder out of ordinary builds', async () => {
+    const directory = await createBuild('Create plan proposal')
+
+    await expect(findInternalPlanRehearsalLeaks(directory)).resolves.toEqual([
+      expect.objectContaining({ forbiddenText: 'Create plan proposal' }),
+    ])
+  })
+
+  it.each([
+    { allowProvisionalPlanDogfood: true },
+    { allowClosedBetaProvisionalMethodology: true },
+  ])('allows the provisional plan builder at a private methodology boundary', async (flags) => {
+    const directory = await createBuild('Create plan proposal')
+
+    await expect(
+      findInternalPlanRehearsalLeaks(directory, flags),
+    ).resolves.toEqual([])
+  })
+
   it('rejects the closed-beta manifest from an ordinary build', async () => {
     const directory = await createBuild(
       'closed-beta-provisional-methodology@0.1.0',

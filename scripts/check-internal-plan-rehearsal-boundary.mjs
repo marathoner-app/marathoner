@@ -6,6 +6,7 @@ const sharedPlanAndAdaptationVersionText = [
   'beta-rules@0.2.0-draft',
   'beta-adaptation@0.2.0-draft',
 ]
+const sharedProvisionalPlanBuildText = ['Create plan proposal']
 const provisionalDogfoodBuildText = [
   'generateInternalAdaptationRecommendation',
   'Check recent training against the draft adjustment rules',
@@ -86,7 +87,7 @@ export async function findInternalPlanRehearsalLeaks(
     ...(allowProvisionalPlanDogfood ||
     allowClosedBetaProvisionalMethodology
       ? []
-      : sharedPlanAndAdaptationVersionText),
+      : [...sharedPlanAndAdaptationVersionText, ...sharedProvisionalPlanBuildText]),
     ...(allowProvisionalPlanDogfood ? [] : provisionalDogfoodBuildText),
     ...(allowClosedBetaProvisionalMethodology
       ? []

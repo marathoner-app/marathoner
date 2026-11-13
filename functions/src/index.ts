@@ -172,12 +172,20 @@ const dependencies = {
   store: new FirestoreMaterialCommandStore(database),
   planApproval: {
     activationGate: operatorActivationGate,
+    allowProvisionalClosedBeta: useEmulatorPlanApprovalPolicy
+      ? false
+      : livePlanApprovalPolicy.allowProvisionalClosedBeta,
     allowProvisionalDogfood: useEmulatorPlanApprovalPolicy
       ? false
       : livePlanApprovalPolicy.allowProvisionalDogfood,
     policyRecords: useEmulatorPlanApprovalPolicy
       ? emulatorPlanApprovalPolicy
       : livePlanApprovalPolicy.records,
+    closedBetaEligibility: {
+      projectId: gcloudProject.value(),
+      evaluate: (request: ClosedBetaMethodologyEligibilityRequest) =>
+        closedBetaMethodologyEligibilityStore.evaluate(request),
+    },
     store: new FirestorePlanApprovalStore(database),
     supportedScopeId: useEmulatorPlanApprovalPolicy
       ? emulatorPlanApprovalScopeId

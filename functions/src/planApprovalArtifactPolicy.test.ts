@@ -7,6 +7,8 @@ import {
   planGenerationContractFixtures,
 } from '../../src/domain/training/index.js'
 import {
+  CLOSED_BETA_PLAN_APPROVAL_ARTIFACT_POLICY,
+  CLOSED_BETA_PLAN_SCOPE_ID,
   DEVELOPMENT_DOGFOOD_PLAN_APPROVAL_ARTIFACT_POLICY,
   DEVELOPMENT_DOGFOOD_PLAN_SCOPE_ID,
   evaluatePlanApprovalArtifactPolicy,
@@ -49,8 +51,10 @@ function evaluate(
   records: readonly PlanApprovalArtifactPolicyRecord[],
   scopeId: string | null = supportedScopeId,
   allowProvisionalDogfood = false,
+  allowProvisionalClosedBeta = false,
 ) {
   return evaluatePlanApprovalArtifactPolicy(command, {
+    allowProvisionalClosedBeta,
     allowProvisionalDogfood,
     records,
     supportedScopeId: scopeId,
@@ -69,16 +73,29 @@ describe('plan-approval artifact policy', () => {
     ])
   })
 
-  it('installs provisional rules only for the enabled development Functions project', () => {
+  it('installs each provisional policy only in its authorized Functions project', () => {
     expect(
       selectLivePlanApprovalArtifactPolicy({
         projectId: 'marathoner-d9bf9',
         provisionalDogfoodEnabled: true,
       }),
     ).toEqual({
+      allowProvisionalClosedBeta: false,
       allowProvisionalDogfood: true,
       records: DEVELOPMENT_DOGFOOD_PLAN_APPROVAL_ARTIFACT_POLICY,
       supportedScopeId: DEVELOPMENT_DOGFOOD_PLAN_SCOPE_ID,
+    })
+
+    expect(
+      selectLivePlanApprovalArtifactPolicy({
+        projectId: 'marathonerapp-beta',
+        provisionalDogfoodEnabled: false,
+      }),
+    ).toEqual({
+      allowProvisionalClosedBeta: true,
+      allowProvisionalDogfood: false,
+      records: CLOSED_BETA_PLAN_APPROVAL_ARTIFACT_POLICY,
+      supportedScopeId: CLOSED_BETA_PLAN_SCOPE_ID,
     })
 
     for (const options of [
@@ -86,13 +103,10 @@ describe('plan-approval artifact policy', () => {
         projectId: 'marathoner-d9bf9',
         provisionalDogfoodEnabled: false,
       },
-      {
-        projectId: 'marathonerapp-beta',
-        provisionalDogfoodEnabled: true,
-      },
       { projectId: 'unknown-project', provisionalDogfoodEnabled: true },
     ]) {
       expect(selectLivePlanApprovalArtifactPolicy(options)).toEqual({
+        allowProvisionalClosedBeta: false,
         allowProvisionalDogfood: false,
         records: PRODUCTION_PLAN_APPROVAL_ARTIFACT_POLICY,
         supportedScopeId: null,
@@ -119,6 +133,7 @@ describe('plan-approval artifact policy', () => {
     'ready_for_review',
     'conditional',
     'provisional_dogfood',
+    'provisional_closed_beta',
     'rejected',
     'retired',
   ])('rejects an exact tuple in the %s review state', (reviewState) => {
@@ -228,6 +243,47 @@ describe('plan-approval artifact policy', () => {
     expect(
       evaluatePlanApprovalArtifactPolicy(draftCommand, {
         allowProvisionalDogfood: true,
+        records: [record],
+        supportedScopeId,
+      }),
+    ).toEqual({ allowed: true, record })
+  })
+
+  it('allows one exact draft only when the server installs the provisional closed-beta policy', () => {
+    const draftRulesetVersion = createPlanGenerationArtifactVersion(
+      'fixture-rules@1.0.0-draft',
+    )
+    const draftCommand = createPlanApprovalCommand(
+      'approve-provisional-closed-beta-0001',
+      {
+        expectedActivePlanRevision: null,
+        input: {
+          ...command.command.input,
+          rulesetVersion: draftRulesetVersion,
+        },
+        proposal: {
+          ...command.command.proposal,
+          provenance: {
+            ...command.command.proposal.provenance,
+            rulesetVersion: draftRulesetVersion,
+          },
+        },
+      },
+    )
+    const record: PlanApprovalArtifactPolicyRecord = {
+      ...policyRecord('provisional_closed_beta'),
+      rulesetVersion: draftRulesetVersion,
+    }
+
+    expect(
+      evaluatePlanApprovalArtifactPolicy(draftCommand, {
+        records: [record],
+        supportedScopeId,
+      }),
+    ).toEqual({ allowed: false })
+    expect(
+      evaluatePlanApprovalArtifactPolicy(draftCommand, {
+        allowProvisionalClosedBeta: true,
         records: [record],
         supportedScopeId,
       }),

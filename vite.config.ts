@@ -22,6 +22,10 @@ const provisionalPlanDogfoodRulesModuleId =
   'virtual:provisional-plan-dogfood-rules'
 const resolvedProvisionalPlanDogfoodRulesModuleId =
   `\0${provisionalPlanDogfoodRulesModuleId}`
+const closedBetaProvisionalPlanRulesModuleId =
+  'virtual:closed-beta-provisional-plan-rules'
+const resolvedClosedBetaProvisionalPlanRulesModuleId =
+  `\0${closedBetaProvisionalPlanRulesModuleId}`
 const internalAdaptationPacketModuleId =
   'virtual:internal-adaptation-rehearsal-packet'
 const resolvedInternalAdaptationPacketModuleId =
@@ -39,6 +43,25 @@ const closedBetaProvisionalMethodologyManifestPath = path.join(
   'docs/methodology/artifacts/closed-beta-provisional-methodology/0.1.0/manifest.json',
 )
 
+function loadClosedBetaProvisionalMethodology() {
+  const manifestText = readFileSync(
+    closedBetaProvisionalMethodologyManifestPath,
+    'utf8',
+  )
+  const manifest = parseClosedBetaProvisionalMethodologyManifest(manifestText)
+  for (const artifact of manifest.artifacts) {
+    const contents = readFileSync(path.join(repositoryRoot, artifact.sourcePath))
+    const digest = createHash('sha256').update(contents).digest('hex')
+    if (digest !== artifact.sha256) {
+      throw new Error(
+        `The pinned ${artifact.kind} artifact no longer matches ${artifact.sourcePath}. Publish a new manifest version instead of changing the pinned set in place.`,
+      )
+    }
+  }
+
+  return { manifest, manifestText }
+}
+
 function internalRehearsalArtifactsPlugin(
   mode: string,
   provisionalPlanDogfoodEnabled: boolean,
@@ -52,6 +75,9 @@ function internalRehearsalArtifactsPlugin(
       }
       if (id === provisionalPlanDogfoodRulesModuleId) {
         return resolvedProvisionalPlanDogfoodRulesModuleId
+      }
+      if (id === closedBetaProvisionalPlanRulesModuleId) {
+        return resolvedClosedBetaProvisionalPlanRulesModuleId
       }
       if (id === internalAdaptationPacketModuleId) {
         return resolvedInternalAdaptationPacketModuleId
@@ -68,6 +94,7 @@ function internalRehearsalArtifactsPlugin(
       if (
         id !== resolvedInternalPlanRulesModuleId &&
         id !== resolvedProvisionalPlanDogfoodRulesModuleId &&
+        id !== resolvedClosedBetaProvisionalPlanRulesModuleId &&
         id !== resolvedInternalAdaptationPacketModuleId &&
         id !== resolvedInternalSafetyPacketModuleId &&
         id !== resolvedClosedBetaProvisionalMethodologyModuleId
@@ -79,26 +106,29 @@ function internalRehearsalArtifactsPlugin(
           return 'export default null'
         }
 
-        const manifestText = readFileSync(
-          closedBetaProvisionalMethodologyManifestPath,
-          'utf8',
-        )
-        const manifest = parseClosedBetaProvisionalMethodologyManifest(
-          manifestText,
-        )
-        for (const artifact of manifest.artifacts) {
-          const contents = readFileSync(
-            path.join(repositoryRoot, artifact.sourcePath),
-          )
-          const digest = createHash('sha256').update(contents).digest('hex')
-          if (digest !== artifact.sha256) {
-            throw new Error(
-              `The pinned ${artifact.kind} artifact no longer matches ${artifact.sourcePath}. Publish a new manifest version instead of changing the pinned set in place.`,
-            )
-          }
-        }
+        const { manifestText } = loadClosedBetaProvisionalMethodology()
 
         return `export default ${JSON.stringify(manifestText)}`
+      }
+      if (id === resolvedClosedBetaProvisionalPlanRulesModuleId) {
+        if (!closedBetaProvisionalMethodologyEnabled) {
+          return 'export default null'
+        }
+
+        const { manifest } = loadClosedBetaProvisionalMethodology()
+        const planArtifact = manifest.artifacts.find(
+          (artifact) => artifact.kind === 'plan',
+        )
+        if (!planArtifact) {
+          throw new Error(
+            'The closed-beta methodology manifest does not pin a plan artifact.',
+          )
+        }
+        const rulesText = readFileSync(
+          path.join(repositoryRoot, planArtifact.sourcePath),
+          'utf8',
+        )
+        return `export default ${JSON.stringify(rulesText)}`
       }
       if (
         id === resolvedProvisionalPlanDogfoodRulesModuleId &&

@@ -52,6 +52,7 @@ import type {
   PlanApprovalArtifactPolicyRecord,
   PlanApprovalArtifactReviewState,
 } from './planApprovalArtifactPolicy.js'
+import type { ClosedBetaMethodologyEligibilityDecision } from './closedBetaMethodologyEligibility.js'
 
 const ownerId = 'runner-one'
 const commandId = 'proof-command-0001'
@@ -655,6 +656,7 @@ describe('material-command handler', () => {
     'ready_for_review',
     'conditional',
     'provisional_dogfood',
+    'provisional_closed_beta',
     'rejected',
     'retired',
   ])('returns a typed rejection before storage for a %s tuple', async (reviewState) => {
@@ -708,6 +710,151 @@ describe('material-command handler', () => {
       ownerId,
     })
     expect(activationGate.evaluate).not.toHaveBeenCalled()
+  })
+
+  it('persists an exact provisional draft for an eligible verified closed-beta member', async () => {
+    const planStore = new InMemoryPlanApprovalStore()
+    const provisionalRecord: PlanApprovalArtifactPolicyRecord = {
+      ...approvedPolicyRecord(),
+      rulesetVersion: provisionalRulesetVersion,
+      reviewState: 'provisional_closed_beta',
+    }
+    const closedBetaEligibility = {
+      projectId: 'marathonerapp-beta',
+      evaluate: vi.fn(async () =>
+        ({ status: 'allowed' } as ClosedBetaMethodologyEligibilityDecision)),
+    }
+    const boundary = dependencies(new InMemoryMaterialCommandStore(), {
+      activationGate: allowingActivationGate(),
+      allowProvisionalClosedBeta: true,
+      closedBetaEligibility,
+      policyRecords: [provisionalRecord],
+      store: planStore,
+      supportedScopeId,
+    })
+
+    await expect(
+      executeMaterialCommand(
+        {
+          appCheckVerified: true,
+          authenticatedUserId: ownerId,
+          data: provisionalPlanApprovalCommand,
+        },
+        boundary,
+      ),
+    ).resolves.toEqual(planStore.result)
+    expect(closedBetaEligibility.evaluate).toHaveBeenCalledWith({
+      ownerId,
+      projectId: 'marathonerapp-beta',
+      capability: 'plan',
+      serverArtifactVersion: provisionalRulesetVersion,
+      inputDisposition: 'supported',
+    })
+    expect(planStore.commit).toHaveBeenCalledWith({
+      artifactPolicyRecord: provisionalRecord,
+      envelope: provisionalPlanApprovalCommand,
+      ownerId,
+    })
+  })
+
+  it('requires App Check before evaluating closed-beta plan eligibility', async () => {
+    const planStore = new InMemoryPlanApprovalStore()
+    const closedBetaEligibility = {
+      projectId: 'marathonerapp-beta',
+      evaluate: vi.fn(async () =>
+        ({ status: 'allowed' } as ClosedBetaMethodologyEligibilityDecision)),
+    }
+    const boundary = dependencies(new InMemoryMaterialCommandStore(), {
+      activationGate: allowingActivationGate(),
+      allowProvisionalClosedBeta: true,
+      closedBetaEligibility,
+      policyRecords: [
+        {
+          ...approvedPolicyRecord(),
+          rulesetVersion: provisionalRulesetVersion,
+          reviewState: 'provisional_closed_beta',
+        },
+      ],
+      store: planStore,
+      supportedScopeId,
+    })
+
+    await expect(
+      executeMaterialCommand(
+        {
+          authenticatedUserId: ownerId,
+          data: provisionalPlanApprovalCommand,
+        },
+        boundary,
+      ),
+    ).resolves.toEqual(
+      expect.objectContaining({
+        status: 'authorization_error',
+        code: 'app-check-required',
+      }),
+    )
+    expect(closedBetaEligibility.evaluate).not.toHaveBeenCalled()
+    expect(planStore.commit).not.toHaveBeenCalled()
+  })
+
+  it.each([
+    {
+      status: 'denied' as const,
+      code: 'closed-beta-access-required' as const,
+      expectedCode: 'approved-beta-membership-required',
+    },
+    {
+      status: 'denied' as const,
+      code: 'closed-beta-methodology-disabled' as const,
+      expectedCode: 'plan-activation-not-available',
+    },
+    {
+      status: 'stale_version' as const,
+      code: 'methodology-manifest-version-stale' as const,
+      expectedCode: 'plan-activation-not-available',
+    },
+    {
+      status: 'unavailable' as const,
+      code: 'methodology-artifact-mismatch' as const,
+      expectedCode: 'plan-activation-not-available',
+    },
+  ])('fails closed when closed-beta plan eligibility is $code', async ({ status, code, expectedCode }) => {
+    const planStore = new InMemoryPlanApprovalStore()
+    const boundary = dependencies(new InMemoryMaterialCommandStore(), {
+      activationGate: allowingActivationGate(),
+      allowProvisionalClosedBeta: true,
+      closedBetaEligibility: {
+        projectId: 'marathonerapp-beta',
+        evaluate: vi.fn(async () =>
+          ({ status, code } as ClosedBetaMethodologyEligibilityDecision)),
+      },
+      policyRecords: [
+        {
+          ...approvedPolicyRecord(),
+          rulesetVersion: provisionalRulesetVersion,
+          reviewState: 'provisional_closed_beta',
+        },
+      ],
+      store: planStore,
+      supportedScopeId,
+    })
+
+    await expect(
+      executeMaterialCommand(
+        {
+          appCheckVerified: true,
+          authenticatedUserId: ownerId,
+          data: provisionalPlanApprovalCommand,
+        },
+        boundary,
+      ),
+    ).resolves.toEqual(
+      expect.objectContaining({
+        status: 'authorization_error',
+        code: expectedCode,
+      }),
+    )
+    expect(planStore.commit).not.toHaveBeenCalled()
   })
 
   it('rejects a mismatched policy before the plan store and redacts policy data from logs', async () => {

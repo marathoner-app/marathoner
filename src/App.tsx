@@ -65,8 +65,10 @@ const InternalSessionTodayComparison =
     ? lazy(() => import("./components/InternalSessionTodayComparison"))
     : null;
 const PlanProposalBuilder =
-  import.meta.env.VITE_FIREBASE_ENVIRONMENT === "development" &&
-  import.meta.env.VITE_PROVISIONAL_PLAN_DOGFOOD === "true"
+  (import.meta.env.VITE_FIREBASE_ENVIRONMENT === "development" &&
+    import.meta.env.VITE_PROVISIONAL_PLAN_DOGFOOD === "true") ||
+  (import.meta.env.VITE_FIREBASE_ENVIRONMENT === "beta" &&
+    import.meta.env.VITE_CLOSED_BETA_PROVISIONAL_METHODOLOGY === "true")
     ? lazy(() => import("./components/PlanProposalBuilderLive"))
     : null;
 const InternalAdaptationDogfood = isInternalAdaptationDogfoodEnabled({
