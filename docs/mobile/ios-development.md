@@ -137,8 +137,8 @@ padding or changing responsive-browser spacing. `npm run check:ios` verifies
 the policy in both the TypeScript source and the generated native runtime
 configuration.
 
-The normal `npm run build` remains the GitHub Pages build with the custom
-domain's root `/` base. It does not read the iOS key.
+The GitHub Pages workflow uses `npm run build:closed-beta` with the custom
+domain's root `/` base and beta web registration. It does not read the iOS key.
 
 ## Export-compliance declaration
 

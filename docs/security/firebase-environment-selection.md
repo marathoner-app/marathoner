@@ -4,15 +4,15 @@
 - **Tracking issues:** [#164](https://github.com/marathoner-app/marathoner/issues/164),
   [#168](https://github.com/marathoner-app/marathoner/issues/168),
   parent [#125](https://github.com/marathoner-app/marathoner/issues/125)
-- **Current selection:** `development`
+- **Current deployed selections:** `development` for local/CI; `beta` for Pages and TestFlight
 
 ## Boundary
 
 Marathoner has two supported Firebase environment names:
 
 - `development` is the existing audited `marathoner-d9bf9` project. It supports
-  local work and the registration-closed GitHub Pages deployment, including
-  its custom domain; it does not hold founding-beta participant data.
+  local work and development iOS builds; it is not the founding-beta product
+  data store.
 - `beta` is the isolated `marathonerapp-beta` project. Its public web
   configuration, membership-gated rules deployment, and fictional live-boundary
   evidence are recorded. Only an explicit production-mode web build or the
@@ -42,9 +42,11 @@ npm run build
 npm run build:ios
 ```
 
-The GitHub Pages and pull-request production-build workflows also set
-`VITE_FIREBASE_ENVIRONMENT=development` explicitly. The selected iOS build
-requires its reviewed development-only API key and fails closed without it.
+Pull-request defaults remain on development. GitHub Pages instead runs the
+explicit `closed-beta` build and verifies the emitted beta project identity
+while rejecting every development identity marker. The selected iOS
+development build requires its reviewed development-only API key and fails
+closed without it.
 
 The beta iOS proof is intentionally separate from every default command:
 
@@ -79,15 +81,17 @@ this sequence through separately reviewed changes:
    [membership and verified-email gate](firebase-beta-membership.md);
 3. retain the recorded representative web and selected iOS project-selection
    evidence, including approved and denied physical-iPhone results; and
-4. change only the approved beta deployment to
+4. publish only the reviewed Pages and TestFlight beta clients with
    `VITE_FIREBASE_ENVIRONMENT=beta`.
 
-Local development, CI defaults, the selected iOS development build, and the
-current GitHub Pages deployment remain explicitly pinned to development. The
+Local development, CI defaults, and the selected iOS development build remain
+explicitly pinned to development. The GitHub Pages deployment is the web beta
+client and is pinned to beta by its artifact boundary. The
 pull-request iOS job checks both environment bundles with non-live placeholder
 keys, but it does not contact beta. App Check providers are registered and the
 client now initializes them before Firebase services. The #204 implementation
 and supported development proof are complete, while paid-team beta App Attest,
 the #205–#206 observation/enforcement rollout, and invitation controls stay
-separate gates. The live custom-domain Pages deployment remains pinned to the
-development project; its publication did not activate beta.
+separate gates. Publishing the custom-domain build activates only the
+registration-closed web beta; it does not open account creation or weaken the
+membership gate.

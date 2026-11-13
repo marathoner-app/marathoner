@@ -48,11 +48,11 @@ recovery material, and App Check debug tokens remain prohibited from source.
 
 ## Deployment boundary
 
-The repository default, local development, CI defaults, GitHub Pages, and the
-selected iOS development build remain pinned to development or emulators. Beta
-can initialize only when a production web build explicitly selects
-`VITE_FIREBASE_ENVIRONMENT=beta` or when the separately keyed `ios-beta` mode
-is invoked for its reviewed device proof.
+The repository default, local development, CI defaults, and selected iOS
+development build remain pinned to development or emulators. The Pages workflow
+publishes the explicit `closed-beta` mode and TestFlight uses the separately
+keyed `ios-beta` mode; both initialize `marathonerapp-beta` so participants have
+one account and one owner-scoped training history across clients.
 
 The beta Firebase configuration now also names the reviewed callable Functions
 codebase behind an exact-project, beta-config-only predeploy guard. The default
@@ -63,9 +63,9 @@ repository boundary. Runtime configuration scales each current export to zero
 and permits at most one instance per export.
 
 The beta browser key intentionally permits no localhost or legacy GitHub Pages
-referrer. It will remain unusable from those origins. The live custom-domain
-Pages deployment remains pinned to development; beta Authentication
-authorized-domain changes belong to the later explicit beta-activation change.
+referrer. It remains usable only from the canonical custom-domain Pages origin.
+Beta Authentication already authorizes that domain; public account creation
+remains disabled and membership-gated rules remain authoritative.
 
 The beta iOS path uses a separate `marathoner-ios-beta` key because the
 browser key's website restrictions correctly reject the Capacitor WebView. The

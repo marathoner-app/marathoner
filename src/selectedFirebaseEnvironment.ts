@@ -18,7 +18,7 @@ function registryForMode(mode: string): FirebaseConfigurationRegistry {
     }
   }
 
-  if (mode === 'ios-beta') {
+  if (mode === 'closed-beta' || mode === 'ios-beta') {
     return {
       development: null,
       beta: betaFirebaseClientConfiguration,
