@@ -323,7 +323,7 @@ describe("deterministic plan generator", () => {
     expect(new Set(identifiers).size).toBe(identifiers.length);
   });
 
-  it("fails closed when the exact race weekday cannot use the preferred long-run day", () => {
+  it("keeps ordinary long runs on the preferred day and treats race day as an exception", () => {
     const input = inputFromValues(draftFixtures.defaults);
     const mismatchedInput = {
       ...input,
@@ -342,14 +342,54 @@ describe("deterministic plan generator", () => {
     });
 
     expect(validatePlanGenerationContract(mismatchedInput, result)).toEqual([]);
-    expect(result).toMatchObject({
-      kind: "invalid_input",
-      issues: [
-        expect.objectContaining({
-          code: "inconsistent",
-          field: "runner.preferredLongRunDay",
-        }),
-      ],
+    expect(result.kind).toBe("generated");
+    if (result.kind !== "generated") {
+      throw new Error("Expected a generated plan for differing weekdays.");
+    }
+
+    const trainingWeeks = result.plan.weeks.slice(0, -1);
+    const raceWeek = trainingWeeks.at(-1);
+    const ordinaryWeeks = trainingWeeks.slice(0, -1);
+    const weekday = (date: string) =>
+      new Intl.DateTimeFormat("en-US", {
+        weekday: "long",
+        timeZone: "UTC",
+      })
+        .format(new Date(`${date}T00:00:00.000Z`))
+        .toLowerCase();
+    const availableDays = new Set<string>(
+      mismatchedInput.runner.availableTrainingDays,
+    );
+
+    expect(
+      ordinaryWeeks.every((week) =>
+        week.workouts.some(
+          (workout) =>
+            workout.kind === "run" &&
+            workout.purpose === "long" &&
+            weekday(workout.scheduledDate) === "saturday",
+        ),
+      ),
+    ).toBe(true);
+
+    expect(raceWeek?.workouts.map((workout) => weekday(workout.scheduledDate)))
+      .toEqual(["monday", "wednesday", "friday", "sunday"]);
+    expect(raceWeek?.workouts.at(-1)).toMatchObject({
+      kind: "run",
+      purpose: "race",
+      scheduledDate: result.plan.targetRaceDate,
     });
+    expect(
+      new Set(raceWeek?.workouts.map((workout) => workout.scheduledDate)).size,
+    ).toBe(raceWeek?.workouts.length);
+    expect(
+      raceWeek?.workouts
+        .slice(0, -1)
+        .every(
+          (workout) =>
+            workout.scheduledDate < result.plan.targetRaceDate &&
+            availableDays.has(weekday(workout.scheduledDate)),
+        ),
+    ).toBe(true);
   });
 });

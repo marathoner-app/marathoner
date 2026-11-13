@@ -88,8 +88,6 @@ function unavailableMessage(
       return "Add an exact marathon date and preferred long-run day before building a plan.";
     case "race_window":
       return "Choose an exact marathon date before building a plan. A date range is not supported yet.";
-    case "race_weekday_mismatch":
-      return "Your marathon date and preferred long-run day do not align. Review your runner setup before building a plan.";
     case "recent_effort_after_supported_start_window":
       return "Your recent effort is later than every supported plan start. Review the effort date or race date before continuing.";
     case "supported_start_window_has_passed":
@@ -259,8 +257,8 @@ export default function PlanProposalBuilder({
         >
           <legend>When should this plan start?</legend>
           <p id={`${idPrefix}-plan-start-help`}>
-            These dates align with your marathon date and preferred long-run
-            day.
+            These dates keep the complete training schedule aligned with your
+            marathon date.
           </p>
           <div className="plan-proposal-choice-grid">
             {candidates.candidates.map((candidate, index) => (

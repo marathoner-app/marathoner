@@ -180,7 +180,7 @@ function unsupportedPlanReasons(
     [
       rules.reasonCodes.raceAlignment,
       () =>
-        "The selected start date must align with your marathon date and preferred long-run day.",
+        "The selected start date must make the final training week end on race day.",
     ],
     [
       rules.reasonCodes.availability,

@@ -1,16 +1,6 @@
 import { createDateOnly, type DateOnly } from "./dates";
 import type { DeterministicPlanRulesV1 } from "./deterministicPlanGenerator";
-import type { UserProfile, Weekday } from "./types";
-
-const weekdaysByUtcIndex: readonly Weekday[] = [
-  "sunday",
-  "monday",
-  "tuesday",
-  "wednesday",
-  "thursday",
-  "friday",
-  "saturday",
-];
+import type { UserProfile } from "./types";
 
 export interface PlanStartDateCandidate {
   readonly date: DateOnly;
@@ -27,7 +17,6 @@ export type PlanStartDateCandidateResult =
       readonly reason:
         | "profile_incomplete"
         | "race_window"
-        | "race_weekday_mismatch"
         | "recent_effort_after_supported_start_window"
         | "supported_start_window_has_passed";
     };
@@ -39,14 +28,6 @@ interface PlanStartDateCandidateOptions {
 function utcDate(value: DateOnly): Date {
   const [year, month, day] = value.split("-").map(Number);
   return new Date(Date.UTC(year, month - 1, day));
-}
-
-function weekdayForDate(value: DateOnly): Weekday {
-  const weekday = weekdaysByUtcIndex[utcDate(value).getUTCDay()];
-  if (weekday === undefined) {
-    throw new Error("Unable to resolve the plan race weekday.");
-  }
-  return weekday;
 }
 
 function subtractDays(value: DateOnly, days: number): DateOnly {
@@ -69,12 +50,6 @@ export function createPlanStartDateCandidates(
 
   if (profile.targetRace.kind !== "date") {
     return { kind: "unavailable", reason: "race_window" };
-  }
-
-  if (
-    weekdayForDate(profile.targetRace.date) !== profile.preferredLongRunDay
-  ) {
-    return { kind: "unavailable", reason: "race_weekday_mismatch" };
   }
 
   const { minimum, maximum } = rules.wholeWeeksFromPlanStartToRace;

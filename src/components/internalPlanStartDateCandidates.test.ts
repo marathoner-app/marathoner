@@ -99,7 +99,7 @@ describe("createInternalPlanStartDateCandidates", () => {
     });
   });
 
-  it("does not invent dates for incomplete, window, or misaligned profiles", () => {
+  it("does not invent dates for incomplete or window profiles", () => {
     expect(
       createInternalPlanStartDateCandidates(
         { ...profile, preferredLongRunDay: undefined },
@@ -120,12 +120,14 @@ describe("createInternalPlanStartDateCandidates", () => {
         rules,
       ),
     ).toEqual({ kind: "unavailable", reason: "race_window" });
+  });
 
+  it("offers the same starts when race day differs from the preferred long-run day", () => {
     expect(
       createInternalPlanStartDateCandidates(
         { ...profile, preferredLongRunDay: "saturday" },
         rules,
       ),
-    ).toEqual({ kind: "unavailable", reason: "race_weekday_mismatch" });
+    ).toEqual(createInternalPlanStartDateCandidates(profile, rules));
   });
 });

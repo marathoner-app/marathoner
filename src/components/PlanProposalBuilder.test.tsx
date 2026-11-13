@@ -113,6 +113,40 @@ function renderBuilder(
 }
 
 describe("PlanProposalBuilder", () => {
+  it("offers plan starts when race day differs from the preferred long-run day", () => {
+    render(
+      <PlanProposalBuilder
+        profile={{
+          ...profile,
+          availableTrainingDays: ["monday", "wednesday", "friday", "saturday"],
+          preferredLongRunDay: "saturday",
+        }}
+        generatorVersion={createPlanGenerationArtifactVersion(
+          "test-generator@1.0.0",
+        )}
+        rules={rules}
+        onEditProfile={vi.fn()}
+        approval={{
+          expectedActivePlanRevision: null,
+          client: approvalClient,
+          reloadTrainingData: vi.fn().mockResolvedValue(undefined),
+          onApproved: vi.fn(),
+        }}
+        today={createDateOnly("2026-12-01")}
+      />,
+    );
+
+    expect(
+      screen.getByRole("heading", { name: "Choose where training begins" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getAllByRole("radio", { name: /weeks to race/i }),
+    ).not.toHaveLength(0);
+    expect(
+      screen.queryByRole("heading", { name: "Review your starting point" }),
+    ).not.toBeInTheDocument();
+  });
+
   it("labels closed-beta rules as provisional without owner-only language", () => {
     renderBuilder("closed_beta");
 
