@@ -90,6 +90,23 @@ npm run manage:closed-beta-methodology-controls -- \
   --confirm CREATE-DISABLED-CLOSED-BETA-METHODOLOGY-CONTROLS
 ```
 
+When a reviewed release advances the pinned manifest, first prepare the new
+web and iOS candidates and deploy the matching merged backend. Then migrate the
+exact predecessor controls atomically:
+
+```bash
+npm run manage:closed-beta-methodology-controls -- \
+  upgrade --project marathonerapp-beta \
+  --confirm UPGRADE-CLOSED-BETA-METHODOLOGY
+```
+
+The upgrade preserves each control's enabled state and the retired-guidance
+list, increments both revisions, and accepts only the exact bundled predecessor
+manifest. Run `status` immediately afterward. Unknown drift, a skipped version,
+or a repeated upgrade fails closed. Old clients may receive a typed stale-version
+response after the control advances; distribute the matching locked candidate
+rather than rolling the control backward implicitly.
+
 After the merged backend is deployed and the locked web/iOS candidate is ready,
 enable both controls atomically:
 
