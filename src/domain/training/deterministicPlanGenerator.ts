@@ -82,16 +82,40 @@ function weekdayForDate(value: DateOnly): Weekday {
 }
 
 function scheduledDayOffset(
+  weekStartDate: DateOnly,
   preferredLongRunDay: Weekday,
   positionRelativeToLongRunDay: number,
 ): number {
+  const weekStartDayIndex = weekdays.indexOf(weekdayForDate(weekStartDate));
   const preferredDayIndex = weekdays.indexOf(preferredLongRunDay);
-  const weekStartDayIndex = (preferredDayIndex + 1) % weekdays.length;
   const scheduledDayIndex =
     (preferredDayIndex + positionRelativeToLongRunDay) % weekdays.length;
   return (
     (scheduledDayIndex - weekStartDayIndex + weekdays.length) % weekdays.length
   );
+}
+
+function raceWeekDayOffsets(
+  startDate: DateOnly,
+  availableTrainingDays: readonly Weekday[],
+  workoutCount: number,
+): number[] {
+  const availableDays = new Set(availableTrainingDays);
+  const offsets = Array.from({ length: 6 }, (_, offset) => offset).filter(
+    (offset) => availableDays.has(weekdayForDate(addDays(startDate, offset))),
+  );
+  if (offsets.length < workoutCount) {
+    throw new Error("Race week does not have enough available pre-race days.");
+  }
+  return offsets.slice(0, workoutCount);
+}
+
+function raceWeekDayOffset(offsets: readonly number[], index: number): number {
+  const offset = offsets[index];
+  if (offset === undefined) {
+    throw new Error("Race week is missing a pre-race workout day.");
+  }
+  return offset;
 }
 
 function workoutId(
@@ -120,6 +144,14 @@ function createTrainingWeek(
 ): GeneratedWeekV1 {
   const startDate = addDays(input.planStartDate, (weekNumber - 1) * 7);
   const endDate = addDays(startDate, 6);
+  const preRaceDayOffsets = isRaceWeek
+    ? raceWeekDayOffsets(
+        startDate,
+        input.runner.availableTrainingDays,
+        rules.requiredTrainingDayPositionsRelativeToPreferredLongRunDay.length -
+          1,
+      )
+    : [];
   const workouts = rules.requiredTrainingDayPositionsRelativeToPreferredLongRunDay
     .map((position, positionIndex): GeneratedRunWorkoutV1 => {
       const isRacePosition =
@@ -130,7 +162,13 @@ function createTrainingWeek(
         ? targetRaceDate
         : addDays(
             startDate,
-            scheduledDayOffset(input.runner.preferredLongRunDay, position),
+            isRaceWeek
+              ? raceWeekDayOffset(preRaceDayOffsets, positionIndex)
+              : scheduledDayOffset(
+                  startDate,
+                  input.runner.preferredLongRunDay,
+                  position,
+                ),
           );
       const purpose = isRacePosition
         ? rules.raceWeek.finalPositionPurpose
@@ -275,21 +313,6 @@ export function generateDeterministicPlan(
       ],
     };
   }
-  if (weekdayForDate(targetRace.date) !== input.runner.preferredLongRunDay) {
-    return {
-      schemaVersion: PLAN_GENERATION_RESULT_SCHEMA_VERSION,
-      kind: "invalid_input",
-      issues: [
-        {
-          code: "inconsistent",
-          field: "runner.preferredLongRunDay",
-          message:
-            "The preferred long-run day must match the exact race date weekday for this plan family.",
-        },
-      ],
-    };
-  }
-
   const preRaceWeekCount =
     inclusiveDayCount(input.planStartDate, targetRace.date) / 7;
   const leadInWeekCount = preRaceWeekCount - rules.coreWeeks.length;

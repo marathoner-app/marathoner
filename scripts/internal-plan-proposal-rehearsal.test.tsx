@@ -86,7 +86,7 @@ describe("InternalPlanProposalRehearsal", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("explains when the saved race weekday cannot produce candidates", () => {
+  it("offers candidates when race day differs from the preferred long-run day", () => {
     render(
       <InternalPlanProposalRehearsal
         profile={{ ...profile, preferredLongRunDay: "saturday" }}
@@ -96,8 +96,11 @@ describe("InternalPlanProposalRehearsal", () => {
     );
 
     expect(
-      screen.getByText(/does not fall on the preferred long-run day/iu),
+      screen.getByRole("button", {
+        name: "December 10, 2029 22 weeks to race",
+      }),
     ).toBeInTheDocument();
+    expect(screen.queryByText(/does not fall/iu)).not.toBeInTheDocument();
     expect(screen.getByLabelText("Plan start date")).toBeEnabled();
   });
 
