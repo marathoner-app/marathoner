@@ -346,6 +346,8 @@ export function findIosProjectViolations({
     'HKObserverQuery(',
     'enableBackgroundDelivery(',
     'workout.workoutActivityType == .running',
+    'legacyAccountScope',
+    'migrateLegacyStorage(from: legacyScope, to: scope)',
   ]) {
     requireText(
       violations,

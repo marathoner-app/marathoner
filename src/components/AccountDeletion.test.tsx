@@ -59,6 +59,10 @@ function renderDialog(
     ...render(
       <AccountDeletionDialog
         accountScope="runner-account"
+        healthKitAccountScope={{
+          current: 'firebase-project:beta-project:user:runner-account',
+          legacy: 'runner-account',
+        }}
         email="runner@example.com"
         supportEmail={supportEmail}
         unresolvedCommandId={unresolvedCommandId}

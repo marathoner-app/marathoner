@@ -178,7 +178,49 @@ final class HealthKitPlugin: CAPPlugin, CAPBridgedPlugin {
             )
             return nil
         }
+
+        if let rawLegacyScope = call.getString("legacyAccountScope") {
+            let legacyScope = rawLegacyScope.trimmingCharacters(
+                in: .whitespacesAndNewlines
+            )
+            guard !legacyScope.isEmpty, legacyScope.count <= 256 else {
+                call.reject(
+                    "The saved Apple Health account scope is invalid.",
+                    "healthkit_account_scope_invalid"
+                )
+                return nil
+            }
+            if legacyScope != scope {
+                migrateLegacyStorage(from: legacyScope, to: scope)
+            }
+        }
         return scope
+    }
+
+    private func migrateLegacyStorage(from legacyScope: String, to scope: String) {
+        let defaults = UserDefaults.standard
+        let keyPairs = [
+            (enabledKey(for: legacyScope), enabledKey(for: scope)),
+            (anchorKey(for: legacyScope), anchorKey(for: scope)),
+            (queryStartDateKey(for: legacyScope), queryStartDateKey(for: scope)),
+            (runningIdsKey(for: legacyScope), runningIdsKey(for: scope)),
+        ]
+        var foundLegacyState = false
+
+        for (legacyKey, currentKey) in keyPairs {
+            guard let legacyValue = defaults.object(forKey: legacyKey) else {
+                continue
+            }
+            foundLegacyState = true
+            if defaults.object(forKey: currentKey) == nil {
+                defaults.set(legacyValue, forKey: currentKey)
+            }
+        }
+
+        guard foundLegacyState else { return }
+        for (legacyKey, _) in keyPairs {
+            defaults.removeObject(forKey: legacyKey)
+        }
     }
 
     private func boundedLookbackDays(_ call: CAPPluginCall) -> Int {

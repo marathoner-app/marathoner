@@ -43,6 +43,36 @@ supported observer/background-delivery behavior for later changes. Permission
 denial must leave manual entry usable and explain how to reconnect without
 pressuring the runner to grant access.
 
+Apple Health connection state is device-local. “Permission and workout
+monitoring are on” confirms the selected Firebase project and signed-in UID can
+use that iPhone's HealthKit cursor; it does not prove that the server already
+contains every expected run. The native state key therefore includes both the
+Firebase project ID and UID. When an existing installation first adopts that
+key, Marathoner moves the prior UID-only enabled flag, query start date,
+tracked IDs, and anchor into the new scope instead of resetting the cursor or
+replaying history.
+
+### Safe missing-history recovery
+
+When Apple Health is connected but expected runs are absent:
+
+1. confirm the app is signed into the intended Marathoner environment and
+   account;
+2. review Marathoner's workout permission in the Health app;
+3. use **Check for runs now** and read “No new Apple Health workout changes
+   were found” literally—it describes the incremental HealthKit query, not the
+   account's full history;
+4. compare owned server run counts with the device/account identity before
+   changing any local state; and
+5. if history belongs to a previous Marathoner environment, use a reviewed,
+   create-only owner migration with exact-field verification and a rollback
+   manifest.
+
+Do not disconnect, delete an anchor, or expand the lookback merely to force a
+replay. The provider command boundary is idempotent for the same provider
+activity, but deliberate recovery still needs an inspected source and empty or
+reconciled destination so it cannot invent duplicates.
+
 Official references:
 
 - [HealthKit](https://developer.apple.com/documentation/healthkit)

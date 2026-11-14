@@ -5,12 +5,13 @@ import {
   disconnectHealthKit,
   getHealthKitConnectionState,
   synchronizeHealthKit,
+  type HealthKitAccountScope,
   type HealthKitConnectionState,
   type HealthKitImportSummary,
 } from '../services/healthKitImport'
 
 interface AppleHealthConnectionProps {
-  accountScope: string
+  accountScope: HealthKitAccountScope
 }
 
 type PendingOperation = 'connect' | 'synchronize' | 'disconnect' | null
@@ -29,7 +30,7 @@ function summaryMessage(summary: HealthKitImportSummary): string {
   if (summary.skipped > 0) {
     return 'No complete running workouts were available to import.'
   }
-  return 'Apple Health is up to date.'
+  return 'No new Apple Health workout changes were found.'
 }
 
 const initialState: HealthKitConnectionState = {
@@ -135,9 +136,14 @@ export default function AppleHealthConnection({
       ) : (
         <>
           <p>
-            Automatic workout import is on for this iPhone. If an expected run
-            does not appear, open the Health app, tap your profile picture, then
-            choose Apps and Marathoner to review workout access.
+            Marathoner requested Apple Health workout access and enabled
+            monitoring on this iPhone. This device state does not confirm that
+            every prior workout is already saved in this Marathoner account.
+          </p>
+          <p className="apple-health-privacy-note">
+            If an expected run does not appear, use Check for runs now. Then open
+            the Health app, tap your profile picture, and choose Apps and
+            Marathoner to review workout access.
           </p>
           <div className="apple-health-actions">
             <button
