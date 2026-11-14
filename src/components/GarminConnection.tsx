@@ -66,7 +66,7 @@ function connectionFailure(result: GarminConnectionFailure): string {
       : 'Marathoner could not verify this app session. Refresh or reopen Marathoner and try again.'
   }
   if (result.code === 'provider-revocation-failed') {
-    return 'Garmin is still being disconnected. Try again to finish removing access.'
+    return 'Garmin did not confirm removal yet. Marathoner kept the connection details needed to retry safely. Try finishing the disconnect again.'
   }
   return 'Garmin connection is not available in this build yet.'
 }

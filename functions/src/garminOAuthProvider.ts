@@ -1,8 +1,10 @@
 import type {
   GarminConnectionGrant,
   GarminOAuthProvider,
+  GarminRevocationOutcome,
   GarminTokenGrant,
 } from './garminOAuthHandler.js'
+import { GarminRevocationFailure } from './garminOAuthHandler.js'
 
 type GarminOAuthProviderConfiguration = Readonly<{
   authorizationUrl: string
@@ -77,6 +79,29 @@ function providerUserId(value: unknown): string {
     throw new Error('The OAuth provider returned no usable user identifier.')
   }
   return userId
+}
+
+async function providerErrorCode(response: Response): Promise<string | null> {
+  try {
+    const value = await response.clone().json()
+    if (typeof value !== 'object' || value === null) return null
+    const error = (value as Record<string, unknown>).error
+    if (error === 'invalid_grant' || error === 'invalid_token') return error
+    const errorMessage = (value as Record<string, unknown>).errorMessage
+    return errorMessage === 'Unable to read oAuth header'
+      ? 'invalid_token'
+      : null
+  } catch {
+    return null
+  }
+}
+
+function failureCategory(
+  httpStatus: number,
+): GarminRevocationFailure['category'] {
+  return httpStatus === 429 || httpStatus >= 500
+    ? 'transient'
+    : 'provider-rejected'
 }
 
 export class HttpGarminOAuthProvider implements GarminOAuthProvider {
@@ -183,24 +208,124 @@ export class HttpGarminOAuthProvider implements GarminOAuthProvider {
     }
   }
 
-  async revoke(grant: GarminTokenGrant): Promise<void> {
+  async revoke(grant: GarminTokenGrant): Promise<GarminRevocationOutcome> {
     const request = this.options.fetch ?? fetch
-    const clientSecret = nonEmpty(
-      this.clientSecret,
-      'The OAuth client secret',
-    )
-    const response = await request(this.revocationEndpoint, {
-      method: 'POST',
-      headers: { 'content-type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({
-        token: grant.refreshToken ?? grant.accessToken,
-        token_type_hint: grant.refreshToken ? 'refresh_token' : 'access_token',
-        client_id: this.clientId,
-        client_secret: clientSecret,
-      }),
-    })
-    if (!response.ok) {
-      throw new Error('The OAuth provider rejected grant revocation.')
+    const deleteRegistration = async (accessToken: string) => {
+      try {
+        return await request(this.revocationEndpoint, {
+          method: 'DELETE',
+          headers: { authorization: `Bearer ${accessToken}` },
+        })
+      } catch {
+        throw new GarminRevocationFailure({
+          category: 'transient',
+          httpStatus: null,
+        })
+      }
     }
+
+    const initialDelete = await deleteRegistration(grant.accessToken)
+    if (initialDelete.ok) {
+      return { status: 'revoked', httpStatus: initialDelete.status }
+    }
+    if (initialDelete.status === 404 || initialDelete.status === 410) {
+      return { status: 'already-invalid', httpStatus: initialDelete.status }
+    }
+
+    const initialError = await providerErrorCode(initialDelete)
+    const accessGrantIsInvalid =
+      initialDelete.status === 401 || initialError === 'invalid_token'
+    if (!accessGrantIsInvalid) {
+      throw new GarminRevocationFailure({
+        category: failureCategory(initialDelete.status),
+        httpStatus: initialDelete.status,
+      })
+    }
+    if (grant.refreshToken === null) {
+      return { status: 'already-invalid', httpStatus: initialDelete.status }
+    }
+
+    const clientSecret = nonEmpty(this.clientSecret, 'The OAuth client secret')
+    let refreshResponse: Response
+    try {
+      refreshResponse = await request(this.tokenEndpoint, {
+        method: 'POST',
+        headers: { 'content-type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+          grant_type: 'refresh_token',
+          client_id: this.clientId,
+          client_secret: clientSecret,
+          refresh_token: grant.refreshToken,
+        }),
+      })
+    } catch {
+      throw new GarminRevocationFailure({
+        category: 'transient',
+        httpStatus: null,
+      })
+    }
+    if (!refreshResponse.ok) {
+      const refreshError = await providerErrorCode(refreshResponse)
+      if (refreshError === 'invalid_grant' || refreshError === 'invalid_token') {
+        return {
+          status: 'already-invalid',
+          httpStatus: refreshResponse.status,
+        }
+      }
+      throw new GarminRevocationFailure({
+        category: failureCategory(refreshResponse.status),
+        httpStatus: refreshResponse.status,
+      })
+    }
+
+    let refreshedGrant: GarminTokenGrant
+    try {
+      refreshedGrant = tokenGrant(
+        await refreshResponse.json(),
+        this.options.now?.() ?? new Date(),
+      )
+      if (refreshedGrant.refreshToken === null) {
+        throw new Error('The OAuth provider returned no refresh token.')
+      }
+    } catch {
+      throw new GarminRevocationFailure({
+        category: 'provider-rejected',
+        httpStatus: refreshResponse.status,
+      })
+    }
+
+    let refreshedDelete: Response
+    try {
+      refreshedDelete = await request(this.revocationEndpoint, {
+        method: 'DELETE',
+        headers: { authorization: `Bearer ${refreshedGrant.accessToken}` },
+      })
+    } catch {
+      throw new GarminRevocationFailure({
+        category: 'transient',
+        httpStatus: null,
+        retryGrant: refreshedGrant,
+      })
+    }
+    if (refreshedDelete.ok) {
+      return { status: 'revoked', httpStatus: refreshedDelete.status }
+    }
+    const refreshedError = await providerErrorCode(refreshedDelete)
+    if (
+      refreshedDelete.status === 404 ||
+      refreshedDelete.status === 410 ||
+      refreshedDelete.status === 401 ||
+      refreshedError === 'invalid_token'
+    ) {
+      return {
+        status: 'already-invalid',
+        httpStatus: refreshedDelete.status,
+      }
+    }
+    throw new GarminRevocationFailure({
+      category: failureCategory(refreshedDelete.status),
+      httpStatus: refreshedDelete.status,
+      retryGrant: refreshedGrant,
+    })
   }
 }

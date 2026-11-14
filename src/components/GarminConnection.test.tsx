@@ -161,7 +161,9 @@ describe('GarminConnection', () => {
 
     await user.click(await screen.findByRole('button', { name: 'Disconnect Garmin' }))
 
-    expect(screen.getByRole('alert')).toHaveTextContent(/still being disconnected/i)
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      /did not confirm removal yet.*kept the connection details needed to retry safely/i,
+    )
     expect(
       screen.getByRole('button', { name: 'Finish disconnecting Garmin' }),
     ).toBeEnabled()

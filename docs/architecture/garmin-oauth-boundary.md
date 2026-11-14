@@ -34,10 +34,13 @@ limited-account evidence remain part of the final proof in #624.
    the authenticated owner's server-only connection record. Callback replay
    returns the prior outcome without repeating the exchange.
 5. Reconnect replaces the current grant. Prior grants remain in trusted custody
-   until provider revocation succeeds.
+   until Garmin registration deletion succeeds.
 6. `disconnectGarminConnection` marks the connection unusable before contacting
-   the provider, retries provider revocation safely, and deletes all held grant
-   material after revocation succeeds.
+   Garmin, then calls the documented user-registration `DELETE` endpoint with
+   an access token. If that token is invalid, the server refreshes it before
+   retrying. A refreshed grant remains in trusted custody after a transient
+   failure, and all held grant material is deleted only after Garmin confirms
+   deletion or confirms that the grant is already invalid.
 7. `getGarminConnection` exposes only `connected`, `disconnecting`, or
    `disconnected` plus the connection time. It never returns provider identity
    or token material.
@@ -91,11 +94,15 @@ closed beta runtime and private provider controls.
 | `GARMIN_AUTHORIZATION_URL` | Private beta server configuration |
 | `GARMIN_TOKEN_URL` | Private beta server configuration |
 | `GARMIN_USER_ID_URL` | Private beta server configuration used after token exchange |
-| `GARMIN_REVOCATION_URL` | Private beta server configuration |
 
 No configuration value is required for builds or synthetic checks. A live
 deployment must stop if any HTTPS endpoint, callback, client identifier, or
 secret is missing.
+
+The Garmin user-registration deletion URL is fixed in trusted server code to
+the provider-documented `DELETE https://apis.garmin.com/wellness-api/rest/user/registration`
+endpoint. It is deliberately not an environment parameter that can drift to a
+generic OAuth token-revocation URL.
 
 ## Verification
 

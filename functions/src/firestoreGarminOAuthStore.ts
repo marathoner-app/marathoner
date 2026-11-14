@@ -60,6 +60,13 @@ function storedPendingRevocationGrants(data: DocumentData): GarminTokenGrant[] {
   )
 }
 
+function sameGrant(left: GarminTokenGrant, right: GarminTokenGrant): boolean {
+  return (
+    left.accessToken === right.accessToken &&
+    left.refreshToken === right.refreshToken
+  )
+}
+
 function isEnvironment(
   data: DocumentData | undefined,
   environment: GarminOAuthEnvironment,
@@ -366,6 +373,56 @@ export class FirestoreGarminOAuthStore implements GarminOAuthStore {
         kind: 'reserved',
         grants: [grant, ...storedPendingRevocationGrants(data)],
       }
+    })
+  }
+
+  async replaceDisconnectGrant(options: {
+    environment: GarminOAuthEnvironment
+    ownerId: string
+    previousGrant: GarminTokenGrant
+    replacementGrant: GarminTokenGrant
+  }): Promise<void> {
+    const reference = this.database.doc(connectionPath(options.ownerId))
+    await this.database.runTransaction(async (transaction) => {
+      const snapshot = await transaction.get(reference)
+      const data = snapshot.data()
+      if (
+        data?.schemaVersion !== connectionSchemaVersion ||
+        data.environment !== options.environment ||
+        data.status !== 'disconnecting'
+      ) {
+        throw new Error('The disconnect reservation is no longer active.')
+      }
+
+      const currentGrant = storedGrant(data)
+      if (sameGrant(currentGrant, options.previousGrant)) {
+        transaction.update(reference, {
+          accessToken: options.replacementGrant.accessToken,
+          refreshToken: options.replacementGrant.refreshToken,
+          expiresAt: options.replacementGrant.expiresAt,
+          updatedAt: new Date().toISOString(),
+        })
+        return
+      }
+
+      let replaced = false
+      const pendingRevocationGrants = storedPendingRevocationGrants(data).map(
+        (grant) => {
+          if (!replaced && sameGrant(grant, options.previousGrant)) {
+            replaced = true
+            return options.replacementGrant
+          }
+          return grant
+        },
+      )
+      if (!replaced) {
+        if (sameGrant(currentGrant, options.replacementGrant)) return
+        throw new Error('The disconnect grant is no longer current.')
+      }
+      transaction.update(reference, {
+        pendingRevocationGrants,
+        updatedAt: new Date().toISOString(),
+      })
     })
   }
 
