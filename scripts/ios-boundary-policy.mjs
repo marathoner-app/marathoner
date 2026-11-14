@@ -6,7 +6,7 @@ export const expectedIosBoundary = {
   firebaseIosVersion: '12.19.2',
   firebaseJsVersion: '^12.19.0',
   firebaseRulesTestVersion: '^5.0.2',
-  iosContentInset: 'always',
+  iosContentInset: 'never',
   splashScreenVersion: '8.0.2',
   developmentProjectId: 'marathoner-d9bf9',
   betaProjectId: 'marathonerapp-beta',
@@ -540,6 +540,7 @@ export function findCopiedBundleViolations({
     violations.push('iOS index.html contains the legacy project-site base path')
   }
   for (const expectedStartupValue of [
+    'viewport-fit=cover',
     'data-marathoner-startup',
     'Loading your session...',
     'data-startup-recovery',

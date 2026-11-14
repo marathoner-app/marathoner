@@ -33,7 +33,8 @@
 .landing-page__frame {
   width: min(100%, var(--landing-content-width));
   margin: 0 auto;
-  padding: clamp(1rem, 3vw, 2rem) var(--landing-space-page)
+  padding: calc(clamp(1rem, 3vw, 2rem) + env(safe-area-inset-top))
+    var(--landing-space-page)
     var(--landing-space-section);
 }
 

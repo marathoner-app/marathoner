@@ -301,6 +301,19 @@ test("keeps mobile navigation anchored at the document scroll boundary", async (
 }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("tests/viewport/signedInHome.html");
+  await page.addStyleTag({
+    content: `
+      @media (max-width: 768px) {
+        .main.signed-in-home {
+          padding-bottom: calc(5.5rem + 34px);
+        }
+
+        .section-navigation {
+          padding-bottom: calc(0.375rem + 34px);
+        }
+      }
+    `,
+  });
 
   await expect(page.locator("html")).toHaveCSS("overscroll-behavior-y", "none");
   await expect(page.locator("body")).toHaveCSS("overscroll-behavior-y", "none");
@@ -321,6 +334,7 @@ test("keeps mobile navigation anchored at the document scroll boundary", async (
   const navigation = page.getByRole("navigation", {
     name: "Training sections",
   });
+  await expect(navigation).toHaveCSS("padding-bottom", "40px");
   const navigationHandle = await navigation.elementHandle();
   expect(
     navigationHandle,

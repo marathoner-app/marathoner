@@ -15,7 +15,8 @@
   width: min(100%, 70rem);
   min-height: 100%;
   margin: 0 auto;
-  padding: clamp(1rem, 4vw, 3rem) clamp(1rem, 4vw, 3rem)
+  padding: calc(clamp(1rem, 4vw, 3rem) + env(safe-area-inset-top))
+    clamp(1rem, 4vw, 3rem)
     max(1rem, env(safe-area-inset-bottom));
 }
 
