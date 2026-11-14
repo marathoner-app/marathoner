@@ -345,6 +345,12 @@ export function findIosProjectViolations({
     'read: [workoutType, heartRateType]',
     'HKAnchoredObjectQuery(',
     'HKStatisticsQuery(',
+    'HKQuery.predicateForObjects(from: workout)',
+    'withStart: workout.startDate',
+    'end: workout.endDate',
+    'options: [.strictStartDate, .strictEndDate]',
+    'from: Set([workout.sourceRevision.source])',
+    'NSCompoundPredicate(',
     'HKObserverQuery(',
     'enableBackgroundDelivery(',
     'workout.workoutActivityType == .running',
@@ -356,6 +362,11 @@ export function findIosProjectViolations({
       healthKitPlugin,
       healthKitBridgeValue,
       'HealthKitPlugin.swift',
+    )
+  }
+  if (healthKitPlugin.includes('HKSampleQuery(')) {
+    violations.push(
+      'HealthKitPlugin.swift must summarize heart rate without retaining raw samples',
     )
   }
   requireText(

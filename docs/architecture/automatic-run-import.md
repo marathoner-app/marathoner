@@ -138,6 +138,16 @@ contract. Heart-rate summaries are optional: their absence means the provider
 did not make a valid workout summary available, not that the run import failed.
 They remain provider-owned facts and are never inferred from pace or effort.
 
+The HealthKit adapter first asks for average and maximum heart rate from samples
+explicitly associated with the workout. Some third-party writers, including
+Garmin Connect, can save a workout and time-aligned heart-rate samples without
+associating those samples with the workout object. When the preferred query
+returns no valid summary, Marathoner makes one bounded fallback statistics
+query: heart-rate samples must come from the workout's source and fall entirely
+within the workout start/end window. The adapter still returns only validated
+whole-BPM average and maximum values; it never retains raw samples or expands
+the query to all-day heart-rate data.
+
 ## Idempotency and duplicate handling
 
 Automatic delivery is at-least-once in practice. The import boundary therefore
