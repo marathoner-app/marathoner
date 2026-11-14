@@ -124,17 +124,19 @@ a completed run:
 - source creation/update state and import timestamps;
 - supported running-activity type;
 - start/end time or duration plus the relevant time zone;
-- distance in canonical units; and
+- distance in canonical units;
+- optional workout-scoped average and maximum heart rate in whole BPM; and
 - the minimum source metadata needed for duplicate handling and support.
 
 Perceived effort, Marathoner notes, shoe association, and plan-workout matching
 remain Marathoner-owned fields. They are never inferred from a provider merely
 because the provider supplies other activity details.
 
-Provider SDK types, OAuth tokens, FIT payloads, GPS routes, and raw all-day
-health data do not enter the portable training contract. A later requirement
-may add a narrowly reviewed detail, but data availability by itself is not a
-reason to collect or retain it.
+Provider SDK types, OAuth tokens, FIT payloads, GPS routes, raw heart-rate
+samples, and raw all-day health data do not enter the portable training
+contract. Heart-rate summaries are optional: their absence means the provider
+did not make a valid workout summary available, not that the run import failed.
+They remain provider-owned facts and are never inferred from pace or effort.
 
 ## Idempotency and duplicate handling
 

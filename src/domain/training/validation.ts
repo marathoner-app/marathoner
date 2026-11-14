@@ -1,4 +1,5 @@
 import type { TrainingPlan, PlannedWorkout, CompletedRun, Shoe, UserProfile } from "./types.js";
+import { isHeartRateBpm } from "./units.js";
 
 export const COMPLETED_RUN_NOTES_MAX_LENGTH = 500;
 export const PLANNED_WORKOUT_NOTES_MAX_LENGTH = 500;
@@ -227,6 +228,37 @@ export function validateCompletedRun(run: CompletedRun): ValidationIssue[] {
 
   if (run.duration <= 0) {
     issues.push({ field: "duration", message: "Completed run duration must be positive." });
+  }
+
+  if (
+    run.averageHeartRateBpm !== undefined &&
+    !isHeartRateBpm(run.averageHeartRateBpm)
+  ) {
+    issues.push({
+      field: "averageHeartRateBpm",
+      message: "Average heart rate must be from 20 through 300 bpm.",
+    });
+  }
+
+  if (
+    run.maximumHeartRateBpm !== undefined &&
+    !isHeartRateBpm(run.maximumHeartRateBpm)
+  ) {
+    issues.push({
+      field: "maximumHeartRateBpm",
+      message: "Maximum heart rate must be from 20 through 300 bpm.",
+    });
+  }
+
+  if (
+    run.averageHeartRateBpm !== undefined &&
+    run.maximumHeartRateBpm !== undefined &&
+    run.maximumHeartRateBpm < run.averageHeartRateBpm
+  ) {
+    issues.push({
+      field: "maximumHeartRateBpm",
+      message: "Maximum heart rate cannot be lower than average heart rate.",
+    });
   }
 
   if (

@@ -6,7 +6,12 @@ import type {
   TrainingPlanId,
   UserId,
 } from "./identifiers.js";
-import type { DistanceMeters, DistanceUnit, DurationSeconds } from "./units.js";
+import type {
+  DistanceMeters,
+  DistanceUnit,
+  DurationSeconds,
+  HeartRateBpm,
+} from "./units.js";
 import type {
   ActivityImportProvider,
   ReportedActivityOrigin,
@@ -153,6 +158,9 @@ export interface CompletedRun extends EntityTimestamps {
   readonly timeZone: IanaTimeZone;
   readonly distance: DistanceMeters;
   readonly duration: DurationSeconds;
+  /** Provider-owned workout summaries; raw heart-rate samples are not retained. */
+  readonly averageHeartRateBpm?: HeartRateBpm;
+  readonly maximumHeartRateBpm?: HeartRateBpm;
   readonly perceivedEffort?: PerceivedEffort;
   readonly unusualPain?: boolean;
   readonly notes?: string;

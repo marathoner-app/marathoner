@@ -673,6 +673,8 @@ describe("Firestore training-data ownership rules", () => {
         runDocument(firstUserId, {
           importProvider: "apple_health",
           reportedOrigin: "garmin",
+          averageHeartRateBpm: 151,
+          maximumHeartRateBpm: 176,
         }),
       );
     });
@@ -695,6 +697,12 @@ describe("Firestore training-data ownership rules", () => {
       }),
     );
     await assertFails(
+      updateDoc(reference, {
+        averageHeartRateBpm: 152,
+        updatedAt: new Date("2026-10-05T15:00:00.000Z"),
+      }),
+    );
+    await assertFails(
       setDoc(
         doc(database, `users/${firstUserId}/runs/imported-run-2`),
         runDocument(firstUserId, {
@@ -710,6 +718,16 @@ describe("Firestore training-data ownership rules", () => {
     ["a blank time zone", { timeZone: "" }],
     ["zero distance", { distanceMeters: 0 }],
     ["fractional distance", { distanceMeters: 1.5 }],
+    ["heart rate on a manual run", { averageHeartRateBpm: 151 }],
+    [
+      "an impossible heart-rate range",
+      {
+        importProvider: "apple_health",
+        reportedOrigin: "apple",
+        averageHeartRateBpm: 180,
+        maximumHeartRateBpm: 170,
+      },
+    ],
     ["zero duration", { durationSeconds: 0 }],
     ["an invalid perceived effort", { perceivedEffort: "fast" }],
     ["a non-boolean pain flag", { unusualPain: "no" }],

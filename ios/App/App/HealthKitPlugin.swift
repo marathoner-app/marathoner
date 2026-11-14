@@ -17,6 +17,7 @@ final class HealthKitPlugin: CAPPlugin, CAPBridgedPlugin {
 
     private let healthStore = HKHealthStore()
     private let workoutType = HKObjectType.workoutType()
+    private let heartRateType = HKQuantityType.quantityType(forIdentifier: .heartRate)!
     private var observerQuery: HKObserverQuery?
     private var observerScope: String?
 
@@ -38,7 +39,7 @@ final class HealthKitPlugin: CAPPlugin, CAPBridgedPlugin {
 
         healthStore.getRequestStatusForAuthorization(
             toShare: [],
-            read: [workoutType]
+            read: [workoutType, heartRateType]
         ) { [weak self] status, error in
             guard let self else { return }
             if let error {
@@ -69,7 +70,10 @@ final class HealthKitPlugin: CAPPlugin, CAPBridgedPlugin {
         }
 
         let lookbackDays = boundedLookbackDays(call)
-        healthStore.requestAuthorization(toShare: [], read: [workoutType]) {
+        healthStore.requestAuthorization(
+            toShare: [],
+            read: [workoutType, heartRateType]
+        ) {
             [weak self] success, error in
             guard let self else { return }
             if let error {
@@ -89,6 +93,9 @@ final class HealthKitPlugin: CAPPlugin, CAPBridgedPlugin {
             }
 
             self.setEnabled(true, for: scope)
+            // Replay the bounded window after a permission upgrade so existing
+            // provider identities can be enriched instead of duplicated.
+            UserDefaults.standard.removeObject(forKey: self.anchorKey(for: scope))
             self.installObserver(for: scope, lookbackDays: lookbackDays)
             self.synchronize(
                 scope: scope,
@@ -298,7 +305,7 @@ final class HealthKitPlugin: CAPPlugin, CAPBridgedPlugin {
 
             let observedAt = self.iso8601(Date())
             var trackedRunningIds = self.runningIds(for: scope)
-            var workouts: [[String: Any]] = []
+            var runningWorkouts: [HKWorkout] = []
             var skippedWorkoutCount = 0
 
             for sample in samples ?? [] {
@@ -320,7 +327,7 @@ final class HealthKitPlugin: CAPPlugin, CAPBridgedPlugin {
 
                 let workoutId = workout.uuid.uuidString
                 trackedRunningIds.insert(workoutId)
-                workouts.append(self.workoutPayload(workout, observedAt: observedAt))
+                runningWorkouts.append(workout)
             }
 
             var deletedWorkoutIds: [String] = []
@@ -331,19 +338,48 @@ final class HealthKitPlugin: CAPPlugin, CAPBridgedPlugin {
                 }
             }
 
-            self.saveRunningIds(trackedRunningIds, for: scope)
-            if let newAnchor {
-                self.saveAnchor(newAnchor, for: scope)
+            let summaryGroup = DispatchGroup()
+            let payloadQueue = DispatchQueue(
+                label: "com.marathoner.healthkit.heart-rate-payloads"
+            )
+            var payloadsByWorkoutId: [String: [String: Any]] = [:]
+
+            for workout in runningWorkouts {
+                summaryGroup.enter()
+                self.heartRateSummary(for: workout) { average, maximum in
+                    let payload = self.workoutPayload(
+                        workout,
+                        observedAt: observedAt,
+                        averageHeartRateBpm: average,
+                        maximumHeartRateBpm: maximum
+                    )
+                    payloadQueue.sync {
+                        payloadsByWorkoutId[workout.uuid.uuidString] = payload
+                    }
+                    summaryGroup.leave()
+                }
             }
-            completion([
-                "available": true,
-                "enabled": true,
-                "monitoring": self.observerQuery != nil && self.observerScope == scope,
-                "observedAt": observedAt,
-                "workouts": workouts,
-                "deletedWorkoutIds": deletedWorkoutIds,
-                "skippedWorkoutCount": skippedWorkoutCount,
-            ])
+
+            summaryGroup.notify(queue: .main) {
+                let workouts = payloadQueue.sync {
+                    runningWorkouts.compactMap {
+                        payloadsByWorkoutId[$0.uuid.uuidString]
+                    }
+                }
+                self.saveRunningIds(trackedRunningIds, for: scope)
+                if let newAnchor {
+                    self.saveAnchor(newAnchor, for: scope)
+                }
+                completion([
+                    "available": true,
+                    "enabled": true,
+                    "monitoring": self.observerQuery != nil && self.observerScope == scope,
+                    "observedAt": observedAt,
+                    "workouts": workouts,
+                    "deletedWorkoutIds": deletedWorkoutIds,
+                    "skippedWorkoutCount": skippedWorkoutCount,
+                ])
+            }
         }
         healthStore.execute(query)
     }
@@ -365,10 +401,12 @@ final class HealthKitPlugin: CAPPlugin, CAPBridgedPlugin {
 
     private func workoutPayload(
         _ workout: HKWorkout,
-        observedAt: String
+        observedAt: String,
+        averageHeartRateBpm: Int?,
+        maximumHeartRateBpm: Int?
     ) -> [String: Any] {
         let metadataTimeZone = workout.metadata?[HKMetadataKeyTimeZone] as? String
-        return [
+        var payload: [String: Any] = [
             "providerActivityId": workout.uuid.uuidString,
             "startedAt": iso8601(workout.startDate),
             "endedAt": iso8601(workout.endDate),
@@ -381,6 +419,42 @@ final class HealthKitPlugin: CAPPlugin, CAPBridgedPlugin {
             "sourceBundleIdentifier": workout.sourceRevision.source.bundleIdentifier,
             "observedAt": observedAt,
         ]
+        if let averageHeartRateBpm {
+            payload["averageHeartRateBpm"] = averageHeartRateBpm
+        }
+        if let maximumHeartRateBpm {
+            payload["maximumHeartRateBpm"] = maximumHeartRateBpm
+        }
+        return payload
+    }
+
+    private func heartRateSummary(
+        for workout: HKWorkout,
+        completion: @escaping (Int?, Int?) -> Void
+    ) {
+        let predicate = HKQuery.predicateForObjects(from: workout)
+        let query = HKStatisticsQuery(
+            quantityType: heartRateType,
+            quantitySamplePredicate: predicate,
+            options: [.discreteAverage, .discreteMax]
+        ) { [weak self] _, statistics, error in
+            guard self != nil, error == nil, let statistics else {
+                completion(nil, nil)
+                return
+            }
+            let unit = HKUnit.count().unitDivided(by: .minute())
+            let average = statistics.averageQuantity().map {
+                Int($0.doubleValue(for: unit).rounded())
+            }
+            let maximum = statistics.maximumQuantity().map {
+                Int($0.doubleValue(for: unit).rounded())
+            }
+            completion(
+                average.flatMap { (20...300).contains($0) ? $0 : nil },
+                maximum.flatMap { (20...300).contains($0) ? $0 : nil }
+            )
+        }
+        healthStore.execute(query)
     }
 
     private func authorizationRequestStatusValue(

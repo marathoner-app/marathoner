@@ -13,6 +13,7 @@ import {
 import {
   createDistanceMeters,
   createDurationSeconds,
+  createHeartRateBpm,
 } from '../../src/domain/training/units.js'
 import type { GarminOAuthEnvironment } from './garminOAuthHandler.js'
 
@@ -44,6 +45,8 @@ export type GarminPushActivityDelivery = Readonly<{
   startedAt: string
   durationSeconds: number
   distanceMeters: number
+  averageHeartRateBpm?: number
+  maximumHeartRateBpm?: number
 }>
 
 export type GarminPushDeregistrationDelivery = Readonly<{
@@ -247,6 +250,13 @@ function safePositiveDistance(value: unknown): number | null {
     : null
 }
 
+function safeOptionalHeartRate(value: unknown): number | null {
+  if (value === undefined || value === null) return null
+  return Number.isSafeInteger(value) && Number(value) >= 20 && Number(value) <= 300
+    ? Number(value)
+    : Number.NaN
+}
+
 function parseActivity(
   value: unknown,
   observedAt: string,
@@ -260,10 +270,21 @@ function parseActivity(
   const startTimeInSeconds = safePositiveInteger(value.startTimeInSeconds)
   const durationSeconds = safePositiveInteger(value.durationInSeconds)
   const distanceMeters = safePositiveDistance(value.distanceInMeters)
+  const averageHeartRateBpm = safeOptionalHeartRate(
+    value.averageHeartRateInBeatsPerMinute,
+  )
+  const maximumHeartRateBpm = safeOptionalHeartRate(
+    value.maxHeartRateInBeatsPerMinute,
+  )
   if (
     startTimeInSeconds === null ||
     durationSeconds === null ||
-    distanceMeters === null
+    distanceMeters === null ||
+    Number.isNaN(averageHeartRateBpm) ||
+    Number.isNaN(maximumHeartRateBpm) ||
+    (averageHeartRateBpm !== null &&
+      maximumHeartRateBpm !== null &&
+      maximumHeartRateBpm < averageHeartRateBpm)
   ) {
     return null
   }
@@ -276,6 +297,8 @@ function parseActivity(
     startedAt,
     String(durationSeconds),
     String(distanceMeters),
+    String(averageHeartRateBpm ?? ''),
+    String(maximumHeartRateBpm ?? ''),
   ])
   return {
     schemaVersion: PUSH_SCHEMA_VERSION,
@@ -287,6 +310,8 @@ function parseActivity(
     startedAt,
     durationSeconds,
     distanceMeters,
+    ...(averageHeartRateBpm === null ? {} : { averageHeartRateBpm }),
+    ...(maximumHeartRateBpm === null ? {} : { maximumHeartRateBpm }),
   }
 }
 
@@ -523,6 +548,20 @@ export async function processGarminPushDelivery(
     durationSeconds: createDurationSeconds(delivery.durationSeconds),
     timeZone: createIanaTimeZone(owner.timeZone),
     distanceMeters: createDistanceMeters(delivery.distanceMeters),
+    ...(delivery.averageHeartRateBpm === undefined
+      ? {}
+      : {
+          averageHeartRateBpm: createHeartRateBpm(
+            delivery.averageHeartRateBpm,
+          ),
+        }),
+    ...(delivery.maximumHeartRateBpm === undefined
+      ? {}
+      : {
+          maximumHeartRateBpm: createHeartRateBpm(
+            delivery.maximumHeartRateBpm,
+          ),
+        }),
     reportedOrigin: 'garmin',
   })
   const result = await dependencies.submitImport(owner.ownerId, command)

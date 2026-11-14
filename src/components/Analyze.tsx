@@ -165,6 +165,18 @@ export default function Analyze({
               <dt>Perceived effort</dt>
               <dd>{formatPerceivedEffort(latestRun.perceivedEffort)}</dd>
             </div>
+            {latestRun.averageHeartRateBpm !== undefined && (
+              <div>
+                <dt>Average heart rate</dt>
+                <dd>{latestRun.averageHeartRateBpm} bpm</dd>
+              </div>
+            )}
+            {latestRun.maximumHeartRateBpm !== undefined && (
+              <div>
+                <dt>Maximum heart rate</dt>
+                <dd>{latestRun.maximumHeartRateBpm} bpm</dd>
+              </div>
+            )}
           </dl>
         </section>
       )}

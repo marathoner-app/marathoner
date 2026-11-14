@@ -110,6 +110,8 @@ function pushBody(userId = providerUserId) {
         startTimeOffsetInSeconds: -28_800,
         durationInSeconds: 3_600,
         distanceInMeters: 10_000,
+        averageHeartRateInBeatsPerMinute: 151,
+        maxHeartRateInBeatsPerMinute: 176,
       },
     ],
   }
@@ -194,6 +196,8 @@ describe('Firestore Garmin push ingestion', () => {
       userId: ownerId,
       distanceMeters: 10_000,
       durationSeconds: 3_600,
+      averageHeartRateBpm: 151,
+      maximumHeartRateBpm: 176,
       importProvider: 'garmin_connect',
       reportedOrigin: 'garmin',
       timeZone: 'America/Los_Angeles',

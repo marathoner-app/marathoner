@@ -4,6 +4,7 @@ import {
   createDateOnly,
   createDistanceMeters,
   createDurationSeconds,
+  createHeartRateBpm,
   createIanaTimeZone,
   createPlannedWorkoutId,
   createShoeId,
@@ -690,6 +691,14 @@ export function completedRunToDocument(run: CompletedRun): Record<string, unknow
     document.notes = run.notes;
   }
 
+  if (run.averageHeartRateBpm !== undefined) {
+    document.averageHeartRateBpm = run.averageHeartRateBpm;
+  }
+
+  if (run.maximumHeartRateBpm !== undefined) {
+    document.maximumHeartRateBpm = run.maximumHeartRateBpm;
+  }
+
   if (run.importProvider !== undefined) {
     document.importProvider = run.importProvider;
   }
@@ -714,6 +723,8 @@ export function completedRunFromDocument(
   const perceivedEffort = readOptionalString(data, "perceivedEffort");
   const importProvider = readOptionalString(data, "importProvider");
   const reportedOrigin = readOptionalString(data, "reportedOrigin");
+  const averageHeartRateBpm = readOptionalNumber(data, "averageHeartRateBpm");
+  const maximumHeartRateBpm = readOptionalNumber(data, "maximumHeartRateBpm");
   const run: CompletedRun = {
     id: createCompletedRunId(id),
     userId: verifyOwner(readString(data, "userId"), expectedUserId),
@@ -730,6 +741,14 @@ export function completedRunFromDocument(
     timeZone: createIanaTimeZone(readString(data, "timeZone")),
     distance: createDistanceMeters(readNumber(data, "distanceMeters")),
     duration: createDurationSeconds(readNumber(data, "durationSeconds")),
+    averageHeartRateBpm:
+      averageHeartRateBpm === undefined
+        ? undefined
+        : createHeartRateBpm(averageHeartRateBpm),
+    maximumHeartRateBpm:
+      maximumHeartRateBpm === undefined
+        ? undefined
+        : createHeartRateBpm(maximumHeartRateBpm),
     perceivedEffort:
       perceivedEffort === undefined
         ? undefined

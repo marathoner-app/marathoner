@@ -22,6 +22,8 @@ const runningPush = {
       startTimeOffsetInSeconds: -28_800,
       durationInSeconds: 3_600,
       distanceInMeters: 10_000.4,
+      averageHeartRateInBeatsPerMinute: 151,
+      maxHeartRateInBeatsPerMinute: 176,
       deviceName: 'Synthetic watch',
     },
   ],
@@ -106,6 +108,8 @@ describe('Garmin Activity push receipt', () => {
       startedAt: '2026-11-04T20:00:00.000Z',
       durationSeconds: 3_600,
       distanceMeters: 10_000,
+      averageHeartRateBpm: 151,
+      maximumHeartRateBpm: 176,
     })
     expect(JSON.stringify(delivery)).not.toContain('synthetic-provider-user')
     expect(JSON.stringify(delivery)).not.toContain('synthetic-summary-001')
@@ -130,6 +134,20 @@ describe('Garmin Activity push receipt', () => {
         request({
           activities: [
             { ...runningPush.activities[0], distanceInMeters: null },
+          ],
+        }),
+        dependencies,
+      ),
+    ).resolves.toEqual({ httpStatus: 400, status: 'rejected' })
+    await expect(
+      receiveGarminActivityPush(
+        request({
+          activities: [
+            {
+              ...runningPush.activities[0],
+              averageHeartRateInBeatsPerMinute: 181,
+              maxHeartRateInBeatsPerMinute: 170,
+            },
           ],
         }),
         dependencies,
@@ -280,6 +298,8 @@ describe('Garmin Activity push processing', () => {
     startedAt: '2026-11-04T16:00:00.000Z',
     durationSeconds: 3_600,
     distanceMeters: 10_000,
+    averageHeartRateBpm: 151,
+    maximumHeartRateBpm: 176,
   }
 
   it('resolves exactly one connected owner before submitting run.import-activity', async () => {
@@ -299,6 +319,8 @@ describe('Garmin Activity push processing', () => {
             provider: 'garmin_connect',
             providerActivityId: 'activity-digest',
             reportedOrigin: 'garmin',
+            averageHeartRateBpm: 151,
+            maximumHeartRateBpm: 176,
             timeZone: 'America/Los_Angeles',
           }),
         }),

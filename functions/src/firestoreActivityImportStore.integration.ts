@@ -13,6 +13,7 @@ import {
 import {
   createDistanceMeters,
   createDurationSeconds,
+  createHeartRateBpm,
 } from '../../src/domain/training/units.js'
 import { FirestoreActivityImportStore } from './firestoreActivityImportStore.js'
 import { FirestoreMaterialCommandStore } from './firestoreMaterialCommandStore.js'
@@ -41,6 +42,8 @@ function garminEvent(
     durationSeconds: createDurationSeconds(3_600),
     timeZone: createIanaTimeZone('America/Los_Angeles'),
     distanceMeters: createDistanceMeters(10_000),
+    averageHeartRateBpm: createHeartRateBpm(151),
+    maximumHeartRateBpm: createHeartRateBpm(176),
     reportedOrigin: 'garmin',
     ...changes,
   } as ActivityImportCommandEventV1
@@ -170,6 +173,8 @@ describe('Firestore activity-import persistence', () => {
       durationSeconds: 3_600,
       importProvider: 'garmin_connect',
       reportedOrigin: 'garmin',
+      averageHeartRateBpm: 151,
+      maximumHeartRateBpm: 176,
     })
   })
 
@@ -222,12 +227,15 @@ describe('Firestore activity-import persistence', () => {
     })
   })
 
-  it('updates provider-owned facts while preserving Marathoner-owned enrichment', async () => {
+  it('enriches the same imported run with heart rate while preserving Marathoner-owned fields', async () => {
     const persistence = store()
     const first = await persistence.commit({
       envelope: createActivityImportCommand(
         'import-update-command-0001',
-        garminEvent(),
+        garminEvent({
+          averageHeartRateBpm: undefined,
+          maximumHeartRateBpm: undefined,
+        }),
       ),
       ownerId,
     })
@@ -254,6 +262,8 @@ describe('Firestore activity-import persistence', () => {
           providerUpdatedAt: createUtcDateTime('2026-11-04T18:04:00.000Z'),
           durationSeconds: createDurationSeconds(3_720),
           distanceMeters: createDistanceMeters(10_500),
+          averageHeartRateBpm: createHeartRateBpm(154),
+          maximumHeartRateBpm: createHeartRateBpm(181),
         }),
       ),
       ownerId,
@@ -278,6 +288,8 @@ describe('Firestore activity-import persistence', () => {
       unusualPain: false,
       plannedWorkoutPlanId: 'runner-selected-plan-0001',
       plannedWorkoutId: 'runner-selected-workout-0001',
+      averageHeartRateBpm: 154,
+      maximumHeartRateBpm: 181,
     })
   })
 

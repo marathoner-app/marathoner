@@ -117,8 +117,9 @@ export default function AppleHealthConnection({
           <p>
             Import completed running workouts from the last 30 days, then keep
             new runs in sync. Marathoner reads workout time, duration, distance,
-            and source. It does not write to Apple Health or read all-day health
-            data.
+            source, and available workout heart-rate summaries. It does not
+            write to Apple Health, retain raw heart-rate samples, or read
+            all-day health data.
           </p>
           <p className="apple-health-privacy-note">
             Apple lets you choose which workout access to allow. Marathoner
@@ -143,8 +144,29 @@ export default function AppleHealthConnection({
           <p className="apple-health-privacy-note">
             If an expected run does not appear, use Check for runs now. Then open
             the Health app, tap your profile picture, and choose Apps and
-            Marathoner to review workout access.
+            Marathoner to review workout and heart-rate access.
           </p>
+          {connection.authorizationRequestStatus === 'should_request' && (
+            <div className="apple-health-permission-update">
+              <p>
+                Allow workout heart rate to add available average and maximum
+                values to imported runs. Marathoner will safely recheck the
+                recent workout window without creating duplicate runs.
+              </p>
+              <button
+                type="button"
+                className="apple-health-primary"
+                disabled={busy}
+                onClick={() =>
+                  void run('connect', () => connectHealthKit(accountScope))
+                }
+              >
+                {pending === 'connect'
+                  ? 'Opening Apple Health...'
+                  : 'Allow workout heart rate'}
+              </button>
+            </div>
+          )}
           <div className="apple-health-actions">
             <button
               type="button"

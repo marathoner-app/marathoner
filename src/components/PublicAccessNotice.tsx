@@ -68,11 +68,13 @@ export default function PublicAccessNotice({
           <p>
             With explicit permission, the iPhone app can import completed
             running workouts from Apple Health. Marathoner limits those imports
-            to the workout source, date and time, distance, duration, and the
-            identifiers needed to avoid duplicates. It does not write to Apple
-            Health or import all-day health data. Existing private accounts can
-            also connect Garmin for new completed running activities. Garmin
-            does not provide historical backfill through this integration.
+            to the workout source, date and time, distance, duration, available
+            average and maximum workout heart rate, and the identifiers needed
+            to avoid duplicates. It does not write to Apple Health, retain raw
+            heart-rate samples, or import all-day health data. Existing private
+            accounts can also connect Garmin for new completed running
+            activities. Garmin does not provide historical backfill through
+            this integration.
           </p>
           <p>
             Marathoner does not sell personal or workout data, use it for

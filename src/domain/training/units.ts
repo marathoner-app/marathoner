@@ -7,8 +7,10 @@ import {
 } from "@marathoner/training-contract";
 
 declare const durationBrand: unique symbol;
+declare const heartRateBpmBrand: unique symbol;
 
 export type DurationSeconds = number & { readonly [durationBrand]: "DurationSeconds" };
+export type HeartRateBpm = number & { readonly [heartRateBpmBrand]: "HeartRateBpm" };
 export type DistanceUnit = "mile" | "kilometer";
 
 export {
@@ -32,6 +34,18 @@ export function createDurationSeconds(value: number): DurationSeconds {
   }
 
   return value as DurationSeconds;
+}
+
+export function isHeartRateBpm(value: unknown): value is HeartRateBpm {
+  return Number.isSafeInteger(value) && Number(value) >= 20 && Number(value) <= 300;
+}
+
+export function createHeartRateBpm(value: number): HeartRateBpm {
+  if (!isHeartRateBpm(value)) {
+    throw new Error("Heart rate must be a whole number from 20 through 300 bpm.");
+  }
+
+  return value as HeartRateBpm;
 }
 
 export function kilometersToMeters(kilometers: number): DistanceMeters {

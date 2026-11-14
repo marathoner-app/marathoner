@@ -70,6 +70,23 @@ export function garminPushDeliveryFromDocument(
   ) {
     return null
   }
+  const averageHeartRateBpm = data.averageHeartRateBpm
+  const maximumHeartRateBpm = data.maximumHeartRateBpm
+  if (
+    (averageHeartRateBpm !== undefined &&
+      (!Number.isSafeInteger(averageHeartRateBpm) ||
+        Number(averageHeartRateBpm) < 20 ||
+        Number(averageHeartRateBpm) > 300)) ||
+    (maximumHeartRateBpm !== undefined &&
+      (!Number.isSafeInteger(maximumHeartRateBpm) ||
+        Number(maximumHeartRateBpm) < 20 ||
+        Number(maximumHeartRateBpm) > 300)) ||
+    (averageHeartRateBpm !== undefined &&
+      maximumHeartRateBpm !== undefined &&
+      Number(maximumHeartRateBpm) < Number(averageHeartRateBpm))
+  ) {
+    return null
+  }
   return {
     schemaVersion: 1,
     kind: 'activity',
@@ -80,6 +97,12 @@ export function garminPushDeliveryFromDocument(
     startedAt: data.startedAt,
     durationSeconds: Number(data.durationSeconds),
     distanceMeters: Number(data.distanceMeters),
+    ...(averageHeartRateBpm === undefined
+      ? {}
+      : { averageHeartRateBpm: Number(averageHeartRateBpm) }),
+    ...(maximumHeartRateBpm === undefined
+      ? {}
+      : { maximumHeartRateBpm: Number(maximumHeartRateBpm) }),
   }
 }
 

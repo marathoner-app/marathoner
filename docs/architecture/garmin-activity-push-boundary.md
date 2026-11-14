@@ -29,10 +29,11 @@ activity recorded after connection has not yet proved end-to-end delivery.
    owner data changes.
 3. Non-running summaries are acknowledged and ignored. Malformed supported
    summaries are rejected without a queue or owner write.
-4. The receiver keeps only the minimum normalized run facts. Stable provider
-   user and activity identities are one-way digests; names, devices, routes,
-   coordinates, heart rate, calories, raw payloads, and token material are not
-   queued or logged.
+4. The receiver keeps only the minimum normalized run facts, including optional
+   whole-BPM average and maximum workout heart rate when Garmin supplies them.
+   Stable provider user and activity identities are one-way digests; names,
+   devices, routes, coordinates, raw heart-rate samples, calories, raw payloads,
+   and token material are not queued or logged.
 5. A Firestore queue create is the durable acknowledgment boundary. The HTTPS
    response closes before the Firestore-triggered processor resolves an owner
    or changes a run.

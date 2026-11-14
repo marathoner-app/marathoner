@@ -251,6 +251,8 @@ Path: `users/{userId}/runs/{runId}`
 | `timeZone` | IANA time-zone string |
 | `distanceMeters` | whole number |
 | `durationSeconds` | whole number |
+| `averageHeartRateBpm` | optional whole number from 20 through 300 |
+| `maximumHeartRateBpm` | optional whole number from 20 through 300 |
 | `perceivedEffort` | optional shared `PerceivedEffort` value |
 | `unusualPain` | optional boolean |
 | `notes` | optional string |
@@ -261,6 +263,14 @@ A run can be logged without a planned workout. When it does reference a
 workout, both the workout ID and its parent plan ID are required because workout
 documents are nested below plans. The repository verifies referenced workouts
 and shoes before saving the run.
+
+Heart-rate summaries are server-owned imported-run facts. Clients may display
+them and preserve them while adding shoes, effort, notes, or a plan association,
+but cannot add or alter them. Raw heart-rate samples are not stored. Deleting a
+run or its owning account deletes the summaries with the completed-run record.
+An account-data export that includes a completed-run record includes these two
+summary fields when present; there is no separate raw heart-rate store to export
+or delete.
 
 ### Completed-run command projection
 

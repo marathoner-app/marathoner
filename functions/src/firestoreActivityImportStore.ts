@@ -235,6 +235,12 @@ function importedRun(
     timeZone: event.timeZone,
     distance: event.distanceMeters,
     duration: createDurationSeconds(resolveActivityDurationSeconds(event)),
+    ...(event.averageHeartRateBpm === undefined
+      ? {}
+      : { averageHeartRateBpm: event.averageHeartRateBpm }),
+    ...(event.maximumHeartRateBpm === undefined
+      ? {}
+      : { maximumHeartRateBpm: event.maximumHeartRateBpm }),
     importProvider: event.provider,
     reportedOrigin: event.reportedOrigin,
     createdAt: createUtcDateTime(committedAt),
@@ -257,6 +263,16 @@ function updatedImportedRun(
     timeZone: event.timeZone,
     distance: event.distanceMeters,
     duration: createDurationSeconds(resolveActivityDurationSeconds(event)),
+    ...(event.averageHeartRateBpm === undefined
+      ? existing.averageHeartRateBpm === undefined
+        ? {}
+        : { averageHeartRateBpm: existing.averageHeartRateBpm }
+      : { averageHeartRateBpm: event.averageHeartRateBpm }),
+    ...(event.maximumHeartRateBpm === undefined
+      ? existing.maximumHeartRateBpm === undefined
+        ? {}
+        : { maximumHeartRateBpm: existing.maximumHeartRateBpm }
+      : { maximumHeartRateBpm: event.maximumHeartRateBpm }),
     importProvider: event.provider,
     reportedOrigin: event.reportedOrigin,
     updatedAt: createUtcDateTime(updatedAt),

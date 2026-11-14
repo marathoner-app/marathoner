@@ -4,6 +4,7 @@ import {
   createCompletedRunId,
   createDistanceMeters,
   createDurationSeconds,
+  createHeartRateBpm,
   createIanaTimeZone,
   createShoeId,
   createUserId,
@@ -57,6 +58,8 @@ const run: CompletedRun = {
   duration: createDurationSeconds(2_400),
   shoeId: createShoeId("shoe-1"),
   perceivedEffort: "about_right",
+  averageHeartRateBpm: createHeartRateBpm(151),
+  maximumHeartRateBpm: createHeartRateBpm(176),
   createdAt: timestamp,
   updatedAt: timestamp,
 };
@@ -89,6 +92,8 @@ it("shows analytics calculated from completed runs", async () => {
   expect(screen.getByText("Daily trainer")).toBeInTheDocument();
   const latestRunSummary = screen.getByRole("region", { name: "Aug 5, 2026" });
   expect(within(latestRunSummary).getByText("About as expected")).toBeInTheDocument();
+  expect(within(latestRunSummary).getByText("151 bpm")).toBeInTheDocument();
+  expect(within(latestRunSummary).getByText("176 bpm")).toBeInTheDocument();
   expect(screen.getByText("Average Pace")).toBeInTheDocument();
   expect(screen.getByText("Total Runs")).toBeInTheDocument();
   expect(screen.getAllByText("1")).toHaveLength(2);

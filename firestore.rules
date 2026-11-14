@@ -346,6 +346,25 @@ service cloud.firestore {
             && data.reportedOrigin in ['apple', 'garmin', 'other', 'unknown']));
     }
 
+    function hasValidRunHeartRate(data) {
+      let hasAverage = data.keys().hasAny(['averageHeartRateBpm']);
+      let hasMaximum = data.keys().hasAny(['maximumHeartRateBpm']);
+      let average = data.get('averageHeartRateBpm', null);
+      let maximum = data.get('maximumHeartRateBpm', null);
+      return (!hasAverage
+          || (average is int
+            && average >= 20
+            && average <= 300))
+        && (!hasMaximum
+          || (maximum is int
+            && maximum >= 20
+            && maximum <= 300))
+        && (!hasAverage || !hasMaximum
+          || maximum >= average)
+        && ((!hasAverage && !hasMaximum)
+          || data.keys().hasAny(['importProvider']));
+    }
+
     function isValidRunWrite(userId) {
       let data = request.resource.data;
       return isValidOwnedWrite(userId)
@@ -369,6 +388,8 @@ service cloud.firestore {
           'timeZone',
           'distanceMeters',
           'durationSeconds',
+          'averageHeartRateBpm',
+          'maximumHeartRateBpm',
           'perceivedEffort',
           'unusualPain',
           'notes',
@@ -388,7 +409,8 @@ service cloud.firestore {
         && data.updatedAt >= data.createdAt
         && hasValidRunAssociations(data)
         && hasValidOptionalRunFeedback(data)
-        && hasValidRunImportProvenance(data);
+        && hasValidRunImportProvenance(data)
+        && hasValidRunHeartRate(data);
     }
 
     function isValidRunCreate(userId) {
@@ -411,6 +433,10 @@ service cloud.firestore {
         && (!prior.keys().hasAny(['importProvider'])
           || (next.importProvider == prior.importProvider
             && next.reportedOrigin == prior.reportedOrigin))
+        && next.get('averageHeartRateBpm', null)
+          == prior.get('averageHeartRateBpm', null)
+        && next.get('maximumHeartRateBpm', null)
+          == prior.get('maximumHeartRateBpm', null)
         && next.createdAt == prior.createdAt
         && next.updatedAt >= prior.updatedAt;
     }
