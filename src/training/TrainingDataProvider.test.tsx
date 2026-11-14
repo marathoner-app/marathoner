@@ -285,6 +285,7 @@ function IntegrationProbe() {
   const workout = training.workouts[0];
   const shoe = training.shoes[0];
   const run = training.runs[0];
+  const olderRun = training.runs[1];
   const analytics = calculateTrainingAnalytics(
     training.runs,
     createDateOnly("2026-08-03"),
@@ -359,6 +360,16 @@ function IntegrationProbe() {
         }
       >
         Delete run
+      </button>
+      <button
+        type="button"
+        disabled={!training.canWrite || !olderRun}
+        onClick={() =>
+          olderRun &&
+          void training.deleteRun(olderRun.id).catch(() => undefined)
+        }
+      >
+        Delete older run
       </button>
       <button
         type="button"
@@ -1141,6 +1152,59 @@ describe("TrainingDataProvider", () => {
     );
     expect(completedRunCommandClient.submitDeletion).toHaveBeenCalledOnce();
     expect(directDelete).not.toHaveBeenCalled();
+  });
+
+  it("never resolves one pending deletion and submits another under one confirmation", async () => {
+    const shoe = await repositories.shoes.create({ name: "Daily Trainer" });
+    const olderRun = await repositories.runs.create({
+      shoeId: shoe.id,
+      startedAt: createUtcDateTime("2026-08-02T14:00:00Z"),
+      timeZone,
+      distance: milesToMeters(4),
+      duration: createDurationSeconds(2_400),
+    });
+    const newerRun = await repositories.runs.create({
+      shoeId: shoe.id,
+      startedAt: createUtcDateTime("2026-08-03T14:00:00Z"),
+      timeZone,
+      distance: milesToMeters(3),
+      duration: createDurationSeconds(1_800),
+    });
+    vi.mocked(completedRunCommandClient.submitDeletion).mockResolvedValue(
+      unknownDeletion("run-delete-test-command"),
+    );
+    vi.mocked(completedRunCommandClient.resolveDeletion)
+      .mockResolvedValueOnce(unknownDeletion("run-delete-test-command"))
+      .mockResolvedValueOnce({
+        status: "run_deleted",
+        commandId: "run-delete-test-command",
+        completedRunId: newerRun.id,
+        deletedAt: timestamp,
+        reopenedPlannedWorkout: null,
+      });
+    const user = userEvent.setup();
+    renderProvider();
+    const source = await waitForSource();
+    await publishRepositories(source);
+
+    await user.click(screen.getByRole("button", { name: "Delete run" }));
+    await waitFor(() =>
+      expect(completedRunCommandClient.resolveDeletion).toHaveBeenCalledTimes(1),
+    );
+    await user.click(
+      screen.getByRole("button", { name: "Delete older run" }),
+    );
+
+    await waitFor(() =>
+      expect(completedRunCommandClient.resolveDeletion).toHaveBeenCalledTimes(2),
+    );
+    expect(completedRunCommandClient.submitDeletion).toHaveBeenCalledOnce();
+    expect(completedRunCommandClient.submitDeletion).toHaveBeenCalledWith(
+      expect.objectContaining({ completedRunId: newerRun.id }),
+    );
+    expect(completedRunCommandClient.submitDeletion).not.toHaveBeenCalledWith(
+      expect.objectContaining({ completedRunId: olderRun.id }),
+    );
   });
 
   it("routes completed-run editing through the trusted command path", async () => {

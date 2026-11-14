@@ -2,8 +2,10 @@ import { deleteApp, initializeApp } from 'firebase-admin/app'
 import { getFirestore, Timestamp } from 'firebase-admin/firestore'
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
+import { createProviderActivityId } from '../../src/domain/activityImport/contract.js'
 import {
   createActivityImportCommand,
+  createRunDeletionCommand,
   type ActivityImportCommandEventV1,
 } from '../../src/domain/materialCommands/contract.js'
 import {
@@ -17,6 +19,7 @@ import {
 } from '../../src/domain/training/units.js'
 import { FirestoreActivityImportStore } from './firestoreActivityImportStore.js'
 import { FirestoreMaterialCommandStore } from './firestoreMaterialCommandStore.js'
+import { FirestoreRunDeletionStore } from './firestoreRunDeletionStore.js'
 
 const projectId = 'demo-marathoner'
 const ownerId = 'activity-import-owner'
@@ -435,6 +438,169 @@ describe('Firestore activity-import persistence', () => {
     await expect(
       database.collection(`users/${ownerId}/runs`).get(),
     ).resolves.toEqual(expect.objectContaining({ size: 1 }))
+  })
+
+  it('recovers a legacy active import whose visible run is missing', async () => {
+    const persistence = store()
+    const first = await persistence.commit({
+      envelope: createActivityImportCommand(
+        'import-orphan-recovery-command-0001',
+        garminEvent(),
+      ),
+      ownerId,
+    })
+    if (first.kind !== 'applied' || first.result.completedRunId === null) {
+      throw new Error('Expected an imported run.')
+    }
+    const runReference = database.doc(
+      `users/${ownerId}/runs/${first.result.completedRunId}`,
+    )
+    await runReference.delete()
+    now = new Date('2026-11-04T18:10:00.000Z')
+
+    const replay = await persistence.commit({
+      envelope: createActivityImportCommand(
+        'import-orphan-recovery-command-0002',
+        garminEvent({
+          observedAt: createUtcDateTime('2026-11-04T18:05:00.000Z'),
+        }),
+      ),
+      ownerId,
+    })
+
+    expect(replay).toEqual({
+      kind: 'applied',
+      result: expect.objectContaining({
+        operation: 'created',
+        completedRunId: first.result.completedRunId,
+      }),
+    })
+    await expect(runReference.get()).resolves.toEqual(
+      expect.objectContaining({ exists: true }),
+    )
+    expect((await runReference.get()).data()).toMatchObject({
+      importProvider: 'garmin_connect',
+      distanceMeters: 10_000,
+      durationSeconds: 3_600,
+    })
+  })
+
+  it('keeps a user-deleted import and its duplicate candidate suppressed across replay', async () => {
+    const persistence = store()
+    const garminCommand = createActivityImportCommand(
+      'import-user-delete-command-0001',
+      garminEvent(),
+    )
+    const first = await persistence.commit({
+      envelope: garminCommand,
+      ownerId,
+    })
+    if (
+      first.kind !== 'applied' ||
+      first.result.completedRunId === null ||
+      first.result.completedRunUpdatedAt === null
+    ) {
+      throw new Error('Expected an imported run.')
+    }
+    const appleEvent: ActivityImportCommandEventV1 = {
+      ...garminEvent(),
+      provider: 'apple_health',
+      providerActivityId: createProviderActivityId(
+        'health-user-delete-activity-001',
+      ),
+      providerUpdatedAt: null,
+    }
+    const appleCommand = createActivityImportCommand(
+      'import-user-delete-command-0002',
+      appleEvent,
+    )
+    await expect(
+      persistence.commit({ envelope: appleCommand, ownerId }),
+    ).resolves.toEqual({
+      kind: 'review-required',
+      result: expect.objectContaining({
+        candidateCompletedRunId: first.result.completedRunId,
+      }),
+    })
+
+    now = new Date('2026-11-04T18:05:00.000Z')
+    const deletion = await new FirestoreRunDeletionStore(database, {
+      now: () => now,
+    }).commit({
+      envelope: createRunDeletionCommand(
+        'delete-imported-run-command-0001',
+        {
+          completedRunId: first.result.completedRunId,
+          expectedCompletedRunUpdatedAt:
+            first.result.completedRunUpdatedAt,
+          plannedWorkout: null,
+        },
+      ),
+      ownerId,
+    })
+
+    expect(deletion).toEqual({
+      kind: 'deleted',
+      result: expect.objectContaining({
+        completedRunId: first.result.completedRunId,
+      }),
+    })
+    await expect(
+      database
+        .doc(`users/${ownerId}/runs/${first.result.completedRunId}`)
+        .get(),
+    ).resolves.toEqual(expect.objectContaining({ exists: false }))
+    const importsAfterDeletion = await database
+      .collection(`users/${ownerId}/activityImports`)
+      .get()
+    expect(importsAfterDeletion.docs).toHaveLength(2)
+    for (const document of importsAfterDeletion.docs) {
+      expect(document.data()).toMatchObject({
+        state: 'user_deleted',
+        completedRunId: null,
+        candidateCompletedRunId: null,
+        candidateKind: null,
+      })
+    }
+
+    now = new Date('2026-11-04T18:10:00.000Z')
+    const garminReplay = await persistence.commit({
+      envelope: createActivityImportCommand(
+        'import-user-delete-command-0003',
+        garminEvent({
+          observedAt: createUtcDateTime('2026-11-04T18:06:00.000Z'),
+        }),
+      ),
+      ownerId,
+    })
+    const appleReplay = await persistence.commit({
+      envelope: createActivityImportCommand(
+        'import-user-delete-command-0004',
+        {
+          ...appleEvent,
+          observedAt: createUtcDateTime('2026-11-04T18:07:00.000Z'),
+        },
+      ),
+      ownerId,
+    })
+
+    expect(garminReplay).toEqual({
+      kind: 'applied',
+      result: expect.objectContaining({
+        operation: 'deleted',
+        completedRunId: null,
+      }),
+    })
+    expect(appleReplay).toEqual({
+      kind: 'applied',
+      result: expect.objectContaining({
+        operation: 'deleted',
+        completedRunId: null,
+      }),
+    })
+    await expect(
+      database.collection(`users/${ownerId}/runs`).get(),
+    ).resolves.toEqual(expect.objectContaining({ empty: true }))
   })
 
   it('deletes the exact imported run and keeps a tombstone that rejects an older resurrection', async () => {

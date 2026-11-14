@@ -66,7 +66,11 @@ import {
 
 const ACTIVITY_IMPORT_RECORD_SCHEMA_VERSION = 1 as const
 
-type ActivityImportRecordState = 'active' | 'deleted' | 'review_required'
+type ActivityImportRecordState =
+  | 'active'
+  | 'deleted'
+  | 'review_required'
+  | 'user_deleted'
 
 interface ActivityImportRecordV1 {
   readonly schemaVersion: typeof ACTIVITY_IMPORT_RECORD_SCHEMA_VERSION
@@ -106,7 +110,9 @@ function importRecordFromDocument(
     !parsedEvent.ok ||
     typeof data.userId !== 'string' ||
     materialCommandIdFrom({ commandId: data.canonicalCommandId }) === null ||
-    !['active', 'deleted', 'review_required'].includes(String(data.state)) ||
+    !['active', 'deleted', 'review_required', 'user_deleted'].includes(
+      String(data.state),
+    ) ||
     (data.completedRunId !== null &&
       !isCompletedRunIdValue(data.completedRunId)) ||
     (data.candidateCompletedRunId !== null &&
@@ -153,6 +159,14 @@ function importRecordFromDocument(
         data.candidateKind === 'ambiguous_candidate') &&
       typeof data.crossProviderFingerprint === 'string' &&
       data.startedAtEpochMilliseconds ===
+        Date.parse(parsedEvent.value.startedAt)) ||
+    (data.state === 'user_deleted' &&
+      parsedEvent.value.operation === 'upsert' &&
+      data.completedRunId === null &&
+      data.candidateCompletedRunId === null &&
+      data.candidateKind === null &&
+      typeof data.crossProviderFingerprint === 'string' &&
+      data.startedAtEpochMilliseconds ===
         Date.parse(parsedEvent.value.startedAt))
   if (!stateIsConsistent) {
     throw new Error('A stored activity-import state is inconsistent.')
@@ -182,6 +196,33 @@ function importRecordFromDocument(
 
 function importRecordDocument(record: ActivityImportRecordV1): DocumentData {
   return record
+}
+
+export function userDeletedActivityImportDocument(
+  data: DocumentData | undefined,
+  completedRunId: CompletedRunId,
+  deletedAt: string,
+): DocumentData | null {
+  const record = importRecordFromDocument(data)
+  if (
+    record === null ||
+    (record.completedRunId !== completedRunId &&
+      record.candidateCompletedRunId !== completedRunId)
+  ) {
+    return null
+  }
+  if (record.event.operation !== 'upsert') {
+    throw new Error('Only an imported completed run can be user-deleted.')
+  }
+
+  return importRecordDocument({
+    ...record,
+    state: 'user_deleted',
+    completedRunId: null,
+    candidateCompletedRunId: null,
+    candidateKind: null,
+    updatedAt: createUtcDateTime(deletedAt),
+  })
 }
 
 function storedImportResult(data: unknown) {
@@ -462,6 +503,37 @@ export class FirestoreActivityImportStore implements ActivityImportStore {
         writeReceipt(result)
         return { kind: 'stale' as const, result }
       }
+      if (resolution.kind === 'unrelated') {
+        throw new Error('A provider event resolved against an unrelated identity.')
+      }
+      if (existing?.state === 'user_deleted' && event.operation === 'upsert') {
+        const shouldRefreshEvent =
+          resolution.kind === 'updated' ||
+          (resolution.kind === 'duplicate' &&
+            incomingEventIsNewer(existing.event, event))
+        if (shouldRefreshEvent) {
+          transaction.set(
+            importReference,
+            importRecordDocument({
+              ...existing,
+              event,
+              crossProviderFingerprint:
+                createCrossProviderDuplicateFingerprint(event),
+              startedAtEpochMilliseconds: Date.parse(event.startedAt),
+              updatedAt: createUtcDateTime(processedAt),
+            }),
+          )
+        }
+        const result = appliedResult({
+          commandId: options.envelope.commandId,
+          canonicalCommandId,
+          completedRun: null,
+          operation: 'deleted',
+          processedAt,
+        })
+        writeReceipt(result)
+        return { kind: 'applied' as const, result }
+      }
       if (resolution.kind === 'ambiguous') {
         const result = reviewResult({
           commandId: options.envelope.commandId,
@@ -473,11 +545,9 @@ export class FirestoreActivityImportStore implements ActivityImportStore {
         writeReceipt(result)
         return { kind: 'review-required' as const, result }
       }
-      if (resolution.kind === 'unrelated') {
-        throw new Error('A provider event resolved against an unrelated identity.')
-      }
 
       let existingRun: CompletedRun | null = null
+      let activeRunIsMissing = false
       if (existing?.completedRunId !== null && existing?.completedRunId !== undefined) {
         const runSnapshot = await transaction.get(
           this.database.doc(runDocumentPath(ownerId, existing.completedRunId)),
@@ -486,9 +556,61 @@ export class FirestoreActivityImportStore implements ActivityImportStore {
           runSnapshot.id,
           runSnapshot.data(),
         )
-        if (existingRun === null || existingRun.userId !== ownerId) {
+        if (existingRun === null && existing.state === 'active') {
+          activeRunIsMissing = true
+        } else if (existingRun === null || existingRun.userId !== ownerId) {
           throw new Error('The imported completed run is unavailable.')
         }
+      }
+
+      if (
+        activeRunIsMissing &&
+        existing?.completedRunId !== null &&
+        existing?.completedRunId !== undefined &&
+        event.operation === 'upsert'
+      ) {
+        if (Date.parse(event.startedAt) > Date.parse(processedAt)) {
+          return {
+            kind: 'rejected' as const,
+            result: validationResult(
+              options.envelope.commandId,
+              'An imported completed run cannot start in the future.',
+            ),
+          }
+        }
+        const recoveredRun = importedRun(
+          event,
+          existing.completedRunId,
+          processedAt,
+        )
+        transaction.create(
+          this.database.doc(runDocumentPath(ownerId, recoveredRun.id)),
+          completedRunAdminDocument(recoveredRun),
+        )
+        transaction.set(
+          importReference,
+          importRecordDocument({
+            ...existing,
+            state: 'active',
+            event,
+            completedRunId: recoveredRun.id,
+            candidateCompletedRunId: null,
+            candidateKind: null,
+            crossProviderFingerprint:
+              createCrossProviderDuplicateFingerprint(event),
+            startedAtEpochMilliseconds: Date.parse(event.startedAt),
+            updatedAt: createUtcDateTime(processedAt),
+          }),
+        )
+        const result = appliedResult({
+          commandId: options.envelope.commandId,
+          canonicalCommandId,
+          completedRun: recoveredRun,
+          operation: 'created',
+          processedAt,
+        })
+        writeReceipt(result)
+        return { kind: 'applied' as const, result }
       }
 
       if (resolution.kind === 'duplicate') {

@@ -9,6 +9,7 @@ import {
 import {
   createUtcDateTime,
   createUserId,
+  getRunLocalDate,
   type CompletedRun,
   type CompletedRunId,
   type DateOnly,
@@ -125,6 +126,7 @@ type PendingRunCompletion = {
 };
 
 type PendingRunDeletion = {
+  readonly prior: CompletedRun;
   readonly submission: RunDeletionSubmission;
 };
 
@@ -770,6 +772,9 @@ export default function TrainingDataProvider({
         if (resolved.status === "run_deleted") {
           pendingRunDeletionRef.current = null;
           if (pending.submission.completedRunId === id) return;
+          throw new Error(
+            `Marathoner finished deleting the previously confirmed run from ${getRunLocalDate(pending.prior)}. Review your updated run history, then confirm any other deletion separately.`,
+          );
         } else {
           if (resolved.status !== "outcome_unknown") {
             pendingRunDeletionRef.current = null;
@@ -796,7 +801,7 @@ export default function TrainingDataProvider({
           "delete",
         ),
       };
-      pendingRunDeletionRef.current = { submission };
+      pendingRunDeletionRef.current = { prior: run, submission };
 
       let result = await commandClient.submitDeletion(submission);
       if (result.status === "outcome_unknown") {
