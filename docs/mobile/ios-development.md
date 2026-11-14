@@ -12,13 +12,13 @@ and validate the corresponding public native Firebase configuration. Beta and
 Release initialize App Attest before JavaScript Firebase services; the
 development Debug workflow uses a private fixed debug token. Paid-team Debug
 and Release signing, the production App Attest entitlement, physical-device
-installation, and launch passed on November 12, 2026. App Store Connect has
-processed version 1.0 build 2, and its export-compliance answer is recorded;
-the build is ready to submit to TestFlight review. Live App Attest token
-acceptance and enforcement remain open, as do migrated material mobile
-workflows, TestFlight review, tester installation, and Android. The
-local command foundation is proved in #158; workflow migration, live reads,
-and release work remain in #72, #115, #138, #159, #161, #122, and #90.
+installation, and launch passed on November 12, 2026. The historical first
+App Store Connect upload was version 1.0 build 2. Internal TestFlight build 9
+has since been processed, assigned to the internal group, installed, and used
+by the owner and operating partner. Valid beta App Check traffic is observable
+while enforcement remains off. External TestFlight App Review, the locked
+build-10 proof matrix, staged App Check enforcement, accessibility, and Android
+remain open under #122, #140, #161, #624, #691, and #772.
 
 ## Prerequisites
 
@@ -335,8 +335,10 @@ Release builds signed successfully; the signed Release app contained the
 production App Attest and required HealthKit entitlements, then installed on
 and launched from the physical test iPhone. See the
 [dated evidence record](evidence/2026-11-12-paid-team-signing-and-release-proof.md).
-Live App Attest token acceptance, the signed-in beta journey, Apple processing,
-and TestFlight remain open under #122 and #205.
+The signed-in internal TestFlight journey and valid beta App Check traffic have
+since been observed. The complete token-refresh/cold-start observation,
+rollback rehearsal, staged enforcement, accessibility matrix, and external
+TestFlight App Review remain open under #122, #140, #205, and #206.
 
 The first App Store Connect archive and upload followed on November 12, 2026.
 Version 1.0 build 2 uploaded successfully and entered Apple processing after a
@@ -345,9 +347,10 @@ iOS boundary policy. Apple later completed processing; after the export-
 compliance answer was recorded, the build advanced to **Ready to Submit**.
 See the
 [dated archive and upload evidence](evidence/2026-11-12-app-store-connect-archive-upload.md).
-TestFlight review, tester access, and the non-owner journey remain open; a
-processed upload that is ready to submit is not a TestFlight distribution
-pass.
+That record remains the historical first-upload proof. Later internal builds
+advanced through build 9 and have been exercised by the owner and operating
+partner. External TestFlight App Review and the locked build-10 release matrix
+remain open; internal availability is not external invitation approval.
 
 After `npm run check:ios` and local signing configuration:
 

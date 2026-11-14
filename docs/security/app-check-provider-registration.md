@@ -1,8 +1,8 @@
 # App Check provider registration
 
-- **Status:** Development and beta web/iOS providers registered; #204 client
-  initialization closed and owner-only development proof passed; paid-team beta
-  App Attest proof, observation, and enforcement remain open
+- **Status:** Development and beta web/iOS providers registered; valid beta
+  traffic observed; the complete #205 observation/rollback record and #206
+  enforcement remain open
 - **Registration date:** 2026-10-06
 - **Tracking issue:**
   [#203](https://github.com/marathoner-app/marathoner/issues/203)
@@ -108,11 +108,12 @@ The rollout remains deliberately staged:
    and must prove rejected-client behavior for Authentication, Firestore, and
    Functions.
 
-Do not treat the four registered rows or the #204 client implementation as
-paid-team beta token evidence. The
+Do not treat the four registered rows, the #204 client implementation, or a
+partial valid-traffic snapshot as completion of #205. The
 [client initialization record](app-check-client-initialization.md) documents
-the completed development proof and the remaining Apple provisioning and beta
-rollout work. No backend rejects missing tokens while enforcement is off.
+the completed development proof and beta rollout boundary. Product-level
+Authentication and Firestore enforcement remains off; reviewed callable
+handlers still require their in-code App Check context where documented.
 
 ## Console verification evidence
 
@@ -122,6 +123,20 @@ Registered**. The development API table showed Authentication and Firestore as
 **Unenforced**. The beta API table showed Authentication as **Unenforced**,
 Firestore as not yet receiving eligible App Check traffic, and no Functions
 enforcement control. No enforcement action or debug-token creation was taken.
+
+### November 14 beta observation checkpoint
+
+The beta console's November 8-15 view reported all observed Firestore traffic
+as verified (approximately 2,000 of 2,000 requests) and all observed
+Authentication traffic as verified (63 of 63 requests), with zero
+outdated-client, unknown-origin, or invalid requests in those views. A bounded
+Functions log review also showed a valid authentication and App Check context
+on a current import-resolution path without exposing identifiers or payloads.
+
+This is strong partial observation evidence only. It does not prove the full
+representative window, cold start, token refresh, deletion request, invalid or
+revoked client, rollback, or staged-enforcement cases required by #205 and
+#206. Enforcement was not changed during this checkpoint.
 
 GitHub secret scanning opened alerts #3 and #4 for the public Firebase Apple
 API keys at the two new plist locations. Each alert had exactly one expected
