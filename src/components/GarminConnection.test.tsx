@@ -36,7 +36,9 @@ describe('GarminConnection', () => {
 
     expect(await screen.findByRole('button', { name: 'Connect Garmin' })).toBeEnabled()
     expect(screen.getByText(/completed running activities automatically/i)).toBeInTheDocument()
-    expect(screen.getByText(/does not import routes or all-day health data/i)).toBeInTheDocument()
+    expect(
+      screen.getByText(/does not import routes, raw heart-rate streams, or all-day health data/i),
+    ).toBeInTheDocument()
     expect(screen.queryByText(/webhook|provider id|token/i)).not.toBeInTheDocument()
   })
 

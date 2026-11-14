@@ -8,6 +8,7 @@ import {
   createDateOnly,
   createDistanceMeters,
   createDurationSeconds,
+  createHeartRateBpm,
   createIanaTimeZone,
   createPlannedWorkoutId,
   createShoeId,
@@ -843,6 +844,8 @@ describe("ShoeTracker", () => {
       duration: createDurationSeconds(1_800),
       importProvider: "apple_health",
       reportedOrigin: "garmin",
+      averageHeartRateBpm: createHeartRateBpm(151),
+      maximumHeartRateBpm: createHeartRateBpm(176),
       createdAt: timestamp,
       updatedAt: timestamp,
     };
@@ -858,6 +861,9 @@ describe("ShoeTracker", () => {
     );
 
     expect(screen.getByText("Imported from Garmin via Apple Health")).toBeVisible();
+    expect(
+      screen.getByText("151 bpm average, 176 bpm max"),
+    ).toBeVisible();
     expect(screen.queryByText(/provider/i)).not.toBeInTheDocument();
     await user.click(
       screen.getByRole("button", {

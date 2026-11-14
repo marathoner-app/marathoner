@@ -236,6 +236,12 @@ function updatedRun(
     ...(prior.reportedOrigin === undefined
       ? {}
       : { reportedOrigin: prior.reportedOrigin }),
+    ...(prior.averageHeartRateBpm === undefined
+      ? {}
+      : { averageHeartRateBpm: prior.averageHeartRateBpm }),
+    ...(prior.maximumHeartRateBpm === undefined
+      ? {}
+      : { maximumHeartRateBpm: prior.maximumHeartRateBpm }),
     createdAt: prior.createdAt,
     updatedAt,
   };

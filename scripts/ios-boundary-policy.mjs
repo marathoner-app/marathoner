@@ -341,8 +341,9 @@ export function findIosProjectViolations({
   }
   for (const healthKitBridgeValue of [
     'import HealthKit',
-    'requestAuthorization(toShare: [], read: [workoutType])',
+    'read: [workoutType, heartRateType]',
     'HKAnchoredObjectQuery(',
+    'HKStatisticsQuery(',
     'HKObserverQuery(',
     'enableBackgroundDelivery(',
     'workout.workoutActivityType == .running',

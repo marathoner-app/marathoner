@@ -35,6 +35,7 @@ import type {
 import {
   createDistanceMeters,
   createDurationSeconds,
+  createHeartRateBpm,
 } from '../../src/domain/training/units.js'
 import { validateTrainingPlan } from '../../src/domain/training/validation.js'
 import { TRAINING_SCHEMA_VERSION } from '../../src/persistence/trainingSchema.js'
@@ -263,6 +264,8 @@ export function completedRunFromAdminDocument(
   const notes = readOptionalString(data, 'notes')
   const importProvider = readOptionalString(data, 'importProvider')
   const reportedOrigin = readOptionalString(data, 'reportedOrigin')
+  const averageHeartRateBpm = readOptionalNumber(data, 'averageHeartRateBpm')
+  const maximumHeartRateBpm = readOptionalNumber(data, 'maximumHeartRateBpm')
   return {
     id: createCompletedRunId(id),
     userId: createUserId(readString(data, 'userId')),
@@ -279,6 +282,12 @@ export function completedRunFromAdminDocument(
     timeZone: createIanaTimeZone(readString(data, 'timeZone')),
     distance: createDistanceMeters(readNumber(data, 'distanceMeters')),
     duration: createDurationSeconds(readNumber(data, 'durationSeconds')),
+    ...(averageHeartRateBpm === undefined
+      ? {}
+      : { averageHeartRateBpm: createHeartRateBpm(averageHeartRateBpm) }),
+    ...(maximumHeartRateBpm === undefined
+      ? {}
+      : { maximumHeartRateBpm: createHeartRateBpm(maximumHeartRateBpm) }),
     ...(perceivedEffort === undefined
       ? {}
       : {
@@ -352,6 +361,12 @@ export function completedRunAdminDocument(run: CompletedRun): DocumentData {
     timeZone: run.timeZone,
     distanceMeters: run.distance,
     durationSeconds: run.duration,
+    ...(run.averageHeartRateBpm === undefined
+      ? {}
+      : { averageHeartRateBpm: run.averageHeartRateBpm }),
+    ...(run.maximumHeartRateBpm === undefined
+      ? {}
+      : { maximumHeartRateBpm: run.maximumHeartRateBpm }),
     ...(run.perceivedEffort === undefined
       ? {}
       : { perceivedEffort: run.perceivedEffort }),

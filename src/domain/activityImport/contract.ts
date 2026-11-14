@@ -14,8 +14,11 @@ import {
 import {
   createDistanceMeters,
   createDurationSeconds,
+  createHeartRateBpm,
+  isHeartRateBpm,
   type DistanceMeters,
   type DurationSeconds,
+  type HeartRateBpm,
 } from "../training/units.js";
 
 export const COMPLETED_ACTIVITY_IMPORT_SCHEMA_VERSION =
@@ -84,6 +87,9 @@ export interface CompletedActivityUpsertV1
   readonly durationSeconds: DurationSeconds | null;
   readonly timeZone: IanaTimeZone;
   readonly distanceMeters: DistanceMeters;
+  /** Workout-scoped summaries only; raw heart-rate samples stay provider-side. */
+  readonly averageHeartRateBpm?: HeartRateBpm;
+  readonly maximumHeartRateBpm?: HeartRateBpm;
   /**
    * A provider adapter may report the producing ecosystem when it knows it.
    * For example, a Garmin workout read through Apple Health reports "garmin".
@@ -179,6 +185,8 @@ const UPSERT_KEYS = [
   "durationSeconds",
   "timeZone",
   "distanceMeters",
+  "averageHeartRateBpm",
+  "maximumHeartRateBpm",
   "reportedOrigin",
 ] as const;
 
@@ -414,6 +422,32 @@ function validateUpsertFields(
     );
   }
 
+  for (const field of ["averageHeartRateBpm", "maximumHeartRateBpm"] as const) {
+    if (value[field] !== undefined && !isHeartRateBpm(value[field])) {
+      issues.push(
+        issue(
+          "invalid_value",
+          field,
+          "Heart rate must be omitted or a whole number from 20 through 300 bpm.",
+        ),
+      );
+    }
+  }
+
+  if (
+    isHeartRateBpm(value.averageHeartRateBpm) &&
+    isHeartRateBpm(value.maximumHeartRateBpm) &&
+    value.maximumHeartRateBpm < value.averageHeartRateBpm
+  ) {
+    issues.push(
+      issue(
+        "inconsistent",
+        "maximumHeartRateBpm",
+        "Maximum heart rate cannot be lower than average heart rate.",
+      ),
+    );
+  }
+
   if (!includesValue(REPORTED_ACTIVITY_ORIGINS, value.reportedOrigin)) {
     issues.push(
       issue(
@@ -531,6 +565,20 @@ export function parseCompletedActivityImportEvent(
           : createDurationSeconds(Number(value.durationSeconds)),
       timeZone: createIanaTimeZone(String(value.timeZone)),
       distanceMeters: createDistanceMeters(Number(value.distanceMeters)),
+      ...(value.averageHeartRateBpm === undefined
+        ? {}
+        : {
+            averageHeartRateBpm: createHeartRateBpm(
+              Number(value.averageHeartRateBpm),
+            ),
+          }),
+      ...(value.maximumHeartRateBpm === undefined
+        ? {}
+        : {
+            maximumHeartRateBpm: createHeartRateBpm(
+              Number(value.maximumHeartRateBpm),
+            ),
+          }),
       reportedOrigin: value.reportedOrigin as ReportedActivityOrigin,
     },
   };
@@ -574,6 +622,8 @@ function eventsAreEquivalent(
     left.durationSeconds === right.durationSeconds &&
     left.timeZone === right.timeZone &&
     left.distanceMeters === right.distanceMeters &&
+    left.averageHeartRateBpm === right.averageHeartRateBpm &&
+    left.maximumHeartRateBpm === right.maximumHeartRateBpm &&
     left.reportedOrigin === right.reportedOrigin
   );
 }

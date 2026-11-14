@@ -26,6 +26,8 @@ function workout(overrides: Record<string, unknown> = {}) {
     timeZone: 'America/Los_Angeles',
     sourceName: 'Garmin Connect',
     sourceBundleIdentifier: 'com.garmin.connect.mobile',
+    averageHeartRateBpm: 151,
+    maximumHeartRateBpm: 176,
     observedAt,
     ...overrides,
   }
@@ -96,6 +98,8 @@ describe('HealthKit workout normalization', () => {
         providerActivityId: 'healthkit-workout-1001',
         distanceMeters: 8000,
         durationSeconds: 2700,
+        averageHeartRateBpm: 151,
+        maximumHeartRateBpm: 176,
         reportedOrigin: 'garmin',
       }),
     )
@@ -104,6 +108,14 @@ describe('HealthKit workout normalization', () => {
   it('rejects partial workouts that cannot become trustworthy completed runs', () => {
     expect(normalizeHealthKitWorkout(workout({ distanceMeters: 0 }))).toBeNull()
     expect(normalizeHealthKitWorkout(workout({ durationSeconds: null }))).toBeNull()
+    expect(
+      normalizeHealthKitWorkout(workout({ averageHeartRateBpm: 301 })),
+    ).toBeNull()
+    expect(
+      normalizeHealthKitWorkout(
+        workout({ averageHeartRateBpm: 180, maximumHeartRateBpm: 170 }),
+      ),
+    ).toBeNull()
     expect(
       normalizeHealthKitWorkout(
         workout({ endedAt: '2026-11-04T14:00:00.000Z' }),

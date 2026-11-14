@@ -272,8 +272,9 @@ export default function GarminConnection({
         <>
           <p>
             Connect Garmin to add completed running activities automatically.
-            Marathoner receives workout time, duration, and distance. It does
-            not import routes or all-day health data.
+            Marathoner receives workout time, duration, distance, and available
+            workout heart-rate summaries. It does not import routes, raw
+            heart-rate streams, or all-day health data.
           </p>
           <button
             type="button"

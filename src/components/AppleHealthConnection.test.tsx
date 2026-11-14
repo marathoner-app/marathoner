@@ -95,6 +95,25 @@ describe('AppleHealthConnection', () => {
     expect(mockedDisconnect).toHaveBeenCalledWith(accountScope)
   })
 
+  it('offers the heart-rate permission upgrade for an existing connection', async () => {
+    const user = userEvent.setup()
+    mockedGetState.mockResolvedValue({
+      availability: 'enabled',
+      monitoring: true,
+      authorizationRequestStatus: 'should_request',
+    })
+    render(<AppleHealthConnection accountScope={accountScope} />)
+
+    await user.click(
+      await screen.findByRole('button', { name: 'Allow workout heart rate' }),
+    )
+
+    expect(mockedConnect).toHaveBeenCalledWith(accountScope)
+    expect(
+      screen.getByText(/without creating duplicate runs/i),
+    ).toBeInTheDocument()
+  })
+
   it('explains when a possible duplicate was safely held back', async () => {
     const user = userEvent.setup()
     mockedGetState.mockResolvedValue({

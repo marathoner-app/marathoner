@@ -21,6 +21,8 @@ import {
 import {
   createDistanceMeters,
   createDurationSeconds,
+  createHeartRateBpm,
+  isHeartRateBpm,
 } from '../domain/training/units'
 import { materialCommandClient } from './firebaseMaterialCommandClient'
 
@@ -43,6 +45,8 @@ export interface NativeHealthKitWorkout {
   endedAt: string
   durationSeconds: number
   distanceMeters: number
+  averageHeartRateBpm?: number
+  maximumHeartRateBpm?: number
   timeZone: string
   sourceName: string
   sourceBundleIdentifier: string
@@ -166,6 +170,10 @@ function isNativeHealthKitWorkout(value: unknown): value is NativeHealthKitWorko
     typeof value.endedAt === 'string' &&
     typeof value.durationSeconds === 'number' &&
     typeof value.distanceMeters === 'number' &&
+    (value.averageHeartRateBpm === undefined ||
+      typeof value.averageHeartRateBpm === 'number') &&
+    (value.maximumHeartRateBpm === undefined ||
+      typeof value.maximumHeartRateBpm === 'number') &&
     typeof value.timeZone === 'string' &&
     typeof value.sourceName === 'string' &&
     typeof value.sourceBundleIdentifier === 'string' &&
@@ -204,6 +212,17 @@ export function normalizeHealthKitWorkout(
   ) {
     return null
   }
+  if (
+    (value.averageHeartRateBpm !== undefined &&
+      !isHeartRateBpm(value.averageHeartRateBpm)) ||
+    (value.maximumHeartRateBpm !== undefined &&
+      !isHeartRateBpm(value.maximumHeartRateBpm)) ||
+    (value.averageHeartRateBpm !== undefined &&
+      value.maximumHeartRateBpm !== undefined &&
+      value.maximumHeartRateBpm < value.averageHeartRateBpm)
+  ) {
+    return null
+  }
 
   try {
     const startedAt = createUtcDateTime(value.startedAt)
@@ -223,6 +242,20 @@ export function normalizeHealthKitWorkout(
       durationSeconds: createDurationSeconds(value.durationSeconds),
       timeZone: normalizedTimeZone(value.timeZone),
       distanceMeters: createDistanceMeters(value.distanceMeters),
+      ...(value.averageHeartRateBpm === undefined
+        ? {}
+        : {
+            averageHeartRateBpm: createHeartRateBpm(
+              value.averageHeartRateBpm,
+            ),
+          }),
+      ...(value.maximumHeartRateBpm === undefined
+        ? {}
+        : {
+            maximumHeartRateBpm: createHeartRateBpm(
+              value.maximumHeartRateBpm,
+            ),
+          }),
       reportedOrigin: reportedOriginFor(value),
     }
   } catch {

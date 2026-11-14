@@ -992,6 +992,22 @@ export default function ShoeTracker({
                           {formatDuration(run.duration)} wearing {shoe?.name ?? "No shoe"}. Effort:{" "}
                           {formatPerceivedEffort(run.perceivedEffort)}
                         </span>
+                        {(run.averageHeartRateBpm !== undefined ||
+                          run.maximumHeartRateBpm !== undefined) && (
+                          <p className="run-heart-rate">
+                            <strong>Heart rate:</strong>{" "}
+                            {[
+                              run.averageHeartRateBpm === undefined
+                                ? null
+                                : `${run.averageHeartRateBpm} bpm average`,
+                              run.maximumHeartRateBpm === undefined
+                                ? null
+                                : `${run.maximumHeartRateBpm} bpm max`,
+                            ]
+                              .filter((value) => value !== null)
+                              .join(", ")}
+                          </p>
+                        )}
                         {run.notes !== undefined && (
                           <p className="run-notes"><strong>Notes:</strong> {run.notes}</p>
                         )}

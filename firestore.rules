@@ -346,6 +346,23 @@ service cloud.firestore {
             && data.reportedOrigin in ['apple', 'garmin', 'other', 'unknown']));
     }
 
+    function hasValidRunHeartRate(data) {
+      let hasAverage = data.keys().hasAny(['averageHeartRateBpm']);
+      let hasMaximum = data.keys().hasAny(['maximumHeartRateBpm']);
+      return (!hasAverage
+          || (data.averageHeartRateBpm is int
+            && data.averageHeartRateBpm >= 20
+            && data.averageHeartRateBpm <= 300))
+        && (!hasMaximum
+          || (data.maximumHeartRateBpm is int
+            && data.maximumHeartRateBpm >= 20
+            && data.maximumHeartRateBpm <= 300))
+        && (!hasAverage || !hasMaximum
+          || data.maximumHeartRateBpm >= data.averageHeartRateBpm)
+        && ((!hasAverage && !hasMaximum)
+          || data.keys().hasAny(['importProvider']));
+    }
+
     function isValidRunWrite(userId) {
       let data = request.resource.data;
       return isValidOwnedWrite(userId)
@@ -356,6 +373,8 @@ service cloud.firestore {
           'timeZone',
           'distanceMeters',
           'durationSeconds',
+          'averageHeartRateBpm',
+          'maximumHeartRateBpm',
           'createdAt',
           'updatedAt'
         ])
@@ -388,7 +407,8 @@ service cloud.firestore {
         && data.updatedAt >= data.createdAt
         && hasValidRunAssociations(data)
         && hasValidOptionalRunFeedback(data)
-        && hasValidRunImportProvenance(data);
+        && hasValidRunImportProvenance(data)
+        && hasValidRunHeartRate(data);
     }
 
     function isValidRunCreate(userId) {
@@ -411,6 +431,14 @@ service cloud.firestore {
         && (!prior.keys().hasAny(['importProvider'])
           || (next.importProvider == prior.importProvider
             && next.reportedOrigin == prior.reportedOrigin))
+        && next.keys().hasAny(['averageHeartRateBpm'])
+          == prior.keys().hasAny(['averageHeartRateBpm'])
+        && (!prior.keys().hasAny(['averageHeartRateBpm'])
+          || next.averageHeartRateBpm == prior.averageHeartRateBpm)
+        && next.keys().hasAny(['maximumHeartRateBpm'])
+          == prior.keys().hasAny(['maximumHeartRateBpm'])
+        && (!prior.keys().hasAny(['maximumHeartRateBpm'])
+          || next.maximumHeartRateBpm == prior.maximumHeartRateBpm)
         && next.createdAt == prior.createdAt
         && next.updatedAt >= prior.updatedAt;
     }

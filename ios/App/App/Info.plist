@@ -27,7 +27,7 @@
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>NSHealthShareUsageDescription</key>
-	<string>Marathoner reads completed running workouts so your distance and time can appear automatically in your training history.</string>
+	<string>Marathoner reads completed running workouts and workout heart-rate summaries so your distance, time, and effort data can appear automatically in your training history.</string>
 	<key>NSHealthUpdateUsageDescription</key>
 	<string>Marathoner does not write Health data. It only reads completed running workouts you choose to share.</string>
 	<key>UIApplicationSceneManifest</key>

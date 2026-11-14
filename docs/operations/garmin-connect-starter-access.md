@@ -140,9 +140,10 @@ The provider-neutral contract in
 [automatic completed-run import](../architecture/automatic-run-import.md)
 limits the stored Garmin facts to the activity source and opaque provider
 identity, supported running type, start time and time zone, duration, distance,
-import timestamps, and the minimum metadata required for idempotency and
-support. Marathoner-owned perceived effort, notes, shoe selection, and planned-
-workout association remain separate.
+optional average and maximum workout heart rate, import timestamps, and the
+minimum metadata required for idempotency and support. Raw heart-rate samples
+are excluded. Marathoner-owned perceived effort, notes, shoe selection, and
+planned-workout association remain separate.
 
 - OAuth authorization must explain that Marathoner will receive completed
   Garmin running activities and why.

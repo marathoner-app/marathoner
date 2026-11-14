@@ -81,6 +81,50 @@ describe("completed activity import contract", () => {
     }
   });
 
+  it("accepts bounded workout heart-rate summaries and rejects malformed values", () => {
+    const result = parseCompletedActivityImportEvent({
+      ...plainAppleHealthActivity(),
+      averageHeartRateBpm: 151,
+      maximumHeartRateBpm: 176,
+    });
+
+    expect(result).toMatchObject({
+      ok: true,
+      value: {
+        averageHeartRateBpm: 151,
+        maximumHeartRateBpm: 176,
+      },
+    });
+    expect(
+      validateCompletedActivityImportEvent({
+        ...plainAppleHealthActivity(),
+        averageHeartRateBpm: 301,
+        maximumHeartRateBpm: 140,
+      }),
+    ).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          code: "invalid_value",
+          field: "averageHeartRateBpm",
+        }),
+      ]),
+    );
+    expect(
+      validateCompletedActivityImportEvent({
+        ...plainAppleHealthActivity(),
+        averageHeartRateBpm: 170,
+        maximumHeartRateBpm: 160,
+      }),
+    ).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          code: "inconsistent",
+          field: "maximumHeartRateBpm",
+        }),
+      ]),
+    );
+  });
+
   it("keeps provider IDs opaque and scopes their identity to the owner", () => {
     const providerActivityId = createProviderActivityId(
       "opaque/value:with/provider-specific-format",
