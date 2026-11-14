@@ -138,7 +138,13 @@ function safeApiError(payload) {
   return typeof message === 'string' ? message : 'request failed'
 }
 
-async function requestJson({ body, headers = {}, label, method = 'POST', url }) {
+export async function requestJson({
+  body,
+  headers = {},
+  label,
+  method = 'POST',
+  url,
+}) {
   const response = await fetch(url, {
     body: body === undefined ? undefined : JSON.stringify(body),
     headers: {
@@ -171,14 +177,19 @@ async function requestJson({ body, headers = {}, label, method = 'POST', url }) 
   return payload
 }
 
-function bearerHeaders(accessToken, includeOrigin = false) {
+export function bearerHeaders(accessToken, includeOrigin = false) {
   return {
     Authorization: `Bearer ${accessToken}`,
     ...(includeOrigin ? { Referer: OPERATOR_ORIGIN } : {}),
   }
 }
 
-async function lookupAuthAccount({ accessToken, projectId, property, value }) {
+export async function lookupAuthAccount({
+  accessToken,
+  projectId,
+  property,
+  value,
+}) {
   try {
     const payload = await requestJson({
       body: { [property]: [value] },
@@ -211,7 +222,7 @@ async function createTargetAuthAccount({ accessToken, account, projectId }) {
   })
 }
 
-async function getDocument({ accessToken, documentPath, projectId }) {
+export async function getDocument({ accessToken, documentPath, projectId }) {
   try {
     return await requestJson({
       headers: bearerHeaders(accessToken),
@@ -225,7 +236,7 @@ async function getDocument({ accessToken, documentPath, projectId }) {
   }
 }
 
-async function listCollectionDocuments({
+export async function listCollectionDocuments({
   accessToken,
   collectionId,
   parentPath,
@@ -256,7 +267,7 @@ async function listCollectionDocuments({
   return documents
 }
 
-function documentPathFromName(name) {
+export function documentPathFromName(name) {
   const marker = '/documents/'
   const index = typeof name === 'string' ? name.indexOf(marker) : -1
   if (index < 0) throw new Error('Firestore returned an invalid document name.')
@@ -438,7 +449,7 @@ async function preflight({ accessToken, email, sourceProjectId, targetProjectId 
   return { documents, sourceAccount }
 }
 
-async function manifestMustNotExist(manifestPath) {
+export async function manifestMustNotExist(manifestPath) {
   try {
     await access(manifestPath, constants.F_OK)
   } catch (error) {

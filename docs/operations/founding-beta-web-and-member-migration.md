@@ -87,6 +87,64 @@ After Pages deploys and the participant resets the beta password:
 6. record the date, deployed commit, TestFlight build, participant-safe result,
    and any failure without recording credentials or training details.
 
+## Existing beta account with a different UID
+
+The same-UID member migration above must refuse an account that already exists
+in beta. If a founder already has a canonical beta account under a different
+UID and only unlinked development runs need recovery, use the narrower
+owner-run migration. It never changes either Auth account, profiles, plans,
+shoes, command receipts, provider records, or the development source.
+
+First inspect with both UIDs copied from the reviewed live diagnosis:
+
+```sh
+npm run migrate:owner-runs-to-beta -- inspect \
+  --email participant@example.com \
+  --source-project marathoner-d9bf9 \
+  --source-uid SOURCE_UID \
+  --target-project marathonerapp-beta \
+  --target-uid TARGET_UID
+```
+
+Inspection refuses unless both accounts are enabled and verified, the target
+profile and approved membership exist, the target run collection is empty, and
+every source run belongs to the source UID and is not linked to a plan. The
+output contains only project IDs, UIDs, the run count, and the empty-target
+decision.
+
+After reviewing that output, run the exact confirmation phrase printed by the
+tool contract:
+
+```sh
+npm run migrate:owner-runs-to-beta -- migrate \
+  --email participant@example.com \
+  --source-project marathoner-d9bf9 \
+  --source-uid SOURCE_UID \
+  --target-project marathonerapp-beta \
+  --target-uid TARGET_UID \
+  --confirm MIGRATE-OWNER-RUNS:participant@example.com:SOURCE_UID:TARGET_UID
+```
+
+The tool creates each target document only if it does not already exist,
+rewrites only the stored `userId`, verifies the final count and owner, and
+writes an ignored mode-`0600` rollback manifest containing target paths and
+write versions but no run contents. Verify the run count on both web and iOS
+before continuing integration recovery.
+
+Rollback is permitted only while every migrated run still has its original
+write version. If any run has changed or disappeared, the tool refuses to
+delete anything and requires a participant-specific recovery plan:
+
+```sh
+npm run migrate:owner-runs-to-beta -- rollback \
+  --email participant@example.com \
+  --source-project marathoner-d9bf9 \
+  --source-uid SOURCE_UID \
+  --target-project marathonerapp-beta \
+  --target-uid TARGET_UID \
+  --confirm ROLLBACK-OWNER-RUNS:participant@example.com:SOURCE_UID:TARGET_UID
+```
+
 ## Rollback
 
 If the migration itself is wrong and the participant has not begun using beta,
