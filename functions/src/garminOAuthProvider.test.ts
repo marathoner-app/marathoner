@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 
+import { GarminRevocationFailure } from './garminOAuthHandler.js'
 import { HttpGarminOAuthProvider } from './garminOAuthProvider.js'
 
 function provider(fetchImplementation: typeof fetch) {
@@ -85,21 +86,128 @@ describe('Garmin OAuth HTTP provider adapter', () => {
     })
   })
 
-  it('revokes the refresh grant and rejects non-HTTPS configuration', async () => {
+  it('deletes the Garmin registration with the access token', async () => {
     const request = vi.fn(async () => new Response(null, { status: 204 }))
     const boundary = provider(request)
-    await boundary.revoke({
-      accessToken: 'access-token',
-      refreshToken: 'refresh-token',
-      expiresAt: null,
-    })
-    const body = request.mock.calls[0]?.[1]?.body as URLSearchParams
-    expect(Object.fromEntries(body)).toEqual({
-      token: 'refresh-token',
-      token_type_hint: 'refresh_token',
+    await expect(
+      boundary.revoke({
+        accessToken: 'access-token',
+        refreshToken: 'refresh-token',
+        expiresAt: null,
+      }),
+    ).resolves.toEqual({ status: 'revoked', httpStatus: 204 })
+    expect(request).toHaveBeenCalledWith(
+      new URL('https://provider.invalid/oauth/revoke'),
+      {
+        method: 'DELETE',
+        headers: { authorization: 'Bearer access-token' },
+      },
+    )
+  })
+
+  it('refreshes an expired access grant before retrying registration deletion', async () => {
+    const request = vi
+      .fn<typeof fetch>()
+      .mockResolvedValueOnce(
+        Response.json(
+          { error: 'invalid_token' },
+          { status: 401 },
+        ),
+      )
+      .mockResolvedValueOnce(
+        Response.json({
+          access_token: 'replacement-access-token',
+          refresh_token: 'replacement-refresh-token',
+          expires_in: 3600,
+        }),
+      )
+      .mockResolvedValueOnce(new Response(null, { status: 204 }))
+    const boundary = provider(request)
+
+    await expect(
+      boundary.revoke({
+        accessToken: 'expired-access-token',
+        refreshToken: 'refresh-token',
+        expiresAt: '2026-11-04T19:00:00.000Z',
+      }),
+    ).resolves.toEqual({ status: 'revoked', httpStatus: 204 })
+
+    expect(request.mock.calls[0]).toEqual([
+      new URL('https://provider.invalid/oauth/revoke'),
+      {
+        method: 'DELETE',
+        headers: { authorization: 'Bearer expired-access-token' },
+      },
+    ])
+    const refreshBody = request.mock.calls[1]?.[1]?.body as URLSearchParams
+    expect(Object.fromEntries(refreshBody)).toEqual({
+      grant_type: 'refresh_token',
       client_id: 'server-client-id',
       client_secret: 'server-client-secret',
+      refresh_token: 'refresh-token',
     })
+    expect(request.mock.calls[2]?.[1]).toEqual({
+      method: 'DELETE',
+      headers: { authorization: 'Bearer replacement-access-token' },
+    })
+  })
+
+  it('treats a documented invalid refresh grant as already invalid', async () => {
+    const request = vi
+      .fn<typeof fetch>()
+      .mockResolvedValueOnce(
+        Response.json({ error: 'invalid_token' }, { status: 401 }),
+      )
+      .mockResolvedValueOnce(
+        Response.json({ error: 'invalid_grant' }, { status: 400 }),
+      )
+    const boundary = provider(request)
+
+    await expect(
+      boundary.revoke({
+        accessToken: 'expired-access-token',
+        refreshToken: 'invalid-refresh-token',
+        expiresAt: '2026-11-04T19:00:00.000Z',
+      }),
+    ).resolves.toEqual({ status: 'already-invalid', httpStatus: 400 })
+  })
+
+  it('returns a refreshed grant when a transient delete must be retried', async () => {
+    const request = vi
+      .fn<typeof fetch>()
+      .mockResolvedValueOnce(
+        Response.json({ error: 'invalid_token' }, { status: 401 }),
+      )
+      .mockResolvedValueOnce(
+        Response.json({
+          access_token: 'replacement-access-token',
+          refresh_token: 'replacement-refresh-token',
+          expires_in: 3600,
+        }),
+      )
+      .mockResolvedValueOnce(new Response(null, { status: 503 }))
+    const boundary = provider(request)
+
+    await expect(
+      boundary.revoke({
+        accessToken: 'expired-access-token',
+        refreshToken: 'refresh-token',
+        expiresAt: '2026-11-04T19:00:00.000Z',
+      }),
+    ).rejects.toEqual(
+      expect.objectContaining<Partial<GarminRevocationFailure>>({
+        category: 'transient',
+        httpStatus: 503,
+        retryGrant: {
+          accessToken: 'replacement-access-token',
+          refreshToken: 'replacement-refresh-token',
+          expiresAt: '2026-11-04T21:00:00.000Z',
+        },
+      }),
+    )
+  })
+
+  it('rejects non-HTTPS configuration', () => {
 
     expect(
       () =>
@@ -135,10 +243,13 @@ describe('Garmin OAuth HTTP provider adapter', () => {
         codeVerifier: 'private-verifier',
       }),
     ).rejects.toThrow('user lookup')
-    const revokeBody = request.mock.calls[2]?.[1]?.body as URLSearchParams
-    expect(Object.fromEntries(revokeBody)).toEqual(
-      expect.objectContaining({ token: 'refresh-token' }),
-    )
+    expect(request.mock.calls[2]).toEqual([
+      new URL('https://provider.invalid/oauth/revoke'),
+      {
+        method: 'DELETE',
+        headers: { authorization: 'Bearer access-token' },
+      },
+    ])
   })
 
   it('can build the browser URL without secret access but refuses server exchange', async () => {

@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from 'vitest'
 import {
   completeGarminOAuthCallback,
   disconnectGarmin,
+  GarminRevocationFailure,
   getGarminConnectionStatus,
   sha256Base64Url,
   startGarminOAuth,
@@ -155,6 +156,22 @@ class InMemoryGarminOAuthStore implements GarminOAuthStore {
     return { kind: 'reserved', grants: [connection.grant] }
   }
 
+  async replaceDisconnectGrant(options: {
+    environment: GarminOAuthEnvironment
+    ownerId: string
+    previousGrant: GarminTokenGrant
+    replacementGrant: GarminTokenGrant
+  }) {
+    const connection = this.connections.get(options.ownerId)
+    if (
+      connection?.environment === options.environment &&
+      connection.grant.accessToken === options.previousGrant.accessToken &&
+      connection.grant.refreshToken === options.previousGrant.refreshToken
+    ) {
+      connection.grant = options.replacementGrant
+    }
+  }
+
   async completeDisconnect(options: {
     environment: GarminOAuthEnvironment
     ownerId: string
@@ -178,7 +195,10 @@ function dependencies(options: {
         `https://provider.invalid/authorize?state=${state}&challenge=${codeChallenge}`,
     ),
     exchangeAuthorizationCode: vi.fn(async () => grant),
-    revoke: vi.fn(async () => undefined),
+    revoke: vi.fn(async () => ({
+      status: 'revoked' as const,
+      httpStatus: 204,
+    })),
   }
   return {
     boundary: {
@@ -434,7 +454,7 @@ describe('trusted Garmin OAuth handler', () => {
     expect(store.connections.get(ownerId)?.grant).toEqual(grant)
   })
 
-  it('revokes and deletes token material, and safely retries a failed revocation', async () => {
+  it('retains refreshed grant material across a transient failure and safely retries', async () => {
     const { boundary, provider, store } = dependencies()
     store.connections.set(ownerId, {
       connectedAt: fixedNow.toISOString(),
@@ -442,7 +462,18 @@ describe('trusted Garmin OAuth handler', () => {
       grant,
       status: 'connected',
     })
-    provider.revoke.mockRejectedValueOnce(new Error('provider unavailable'))
+    const replacementGrant = {
+      accessToken: 'replacement-access-token',
+      refreshToken: 'replacement-refresh-token',
+      expiresAt: '2026-11-04T22:00:00.000Z',
+    }
+    provider.revoke.mockRejectedValueOnce(
+      new GarminRevocationFailure({
+        category: 'transient',
+        httpStatus: 503,
+        retryGrant: replacementGrant,
+      }),
+    )
 
     await expect(
       disconnectGarmin(authenticatedCaller, boundary),
@@ -451,16 +482,49 @@ describe('trusted Garmin OAuth handler', () => {
       code: 'provider-revocation-failed',
     })
     expect(store.connections.get(ownerId)?.status).toBe('disconnecting')
+    expect(store.connections.get(ownerId)?.grant).toEqual(replacementGrant)
+    expect(boundary.log).toHaveBeenLastCalledWith({
+      event: 'garmin-oauth-disconnect',
+      providerHttpStatus: 503,
+      providerOutcome: 'transient_failure',
+      status: 'provider_error',
+    })
 
     await expect(
       disconnectGarmin(authenticatedCaller, boundary),
     ).resolves.toEqual({ status: 'disconnected' })
     expect(provider.revoke).toHaveBeenCalledTimes(2)
+    expect(provider.revoke).toHaveBeenLastCalledWith(replacementGrant)
     expect(store.connections.has(ownerId)).toBe(false)
 
     await expect(
       disconnectGarmin(authenticatedCaller, boundary),
     ).resolves.toEqual({ status: 'disconnected' })
     expect(provider.revoke).toHaveBeenCalledTimes(2)
+  })
+
+  it('completes local cleanup when Garmin confirms the grant is already invalid', async () => {
+    const { boundary, provider, store } = dependencies()
+    store.connections.set(ownerId, {
+      connectedAt: fixedNow.toISOString(),
+      environment: 'beta',
+      grant,
+      status: 'connected',
+    })
+    provider.revoke.mockResolvedValueOnce({
+      status: 'already-invalid',
+      httpStatus: 400,
+    })
+
+    await expect(
+      disconnectGarmin(authenticatedCaller, boundary),
+    ).resolves.toEqual({ status: 'disconnected' })
+    expect(store.connections.has(ownerId)).toBe(false)
+    expect(boundary.log).toHaveBeenCalledWith({
+      event: 'garmin-oauth-disconnect',
+      providerHttpStatus: 400,
+      providerOutcome: 'already_invalid',
+      status: 'accepted',
+    })
   })
 })

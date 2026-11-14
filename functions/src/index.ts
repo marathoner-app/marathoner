@@ -258,9 +258,8 @@ const garminAuthorizationUrl = defineString('GARMIN_AUTHORIZATION_URL', {
 })
 const garminTokenUrl = defineString('GARMIN_TOKEN_URL', { default: '' })
 const garminUserIdUrl = defineString('GARMIN_USER_ID_URL', { default: '' })
-const garminRevocationUrl = defineString('GARMIN_REVOCATION_URL', {
-  default: '',
-})
+const garminRegistrationDeletionUrl =
+  'https://apis.garmin.com/wellness-api/rest/user/registration'
 const garminStore = new FirestoreGarminOAuthStore(database)
 const garminPushStore = new FirestoreGarminActivityPushStore(database)
 
@@ -296,7 +295,7 @@ function garminOAuthDependencies(options: {
           authorizationUrl: garminAuthorizationUrl.value(),
           tokenUrl: garminTokenUrl.value(),
           userIdUrl: garminUserIdUrl.value(),
-          revocationUrl: garminRevocationUrl.value(),
+          revocationUrl: garminRegistrationDeletionUrl,
           clientId: garminClientId.value(),
           clientSecret:
             options.mode === 'server' ? garminClientSecret.value() : '',

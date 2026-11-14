@@ -25,6 +25,29 @@ export type GarminTokenGrant = Readonly<{
 export type GarminConnectionGrant = GarminTokenGrant &
   Readonly<{ providerUserId: string }>
 
+export type GarminRevocationOutcome = Readonly<{
+  status: 'revoked' | 'already-invalid'
+  httpStatus: number
+}>
+
+export class GarminRevocationFailure extends Error {
+  readonly category: 'transient' | 'provider-rejected'
+  readonly httpStatus: number | null
+  readonly retryGrant: GarminTokenGrant | null
+
+  constructor(options: {
+    category: 'transient' | 'provider-rejected'
+    httpStatus: number | null
+    retryGrant?: GarminTokenGrant | null
+  }) {
+    super('Garmin registration deletion was not completed.')
+    this.name = 'GarminRevocationFailure'
+    this.category = options.category
+    this.httpStatus = options.httpStatus
+    this.retryGrant = options.retryGrant ?? null
+  }
+}
+
 export type GarminOAuthLogEntry = Readonly<{
   event:
     | 'garmin-oauth-start'
@@ -39,6 +62,12 @@ export type GarminOAuthLogEntry = Readonly<{
     | 'pending'
     | 'provider_error'
     | 'succeeded'
+  providerHttpStatus?: number
+  providerOutcome?:
+    | 'revoked'
+    | 'already_invalid'
+    | 'transient_failure'
+    | 'provider_rejected'
 }>
 
 export interface GarminOAuthProvider {
@@ -50,7 +79,7 @@ export interface GarminOAuthProvider {
     code: string
     codeVerifier: string
   }): Promise<GarminConnectionGrant>
-  revoke(grant: GarminTokenGrant): Promise<void>
+  revoke(grant: GarminTokenGrant): Promise<GarminRevocationOutcome>
 }
 
 export type GarminCallbackReservation =
@@ -107,6 +136,12 @@ export interface GarminOAuthStore {
     environment: GarminOAuthEnvironment
     ownerId: string
   }): Promise<GarminDisconnectReservation>
+  replaceDisconnectGrant(options: {
+    environment: GarminOAuthEnvironment
+    ownerId: string
+    previousGrant: GarminTokenGrant
+    replacementGrant: GarminTokenGrant
+  }): Promise<void>
   completeDisconnect(options: {
     environment: GarminOAuthEnvironment
     ownerId: string
@@ -385,10 +420,51 @@ export async function disconnectGarmin(
     return { status: 'pending' }
   }
 
-  try {
-    for (const grant of reservation.grants) {
-      await dependencies.provider.revoke(grant)
+  for (const grant of reservation.grants) {
+    try {
+      const outcome = await dependencies.provider.revoke(grant)
+      dependencies.log({
+        event: 'garmin-oauth-disconnect',
+        providerHttpStatus: outcome.httpStatus,
+        providerOutcome:
+          outcome.status === 'revoked' ? 'revoked' : 'already_invalid',
+        status: 'accepted',
+      })
+    } catch (error) {
+      const failure =
+        error instanceof GarminRevocationFailure ? error : null
+      if (failure?.retryGrant !== null && failure?.retryGrant !== undefined) {
+        try {
+          await dependencies.store.replaceDisconnectGrant({
+            environment: dependencies.environment,
+            ownerId: caller.ownerId as string,
+            previousGrant: grant,
+            replacementGrant: failure.retryGrant,
+          })
+        } catch {
+          dependencies.log({
+            event: 'garmin-oauth-disconnect',
+            status: 'configuration_error',
+          })
+          return { status: 'unavailable', code: 'provider-revocation-failed' }
+        }
+      }
+      dependencies.log({
+        event: 'garmin-oauth-disconnect',
+        ...(failure?.httpStatus === null || failure === null
+          ? {}
+          : { providerHttpStatus: failure.httpStatus }),
+        providerOutcome:
+          failure?.category === 'provider-rejected'
+            ? 'provider_rejected'
+            : 'transient_failure',
+        status: 'provider_error',
+      })
+      return { status: 'unavailable', code: 'provider-revocation-failed' }
     }
+  }
+
+  try {
     await dependencies.store.completeDisconnect({
       environment: dependencies.environment,
       ownerId: caller.ownerId as string,
@@ -401,7 +477,7 @@ export async function disconnectGarmin(
   } catch {
     dependencies.log({
       event: 'garmin-oauth-disconnect',
-      status: 'provider_error',
+      status: 'configuration_error',
     })
     return { status: 'unavailable', code: 'provider-revocation-failed' }
   }
