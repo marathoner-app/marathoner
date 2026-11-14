@@ -20,7 +20,7 @@ const validProject = {
   appEntitlements:
     '<key>com.apple.developer.devicecheck.appattest-environment</key><string>production</string><key>com.apple.developer.healthkit</key><true/><key>com.apple.developer.healthkit.background-delivery</key><true/>',
   bridgeViewController:
-    'installStartupOverlay() registerPluginInstance(StartupOverlayPlugin()) registerPluginInstance(HealthKitPlugin()) DispatchQueue.main.asyncAfter(deadline: .now() + 10',
+    'installStartupOverlay() webView?.scrollView.bounces = false registerPluginInstance(StartupOverlayPlugin()) registerPluginInstance(HealthKitPlugin()) DispatchQueue.main.asyncAfter(deadline: .now() + 10',
   healthKitPlugin:
     'import HealthKit read: [workoutType, heartRateType] HKAnchoredObjectQuery( HKStatisticsQuery( HKObserverQuery( enableBackgroundDelivery( workout.workoutActivityType == .running legacyAccountScope migrateLegacyStorage(from: legacyScope, to: scope)',
   capacitorConfig: `appId: 'com.marathonerapp.marathoner'\nappName: 'Marathoner'\nwebDir: 'dist-ios'\nbackgroundColor: '#ffffff'\ncontentInset: 'always'\nerrorPath: 'startup-error.html'\nlaunchAutoHide: true\nlaunchShowDuration: 10_000\nbackgroundColor: '#ffffffff'\n'@capacitor-firebase/app-check'\nsymlink: true`,
@@ -175,6 +175,20 @@ describe('iOS boundary policy', () => {
         ),
       }),
     ).toContain("capacitor.config.ts is missing contentInset: 'always'")
+  })
+
+  it('rejects a native shell that allows document rubber-banding', () => {
+    expect(
+      findIosProjectViolations({
+        ...validProject,
+        bridgeViewController: validProject.bridgeViewController.replace(
+          'webView?.scrollView.bounces = false',
+          '',
+        ),
+      }),
+    ).toContain(
+      'MarathonerBridgeViewController.swift is missing webView?.scrollView.bounces = false',
+    )
   })
 
   it('rejects a HealthKit-enabled app without both privacy purpose strings', () => {

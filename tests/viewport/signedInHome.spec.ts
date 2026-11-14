@@ -317,6 +317,30 @@ test("keeps mobile navigation anchored at the document scroll boundary", async (
   expect(await page.evaluate(() => window.scrollY)).toBeGreaterThan(0);
 
   await expectMobileBottomNavigation(page);
+
+  const navigation = page.getByRole("navigation", {
+    name: "Training sections",
+  });
+  const navigationHandle = await navigation.elementHandle();
+  expect(
+    navigationHandle,
+    "navigation should have an element handle",
+  ).not.toBeNull();
+
+  await page.getByRole("button", { name: "Plan", exact: true }).click();
+  await expect(
+    page.getByRole("region", { name: "Plan Your Workouts" }),
+  ).toBeVisible();
+  expect(await page.evaluate(() => window.scrollY)).toBe(0);
+  expect(
+    await navigationHandle?.evaluate(
+      (element) =>
+        element.isConnected &&
+        element === document.querySelector(".section-navigation"),
+    ),
+    "Home-to-section navigation should reuse the mounted dock",
+  ).toBe(true);
+  await expectMobileBottomNavigation(page);
 });
 
 test("keeps overflowing signed-in content reachable at desktop width", async ({

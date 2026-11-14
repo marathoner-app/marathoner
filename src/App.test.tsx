@@ -1081,6 +1081,9 @@ describe('App training sections', () => {
     const user = userEvent.setup()
     renderSignedInApp()
 
+    const navigation = screen.getByRole('navigation', {
+      name: 'Training sections'
+    })
     const homeTrigger = screen.getByRole('button', { name: 'Home' })
     expect(homeTrigger).toHaveAttribute('aria-current', 'page')
 
@@ -1096,6 +1099,9 @@ describe('App training sections', () => {
     expect(
       screen.getByRole('region', { name: 'Plan Your Workouts' })
     ).toBeInTheDocument()
+    expect(
+      screen.getByRole('navigation', { name: 'Training sections' })
+    ).toBe(navigation)
 
     await user.click(screen.getByRole('button', { name: 'Track' }))
 
@@ -1112,6 +1118,9 @@ describe('App training sections', () => {
     expect(
       screen.getByRole('region', { name: 'Track Your Runs' })
     ).toBeInTheDocument()
+    expect(
+      screen.getByRole('navigation', { name: 'Training sections' })
+    ).toBe(navigation)
 
     await user.click(screen.getByRole('button', { name: 'Home' }))
 
@@ -1124,6 +1133,9 @@ describe('App training sections', () => {
     expect(
       screen.queryByRole('region', { name: 'Track Your Runs' })
     ).not.toBeInTheDocument()
+    expect(
+      screen.getByRole('navigation', { name: 'Training sections' })
+    ).toBe(navigation)
   })
 
   it('opens and closes a section with the keyboard', async () => {
