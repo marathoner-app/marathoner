@@ -130,11 +130,13 @@ Debug intentionally fails closed because Debug has no App Attest entitlement.
 Release. The JavaScript bridge repeats the same selection but cannot be the
 first selector because its call occurs after native Firebase startup.
 
-The native shell sets Capacitor's iOS `contentInset` policy to `always`. That
-single WebView boundary keeps public, authentication, onboarding, signed-in,
-and overlay content inside the iPhone safe area without adding route-specific
-padding or changing responsive-browser spacing. `npm run check:ios` verifies
-the policy in both the TypeScript source and the generated native runtime
+The web UI owns iPhone safe-area layout. Its viewport opts into
+`viewport-fit=cover`, and shared shell styles use the `safe-area-inset-*`
+environment values wherever controls meet a physical screen edge. Capacitor's
+iOS `contentInset` policy is therefore `never`: allowing `WKWebView` to add a
+second automatic inset can lift fixed navigation by one home-indicator inset
+at the document scroll boundary. `npm run check:ios` verifies both the viewport
+contract and the native policy in the built bundle and generated runtime
 configuration.
 
 The GitHub Pages workflow uses `npm run build:closed-beta` with the custom
@@ -172,12 +174,14 @@ Issue #351 passed its physical-device proof on October 21, 2026 at commit
   documented rotation policy, and the temporary redacted diagnostic log was
   removed.
 
-Issue #353 resolved the observed safe-area defect on October 21, 2026 at commit
-`f1c2c06`. A signed development build was compiled, installed, and launched on
-the same physical iPhone 15. The **Tell us where you are starting** onboarding
-heading rendered fully below the clock and Dynamic Island, confirming that the
-shared native WebView inset protects the top of the page without route-specific
-padding.
+Issue #353 resolved the original top-edge safe-area defect on October 21, 2026
+at commit `f1c2c06`. A signed development build was compiled, installed, and
+launched on the same physical iPhone 15, where the **Tell us where you are
+starting** heading rendered fully below the clock and Dynamic Island. Physical
+build-8 evidence later showed that the native inset used for that proof could
+move fixed bottom navigation at the document boundary. The current contract
+keeps the same edge protection through the shared CSS safe-area values while
+leaving the WebView scroll inset disabled.
 
 ## Explicit beta selection and physical proof
 
