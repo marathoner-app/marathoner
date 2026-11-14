@@ -18,6 +18,7 @@ import SupportDiagnostics from './SupportDiagnostics'
 import AppleHealthConnection from './AppleHealthConnection'
 import GarminConnection from './GarminConnection'
 import type { GarminConnectionClient } from '../services/garminConnectionClient'
+import type { HealthKitAccountScope } from '../services/healthKitImport'
 
 type RequestPhase = 'idle' | 'reauthenticating' | 'submitting' | 'resolving'
 
@@ -28,6 +29,7 @@ interface AccountDeletionFailure {
 
 export interface AccountDeletionDialogProps {
   accountScope: string
+  healthKitAccountScope: HealthKitAccountScope
   email: string | null
   supportEmail: string
   unresolvedCommandId: string | null
@@ -142,6 +144,7 @@ function reauthenticationFailure(error: unknown): AccountDeletionFailure {
 
 export function AccountDeletionDialog({
   accountScope,
+  healthKitAccountScope,
   email,
   supportEmail,
   unresolvedCommandId,
@@ -293,7 +296,7 @@ export function AccountDeletionDialog({
 
         <SupportDiagnostics />
 
-        <AppleHealthConnection accountScope={accountScope} />
+        <AppleHealthConnection accountScope={healthKitAccountScope} />
 
         <GarminConnection accountScope={accountScope} client={garminClient} />
 

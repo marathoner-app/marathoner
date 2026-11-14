@@ -32,6 +32,11 @@ const emptySummary = {
   skipped: 0,
 }
 
+const accountScope = {
+  current: 'firebase-project:beta-project:user:owner-a',
+  legacy: 'owner-a',
+}
+
 describe('AppleHealthConnection', () => {
   beforeEach(() => {
     vi.clearAllMocks()
@@ -47,7 +52,7 @@ describe('AppleHealthConnection', () => {
 
   it('explains the narrow read scope before opening the system permission sheet', async () => {
     const user = userEvent.setup()
-    render(<AppleHealthConnection accountScope="owner-a" />)
+    render(<AppleHealthConnection accountScope={accountScope} />)
 
     expect(
       await screen.findByText(/Import completed running workouts from the last 30 days/i),
@@ -58,7 +63,7 @@ describe('AppleHealthConnection', () => {
     ).toBeInTheDocument()
 
     await user.click(screen.getByRole('button', { name: 'Connect Apple Health' }))
-    expect(mockedConnect).toHaveBeenCalledWith('owner-a')
+    expect(mockedConnect).toHaveBeenCalledWith(accountScope)
     expect(
       await screen.findByText('2 Apple Health workout changes are now in Marathoner.'),
     ).toBeInTheDocument()
@@ -71,18 +76,23 @@ describe('AppleHealthConnection', () => {
       monitoring: true,
       authorizationRequestStatus: 'unnecessary',
     })
-    render(<AppleHealthConnection accountScope="owner-a" />)
+    render(<AppleHealthConnection accountScope={accountScope} />)
 
     await user.click(
       await screen.findByRole('button', { name: 'Check for runs now' }),
     )
-    expect(mockedSynchronize).toHaveBeenCalledWith('owner-a')
-    expect(await screen.findByText('Apple Health is up to date.')).toBeInTheDocument()
+    expect(mockedSynchronize).toHaveBeenCalledWith(accountScope)
+    expect(
+      await screen.findByText('No new Apple Health workout changes were found.'),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByText(/does not confirm that every prior workout/i),
+    ).toBeInTheDocument()
 
     await user.click(
       screen.getByRole('button', { name: 'Stop importing on this iPhone' }),
     )
-    expect(mockedDisconnect).toHaveBeenCalledWith('owner-a')
+    expect(mockedDisconnect).toHaveBeenCalledWith(accountScope)
   })
 
   it('explains when a possible duplicate was safely held back', async () => {
@@ -96,7 +106,7 @@ describe('AppleHealthConnection', () => {
       ...emptySummary,
       reviewRequired: 1,
     })
-    render(<AppleHealthConnection accountScope="owner-a" />)
+    render(<AppleHealthConnection accountScope={accountScope} />)
 
     await user.click(
       await screen.findByRole('button', { name: 'Check for runs now' }),
@@ -134,7 +144,7 @@ describe('AppleHealthConnection', () => {
       ...emptySummary,
       reviewRequired: 1,
     })
-    render(<AppleHealthConnection accountScope="owner-a" />)
+    render(<AppleHealthConnection accountScope={accountScope} />)
 
     await user.click(
       await screen.findByRole('button', { name: 'Check for runs now' }),
@@ -156,7 +166,7 @@ describe('AppleHealthConnection', () => {
       monitoring: false,
       authorizationRequestStatus: 'unavailable',
     })
-    render(<AppleHealthConnection accountScope="owner-a" />)
+    render(<AppleHealthConnection accountScope={accountScope} />)
 
     expect(
       await screen.findByText(/available in the Marathoner app on iPhone/i),
@@ -169,7 +179,7 @@ describe('AppleHealthConnection', () => {
   it('reports native failures without closing account settings', async () => {
     const user = userEvent.setup()
     mockedConnect.mockRejectedValue(new Error('Apple Health is unavailable.'))
-    render(<AppleHealthConnection accountScope="owner-a" />)
+    render(<AppleHealthConnection accountScope={accountScope} />)
 
     await user.click(
       await screen.findByRole('button', { name: 'Connect Apple Health' }),

@@ -63,21 +63,34 @@ interface NativeHealthKitChangeError {
 
 type NativeHealthKitChange = NativeHealthKitBatch | NativeHealthKitChangeError
 
+export interface HealthKitAccountScope {
+  current: string
+  legacy: string
+}
+
+interface NativeHealthKitScopeOptions {
+  accountScope: string
+  legacyAccountScope: string
+}
+
 interface NativeHealthKitPlugin {
-  getStatus(options: { accountScope: string }): Promise<NativeHealthKitStatus>
+  getStatus(options: NativeHealthKitScopeOptions): Promise<NativeHealthKitStatus>
   requestAuthorization(options: {
     accountScope: string
+    legacyAccountScope: string
     lookbackDays: number
   }): Promise<NativeHealthKitBatch>
   synchronize(options: {
     accountScope: string
+    legacyAccountScope: string
     lookbackDays: number
   }): Promise<NativeHealthKitBatch>
   startMonitoring(options: {
     accountScope: string
+    legacyAccountScope: string
     lookbackDays: number
   }): Promise<NativeHealthKitStatus>
-  disconnect(options: { accountScope: string }): Promise<NativeHealthKitStatus>
+  disconnect(options: NativeHealthKitScopeOptions): Promise<NativeHealthKitStatus>
   addListener(
     eventName: 'workoutsChanged',
     listener: (change: NativeHealthKitChange) => void,
@@ -115,6 +128,31 @@ interface HealthKitImportDependencies {
 const MarathonerHealthKit = registerPlugin<NativeHealthKitPlugin>(
   'MarathonerHealthKit',
 )
+
+export function createHealthKitAccountScope(
+  firebaseProjectId: string,
+  userId: string,
+): HealthKitAccountScope {
+  const projectId = firebaseProjectId.trim()
+  const uid = userId.trim()
+  if (projectId.length === 0 || uid.length === 0) {
+    throw new Error('Apple Health account scope requires a project and user.')
+  }
+
+  return {
+    current: `firebase-project:${projectId}:user:${uid}`,
+    legacy: uid,
+  }
+}
+
+function nativeScopeOptions(
+  scope: HealthKitAccountScope,
+): NativeHealthKitScopeOptions {
+  return {
+    accountScope: scope.current,
+    legacyAccountScope: scope.legacy,
+  }
+}
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
@@ -318,8 +356,8 @@ export function createHealthKitImportCoordinator(
     return summary
   }
 
-  const stopMonitoring = async (accountScope?: string) => {
-    if (accountScope && monitoredScope !== accountScope) return
+  const stopMonitoring = async (accountScope?: HealthKitAccountScope) => {
+    if (accountScope && monitoredScope !== accountScope.current) return
     const handle = listenerHandle
     listenerHandle = null
     monitoredScope = null
@@ -328,10 +366,10 @@ export function createHealthKitImportCoordinator(
   }
 
   const ensureMonitoring = async (
-    accountScope: string,
+    accountScope: HealthKitAccountScope,
     onChange?: (summary: HealthKitImportSummary) => void,
   ) => {
-    if (monitoredScope === accountScope && listenerHandle !== null) {
+    if (monitoredScope === accountScope.current && listenerHandle !== null) {
       changeListener = onChange ?? changeListener
       return
     }
@@ -344,15 +382,17 @@ export function createHealthKitImportCoordinator(
         void importBatch(change).then((summary) => changeListener?.(summary))
       },
     )
-    monitoredScope = accountScope
+    monitoredScope = accountScope.current
     await dependencies.plugin.startMonitoring({
-      accountScope,
+      ...nativeScopeOptions(accountScope),
       lookbackDays: DEFAULT_LOOKBACK_DAYS,
     })
   }
 
   return {
-    async getState(accountScope: string): Promise<HealthKitConnectionState> {
+    async getState(
+      accountScope: HealthKitAccountScope,
+    ): Promise<HealthKitConnectionState> {
       if (!dependencies.isNativeIos()) {
         return {
           availability: 'web',
@@ -361,18 +401,20 @@ export function createHealthKitImportCoordinator(
         }
       }
       return connectionState(
-        await dependencies.plugin.getStatus({ accountScope }),
+        await dependencies.plugin.getStatus(nativeScopeOptions(accountScope)),
       )
     },
 
-    async connect(accountScope: string): Promise<HealthKitImportSummary> {
+    async connect(
+      accountScope: HealthKitAccountScope,
+    ): Promise<HealthKitImportSummary> {
       if (!dependencies.isNativeIos()) {
         throw new HealthKitImportError(
           'Apple Health connection is available in Marathoner on iPhone.',
         )
       }
       const batch = await dependencies.plugin.requestAuthorization({
-        accountScope,
+        ...nativeScopeOptions(accountScope),
         lookbackDays: DEFAULT_LOOKBACK_DAYS,
       })
       const summary = await importBatch(batch)
@@ -380,7 +422,9 @@ export function createHealthKitImportCoordinator(
       return summary
     },
 
-    async synchronize(accountScope: string): Promise<HealthKitImportSummary> {
+    async synchronize(
+      accountScope: HealthKitAccountScope,
+    ): Promise<HealthKitImportSummary> {
       if (!dependencies.isNativeIos()) {
         throw new HealthKitImportError(
           'Apple Health synchronization is available in Marathoner on iPhone.',
@@ -389,7 +433,7 @@ export function createHealthKitImportCoordinator(
       try {
         return await importBatch(
           await dependencies.plugin.synchronize({
-            accountScope,
+            ...nativeScopeOptions(accountScope),
             lookbackDays: DEFAULT_LOOKBACK_DAYS,
           }),
         )
@@ -399,25 +443,27 @@ export function createHealthKitImportCoordinator(
     },
 
     async resume(
-      accountScope: string,
+      accountScope: HealthKitAccountScope,
       onChange?: (summary: HealthKitImportSummary) => void,
     ): Promise<HealthKitImportSummary | null> {
       if (!dependencies.isNativeIos()) return null
-      const status = await dependencies.plugin.getStatus({ accountScope })
+      const status = await dependencies.plugin.getStatus(
+        nativeScopeOptions(accountScope),
+      )
       if (!status.available || !status.enabled) return null
       await ensureMonitoring(accountScope, onChange)
       return importBatch(
         await dependencies.plugin.synchronize({
-          accountScope,
+          ...nativeScopeOptions(accountScope),
           lookbackDays: DEFAULT_LOOKBACK_DAYS,
         }),
       )
     },
 
-    async disconnect(accountScope: string): Promise<void> {
+    async disconnect(accountScope: HealthKitAccountScope): Promise<void> {
       await stopMonitoring(accountScope)
       if (dependencies.isNativeIos()) {
-        await dependencies.plugin.disconnect({ accountScope })
+        await dependencies.plugin.disconnect(nativeScopeOptions(accountScope))
       }
     },
 

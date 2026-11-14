@@ -22,7 +22,7 @@ const validProject = {
   bridgeViewController:
     'installStartupOverlay() registerPluginInstance(StartupOverlayPlugin()) registerPluginInstance(HealthKitPlugin()) DispatchQueue.main.asyncAfter(deadline: .now() + 10',
   healthKitPlugin:
-    'import HealthKit requestAuthorization(toShare: [], read: [workoutType]) HKAnchoredObjectQuery( HKObserverQuery( enableBackgroundDelivery( workout.workoutActivityType == .running',
+    'import HealthKit requestAuthorization(toShare: [], read: [workoutType]) HKAnchoredObjectQuery( HKObserverQuery( enableBackgroundDelivery( workout.workoutActivityType == .running legacyAccountScope migrateLegacyStorage(from: legacyScope, to: scope)',
   capacitorConfig: `appId: 'com.marathonerapp.marathoner'\nappName: 'Marathoner'\nwebDir: 'dist-ios'\nbackgroundColor: '#ffffff'\ncontentInset: 'always'\nerrorPath: 'startup-error.html'\nlaunchAutoHide: true\nlaunchShowDuration: 10_000\nbackgroundColor: '#ffffffff'\n'@capacitor-firebase/app-check'\nsymlink: true`,
   debugConfig: '#include? "local.xcconfig"',
   infoPlist:
@@ -83,6 +83,20 @@ const validProject = {
 describe('iOS boundary policy', () => {
   it('accepts the production-shaped unsigned project', () => {
     expect(findIosProjectViolations(validProject)).toEqual([])
+  })
+
+  it('rejects a HealthKit bridge that can lose the legacy account cursor', () => {
+    expect(
+      findIosProjectViolations({
+        ...validProject,
+        healthKitPlugin: validProject.healthKitPlugin.replace(
+          'migrateLegacyStorage(from: legacyScope, to: scope)',
+          '',
+        ),
+      }),
+    ).toContain(
+      'HealthKitPlugin.swift is missing migrateLegacyStorage(from: legacyScope, to: scope)',
+    )
   })
 
   it('rejects account-local signing and generated files', () => {

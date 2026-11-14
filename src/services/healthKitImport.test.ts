@@ -4,12 +4,17 @@ import type { MaterialCommandResult } from '../domain/materialCommands/contract'
 import { createUtcDateTime } from '../domain/training/dates'
 import { createCompletedRunId } from '../domain/training/identifiers'
 import {
+  createHealthKitAccountScope,
   createHealthKitImportCoordinator,
   normalizeHealthKitWorkout,
   type NativeHealthKitBatch,
 } from './healthKitImport'
 
 const observedAt = '2026-11-04T16:00:00.000Z'
+
+function accountScope(userId = 'owner-a', projectId = 'beta-project') {
+  return createHealthKitAccountScope(projectId, userId)
+}
 
 function workout(overrides: Record<string, unknown> = {}) {
   return {
@@ -118,6 +123,16 @@ describe('HealthKit workout normalization', () => {
 })
 
 describe('HealthKit import coordinator', () => {
+  it('isolates the native account key by Firebase project and user', () => {
+    expect(accountScope()).toEqual({
+      current: 'firebase-project:beta-project:user:owner-a',
+      legacy: 'owner-a',
+    })
+    expect(accountScope('owner-a', 'development-project').current).not.toBe(
+      accountScope('owner-a', 'beta-project').current,
+    )
+  })
+
   it('does not invoke the native bridge in a browser', async () => {
     const nativePlugin = plugin()
     const coordinator = createHealthKitImportCoordinator({
@@ -126,7 +141,7 @@ describe('HealthKit import coordinator', () => {
       submit: vi.fn(),
     })
 
-    await expect(coordinator.getState('owner-a')).resolves.toEqual({
+    await expect(coordinator.getState(accountScope())).resolves.toEqual({
       availability: 'web',
       monitoring: false,
       authorizationRequestStatus: 'unavailable',
@@ -143,7 +158,7 @@ describe('HealthKit import coordinator', () => {
       submit,
     })
 
-    await expect(coordinator.connect('owner-a')).resolves.toEqual({
+    await expect(coordinator.connect(accountScope())).resolves.toEqual({
       created: 1,
       updated: 0,
       unchanged: 0,
@@ -153,7 +168,8 @@ describe('HealthKit import coordinator', () => {
       skipped: 0,
     })
     expect(nativePlugin.requestAuthorization).toHaveBeenCalledWith({
-      accountScope: 'owner-a',
+      accountScope: 'firebase-project:beta-project:user:owner-a',
+      legacyAccountScope: 'owner-a',
       lookbackDays: 30,
     })
     expect(submit).toHaveBeenCalledWith(
@@ -178,7 +194,7 @@ describe('HealthKit import coordinator', () => {
       submit,
     })
 
-    await expect(coordinator.synchronize('owner-a')).resolves.toEqual(
+    await expect(coordinator.synchronize(accountScope())).resolves.toEqual(
       expect.objectContaining({ deleted: 1, failed: 0 }),
     )
     expect(submit).toHaveBeenCalledWith(
@@ -204,7 +220,7 @@ describe('HealthKit import coordinator', () => {
       }),
     })
 
-    await expect(coordinator.synchronize('owner-a')).resolves.toEqual(
+    await expect(coordinator.synchronize(accountScope())).resolves.toEqual(
       expect.objectContaining({ created: 0, reviewRequired: 1 }),
     )
   })
@@ -221,16 +237,18 @@ describe('HealthKit import coordinator', () => {
       submit: vi.fn().mockResolvedValue(receipt()),
     })
 
-    await coordinator.resume('owner-a')
-    await coordinator.resume('owner-b')
+    await coordinator.resume(accountScope('owner-a'))
+    await coordinator.resume(accountScope('owner-b'))
 
     expect(remove).toHaveBeenCalledOnce()
     expect(nativePlugin.startMonitoring).toHaveBeenNthCalledWith(1, {
-      accountScope: 'owner-a',
+      accountScope: 'firebase-project:beta-project:user:owner-a',
+      legacyAccountScope: 'owner-a',
       lookbackDays: 30,
     })
     expect(nativePlugin.startMonitoring).toHaveBeenNthCalledWith(2, {
-      accountScope: 'owner-b',
+      accountScope: 'firebase-project:beta-project:user:owner-b',
+      legacyAccountScope: 'owner-b',
       lookbackDays: 30,
     })
   })

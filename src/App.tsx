@@ -40,9 +40,11 @@ import { isInternalPlanProposalRehearsalMode } from "./components/internalPlanPr
 import { isInternalAdaptationDogfoodEnabled } from "./components/internalAdaptationDogfoodMode";
 import { resolvePlanSurfaceData } from "./training/planSurfaceData";
 import {
+  createHealthKitAccountScope,
   resumeHealthKitImportMonitoring,
   stopHealthKitImportMonitoring,
 } from "./services/healthKitImport";
+import { selectedFirebaseEnvironment } from "./selectedFirebaseEnvironment";
 import ClosedBetaMethodologyConsentGate from "./components/ClosedBetaMethodologyConsentGate";
 import { getClosedBetaProvisionalMethodologyManifest } from "./domain/methodology/closedBetaProvisionalMethodologyRegistry";
 
@@ -98,6 +100,16 @@ function App() {
   const auth = useAuth();
   const logout = auth.logout;
   const signedInUserId = auth.status === "signedIn" ? auth.user.uid : null;
+  const healthKitAccountScope = useMemo(
+    () =>
+      signedInUserId === null
+        ? null
+        : createHealthKitAccountScope(
+            selectedFirebaseEnvironment.config.projectId,
+            signedInUserId,
+          ),
+    [signedInUserId],
+  );
   const reduceMotion = useReducedMotion();
   const [activeSection, setActiveSection] = useState<Section | null>(null);
   const [trackInitialFocusTarget, setTrackInitialFocusTarget] =
@@ -160,12 +172,14 @@ function App() {
   }, [signedInUserId]);
 
   useEffect(() => {
-    if (signedInUserId === null) return;
-    void resumeHealthKitImportMonitoring(signedInUserId).catch(() => undefined);
+    if (healthKitAccountScope === null) return;
+    void resumeHealthKitImportMonitoring(healthKitAccountScope).catch(
+      () => undefined,
+    );
     return () => {
-      void stopHealthKitImportMonitoring(signedInUserId);
+      void stopHealthKitImportMonitoring(healthKitAccountScope);
     };
-  }, [signedInUserId]);
+  }, [healthKitAccountScope]);
 
   useEffect(() => {
     if (!logoutPending || deletionReceipt !== null) return;
@@ -385,9 +399,11 @@ function App() {
       {!deletionReceipt &&
         !logoutPending &&
         auth.status === "signedIn" &&
+        healthKitAccountScope !== null &&
         accountSettingsOpen && (
           <AccountDeletionDialog
             accountScope={auth.user.uid}
+            healthKitAccountScope={healthKitAccountScope}
             email={auth.user.email}
             supportEmail={publicSupportEmail}
             unresolvedCommandId={unresolvedDeletionCommandId}
