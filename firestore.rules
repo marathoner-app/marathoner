@@ -375,8 +375,6 @@ service cloud.firestore {
           'timeZone',
           'distanceMeters',
           'durationSeconds',
-          'averageHeartRateBpm',
-          'maximumHeartRateBpm',
           'createdAt',
           'updatedAt'
         ])
@@ -390,6 +388,8 @@ service cloud.firestore {
           'timeZone',
           'distanceMeters',
           'durationSeconds',
+          'averageHeartRateBpm',
+          'maximumHeartRateBpm',
           'perceivedEffort',
           'unusualPain',
           'notes',
