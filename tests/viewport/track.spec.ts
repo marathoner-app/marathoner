@@ -302,7 +302,13 @@ test("keeps imported-run details usable at phone width", async ({ page }) => {
   await page.goto("tests/viewport/track.html?imported=1");
 
   await expect(page.getByText("Imported from Garmin via Apple Health")).toBeVisible();
-  await expect(page.getByText("151 bpm average, 176 bpm max")).toBeVisible();
+  await expect(
+    page.getByText(
+      "2026-10-21: 5 mi, 151 bpm average in 45:05 wearing No shoe. Effort: Not recorded",
+    ),
+  ).toBeVisible();
+  await expect(page.getByText("Maximum heart rate:")).toBeVisible();
+  await expect(page.getByText("176 bpm")).toBeVisible();
   const openDetails = page.getByRole("button", {
     name: /Add details to run from/,
   });
