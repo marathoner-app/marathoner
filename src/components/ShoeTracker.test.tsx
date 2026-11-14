@@ -862,8 +862,14 @@ describe("ShoeTracker", () => {
 
     expect(screen.getByText("Imported from Garmin via Apple Health")).toBeVisible();
     expect(
-      screen.getByText("151 bpm average, 176 bpm max"),
+      screen.getByText(
+        "2026-08-05: 3.11 mi, 151 bpm average in 30:00 wearing No shoe. Effort: Not recorded",
+      ),
     ).toBeVisible();
+    expect(
+      screen.getByText("176 bpm"),
+    ).toBeVisible();
+    expect(screen.getByText("Maximum heart rate:")).toBeVisible();
     expect(screen.queryByText(/provider/i)).not.toBeInTheDocument();
     await user.click(
       screen.getByRole("button", {
@@ -929,6 +935,30 @@ describe("ShoeTracker", () => {
     expect(screen.getByText(/Effort: About as expected/)).toBeVisible();
     expect(screen.getByText("Felt relaxed after the first mile.")).toBeVisible();
     expect(screen.getByText(/wearing Daily Trainer/)).toBeVisible();
+  });
+
+  it("keeps the run summary coherent when heart rate is unavailable", () => {
+    const run: CompletedRun = {
+      id: createCompletedRunId("run-1"),
+      userId,
+      startedAt: timestamp,
+      timeZone: createIanaTimeZone("America/Los_Angeles"),
+      distance: createDistanceMeters(5_000),
+      duration: createDurationSeconds(1_800),
+      importProvider: "garmin_connect",
+      reportedOrigin: "garmin",
+      createdAt: timestamp,
+      updatedAt: timestamp,
+    };
+
+    render(<Harness initialRuns={[run]} />);
+
+    expect(
+      screen.getByText(
+        "2026-08-05: 3.11 mi in 30:00 wearing No shoe. Effort: Not recorded",
+      ),
+    ).toBeVisible();
+    expect(screen.queryByText(/bpm/i)).not.toBeInTheDocument();
   });
 
   it("keeps imported-run enrichment open when saving fails", async () => {

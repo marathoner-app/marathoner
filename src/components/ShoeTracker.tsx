@@ -988,24 +988,17 @@ export default function ShoeTracker({
                           {getRunLocalDate(run)}: {formatDistance(
                             run.distance,
                             distanceUnit,
-                          )} in{" "}
+                          )}
+                          {run.averageHeartRateBpm === undefined
+                            ? ""
+                            : `, ${run.averageHeartRateBpm} bpm average`} in{" "}
                           {formatDuration(run.duration)} wearing {shoe?.name ?? "No shoe"}. Effort:{" "}
                           {formatPerceivedEffort(run.perceivedEffort)}
                         </span>
-                        {(run.averageHeartRateBpm !== undefined ||
-                          run.maximumHeartRateBpm !== undefined) && (
+                        {run.maximumHeartRateBpm !== undefined && (
                           <p className="run-heart-rate">
-                            <strong>Heart rate:</strong>{" "}
-                            {[
-                              run.averageHeartRateBpm === undefined
-                                ? null
-                                : `${run.averageHeartRateBpm} bpm average`,
-                              run.maximumHeartRateBpm === undefined
-                                ? null
-                                : `${run.maximumHeartRateBpm} bpm max`,
-                            ]
-                              .filter((value) => value !== null)
-                              .join(", ")}
+                            <strong>Maximum heart rate:</strong>{" "}
+                            {run.maximumHeartRateBpm} bpm
                           </p>
                         )}
                         {run.notes !== undefined && (
