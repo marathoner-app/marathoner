@@ -961,6 +961,32 @@ describe("ShoeTracker", () => {
     expect(screen.queryByText(/bpm/i)).not.toBeInTheDocument();
   });
 
+  it("names the exact imported run and explains import suppression before deletion", async () => {
+    const run: CompletedRun = {
+      id: createCompletedRunId("run-1"),
+      userId,
+      startedAt: timestamp,
+      timeZone: createIanaTimeZone("America/Los_Angeles"),
+      distance: createDistanceMeters(5_000),
+      duration: createDurationSeconds(1_800),
+      importProvider: "garmin_connect",
+      reportedOrigin: "garmin",
+      createdAt: timestamp,
+      updatedAt: timestamp,
+    };
+    const user = userEvent.setup();
+    render(<Harness initialRuns={[run]} />);
+
+    await user.click(
+      screen.getByRole("button", { name: "Delete run from 2026-08-05" }),
+    );
+
+    expect(
+      screen.getByRole("button", { name: "Delete 2026-08-05 run" }),
+    ).toBeVisible();
+    expect(screen.getByText(/will not automatically import this activity again/)).toBeVisible();
+  });
+
   it("keeps imported-run enrichment open when saving fails", async () => {
     const run: CompletedRun = {
       id: createCompletedRunId("run-1"),
@@ -1369,7 +1395,9 @@ describe("ShoeTracker", () => {
     expect(screen.getByText("Total: 3 mi")).toBeInTheDocument();
 
     await user.tab();
-    expect(screen.getByRole("button", { name: "Delete run" })).toHaveFocus();
+    expect(
+      screen.getByRole("button", { name: "Delete 2026-08-05 run" }),
+    ).toHaveFocus();
     await user.keyboard("{Enter}");
 
     expect(await screen.findByText("No runs logged yet.")).toBeInTheDocument();

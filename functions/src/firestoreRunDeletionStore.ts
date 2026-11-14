@@ -7,11 +7,13 @@ import {
 } from '../../src/domain/materialCommands/contract.js'
 import { createUserId } from '../../src/domain/training/identifiers.js'
 import {
+  activityImportsCollectionPath,
   runDocumentPath,
   workoutCompletionGuardDocumentPath,
   workoutDocumentPath,
 } from '../../src/persistence/firestore/paths.js'
 import { projectRunDeletion } from './completedRunCommandProjection.js'
+import { userDeletedActivityImportDocument } from './firestoreActivityImportStore.js'
 import {
   adminTimestamp,
   completedRunFromAdminDocument,
@@ -116,6 +118,19 @@ export class FirestoreRunDeletionStore implements RunDeletionStore {
                 workoutReference.workoutId,
               ),
             )
+      const importCollectionReference = this.database.collection(
+        activityImportsCollectionPath(ownerId),
+      )
+      const completedRunImportsQuery = importCollectionReference.where(
+        'completedRunId',
+        '==',
+        options.envelope.command.completedRunId,
+      )
+      const candidateImportsQuery = importCollectionReference.where(
+        'candidateCompletedRunId',
+        '==',
+        options.envelope.command.completedRunId,
+      )
       const [runSnapshot, workoutSnapshot, guardSnapshot] = await Promise.all([
         transaction.get(runReference),
         workoutDocumentReference === null
@@ -125,6 +140,11 @@ export class FirestoreRunDeletionStore implements RunDeletionStore {
           ? Promise.resolve(null)
           : transaction.get(guardDocumentReference),
       ])
+      const [completedRunImportSnapshots, candidateImportSnapshots] =
+        await Promise.all([
+          transaction.get(completedRunImportsQuery),
+          transaction.get(candidateImportsQuery),
+        ])
 
       const decision = projectRunDeletion({
         authenticatedOwnerId: options.ownerId,
@@ -152,6 +172,25 @@ export class FirestoreRunDeletionStore implements RunDeletionStore {
 
       const projection = decision.projection
       transaction.delete(this.database.doc(projection.deletedRun.path))
+      const associatedImportDocuments = new Map(
+        [
+          ...completedRunImportSnapshots.docs,
+          ...candidateImportSnapshots.docs,
+        ].map((document) => [document.ref.path, document]),
+      )
+      for (const document of associatedImportDocuments.values()) {
+        const suppressed = userDeletedActivityImportDocument(
+          document.data(),
+          projection.deletedRun.id,
+          deletedAt,
+        )
+        if (suppressed === null) {
+          throw new Error(
+            'An activity-import record did not reference the deleted run.',
+          )
+        }
+        transaction.set(document.ref, suppressed)
+      }
       if (
         projection.reopenedPlannedWorkout !== null &&
         workoutDocumentReference !== null

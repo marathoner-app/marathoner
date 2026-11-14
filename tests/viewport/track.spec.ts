@@ -256,8 +256,7 @@ async function exerciseTrackWorkflow(page: Page, textSizeLabel: string) {
   ).toBeVisible();
   const cancelDeletion = page.getByRole("button", { name: "Cancel" });
   const confirmDeletion = page.getByRole("button", {
-    name: "Delete run",
-    exact: true,
+    name: /Delete \d{4}-\d{2}-\d{2} run/,
   });
   await expectMinimumTouchTargets([
     { locator: cancelDeletion, label: `cancel deletion at ${textSizeLabel}` },

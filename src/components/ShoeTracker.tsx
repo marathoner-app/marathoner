@@ -1054,7 +1054,7 @@ export default function ShoeTracker({
           eyebrow="Training history"
           title="Delete this completed run?"
           pending={pendingAction === "delete-run"}
-          confirmLabel="Delete run"
+          confirmLabel={`Delete ${getRunLocalDate(runToDelete)} run`}
           pendingLabel="Deleting…"
           tone="danger"
           fallbackFocusRef={loggedRunsHeadingRef}
@@ -1070,6 +1070,9 @@ export default function ShoeTracker({
           <p id="run-delete-description">
             This permanently removes the run from your training history and
             updates your analytics and shoe mileage. This cannot be undone.
+            {runToDelete.importProvider === undefined
+              ? ""
+              : " Marathoner will not automatically import this activity again."}
           </p>
         </ConfirmationDialog>
       )}
