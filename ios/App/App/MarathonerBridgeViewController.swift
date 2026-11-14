@@ -7,6 +7,7 @@ final class MarathonerBridgeViewController: CAPBridgeViewController {
 
     override func capacitorDidLoad() {
         super.capacitorDidLoad()
+        webView?.scrollView.bounces = false
         bridge?.registerPluginInstance(StartupOverlayPlugin())
         bridge?.registerPluginInstance(HealthKitPlugin())
     }

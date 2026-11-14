@@ -233,6 +233,8 @@ function App() {
     section: Section,
     initialFocusTarget: ShoeTrackerInitialFocusTarget | null = null,
   ) => {
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
     lastActiveSection.current = section;
     setTrackInitialFocusTarget(
       section === "track" ? initialFocusTarget : null,
@@ -689,16 +691,22 @@ function AuthenticatedExperience({
               />
             </Suspense>
           )}
-          {onboardingComplete && (
-            <TrainingSectionNavigation
-              activeSection={null}
-              transitionDuration={sectionTransitionDuration}
-              onSelectHome={onSelectHome}
-              onRegisterHomeTrigger={onRegisterHomeTrigger}
-              onSelect={onOpenSection}
-              onRegisterTrigger={onRegisterTrigger}
-            />
-          )}
+        </>
+      )}
+
+      {hasReadableTraining && onboardingComplete && !showOnboarding && (
+        <TrainingSectionNavigation
+          activeSection={activeSection}
+          transitionDuration={sectionTransitionDuration}
+          onSelectHome={onSelectHome}
+          onRegisterHomeTrigger={onRegisterHomeTrigger}
+          onSelect={onOpenSection}
+          onRegisterTrigger={onRegisterTrigger}
+        />
+      )}
+
+      {!activeSection && hasReadableTraining && !showOnboarding && (
+        <>
           {InternalPlanProposalRehearsal && (
             <Suspense
               fallback={
@@ -764,17 +772,6 @@ function AuthenticatedExperience({
             onClose={onCloseSection}
           />
         </motion.section>
-      )}
-
-      {activeSection && hasReadableTraining && onboardingComplete && !showOnboarding && (
-        <TrainingSectionNavigation
-          activeSection={activeSection}
-          transitionDuration={sectionTransitionDuration}
-          onSelectHome={onSelectHome}
-          onRegisterHomeTrigger={onRegisterHomeTrigger}
-          onSelect={onOpenSection}
-          onRegisterTrigger={onRegisterTrigger}
-        />
       )}
     </>
   );

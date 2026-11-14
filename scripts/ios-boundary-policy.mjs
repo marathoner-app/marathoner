@@ -328,6 +328,7 @@ export function findIosProjectViolations({
   )
   for (const startupBridgeValue of [
     'installStartupOverlay()',
+    'webView?.scrollView.bounces = false',
     'registerPluginInstance(StartupOverlayPlugin())',
     'registerPluginInstance(HealthKitPlugin())',
     'DispatchQueue.main.asyncAfter(deadline: .now() + 10',

@@ -20,6 +20,11 @@ export function SignedInHomeFixture() {
   const activeDetails = trainingSections.find(({ id }) => id === activeSection);
   const setupComplete =
     new URLSearchParams(window.location.search).get("setup") !== "incomplete";
+  const openSection = (section: TrainingSection) => {
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+    setActiveSection(section);
+  };
 
   return (
     <main className={`main${activeSection === null ? " signed-in-home" : ""}`}>
@@ -50,29 +55,33 @@ export function SignedInHomeFixture() {
             plan={null}
             workout={null}
             distanceUnit="mile"
-            onOpenPlan={() => setActiveSection("plan")}
+            onOpenPlan={() => openSection("plan")}
           />
-          {setupComplete && (
-            <TrainingSectionNavigation
-              activeSection={null}
-              transitionDuration={0}
-              onSelectHome={() => setActiveSection(null)}
-              onSelect={setActiveSection}
-            />
-          )}
-          <section
-            aria-label="Additional signed-in content"
-            style={{
-              display: "grid",
-              flex: "0 0 auto",
-              minHeight: "50rem",
-              placeItems: "end center",
-              width: "100%",
-            }}
-          >
-            <button type="button">Final signed-in action</button>
-          </section>
         </>
+      )}
+
+      {setupComplete && (
+        <TrainingSectionNavigation
+          activeSection={activeSection}
+          transitionDuration={0}
+          onSelectHome={() => setActiveSection(null)}
+          onSelect={openSection}
+        />
+      )}
+
+      {activeSection === null && (
+        <section
+          aria-label="Additional signed-in content"
+          style={{
+            display: "grid",
+            flex: "0 0 auto",
+            minHeight: "50rem",
+            placeItems: "end center",
+            width: "100%",
+          }}
+        >
+          <button type="button">Final signed-in action</button>
+        </section>
       )}
 
       {activeSection !== null && activeDetails && (
@@ -105,15 +114,6 @@ export function SignedInHomeFixture() {
             </section>
           </div>
         </section>
-      )}
-
-      {activeSection !== null && setupComplete && (
-        <TrainingSectionNavigation
-          activeSection={activeSection}
-          transitionDuration={0}
-          onSelectHome={() => setActiveSection(null)}
-          onSelect={setActiveSection}
-        />
       )}
     </main>
   );
