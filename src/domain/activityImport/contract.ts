@@ -166,6 +166,7 @@ export type CrossProviderDuplicateAssessment =
         | "duration"
         | "distance"
         | "reported_origin"
+        | "time_zone"
       )[];
     };
 
@@ -773,7 +774,6 @@ export function assessCrossProviderDuplicate(
   );
 
   if (
-    left.timeZone !== right.timeZone ||
     startDifference > START_TIME_TOLERANCE_MILLISECONDS ||
     durationDifference > DURATION_TOLERANCE_SECONDS ||
     distanceDifference > distanceTolerance
@@ -786,6 +786,7 @@ export function assessCrossProviderDuplicate(
     | "duration"
     | "distance"
     | "reported_origin"
+    | "time_zone"
   )[] = [];
   if (left.startedAt !== right.startedAt) differences.push("start_time");
   if (
@@ -798,6 +799,7 @@ export function assessCrossProviderDuplicate(
   if (left.reportedOrigin !== right.reportedOrigin) {
     differences.push("reported_origin");
   }
+  if (left.timeZone !== right.timeZone) differences.push("time_zone");
 
   return {
     kind: "ambiguous_candidate",
