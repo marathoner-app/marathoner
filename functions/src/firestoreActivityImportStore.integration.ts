@@ -52,6 +52,29 @@ function garminEvent(
   } as ActivityImportCommandEventV1
 }
 
+function appleHealthGarminEvent(
+  providerActivityId: string,
+  options: {
+    changes?: Partial<ActivityImportCommandEventV1>
+    withHeartRate?: boolean
+  } = {},
+): ActivityImportCommandEventV1 {
+  const {
+    averageHeartRateBpm,
+    maximumHeartRateBpm,
+    ...eventWithoutHeartRate
+  } = garminEvent(options.changes)
+  return {
+    ...eventWithoutHeartRate,
+    provider: 'apple_health',
+    providerActivityId: createProviderActivityId(providerActivityId),
+    providerUpdatedAt: null,
+    ...(options.withHeartRate === false
+      ? {}
+      : { averageHeartRateBpm, maximumHeartRateBpm }),
+  } as ActivityImportCommandEventV1
+}
+
 async function clearFirestoreEmulator() {
   const host = process.env.FIRESTORE_EMULATOR_HOST
   if (!host) throw new Error('FIRESTORE_EMULATOR_HOST is required.')
@@ -476,6 +499,162 @@ describe('Firestore activity-import persistence', () => {
     await expect(
       database.collection(`users/${ownerId}/runs`).get(),
     ).resolves.toEqual(expect.objectContaining({ size: 1 }))
+  })
+
+  it('enriches the first Apple Health run and holds a second exact identity for review', async () => {
+    const persistence = store()
+    const first = await persistence.commit({
+      envelope: createActivityImportCommand(
+        'import-apple-enrichment-command-0001',
+        appleHealthGarminEvent('health-no-heart-rate-001', {
+          withHeartRate: false,
+        }),
+      ),
+      ownerId,
+    })
+    if (first.kind !== 'applied' || first.result.completedRunId === null) {
+      throw new Error('Expected the first Apple Health run.')
+    }
+    await database
+      .doc(`users/${ownerId}/runs/${first.result.completedRunId}`)
+      .update({
+        notes: 'Keep this runner note.',
+        perceivedEffort: 'about_right',
+        shoeId: 'shoe-001',
+      })
+
+    const secondCommand = createActivityImportCommand(
+      'import-apple-enrichment-command-0002',
+      appleHealthGarminEvent('health-with-heart-rate-002'),
+    )
+    const second = await persistence.commit({
+      envelope: secondCommand,
+      ownerId,
+    })
+    const replay = await persistence.commit({
+      envelope: secondCommand,
+      ownerId,
+    })
+
+    expect(second).toEqual({
+      kind: 'review-required',
+      result: expect.objectContaining({
+        status: 'activity_import_review_required',
+        code: 'same-provider-duplicate-candidate',
+        candidateCompletedRunId: first.result.completedRunId,
+      }),
+    })
+    expect(replay).toEqual(second)
+    const runs = await database.collection(`users/${ownerId}/runs`).get()
+    expect(runs.docs).toHaveLength(1)
+    expect(runs.docs[0]?.data()).toMatchObject({
+      averageHeartRateBpm: 151,
+      maximumHeartRateBpm: 176,
+      notes: 'Keep this runner note.',
+      perceivedEffort: 'about_right',
+      shoeId: 'shoe-001',
+    })
+    const imports = await database
+      .collection(`users/${ownerId}/activityImports`)
+      .get()
+    expect(imports.docs.map((document) => document.data().state).sort()).toEqual([
+      'active',
+      'review_required',
+    ])
+  })
+
+  it('keeps heart rate when the richer Apple Health identity arrives first', async () => {
+    const persistence = store()
+    const first = await persistence.commit({
+      envelope: createActivityImportCommand(
+        'import-apple-reverse-command-0001',
+        appleHealthGarminEvent('health-with-heart-rate-001'),
+      ),
+      ownerId,
+    })
+    if (first.kind !== 'applied') throw new Error('Expected an imported run.')
+
+    const second = await persistence.commit({
+      envelope: createActivityImportCommand(
+        'import-apple-reverse-command-0002',
+        appleHealthGarminEvent('health-no-heart-rate-002', {
+          withHeartRate: false,
+        }),
+      ),
+      ownerId,
+    })
+
+    expect(second).toEqual({
+      kind: 'review-required',
+      result: expect.objectContaining({
+        code: 'same-provider-duplicate-candidate',
+        candidateCompletedRunId: first.result.completedRunId,
+      }),
+    })
+    const runs = await database.collection(`users/${ownerId}/runs`).get()
+    expect(runs.docs).toHaveLength(1)
+    expect(runs.docs[0]?.data()).toMatchObject({
+      averageHeartRateBpm: 151,
+      maximumHeartRateBpm: 176,
+    })
+  })
+
+  it('holds conflicting exact Apple Health identities without merging heart rate', async () => {
+    const persistence = store()
+    const first = await persistence.commit({
+      envelope: createActivityImportCommand(
+        'import-apple-conflict-command-0001',
+        appleHealthGarminEvent('health-conflict-001'),
+      ),
+      ownerId,
+    })
+    if (first.kind !== 'applied') throw new Error('Expected an imported run.')
+
+    const conflicting = await persistence.commit({
+      envelope: createActivityImportCommand(
+        'import-apple-conflict-command-0002',
+        appleHealthGarminEvent('health-conflict-002', {
+          changes: {
+            averageHeartRateBpm: createHeartRateBpm(145),
+            maximumHeartRateBpm: createHeartRateBpm(170),
+          },
+        }),
+      ),
+      ownerId,
+    })
+    const unrelated = await persistence.commit({
+      envelope: createActivityImportCommand(
+        'import-apple-unrelated-command-0003',
+        appleHealthGarminEvent('health-unrelated-003', {
+          changes: { distanceMeters: createDistanceMeters(10_500) },
+        }),
+      ),
+      ownerId,
+    })
+
+    expect(conflicting).toEqual({
+      kind: 'review-required',
+      result: expect.objectContaining({
+        code: 'same-provider-duplicate-candidate',
+        candidateCompletedRunId: first.result.completedRunId,
+      }),
+    })
+    expect(unrelated).toEqual({
+      kind: 'applied',
+      result: expect.objectContaining({ operation: 'created' }),
+    })
+    const runs = await database.collection(`users/${ownerId}/runs`).get()
+    expect(runs.docs).toHaveLength(2)
+    expect(
+      (
+        await database
+          .doc(`users/${ownerId}/runs/${first.result.completedRunId}`)
+          .get()
+      ).data(),
+    ).toMatchObject({
+      averageHeartRateBpm: 151,
+      maximumHeartRateBpm: 176,
+    })
   })
 
   it('recovers a legacy active import whose visible run is missing', async () => {
