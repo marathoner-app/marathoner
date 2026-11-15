@@ -45,6 +45,7 @@
     "manage:closed-beta-methodology-controls": "node scripts/manage-closed-beta-methodology-controls.mjs",
     "migrate:founding-beta-member": "node scripts/migrate-founding-beta-member.mjs",
     "migrate:owner-runs-to-beta": "node scripts/migrate-owner-runs-to-beta.mjs",
+    "reconcile:activity-import-duplicates": "npm run build:functions && node scripts/reconcile-activity-import-duplicates.mjs",
     "verify:functions-postdeploy": "node scripts/verify-material-command-postdeploy.mjs",
     "test:watch": "vitest",
     "sync:ios": "cap sync ios",
