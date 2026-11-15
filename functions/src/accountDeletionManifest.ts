@@ -1,16 +1,16 @@
 import type { DocumentData } from 'firebase-admin/firestore'
 
 export const ACCOUNT_DELETION_WORKFLOW_SCHEMA_VERSION = 1
-export const ACCOUNT_DELETION_MANIFEST_VERSION = 1
+export const ACCOUNT_DELETION_MANIFEST_VERSION = 2
 export const ACCOUNT_DELETION_RECEIPT_RETENTION_MILLISECONDS =
   30 * 24 * 60 * 60 * 1_000
 
 export const ACCOUNT_DELETION_PROGRESS_STAGES = [
   'membership_locked',
   'access_locked',
+  'private_records_deleted',
   'user_tree_deleted',
   'server_records_deleted',
-  'private_records_deleted',
   'membership_removed',
   'manifest_verified',
   'authentication_deleted',
@@ -49,6 +49,7 @@ export interface ActiveAccountDeletionRequest {
   attemptCount: number
   commandId: string
   completionDueAt: string
+  garminProviderAccountDigests?: string[]
   manifestVersion: typeof ACCOUNT_DELETION_MANIFEST_VERSION
   requestId: string
   requestedAt: string
@@ -106,6 +107,7 @@ export function parseActiveAccountDeletionRequest(
     'attemptCount',
     'commandId',
     'completionDueAt',
+    'garminProviderAccountDigests',
     'lastErrorCode',
     'manifestVersion',
     'requestId',
@@ -138,6 +140,15 @@ export function parseActiveAccountDeletionRequest(
     !isIsoTimestamp(data.requestedAt) ||
     !isIsoTimestamp(data.completionDueAt) ||
     !isIsoTimestamp(data.updatedAt) ||
+    ('garminProviderAccountDigests' in data &&
+      (!Array.isArray(data.garminProviderAccountDigests) ||
+        data.garminProviderAccountDigests.some(
+          (digest) =>
+            typeof digest !== 'string' ||
+            !/^[A-Za-z0-9_-]{43}$/u.test(digest),
+        ) ||
+        new Set(data.garminProviderAccountDigests).size !==
+          data.garminProviderAccountDigests.length)) ||
     ('lastErrorCode' in data &&
       !ACCOUNT_DELETION_FAILURE_CODES.includes(data.lastErrorCode))
   ) {
