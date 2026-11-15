@@ -426,6 +426,7 @@ function buildOrphanNormalizationPlan(options: {
   }
   const candidateClusters = [...importsByFingerprint.values()].filter(
     (group) =>
+      group.length > 1 &&
       group.some(
         (activityImport) =>
           !runSnapshots.has(activityImport.completedRunId),

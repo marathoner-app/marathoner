@@ -346,6 +346,16 @@ describe('Firestore activity-import duplicate reconciliation', () => {
   it('normalizes only the exact orphan import so the existing recovery can proceed', async () => {
     const { heartRateRun, noHeartRateRun, orphanEvent, orphanImportId } =
       await seedOrphanNormalizationCluster()
+    const unrelatedOrphanEvent = appleEventWithoutHeartRate(
+      'unrelated-singleton-orphan',
+      { startedAt: createUtcDateTime('2026-11-15T15:00:00.000Z') },
+    )
+    await seedImport(
+      'unrelated-singleton-orphan-import',
+      unrelatedOrphanEvent,
+      'unrelated-singleton-orphan-run',
+      '2026-11-15T17:10:00.000Z',
+    )
 
     await expect(reconciliation().inspect(ownerId)).resolves.toMatchObject({
       blockedPairCount: 3,
