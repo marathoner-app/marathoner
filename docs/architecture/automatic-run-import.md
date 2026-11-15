@@ -1,6 +1,6 @@
 # Automatic completed-run import
 
-- **Status:** Implemented in the closed beta; final Garmin and cross-provider proof remains open
+- **Status:** Apple and direct Garmin happy paths observed; final replay, deletion, limited-account, and cross-provider proof remains open
 - **Decision date:** 2026-10-30
 - **Decision issue:** [#616](https://github.com/marathoner-app/marathoner/issues/616)
 - **Delivery epic:** [#617](https://github.com/marathoner-app/marathoner/issues/617)
@@ -101,8 +101,10 @@ The owner submitted the Activity-API-only Starter request on November 3, 2026,
 and received usable Starter access on November 4. The private beta app, trusted
 OAuth callback, push receiver, permission-change endpoint, credentials, and
 closed-beta runtime configuration now exist. One owner account has completed
-provider authorization. The first real post-connection Garmin running delivery
-and the complete cross-provider proof matrix remain open in #623 and #624.
+provider authorization, and a real post-connection running activity arrived
+automatically through the direct Activity API path. Same-provider live replay,
+cross-provider duplicate handling, global provider-state deletion, and
+limited-account proof remain open in #623, #624, and #771.
 
 Garmin Connect can also share workout summaries with Apple Health. That path
 may support a bounded early iPhone test only after Marathoner verifies the
@@ -214,8 +216,9 @@ behavior must match the implemented providers before invitations open.
 | 7 | [#650 Trusted Garmin OAuth](https://github.com/marathoner-app/marathoner/issues/650) | 05 Trust and External-Beta Readiness | Complete; deployed and owner-authorized |
 | 8 | [#651 Garmin push ingestion](https://github.com/marathoner-app/marathoner/issues/651) | 05 Trust and External-Beta Readiness | Complete; deployed and provider-configured |
 | 9 | [#652 Garmin recovery UI](https://github.com/marathoner-app/marathoner/issues/652) | 05 Trust and External-Beta Readiness | Complete |
-| 10 | [#623 Direct Garmin ingestion](https://github.com/marathoner-app/marathoner/issues/623) | 05 Trust and External-Beta Readiness | First real post-connection run and remaining live evidence |
-| 11 | [#624 Cross-provider beta proof](https://github.com/marathoner-app/marathoner/issues/624) | 05 Trust and External-Beta Readiness | #620, #621, and #623 complete |
+| 10 | [#623 Direct Garmin ingestion](https://github.com/marathoner-app/marathoner/issues/623) | 05 Trust and External-Beta Readiness | Real post-connection import observed; replay, deletion, and limited-account evidence remains |
+| 11 | [#624 Cross-provider beta proof](https://github.com/marathoner-app/marathoner/issues/624) | 05 Trust and External-Beta Readiness | Apple and Garmin happy paths observed; locked candidate matrix remains |
+| 12 | [#771 Garmin-aware account deletion](https://github.com/marathoner-app/marathoner/issues/771) | 05 Trust and External-Beta Readiness | Implementation ready; destructive live proof remains in #124 |
 
 ## Non-goals
 

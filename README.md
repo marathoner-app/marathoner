@@ -9,9 +9,9 @@ scope-or-date decision checkpoint and optimistic invitation floor, not a
 delivery promise. The November 3 capacity forecast places the likely invitation
 decision on February 28, 2027 and the conservative capacity date on August 8,
 subject to every evidence gate. Apple Health import has passed owner-device
-proof, and the approved Garmin integration is configured for the closed beta;
-its first real completed-run delivery and the cross-provider proof matrix remain
-open.
+proof, and a real post-connection Garmin run has arrived automatically through
+the direct Activity API path. Cross-provider duplicate, deletion, replay, and
+limited-account proof remain open.
 The first invitation batch is limited to five to eight allowlisted adults who
 already run consistently and are preparing for a first marathon. The existing
 responsive web application remains the planning and analysis surface; Android
@@ -63,7 +63,9 @@ not represented as professionally approved or invitation-ready.
 
 The visible features share the typed Firestore persistence layer. Follow the
 [open issues](https://github.com/marathoner-app/marathoner/issues) to see what is
-being built next.
+being built next. The dated
+[November 14 beta checkpoint](docs/operations/evidence/2026-11-14-beta-state-reconciliation.md)
+separates confirmed internal evidence from the invitation gates that remain.
 
 ## Governance and security
 
@@ -158,9 +160,12 @@ thin Capacitor iOS shell around this root application. The committed shell is a
 development foundation. App Check gates Firebase client startup in code. An
 owner-only development browser and iPhone debug path has passed, and paid-team
 Debug and Release signing, the production App Attest entitlement, physical
-iPhone installation, and launch passed on November 12, 2026. Monitored beta
-traffic, live token acceptance, beta activation, daily-use behavior,
-accessibility, and TestFlight are still explicit release gates.
+iPhone installation, and launch passed on November 12, 2026. Internal
+TestFlight build 9 has since been installed and used by the owner and operating
+partner. Beta App Check traffic is visible as valid while enforcement remains
+off; the full observation and rollback record, accessibility, external
+TestFlight App Review, and every invitation-readiness rehearsal are still
+explicit release gates.
 
 | Path | Responsibility |
 | --- | --- |
@@ -263,9 +268,12 @@ The development/test-only Creator Radar boundary is documented in
   evidence remain open before external beta under issues #124 and #205.
 - Apple Health owner-device proof imported and reconciled completed workouts.
   Direct Garmin connection, token custody, push receipt, permission-change, and
-  recovery paths are configured in the closed beta. The first real post-
-  connection Garmin run and the full duplicate/disconnect/relaunch matrix remain
-  open in issues #623 and #624.
+  recovery paths are configured in the closed beta, and a real owner-controlled
+  post-connection run arrived automatically. Same-provider replay,
+  cross-provider duplicate handling, account deletion, limited-account, and the
+  complete disconnect/relaunch matrix remain open in issues #623 and #624.
+  Garmin-aware deletion is implemented in #771; the live destructive rehearsal
+  remains under #124.
 - The Track flow captures date, distance, elapsed time, shoe, optional planned-
   workout association, perceived effort, and notes. The production
   professionally approved-content registry remains empty. The distinct

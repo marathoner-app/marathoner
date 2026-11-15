@@ -201,10 +201,12 @@ Firebase is reconsidered only if native attestation, telemetry, or another hard
 requirement triggers the ADR's reopen rules.
 
 The decision does not claim participant readiness. Issue #177 promoted the
-production-shaped shell and #125 proved explicit beta selection. Issue #161
-must still prove Apple App Check, while #122, #137, #138, and #140 retain their
-distribution, session, daily-use, offline, and accessibility gates. Failure of
-a binding gate can reopen the framework choice or move the date.
+production-shaped shell and #125 proved explicit beta selection. Internal
+TestFlight build 9 now supports owner/operating-partner use and valid beta App
+Check traffic is observable. Issues #122, #140, #161, #205, #206, #624, and
+#691 retain external distribution, accessibility, enforcement, import-matrix,
+and invitation-readiness gates. Failure of a binding gate can reopen the
+framework choice or move the date.
 
 The existing web application remains canonical. Do not relocate it or build a
 generalized shared workspace. Keep only the minimum pure TypeScript contracts
