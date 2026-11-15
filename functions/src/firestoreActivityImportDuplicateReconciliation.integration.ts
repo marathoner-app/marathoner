@@ -1,9 +1,12 @@
+import { createHash } from 'node:crypto'
+
 import { deleteApp, initializeApp } from 'firebase-admin/app'
 import { getFirestore, Timestamp } from 'firebase-admin/firestore'
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
 import {
   createCrossProviderDuplicateFingerprint,
+  createProviderActivityIdentityKey,
   createProviderActivityId,
   type CompletedActivityUpsertV1,
 } from '../../src/domain/activityImport/contract.js'
@@ -256,21 +259,28 @@ async function seedOrphanNormalizationCluster(options: {
     { notes: 'Preserve the enriched run note.' },
   )
   const orphanRunId = `apple-orphan-run-${suffix}`
+  const importIdFor = (event: CompletedActivityUpsertV1) =>
+    createHash('sha256')
+      .update(createProviderActivityIdentityKey(event))
+      .digest('hex')
+  const noHeartRateImportId = importIdFor(noHeartRateEvent)
+  const heartRateImportId = importIdFor(heartRateEvent)
+  const orphanImportId = importIdFor(orphanEvent)
   await Promise.all([
     seedImport(
-      `apple-no-hr-import-${suffix}`,
+      noHeartRateImportId,
       noHeartRateEvent,
       noHeartRateRun.id,
       '2026-11-14T16:10:00.000Z',
     ),
     seedImport(
-      `apple-with-hr-import-${suffix}`,
+      heartRateImportId,
       heartRateEvent,
       heartRateRun.id,
       '2026-11-14T17:10:00.000Z',
     ),
     seedImport(
-      `apple-orphan-import-${suffix}`,
+      orphanImportId,
       orphanEvent,
       orphanRunId,
       '2026-11-14T17:20:00.000Z',
@@ -288,7 +298,7 @@ async function seedOrphanNormalizationCluster(options: {
     noHeartRateEvent,
     noHeartRateRun,
     orphanEvent,
-    orphanImportId: `apple-orphan-import-${suffix}`,
+    orphanImportId,
   }
 }
 
@@ -498,7 +508,7 @@ describe('Firestore activity-import duplicate reconciliation', () => {
   })
 
   it('refuses mismatched run evidence and a stale confirmation without writes', async () => {
-    const { noHeartRateRun, orphanImportId } =
+    const { heartRateRun, noHeartRateRun, orphanImportId } =
       await seedOrphanNormalizationCluster()
     await database.doc(`users/${ownerId}/runs/${noHeartRateRun.id}`).update({
       distanceMeters: 10_100,
@@ -519,8 +529,8 @@ describe('Firestore activity-import duplicate reconciliation', () => {
     if (inspection.confirmation === null) {
       throw new Error('Expected a restored orphan-normalization confirmation.')
     }
-    await database.doc(`users/${ownerId}/runs/${noHeartRateRun.id}`).update({
-      updatedAt: '2026-11-14T18:30:00.000Z',
+    await database.doc(`users/${ownerId}/runs/${heartRateRun.id}`).update({
+      notes: 'Changed after the orphan dry run.',
     })
     await expect(
       reconciliation().normalizeOrphanImport({
