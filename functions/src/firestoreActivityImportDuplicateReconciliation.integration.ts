@@ -71,6 +71,19 @@ function appleEvent(
   })
 }
 
+function appleEventWithoutHeartRate(
+  providerActivityId: string,
+  changes: Partial<CompletedActivityUpsertV1> = {},
+): CompletedActivityUpsertV1 {
+  return garminEvent(providerActivityId, {
+    provider: 'apple_health',
+    observedAt: createUtcDateTime('2026-11-14T17:10:00.000Z'),
+    providerUpdatedAt: createUtcDateTime('2026-11-14T17:05:00.000Z'),
+    timeZone: createIanaTimeZone('Etc/GMT+8'),
+    ...changes,
+  })
+}
+
 function completedRun(
   id: string,
   event: CompletedActivityUpsertV1,
@@ -166,6 +179,51 @@ async function seedPair(options: {
   return { directEvent, enrichedEvent, garminRun, appleRun }
 }
 
+async function seedSameProviderEnrichmentPair(options: {
+  heartRateRunChanges?: Partial<CompletedRun>
+  noHeartRateRunChanges?: Partial<CompletedRun>
+} = {}) {
+  const noHeartRateEvent = appleEventWithoutHeartRate('apple-no-hr-001')
+  const heartRateEvent = appleEvent('apple-with-hr-001')
+  const noHeartRateRun = completedRun(
+    'apple-no-hr-run-001',
+    noHeartRateEvent,
+    '2026-11-14T16:10:00.000Z',
+    options.noHeartRateRunChanges,
+  )
+  const heartRateRun = completedRun(
+    'apple-with-hr-run-001',
+    heartRateEvent,
+    '2026-11-14T17:10:00.000Z',
+    {
+      notes: 'Preserve the enriched run note.',
+      perceivedEffort: 'about_right',
+      ...options.heartRateRunChanges,
+    },
+  )
+  await Promise.all([
+    seedImport(
+      'apple-no-hr-import-001',
+      noHeartRateEvent,
+      noHeartRateRun.id,
+      '2026-11-14T16:10:00.000Z',
+    ),
+    seedImport(
+      'apple-with-hr-import-001',
+      heartRateEvent,
+      heartRateRun.id,
+      '2026-11-14T17:10:00.000Z',
+    ),
+    database
+      .doc(`users/${ownerId}/runs/${noHeartRateRun.id}`)
+      .set(completedRunAdminDocument(noHeartRateRun)),
+    database
+      .doc(`users/${ownerId}/runs/${heartRateRun.id}`)
+      .set(completedRunAdminDocument(heartRateRun)),
+  ])
+  return { heartRateEvent, heartRateRun, noHeartRateEvent, noHeartRateRun }
+}
+
 async function clearFirestoreEmulator() {
   const host = process.env.FIRESTORE_EMULATOR_HOST
   if (!host) throw new Error('FIRESTORE_EMULATOR_HOST is required.')
@@ -222,7 +280,9 @@ describe('Firestore activity-import duplicate reconciliation', () => {
       confirmation: expect.stringMatching(
         /^RECONCILE-ACTIVITY-IMPORT-DUPLICATES:[a-f0-9]{24}$/u,
       ),
+      crossProviderCandidatePairCount: 1,
       eligiblePairCount: 1,
+      sameProviderCandidatePairCount: 0,
     })
     if (inspection.confirmation === null) {
       throw new Error('Expected a reconciliation confirmation.')
@@ -287,6 +347,254 @@ describe('Firestore activity-import duplicate reconciliation', () => {
       status: 'already_reconciled',
       reconciledPairCount: 0,
     })
+  })
+
+  it('keeps the exact Apple Health run with HR and holds the redundant identity on replay', async () => {
+    const { heartRateRun, noHeartRateEvent, noHeartRateRun } =
+      await seedSameProviderEnrichmentPair()
+    const inspection = await reconciliation().inspect(ownerId)
+
+    expect(inspection).toEqual({
+      blockedPairCount: 0,
+      blockedReasonCounts: expect.objectContaining({
+        conflicting_heart_rate: 0,
+        duplicate_has_runner_fields: 0,
+        multiple_candidates: 0,
+      }),
+      candidatePairCount: 1,
+      confirmation: expect.stringMatching(
+        /^RECONCILE-ACTIVITY-IMPORT-DUPLICATES:[a-f0-9]{24}$/u,
+      ),
+      crossProviderCandidatePairCount: 0,
+      eligiblePairCount: 1,
+      sameProviderCandidatePairCount: 1,
+    })
+    if (inspection.confirmation === null) {
+      throw new Error('Expected a reconciliation confirmation.')
+    }
+
+    await expect(
+      reconciliation().reconcile({
+        confirmation: inspection.confirmation,
+        ownerId,
+      }),
+    ).resolves.toEqual({ status: 'reconciled', reconciledPairCount: 1 })
+
+    const [canonicalSnapshot, duplicateSnapshot, duplicateImportSnapshot] =
+      await Promise.all([
+        database.doc(`users/${ownerId}/runs/${heartRateRun.id}`).get(),
+        database.doc(`users/${ownerId}/runs/${noHeartRateRun.id}`).get(),
+        database
+          .doc(
+            `users/${ownerId}/activityImports/apple-no-hr-import-001`,
+          )
+          .get(),
+      ])
+    expect(canonicalSnapshot.data()).toMatchObject({
+      averageHeartRateBpm: 151,
+      maximumHeartRateBpm: 176,
+      notes: 'Preserve the enriched run note.',
+      perceivedEffort: 'about_right',
+      importProvider: 'apple_health',
+    })
+    expect(duplicateSnapshot.exists).toBe(false)
+    expect(duplicateImportSnapshot.data()).toMatchObject({
+      state: 'review_required',
+      completedRunId: null,
+      candidateCompletedRunId: heartRateRun.id,
+      candidateKind: 'duplicate_candidate',
+    })
+
+    const { ownerId: _ownerId, ...replayEvent } = noHeartRateEvent
+    void _ownerId
+    const replay = await new FirestoreActivityImportStore(database, {
+      createRunId: () => 'must-not-be-created',
+      now: () => new Date('2026-11-14T18:10:00.000Z'),
+    }).commit({
+      envelope: createActivityImportCommand(
+        'same-provider-reconciliation-replay-command-0001',
+        replayEvent,
+      ),
+      ownerId,
+    })
+    expect(replay).toEqual({
+      kind: 'review-required',
+      result: expect.objectContaining({
+        status: 'activity_import_review_required',
+        code: 'same-provider-duplicate-candidate',
+        candidateCompletedRunId: heartRateRun.id,
+      }),
+    })
+    await expect(
+      database.collection(`users/${ownerId}/runs`).get(),
+    ).resolves.toEqual(expect.objectContaining({ size: 1 }))
+    await expect(
+      reconciliation().reconcile({
+        confirmation: inspection.confirmation,
+        ownerId,
+      }),
+    ).resolves.toEqual({
+      status: 'already_reconciled',
+      reconciledPairCount: 0,
+    })
+  })
+
+  it('refuses a linked no-HR Apple Health copy without changing either run', async () => {
+    await seedSameProviderEnrichmentPair({
+      noHeartRateRunChanges: {
+        plannedWorkoutId: 'linked-workout-id',
+        plannedWorkoutPlanId: 'linked-plan-id',
+      },
+    })
+
+    const inspection = await reconciliation().inspect(ownerId)
+    expect(inspection).toMatchObject({
+      blockedPairCount: 1,
+      blockedReasonCounts: { duplicate_has_runner_fields: 1 },
+      candidatePairCount: 1,
+      eligiblePairCount: 0,
+      sameProviderCandidatePairCount: 1,
+    })
+    await expect(
+      reconciliation().reconcile({ confirmation: 'wrong', ownerId }),
+    ).rejects.toThrow('blocked candidate')
+    await expect(
+      database.collection(`users/${ownerId}/runs`).get(),
+    ).resolves.toEqual(expect.objectContaining({ size: 2 }))
+  })
+
+  it('refuses conflicting Apple Health HR copies instead of choosing one', async () => {
+    const { noHeartRateEvent, noHeartRateRun } =
+      await seedSameProviderEnrichmentPair({
+        heartRateRunChanges: {
+          notes: undefined,
+          perceivedEffort: undefined,
+        },
+      })
+    const changedEvent: CompletedActivityUpsertV1 = {
+      ...noHeartRateEvent,
+      averageHeartRateBpm: createHeartRateBpm(145),
+      maximumHeartRateBpm: createHeartRateBpm(170),
+    }
+    await Promise.all([
+      database
+        .doc(`users/${ownerId}/activityImports/apple-no-hr-import-001`)
+        .update({ event: changedEvent }),
+      database
+        .doc(`users/${ownerId}/runs/${noHeartRateRun.id}`)
+        .set(
+          completedRunAdminDocument(
+            completedRun(
+              noHeartRateRun.id,
+              changedEvent,
+              '2026-11-14T16:10:00.000Z',
+            ),
+          ),
+        ),
+    ])
+
+    const inspection = await reconciliation().inspect(ownerId)
+    expect(inspection).toMatchObject({
+      blockedPairCount: 1,
+      blockedReasonCounts: { conflicting_heart_rate: 1 },
+      eligiblePairCount: 0,
+      sameProviderCandidatePairCount: 1,
+    })
+  })
+
+  it('ignores a non-exact Apple Health pair', async () => {
+    const noHeartRateEvent = appleEventWithoutHeartRate('apple-no-hr-001')
+    const differentEvent = appleEvent('apple-with-hr-001', {
+      distanceMeters: createDistanceMeters(10_100),
+    })
+    const noHeartRateRun = completedRun(
+      'apple-no-hr-run-001',
+      noHeartRateEvent,
+      '2026-11-14T16:10:00.000Z',
+    )
+    const differentRun = completedRun(
+      'apple-with-hr-run-001',
+      differentEvent,
+      '2026-11-14T17:10:00.000Z',
+    )
+    await Promise.all([
+      seedImport(
+        'apple-no-hr-import-001',
+        noHeartRateEvent,
+        noHeartRateRun.id,
+        '2026-11-14T16:10:00.000Z',
+      ),
+      seedImport(
+        'apple-with-hr-import-001',
+        differentEvent,
+        differentRun.id,
+        '2026-11-14T17:10:00.000Z',
+      ),
+      database
+        .doc(`users/${ownerId}/runs/${noHeartRateRun.id}`)
+        .set(completedRunAdminDocument(noHeartRateRun)),
+      database
+        .doc(`users/${ownerId}/runs/${differentRun.id}`)
+        .set(completedRunAdminDocument(differentRun)),
+    ])
+
+    await expect(reconciliation().inspect(ownerId)).resolves.toMatchObject({
+      blockedPairCount: 0,
+      candidatePairCount: 0,
+      confirmation: null,
+      eligiblePairCount: 0,
+      sameProviderCandidatePairCount: 0,
+    })
+    await expect(
+      database.collection(`users/${ownerId}/runs`).get(),
+    ).resolves.toEqual(expect.objectContaining({ size: 2 }))
+  })
+
+  it('refuses overlapping exact Apple Health candidates', async () => {
+    await seedSameProviderEnrichmentPair()
+    const secondHeartRateEvent = appleEvent('apple-with-hr-002')
+    const secondHeartRateRun = completedRun(
+      'apple-with-hr-run-002',
+      secondHeartRateEvent,
+      '2026-11-14T17:20:00.000Z',
+    )
+    await Promise.all([
+      seedImport(
+        'apple-with-hr-import-002',
+        secondHeartRateEvent,
+        secondHeartRateRun.id,
+        '2026-11-14T17:20:00.000Z',
+      ),
+      database
+        .doc(`users/${ownerId}/runs/${secondHeartRateRun.id}`)
+        .set(completedRunAdminDocument(secondHeartRateRun)),
+    ])
+
+    const inspection = await reconciliation().inspect(ownerId)
+    expect(inspection).toMatchObject({
+      blockedPairCount: 3,
+      blockedReasonCounts: { multiple_candidates: 3 },
+      candidatePairCount: 3,
+      eligiblePairCount: 0,
+      sameProviderCandidatePairCount: 3,
+    })
+    await expect(
+      database.collection(`users/${ownerId}/runs`).get(),
+    ).resolves.toEqual(expect.objectContaining({ size: 3 }))
+  })
+
+  it('refuses malformed import evidence before planning any change', async () => {
+    await seedSameProviderEnrichmentPair()
+    await database
+      .doc(`users/${ownerId}/activityImports/apple-no-hr-import-001`)
+      .update({ crossProviderFingerprint: 'malformed-fingerprint' })
+
+    await expect(reconciliation().inspect(ownerId)).rejects.toThrow(
+      'activity-import record is invalid',
+    )
+    await expect(
+      database.collection(`users/${ownerId}/runs`).get(),
+    ).resolves.toEqual(expect.objectContaining({ size: 2 }))
   })
 
   it('refuses a duplicate copy that contains runner-owned fields', async () => {
