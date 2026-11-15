@@ -9,11 +9,15 @@ import {
   createDurationSeconds,
   createHeartRateBpm,
   createIanaTimeZone,
+  createDateOnly,
+  createPlannedWorkoutId,
   createShoeId,
+  createTrainingPlanId,
   createUserId,
   createUtcDateTime,
   type CompletedRun,
   type DateOnly,
+  type PlannedWorkout,
   type Shoe,
   type ShoeId,
 } from "../../src/domain/training";
@@ -26,13 +30,36 @@ import type {
 const userId = createUserId("viewport-runner");
 const timestamp = createUtcDateTime("2026-10-21T16:00:00Z");
 const importedFixture = new URLSearchParams(window.location.search).has("imported");
+const matchedFixture = new URLSearchParams(window.location.search).has("matched");
 const pendingRunSaveFixture = new URLSearchParams(window.location.search).has(
   "pending-run-save",
 );
+const matchedPlanId = createTrainingPlanId("viewport-plan");
+const matchedWorkoutId = createPlannedWorkoutId("viewport-long-run");
+
+const matchedWorkout: PlannedWorkout = {
+  id: matchedWorkoutId,
+  userId,
+  planId: matchedPlanId,
+  scheduledDate: createDateOnly("2026-10-21"),
+  phase: "marathon_training",
+  status: "completed",
+  kind: "run",
+  purpose: "long",
+  targetDistance: createDistanceMeters(8_047),
+  createdAt: timestamp,
+  updatedAt: timestamp,
+};
 
 const importedRun: CompletedRun = {
   id: createCompletedRunId("viewport-imported-run"),
   userId,
+  ...(matchedFixture
+    ? {
+        plannedWorkoutPlanId: matchedPlanId,
+        plannedWorkoutId: matchedWorkoutId,
+      }
+    : {}),
   startedAt: timestamp,
   timeZone: createIanaTimeZone("America/Los_Angeles"),
   distance: createDistanceMeters(8_047),
@@ -127,7 +154,7 @@ function TrackViewportFixture() {
       distanceUnit="mile"
       runs={runs}
       shoes={shoes}
-      plannedWorkouts={[]}
+      plannedWorkouts={matchedFixture ? [matchedWorkout] : []}
       onCreateShoe={createShoe}
       onRetireShoe={retireShoe}
       onCreateRun={createRun}

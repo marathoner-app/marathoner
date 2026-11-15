@@ -1,6 +1,10 @@
 import { createHash, randomUUID } from 'node:crypto'
 
-import type { DocumentData, Firestore } from 'firebase-admin/firestore'
+import type {
+  DocumentData,
+  DocumentReference,
+  Firestore,
+} from 'firebase-admin/firestore'
 
 import {
   assessCrossProviderDuplicate,
@@ -13,6 +17,7 @@ import {
   type CompletedActivityUpsertV1,
   type CrossProviderDuplicateAssessment,
 } from '../../src/domain/activityImport/contract.js'
+import { selectImportedRunWorkoutMatch } from '../../src/domain/activityImport/plannedWorkoutMatch.js'
 import {
   isActivityImportReceiptResult,
   isActivityImportReviewRequiredResult,
@@ -42,17 +47,21 @@ import { validateCompletedRun } from '../../src/domain/training/validation.js'
 import {
   activityImportDocumentPath,
   activityImportsCollectionPath,
+  plansCollectionPath,
   runDocumentPath,
   workoutCompletionGuardDocumentPath,
   workoutDocumentPath,
+  workoutsCollectionPath,
 } from '../../src/persistence/firestore/paths.js'
 import { TRAINING_SCHEMA_VERSION } from '../../src/persistence/trainingSchema.js'
 import {
   completedRunAdminDocument,
   completedRunFromAdminDocument,
+  completionGuardAdminDocument,
   completionGuardFromAdminDocument,
   plannedWorkoutAdminDocument,
   plannedWorkoutFromAdminDocument,
+  trainingPlanFromAdminDocument,
 } from './firestoreCompletedRunDocuments.js'
 import {
   MATERIAL_COMMAND_RECEIPT_SCHEMA_VERSION,
@@ -63,6 +72,10 @@ import {
   approvedBetaMembershipPath,
   isApprovedBetaMembership,
 } from './approvedBetaMembership.js'
+import {
+  WORKOUT_COMPLETION_GUARD_SCHEMA_VERSION,
+  type WorkoutCompletionGuardRecordV1,
+} from './completedRunCommandProjection.js'
 
 const ACTIVITY_IMPORT_RECORD_SCHEMA_VERSION = 1 as const
 
@@ -470,6 +483,13 @@ function duplicateReviewCode(
   return candidateRun?.importProvider === event.provider
     ? 'same-provider-duplicate-candidate'
     : 'cross-provider-duplicate-candidate'
+}
+
+interface AutomaticWorkoutMatchProjection {
+  readonly workout: PlannedWorkout
+  readonly workoutReference: DocumentReference
+  readonly guardReference: DocumentReference
+  readonly guard: WorkoutCompletionGuardRecordV1
 }
 
 export class FirestoreActivityImportStore implements ActivityImportStore {
@@ -966,7 +986,7 @@ export class FirestoreActivityImportStore implements ActivityImportStore {
         return { kind: 'review-required' as const, result }
       }
 
-      const run =
+      let run =
         existingRun === null
           ? importedRun(
               event,
@@ -974,6 +994,100 @@ export class FirestoreActivityImportStore implements ActivityImportStore {
               processedAt,
             )
           : updatedImportedRun(existingRun, event, processedAt)
+      let automaticWorkoutMatch: AutomaticWorkoutMatchProjection | null = null
+      if (existingRun === null) {
+        const activePlanSnapshots = await transaction.get(
+          this.database
+            .collection(plansCollectionPath(ownerId))
+            .where('status', '==', 'active'),
+        )
+        const activePlans = activePlanSnapshots.docs.map((document) => {
+          const plan = trainingPlanFromAdminDocument(
+            document.id,
+            document.data(),
+          )
+          if (plan === null || plan.userId !== ownerId) {
+            throw new Error('The active training plan is unavailable.')
+          }
+          return plan
+        })
+        let plannedWorkouts: PlannedWorkout[] = []
+        if (activePlans.length === 1) {
+          const workoutSnapshots = await transaction.get(
+            this.database.collection(
+              workoutsCollectionPath(ownerId, activePlans[0].id),
+            ),
+          )
+          plannedWorkouts = workoutSnapshots.docs.map((document) => {
+            const workout = plannedWorkoutFromAdminDocument(
+              document.id,
+              document.data(),
+            )
+            if (
+              workout === null ||
+              workout.userId !== ownerId ||
+              workout.planId !== activePlans[0].id
+            ) {
+              throw new Error('The active planned workout is unavailable.')
+            }
+            return workout
+          })
+        }
+        const match = selectImportedRunWorkoutMatch({
+          run,
+          plans: activePlans,
+          workouts: plannedWorkouts,
+        })
+        if (match.kind === 'matched') {
+          const workoutReference = this.database.doc(
+            workoutDocumentPath(ownerId, match.workout.planId, match.workout.id),
+          )
+          const guardReference = this.database.doc(
+            workoutCompletionGuardDocumentPath(
+              ownerId,
+              match.workout.planId,
+              match.workout.id,
+            ),
+          )
+          const guardSnapshot = await transaction.get(guardReference)
+          const existingGuard = completionGuardFromAdminDocument(
+            guardSnapshot.data(),
+          )
+          if (existingGuard === null) {
+            run = {
+              ...run,
+              plannedWorkoutPlanId: match.workout.planId,
+              plannedWorkoutId: match.workout.id,
+            }
+            if (validateCompletedRun(run).length > 0) {
+              throw new Error(
+                'An automatic workout match projected an invalid run.',
+              )
+            }
+            const completedWorkout: PlannedWorkout = {
+              ...match.workout,
+              status: 'completed',
+              updatedAt: createUtcDateTime(processedAt),
+            }
+            const guard: WorkoutCompletionGuardRecordV1 = {
+              schemaVersion: WORKOUT_COMPLETION_GUARD_SCHEMA_VERSION,
+              trainingSchemaVersion: TRAINING_SCHEMA_VERSION,
+              userId: ownerId,
+              planId: completedWorkout.planId,
+              plannedWorkoutId: completedWorkout.id,
+              completedRunId: run.id,
+              commandId: options.envelope.commandId,
+              createdAt: createUtcDateTime(processedAt),
+            }
+            automaticWorkoutMatch = {
+              workout: completedWorkout,
+              workoutReference,
+              guardReference,
+              guard,
+            }
+          }
+        }
+      }
       const record: ActivityImportRecordV1 = {
         schemaVersion: ACTIVITY_IMPORT_RECORD_SCHEMA_VERSION,
         trainingSchemaVersion: TRAINING_SCHEMA_VERSION,
@@ -1001,6 +1115,16 @@ export class FirestoreActivityImportStore implements ActivityImportStore {
         transaction.create(runReference, completedRunAdminDocument(run))
       } else {
         transaction.set(runReference, completedRunAdminDocument(run))
+      }
+      if (automaticWorkoutMatch !== null) {
+        transaction.set(
+          automaticWorkoutMatch.workoutReference,
+          plannedWorkoutAdminDocument(automaticWorkoutMatch.workout),
+        )
+        transaction.create(
+          automaticWorkoutMatch.guardReference,
+          completionGuardAdminDocument(automaticWorkoutMatch.guard),
+        )
       }
       transaction.set(importReference, importRecordDocument(record))
       writeReceipt(result)

@@ -97,6 +97,51 @@ async function seedMembership(userId: string) {
   })
 }
 
+async function seedPlan(options: {
+  status?: 'draft' | 'active'
+  workouts: readonly {
+    id: string
+    scheduledDate?: string
+    status?: 'planned' | 'completed'
+    targetDistanceMeters?: number
+  }[]
+}) {
+  const planId = 'automatic-match-plan'
+  const createdAt = Timestamp.fromDate(new Date('2026-11-01T00:00:00.000Z'))
+  await database.doc(`users/${ownerId}/plans/${planId}`).set({
+    schemaVersion: 1,
+    userId: ownerId,
+    name: 'First marathon',
+    startDate: '2026-11-02',
+    targetRaceDate: '2027-04-11',
+    status: options.status ?? 'active',
+    createdAt,
+    updatedAt: createdAt,
+  })
+  await Promise.all(
+    options.workouts.map((workout) =>
+      database
+        .doc(
+          `users/${ownerId}/plans/${planId}/workouts/${workout.id}`,
+        )
+        .set({
+          schemaVersion: 1,
+          userId: ownerId,
+          planId,
+          scheduledDate: workout.scheduledDate ?? '2026-11-04',
+          phase: 'base_building',
+          status: workout.status ?? 'planned',
+          kind: 'run',
+          purpose: 'long',
+          targetDistanceMeters: workout.targetDistanceMeters ?? 14_484,
+          createdAt,
+          updatedAt: createdAt,
+        }),
+    ),
+  )
+  return planId
+}
+
 function store() {
   return new FirestoreActivityImportStore(database, {
     createRunId: () => `imported-run-${++runSequence}`,
@@ -202,6 +247,134 @@ describe('Firestore activity-import persistence', () => {
       averageHeartRateBpm: 151,
       maximumHeartRateBpm: 176,
     })
+  })
+
+  it('atomically matches a new imported run to one compatible same-day workout', async () => {
+    const planId = await seedPlan({
+      workouts: [{ id: 'automatic-long-run' }],
+    })
+    const command = createActivityImportCommand(
+      'import-automatic-match-command-0001',
+      garminEvent({ distanceMeters: createDistanceMeters(15_000) }),
+    )
+
+    const result = await store().commit({ envelope: command, ownerId })
+
+    expect(result).toEqual({
+      kind: 'applied',
+      result: expect.objectContaining({
+        operation: 'created',
+        completedRunId: 'imported-run-1',
+      }),
+    })
+    expect(
+      (await database.doc(`users/${ownerId}/runs/imported-run-1`).get()).data(),
+    ).toMatchObject({
+      plannedWorkoutPlanId: planId,
+      plannedWorkoutId: 'automatic-long-run',
+    })
+    const workoutPath =
+      `users/${ownerId}/plans/${planId}/workouts/automatic-long-run`
+    expect((await database.doc(workoutPath).get()).data()).toMatchObject({
+      status: 'completed',
+    })
+    expect(
+      (await database.doc(`${workoutPath}/completionState/current`).get()).data(),
+    ).toMatchObject({
+      userId: ownerId,
+      planId,
+      plannedWorkoutId: 'automatic-long-run',
+      completedRunId: 'imported-run-1',
+      commandId: command.commandId,
+    })
+  })
+
+  it('keeps a materially short imported run unplanned', async () => {
+    const planId = await seedPlan({
+      workouts: [
+        { id: 'automatic-long-run', targetDistanceMeters: 12_000 },
+      ],
+    })
+
+    await store().commit({
+      envelope: createActivityImportCommand(
+        'import-short-match-command-0001',
+        garminEvent({ distanceMeters: createDistanceMeters(10_000) }),
+      ),
+      ownerId,
+    })
+
+    expect(
+      (await database.doc(`users/${ownerId}/runs/imported-run-1`).get()).data(),
+    ).not.toHaveProperty('plannedWorkoutId')
+    const workoutPath =
+      `users/${ownerId}/plans/${planId}/workouts/automatic-long-run`
+    expect((await database.doc(workoutPath).get()).data()?.status).toBe('planned')
+    await expect(
+      database.doc(`${workoutPath}/completionState/current`).get(),
+    ).resolves.toEqual(expect.objectContaining({ exists: false }))
+  })
+
+  it('keeps an imported run unplanned when the same day is ambiguous', async () => {
+    const planId = await seedPlan({
+      workouts: [
+        { id: 'first-same-day-run' },
+        { id: 'second-same-day-run' },
+      ],
+    })
+
+    await store().commit({
+      envelope: createActivityImportCommand(
+        'import-ambiguous-match-command-0001',
+        garminEvent({ distanceMeters: createDistanceMeters(15_000) }),
+      ),
+      ownerId,
+    })
+
+    expect(
+      (await database.doc(`users/${ownerId}/runs/imported-run-1`).get()).data(),
+    ).not.toHaveProperty('plannedWorkoutId')
+    const workouts = await database
+      .collection(`users/${ownerId}/plans/${planId}/workouts`)
+      .get()
+    expect(
+      workouts.docs.every((document) => document.data().status === 'planned'),
+    ).toBe(true)
+  })
+
+  it('refuses an automatic match when a completion guard already exists', async () => {
+    const planId = await seedPlan({
+      workouts: [{ id: 'guarded-long-run' }],
+    })
+    const workoutPath =
+      `users/${ownerId}/plans/${planId}/workouts/guarded-long-run`
+    await database.doc(`${workoutPath}/completionState/current`).set({
+      schemaVersion: 1,
+      trainingSchemaVersion: 1,
+      userId: ownerId,
+      planId,
+      plannedWorkoutId: 'guarded-long-run',
+      completedRunId: 'existing-completed-run',
+      commandId: 'existing-completion-command',
+      createdAt: Timestamp.fromDate(new Date('2026-11-04T17:30:00.000Z')),
+    })
+
+    await store().commit({
+      envelope: createActivityImportCommand(
+        'import-guarded-match-command-0001',
+        garminEvent({ distanceMeters: createDistanceMeters(15_000) }),
+      ),
+      ownerId,
+    })
+
+    expect(
+      (await database.doc(`users/${ownerId}/runs/imported-run-1`).get()).data(),
+    ).not.toHaveProperty('plannedWorkoutId')
+    expect((await database.doc(workoutPath).get()).data()?.status).toBe('planned')
+    expect(
+      (await database.doc(`${workoutPath}/completionState/current`).get())
+        .data()?.completedRunId,
+    ).toBe('existing-completed-run')
   })
 
   it('backfills sanitized provenance when a legacy imported run is replayed', async () => {
