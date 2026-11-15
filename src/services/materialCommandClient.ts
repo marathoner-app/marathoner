@@ -3,6 +3,7 @@ import {
   type MaterialCommandEnvelope,
   type MaterialCommandResult,
 } from '../domain/materialCommands/contract'
+import { measureOperation } from '../persistence/operationTiming'
 
 export interface MaterialCommandTransport {
   submit(command: MaterialCommandEnvelope): Promise<unknown>
@@ -13,6 +14,11 @@ export interface MaterialCommandClientOptions {
   isOnline: () => boolean
   transport: MaterialCommandTransport
   retryIdempotentSubmissionsOnce?: boolean
+  timingNames?: Readonly<{
+    firstSubmission: string
+    safeRetry: string
+    commandResolution: string
+  }>
 }
 
 function errorCode(error: unknown): string | null {
@@ -33,11 +39,15 @@ function isDefinitiveTransportFailure(error: unknown): boolean {
 }
 
 async function submitWithOneSafeRetry(
-  transport: MaterialCommandTransport,
+  options: MaterialCommandClientOptions,
   command: MaterialCommandEnvelope,
 ): Promise<unknown> {
+  const submit = (name: string | undefined) =>
+    name === undefined
+      ? options.transport.submit(command)
+      : measureOperation(name, () => options.transport.submit(command))
   try {
-    return await transport.submit(command)
+    return await submit(options.timingNames?.firstSubmission)
   } catch (error) {
     if (isDefinitiveTransportFailure(error)) throw error
 
@@ -45,8 +55,18 @@ async function submitWithOneSafeRetry(
     // envelope can recover a pre-request App Check/network failure or retrieve
     // the existing receipt when the first response was lost, without creating
     // the operation twice.
-    return transport.submit(command)
+    return submit(options.timingNames?.safeRetry)
   }
+}
+
+function firstSubmission(
+  options: MaterialCommandClientOptions,
+  command: MaterialCommandEnvelope,
+): Promise<unknown> {
+  const name = options.timingNames?.firstSubmission
+  return name === undefined
+    ? options.transport.submit(command)
+    : measureOperation(name, () => options.transport.submit(command))
 }
 
 function offlineResult(commandId: string): MaterialCommandResult {
@@ -107,8 +127,8 @@ export function createMaterialCommandClient(
       try {
         return validatedResult(
           await (options.retryIdempotentSubmissionsOnce
-            ? submitWithOneSafeRetry(options.transport, command)
-            : options.transport.submit(command)),
+            ? submitWithOneSafeRetry(options, command)
+            : firstSubmission(options, command)),
           command.commandId,
         )
       } catch (error) {
@@ -120,7 +140,11 @@ export function createMaterialCommandClient(
       if (!options.isOnline()) return offlineResult(commandId)
       try {
         return validatedResult(
-          await options.transport.resolve(commandId),
+          await (options.timingNames === undefined
+            ? options.transport.resolve(commandId)
+            : measureOperation(options.timingNames.commandResolution, () =>
+                options.transport.resolve(commandId),
+              )),
           commandId,
         )
       } catch (error) {

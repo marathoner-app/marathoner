@@ -22,6 +22,40 @@ beforeEach(() => {
 });
 
 describe("slow run diagnostics", () => {
+  it("keeps legacy schema-one records readable", () => {
+    const capturedAt = "2026-10-01T12:00:00.000Z";
+    window.localStorage.setItem(
+      "marathoner:slow-run-diagnostics:v1",
+      JSON.stringify([
+        {
+          schemaVersion: 1,
+          capturedAt,
+          bundle: "index-legacy.js",
+          runtime: "web",
+          platform: "ios",
+          browser: "safari",
+          online: true,
+          visibility: "visible",
+          plannedWorkout: true,
+          outcome: "succeeded",
+          milliseconds: {
+            submissionTotal: 7_000,
+            repositoryTotal: null,
+            associations: null,
+            writeAcknowledgement: null,
+            plannedWorkoutAcknowledgement: null,
+          },
+        },
+      ]),
+    );
+
+    expect(
+      readSlowRunDiagnostics(new Date("2026-10-02T12:00:00.000Z").getTime()),
+    ).toEqual([
+      expect.objectContaining({ schemaVersion: 1, capturedAt }),
+    ]);
+  });
+
   it("ignores routine run submissions", () => {
     recordSlowRunDiagnostic({
       submission: measurement(4_999),
@@ -96,6 +130,62 @@ describe("slow run diagnostics", () => {
         plannedWorkoutAcknowledgement: null,
       },
     });
+  });
+
+  it("records command stages and slow listener convergence without identifiers", () => {
+    const entries = new Map<string, PerformanceEntry[]>([
+      [
+        runCreationTimingNames.commandClientAcquisition,
+        [{ startTime: 110, duration: 120 } as PerformanceEntry],
+      ],
+      [
+        runCreationTimingNames.firstSubmission,
+        [{ startTime: 240, duration: 800 } as PerformanceEntry],
+      ],
+      [
+        runCreationTimingNames.safeRetry,
+        [{ startTime: 1_050, duration: 900 } as PerformanceEntry],
+      ],
+      [
+        runCreationTimingNames.commandResolution,
+        [{ startTime: 1_960, duration: 400 } as PerformanceEntry],
+      ],
+    ]);
+    vi.spyOn(performance, "getEntriesByName").mockImplementation(
+      (name) => entries.get(name) ?? [],
+    );
+
+    recordSlowRunDiagnostic({
+      submission: measurement(2_500, 100),
+      plannedWorkout: true,
+      commandOutcome: "committed",
+      listenerConfirmation: {
+        durationMilliseconds: 6_100,
+        status: "confirmed",
+      },
+    });
+
+    const diagnostics = readSlowRunDiagnostics();
+    expect(diagnostics).toEqual([
+      expect.objectContaining({
+        schemaVersion: 2,
+        commandOutcome: "committed",
+        listenerConfirmationStatus: "confirmed",
+        milliseconds: expect.objectContaining({
+          submissionTotal: 2_500,
+          commandClientAcquisition: 120,
+          firstSubmission: 800,
+          safeRetry: 900,
+          commandResolution: 400,
+          listenerConfirmation: 6_100,
+        }),
+      }),
+    ]);
+
+    const report = formatSlowRunDiagnostics(diagnostics);
+    expect(report).not.toContain("commandId");
+    expect(report).not.toContain("completedRunId");
+    expect(report).not.toContain("userId");
   });
 
   it("formats a support report without account or run content", () => {

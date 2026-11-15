@@ -8,6 +8,7 @@ import {
   createMaterialCommandClient,
   type MaterialCommandTransport,
 } from './materialCommandClient'
+import { runCreationTimingNames } from '../persistence/operationTiming'
 
 const commandId = 'proof-command-0001'
 const command = createProofMaterialCommand(commandId)
@@ -51,6 +52,9 @@ describe('material-command web client', () => {
   })
 
   it('retries the exact idempotent command once after a timed-out response', async () => {
+    const measured = vi
+      .spyOn(performance, 'measure')
+      .mockImplementation(() => ({}) as PerformanceMeasure)
     const boundary = transport()
     vi.mocked(boundary.submit)
       .mockRejectedValueOnce({ code: 'functions/deadline-exceeded' })
@@ -59,12 +63,41 @@ describe('material-command web client', () => {
       isOnline: () => true,
       transport: boundary,
       retryIdempotentSubmissionsOnce: true,
+      timingNames: runCreationTimingNames,
     })
 
     await expect(client.submit(command)).resolves.toEqual(committed)
     expect(boundary.submit).toHaveBeenCalledTimes(2)
     expect(boundary.submit).toHaveBeenNthCalledWith(1, command)
     expect(boundary.submit).toHaveBeenNthCalledWith(2, command)
+    expect(measured).toHaveBeenCalledWith(
+      runCreationTimingNames.firstSubmission,
+      expect.any(Object),
+    )
+    expect(measured).toHaveBeenCalledWith(
+      runCreationTimingNames.safeRetry,
+      expect.any(Object),
+    )
+  })
+
+  it('times command-id resolution separately from submission attempts', async () => {
+    const measured = vi
+      .spyOn(performance, 'measure')
+      .mockImplementation(() => ({}) as PerformanceMeasure)
+    const boundary = transport()
+    const client = createMaterialCommandClient({
+      isOnline: () => true,
+      transport: boundary,
+      timingNames: runCreationTimingNames,
+    })
+
+    await expect(client.resolve(commandId)).resolves.toEqual(committed)
+
+    expect(boundary.resolve).toHaveBeenCalledWith(commandId)
+    expect(measured).toHaveBeenCalledWith(
+      runCreationTimingNames.commandResolution,
+      expect.any(Object),
+    )
   })
 
   it('marks the outcome unknown when both safe attempts fail', async () => {
