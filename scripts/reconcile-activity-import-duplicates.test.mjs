@@ -14,6 +14,12 @@ const ownerEmail = 'runner@example.com'
 const ownerUid = 'runner_UID_123'
 
 function argumentsFor(action = 'inspect') {
+  const confirmation =
+    action === 'apply'
+      ? 'RECONCILE-ACTIVITY-IMPORT-DUPLICATES:0123456789abcdef01234567'
+      : action === 'apply-orphan'
+        ? 'NORMALIZE-ORPHAN-ACTIVITY-IMPORT:0123456789abcdef01234567'
+        : undefined
   return [
     action,
     '--project',
@@ -22,12 +28,7 @@ function argumentsFor(action = 'inspect') {
     ownerEmail,
     '--owner-uid',
     ownerUid,
-    ...(action === 'apply'
-      ? [
-          '--confirm',
-          'RECONCILE-ACTIVITY-IMPORT-DUPLICATES:0123456789abcdef01234567',
-        ]
-      : []),
+    ...(confirmation === undefined ? [] : ['--confirm', confirmation]),
   ]
 }
 
@@ -45,7 +46,7 @@ function boundary(action = 'inspect') {
 }
 
 describe('activity-import duplicate reconciliation operator', () => {
-  it('parses only the exact dry-run and apply boundaries', () => {
+  it('parses only the exact duplicate and orphan dry-run/apply boundaries', () => {
     expect(
       parseActivityImportReconciliationArguments(argumentsFor()),
     ).toEqual({
@@ -65,6 +66,27 @@ describe('activity-import duplicate reconciliation operator', () => {
       ownerUid,
       projectId: FOUNDING_BETA_TARGET_PROJECT_ID,
     })
+    expect(
+      parseActivityImportReconciliationArguments(
+        argumentsFor('inspect-orphan'),
+      ),
+    ).toEqual({
+      action: 'inspect-orphan',
+      confirmation: undefined,
+      ownerEmail,
+      ownerUid,
+      projectId: FOUNDING_BETA_TARGET_PROJECT_ID,
+    })
+    expect(
+      parseActivityImportReconciliationArguments(argumentsFor('apply-orphan')),
+    ).toEqual({
+      action: 'apply-orphan',
+      confirmation:
+        'NORMALIZE-ORPHAN-ACTIVITY-IMPORT:0123456789abcdef01234567',
+      ownerEmail,
+      ownerUid,
+      projectId: FOUNDING_BETA_TARGET_PROJECT_ID,
+    })
     expect(() =>
       parseActivityImportReconciliationArguments([
         ...argumentsFor(),
@@ -74,7 +96,7 @@ describe('activity-import duplicate reconciliation operator', () => {
     ).toThrow('exact and unique')
     expect(() =>
       parseActivityImportReconciliationArguments(argumentsFor('delete')),
-    ).toThrow('Use inspect or apply')
+    ).toThrow('Use inspect, apply, inspect-orphan, or apply-orphan')
   })
 
   it('requires the beta project, dedicated operator, and verified exact owner', () => {
@@ -109,6 +131,16 @@ describe('activity-import duplicate reconciliation operator', () => {
         confirmation: 'RECONCILE-ACTIVITY-IMPORT-DUPLICATES:wrong',
       }),
     ).toThrow('exact confirmation')
+    expect(() =>
+      assertActivityImportReconciliationBoundary(boundary('apply-orphan')),
+    ).not.toThrow()
+    expect(() =>
+      assertActivityImportReconciliationBoundary({
+        ...boundary('apply-orphan'),
+        confirmation:
+          'RECONCILE-ACTIVITY-IMPORT-DUPLICATES:0123456789abcdef01234567',
+      }),
+    ).toThrow('current orphan dry run')
   })
 
   it('uses a permission-restricted temporary ADC and cleans it after success', async () => {

@@ -31,6 +31,50 @@ contain heart-rate summaries. The heart-rate-bearing Apple run remains
 canonical. In either pattern, the redundant run must contain no runner-entered
 or planned-workout fields.
 
+## Normalize one orphaned import first
+
+If the ordinary inspection reports three overlapping same-provider edges for
+one activity, inspect the orphan boundary before attempting reconciliation:
+
+```sh
+npm run reconcile:activity-import-duplicates -- inspect-orphan \
+  --project marathonerapp-beta \
+  --owner-email OWNER_EMAIL \
+  --owner-uid OWNER_UID
+```
+
+This narrower inspection is eligible only for one exact cluster containing:
+
+- three distinct Apple Health workout identities that all report Garmin origin;
+- exactly two existing completed runs: one with heart-rate summaries and one
+  without them;
+- exactly one active no-heart-rate import whose referenced run is missing;
+- matching import and run facts for both existing runs; and
+- no runner-entered or planned-workout fields on the visible no-heart-rate run.
+
+It refuses malformed clusters, conflicting heart-rate evidence, multiple orphan
+clusters, changed run facts, or any ambiguity. When `blockedClusterCount` is
+zero and `eligibleClusterCount` is one, copy the exact opaque confirmation from
+that inspection:
+
+```sh
+npm run reconcile:activity-import-duplicates -- apply-orphan \
+  --project marathonerapp-beta \
+  --owner-email OWNER_EMAIL \
+  --owner-uid OWNER_UID \
+  --confirm NORMALIZE-ORPHAN-ACTIVITY-IMPORT:CURRENT_DIGEST
+```
+
+The orphan apply re-reads all evidence in one Firestore transaction. It changes
+only the orphaned import to duplicate review and links it to the existing
+heart-rate-bearing run. It does not create, update, or remove a completed run.
+Repeating it after success is an idempotent no-op.
+
+After normalization, rerun the ordinary `inspect`. Do not run the ordinary
+apply unless it now reports the expected eligible pairs with zero blocked
+pairs. For the recovery that introduced this path, the expected result is six
+eligible pairs and zero blocked pairs.
+
 ## Inspect
 
 ```sh

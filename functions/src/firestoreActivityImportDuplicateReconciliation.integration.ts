@@ -1,9 +1,12 @@
+import { createHash } from 'node:crypto'
+
 import { deleteApp, initializeApp } from 'firebase-admin/app'
 import { getFirestore, Timestamp } from 'firebase-admin/firestore'
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
 import {
   createCrossProviderDuplicateFingerprint,
+  createProviderActivityIdentityKey,
   createProviderActivityId,
   type CompletedActivityUpsertV1,
 } from '../../src/domain/activityImport/contract.js'
@@ -224,6 +227,81 @@ async function seedSameProviderEnrichmentPair(options: {
   return { heartRateEvent, heartRateRun, noHeartRateEvent, noHeartRateRun }
 }
 
+async function seedOrphanNormalizationCluster(options: {
+  eventChanges?: Partial<CompletedActivityUpsertV1>
+  noHeartRateRunChanges?: Partial<CompletedRun>
+  suffix?: string
+} = {}) {
+  const suffix = options.suffix ?? '001'
+  const noHeartRateEvent = appleEventWithoutHeartRate(
+    `apple-no-hr-${suffix}`,
+    options.eventChanges,
+  )
+  const heartRateEvent = appleEvent(`apple-with-hr-${suffix}`, {
+    ...options.eventChanges,
+    averageHeartRateBpm: createHeartRateBpm(151),
+    maximumHeartRateBpm: createHeartRateBpm(176),
+  })
+  const orphanEvent = appleEventWithoutHeartRate(
+    `apple-orphan-${suffix}`,
+    options.eventChanges,
+  )
+  const noHeartRateRun = completedRun(
+    `apple-no-hr-run-${suffix}`,
+    noHeartRateEvent,
+    '2026-11-14T16:10:00.000Z',
+    options.noHeartRateRunChanges,
+  )
+  const heartRateRun = completedRun(
+    `apple-with-hr-run-${suffix}`,
+    heartRateEvent,
+    '2026-11-14T17:10:00.000Z',
+    { notes: 'Preserve the enriched run note.' },
+  )
+  const orphanRunId = `apple-orphan-run-${suffix}`
+  const importIdFor = (event: CompletedActivityUpsertV1) =>
+    createHash('sha256')
+      .update(createProviderActivityIdentityKey(event))
+      .digest('hex')
+  const noHeartRateImportId = importIdFor(noHeartRateEvent)
+  const heartRateImportId = importIdFor(heartRateEvent)
+  const orphanImportId = importIdFor(orphanEvent)
+  await Promise.all([
+    seedImport(
+      noHeartRateImportId,
+      noHeartRateEvent,
+      noHeartRateRun.id,
+      '2026-11-14T16:10:00.000Z',
+    ),
+    seedImport(
+      heartRateImportId,
+      heartRateEvent,
+      heartRateRun.id,
+      '2026-11-14T17:10:00.000Z',
+    ),
+    seedImport(
+      orphanImportId,
+      orphanEvent,
+      orphanRunId,
+      '2026-11-14T17:20:00.000Z',
+    ),
+    database
+      .doc(`users/${ownerId}/runs/${noHeartRateRun.id}`)
+      .set(completedRunAdminDocument(noHeartRateRun)),
+    database
+      .doc(`users/${ownerId}/runs/${heartRateRun.id}`)
+      .set(completedRunAdminDocument(heartRateRun)),
+  ])
+  return {
+    heartRateEvent,
+    heartRateRun,
+    noHeartRateEvent,
+    noHeartRateRun,
+    orphanEvent,
+    orphanImportId,
+  }
+}
+
 async function clearFirestoreEmulator() {
   const host = process.env.FIRESTORE_EMULATOR_HOST
   if (!host) throw new Error('FIRESTORE_EMULATOR_HOST is required.')
@@ -265,6 +343,220 @@ afterAll(async () => {
 })
 
 describe('Firestore activity-import duplicate reconciliation', () => {
+  it('normalizes only the exact orphan import so the existing recovery can proceed', async () => {
+    const { heartRateRun, noHeartRateRun, orphanEvent, orphanImportId } =
+      await seedOrphanNormalizationCluster()
+    const unrelatedOrphanEvent = appleEventWithoutHeartRate(
+      'unrelated-singleton-orphan',
+      { startedAt: createUtcDateTime('2026-11-15T15:00:00.000Z') },
+    )
+    await seedImport(
+      'unrelated-singleton-orphan-import',
+      unrelatedOrphanEvent,
+      'unrelated-singleton-orphan-run',
+      '2026-11-15T17:10:00.000Z',
+    )
+
+    await expect(reconciliation().inspect(ownerId)).resolves.toMatchObject({
+      blockedPairCount: 3,
+      blockedReasonCounts: { multiple_candidates: 3 },
+      candidatePairCount: 3,
+      eligiblePairCount: 0,
+      sameProviderCandidatePairCount: 3,
+    })
+    const inspection =
+      await reconciliation().inspectOrphanImportNormalization(ownerId)
+    expect(inspection).toEqual({
+      blockedClusterCount: 0,
+      blockedReasonCounts: expect.objectContaining({
+        conflicting_heart_rate: 0,
+        duplicate_has_runner_fields: 0,
+        import_run_mismatch: 0,
+        invalid_cluster_shape: 0,
+        multiple_candidate_clusters: 0,
+      }),
+      candidateClusterCount: 1,
+      confirmation: expect.stringMatching(
+        /^NORMALIZE-ORPHAN-ACTIVITY-IMPORT:[a-f0-9]{24}$/u,
+      ),
+      eligibleClusterCount: 1,
+    })
+    if (inspection.confirmation === null) {
+      throw new Error('Expected an orphan-normalization confirmation.')
+    }
+    const runsBefore = await database.collection(`users/${ownerId}/runs`).get()
+    const runDocumentsBefore = runsBefore.docs
+      .map((snapshot) => ({ data: snapshot.data(), id: snapshot.id }))
+      .sort((left, right) => left.id.localeCompare(right.id))
+
+    await expect(
+      reconciliation().normalizeOrphanImport({
+        confirmation: inspection.confirmation,
+        ownerId,
+      }),
+    ).resolves.toEqual({ status: 'normalized', normalizedImportCount: 1 })
+
+    const [runs, orphanImport] = await Promise.all([
+      database.collection(`users/${ownerId}/runs`).get(),
+      database
+        .doc(`users/${ownerId}/activityImports/${orphanImportId}`)
+        .get(),
+    ])
+    expect(runs.docs.map(({ id }) => id).sort()).toEqual(
+      [heartRateRun.id, noHeartRateRun.id].sort(),
+    )
+    expect(
+      runs.docs
+        .map((snapshot) => ({ data: snapshot.data(), id: snapshot.id }))
+        .sort((left, right) => left.id.localeCompare(right.id)),
+    ).toEqual(runDocumentsBefore)
+    expect(orphanImport.data()).toMatchObject({
+      candidateCompletedRunId: heartRateRun.id,
+      candidateKind: 'duplicate_candidate',
+      completedRunId: null,
+      state: 'review_required',
+      updatedAt: reconciliationTime.toISOString(),
+    })
+    await expect(reconciliation().inspect(ownerId)).resolves.toMatchObject({
+      blockedPairCount: 0,
+      candidatePairCount: 1,
+      eligiblePairCount: 1,
+      sameProviderCandidatePairCount: 1,
+    })
+
+    const { ownerId: _ownerId, ...replayEvent } = orphanEvent
+    void _ownerId
+    await expect(
+      new FirestoreActivityImportStore(database, {
+        createRunId: () => 'must-not-be-created',
+        now: () => new Date('2026-11-14T18:10:00.000Z'),
+      }).commit({
+        envelope: createActivityImportCommand(
+          'orphan-normalization-replay-command-0001',
+          replayEvent,
+        ),
+        ownerId,
+      }),
+    ).resolves.toEqual({
+      kind: 'review-required',
+      result: expect.objectContaining({
+        candidateCompletedRunId: heartRateRun.id,
+        code: 'same-provider-duplicate-candidate',
+        status: 'activity_import_review_required',
+      }),
+    })
+    await expect(
+      reconciliation().normalizeOrphanImport({
+        confirmation: inspection.confirmation,
+        ownerId,
+      }),
+    ).resolves.toEqual({
+      status: 'already_normalized',
+      normalizedImportCount: 0,
+    })
+  })
+
+  it('refuses orphan normalization when the visible no-HR copy has runner fields', async () => {
+    await seedOrphanNormalizationCluster({
+      noHeartRateRunChanges: { notes: 'Keep this runner note.' },
+    })
+
+    await expect(
+      reconciliation().inspectOrphanImportNormalization(ownerId),
+    ).resolves.toMatchObject({
+      blockedClusterCount: 1,
+      blockedReasonCounts: { duplicate_has_runner_fields: 1 },
+      eligibleClusterCount: 0,
+    })
+    await expect(
+      reconciliation().normalizeOrphanImport({
+        confirmation: 'NORMALIZE-ORPHAN-ACTIVITY-IMPORT:wrong',
+        ownerId,
+      }),
+    ).rejects.toThrow('blocked candidate')
+    await expect(
+      database.collection(`users/${ownerId}/runs`).get(),
+    ).resolves.toEqual(expect.objectContaining({ size: 2 }))
+  })
+
+  it('refuses an orphan cluster with an additional provider identity', async () => {
+    const { orphanEvent } = await seedOrphanNormalizationCluster()
+    await seedImport(
+      'apple-extra-orphan-import-001',
+      { ...orphanEvent, providerActivityId: createProviderActivityId('extra') },
+      'apple-extra-orphan-run-001',
+      '2026-11-14T17:30:00.000Z',
+    )
+
+    await expect(
+      reconciliation().inspectOrphanImportNormalization(ownerId),
+    ).resolves.toMatchObject({
+      blockedClusterCount: 1,
+      blockedReasonCounts: { invalid_cluster_shape: 1 },
+      candidateClusterCount: 1,
+      eligibleClusterCount: 0,
+    })
+  })
+
+  it('refuses to choose between multiple orphan clusters', async () => {
+    await seedOrphanNormalizationCluster()
+    await seedOrphanNormalizationCluster({
+      eventChanges: {
+        startedAt: createUtcDateTime('2026-11-15T15:00:00.000Z'),
+      },
+      suffix: '002',
+    })
+
+    await expect(
+      reconciliation().inspectOrphanImportNormalization(ownerId),
+    ).resolves.toMatchObject({
+      blockedClusterCount: 2,
+      blockedReasonCounts: { multiple_candidate_clusters: 2 },
+      candidateClusterCount: 2,
+      eligibleClusterCount: 0,
+    })
+  })
+
+  it('refuses mismatched run evidence and a stale confirmation without writes', async () => {
+    const { heartRateRun, noHeartRateRun, orphanImportId } =
+      await seedOrphanNormalizationCluster()
+    await database.doc(`users/${ownerId}/runs/${noHeartRateRun.id}`).update({
+      distanceMeters: 10_100,
+    })
+
+    await expect(
+      reconciliation().inspectOrphanImportNormalization(ownerId),
+    ).resolves.toMatchObject({
+      blockedClusterCount: 1,
+      blockedReasonCounts: { import_run_mismatch: 1 },
+      eligibleClusterCount: 0,
+    })
+    await database.doc(`users/${ownerId}/runs/${noHeartRateRun.id}`).update({
+      distanceMeters: 10_000,
+    })
+    const inspection =
+      await reconciliation().inspectOrphanImportNormalization(ownerId)
+    if (inspection.confirmation === null) {
+      throw new Error('Expected a restored orphan-normalization confirmation.')
+    }
+    await database.doc(`users/${ownerId}/runs/${heartRateRun.id}`).update({
+      notes: 'Changed after the orphan dry run.',
+    })
+    await expect(
+      reconciliation().normalizeOrphanImport({
+        confirmation: inspection.confirmation,
+        ownerId,
+      }),
+    ).rejects.toThrow('exact current dry-run confirmation')
+    const orphanImport = await database
+      .doc(`users/${ownerId}/activityImports/${orphanImportId}`)
+      .get()
+    expect(orphanImport.data()).toMatchObject({
+      completedRunId: 'apple-orphan-run-001',
+      state: 'active',
+    })
+  })
+
   it('preserves the Garmin run, copies HR, removes the Apple copy, and holds replay', async () => {
     const { enrichedEvent, garminRun, appleRun } = await seedPair()
     const inspection = await reconciliation().inspect(ownerId)
