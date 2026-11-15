@@ -16,8 +16,9 @@ owner account. The owner accepted the private provider checkpoint, created the
 Activity-API-only beta app, placed its secret in private custody, registered the
 reviewed endpoints, and enabled the closed-beta integration. A real run recorded
 after connection arrived automatically through the direct Activity API path.
-The remaining replay, deletion, limited-account, and full #624 proof matrix are
-still open.
+Garmin-aware deletion is implemented under #771. Replay, live destructive
+deletion proof, limited-account, and the full #624 proof matrix remain open
+under #623, #124, and #624.
 
 ## Current posture
 
@@ -218,7 +219,7 @@ minimal normalization, duplicate review, deregistration, and privacy-safe
 evidence. Both functions are deployed and the receiver is registered in the
 private Garmin configuration. A real owner-controlled running delivery has now
 passed through that direct path; the remaining live matrix is tracked in #623,
-#624, and #771.
+#624, and #124, with Garmin-aware deletion implemented under #771.
 
 Provider-specific details that are not public belong in private implementation
 configuration, not this repository. #650 and #651 must preserve that boundary
@@ -270,7 +271,7 @@ record only the status, public-safe requirement, and next action.
 | Public-safe application reference | None; the confirmation page supplied no reference number |
 | Provider blocker | None for implementation. Private terms and credentials remain outside the public repository. |
 | Product prerequisite | Completed: privacy notice, trusted OAuth, push receiver, permission-change endpoint, private secret custody, and provider endpoint registration. |
-| Next action | Complete live replay, cross-provider duplicate, account-deletion, disconnect/relaunch, and limited-account proof in #623, #624, and #771. |
+| Next action | Complete live replay, cross-provider duplicate, destructive account-deletion rehearsal, disconnect/relaunch, and limited-account proof in #623, #624, and #124. |
 | #623 state | A real post-connection run imported automatically; the parent remains open for its other live evidence. |
 
 Possible provider outcomes are `submitted`, `more information requested`,

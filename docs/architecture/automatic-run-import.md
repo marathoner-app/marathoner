@@ -208,7 +208,7 @@ behavior must match the implemented providers before invitations open.
 | 9 | [#652 Garmin recovery UI](https://github.com/marathoner-app/marathoner/issues/652) | 05 Trust and External-Beta Readiness | Complete |
 | 10 | [#623 Direct Garmin ingestion](https://github.com/marathoner-app/marathoner/issues/623) | 05 Trust and External-Beta Readiness | Real post-connection import observed; replay, deletion, and limited-account evidence remains |
 | 11 | [#624 Cross-provider beta proof](https://github.com/marathoner-app/marathoner/issues/624) | 05 Trust and External-Beta Readiness | Apple and Garmin happy paths observed; locked candidate matrix remains |
-| 12 | [#771 Garmin-aware account deletion](https://github.com/marathoner-app/marathoner/issues/771) | 05 Trust and External-Beta Readiness | Revoke and purge global provider state before user-tree deletion |
+| 12 | [#771 Garmin-aware account deletion](https://github.com/marathoner-app/marathoner/issues/771) | 05 Trust and External-Beta Readiness | Implementation ready; destructive live proof remains in #124 |
 
 ## Non-goals
 

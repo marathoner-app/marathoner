@@ -31,8 +31,8 @@
 - External TestFlight App Review or access for the five-to-eight-person cohort.
 - The complete App Check observation window, cold-start/token-refresh matrix,
   rollback, rejected-client proof, or enforcement.
-- Same-provider Garmin live replay, cross-provider duplicate handling, global
-  Garmin-state account deletion, or limited-account import proof.
+- Same-provider Garmin live replay, cross-provider duplicate handling, live
+  Garmin-state account-deletion rehearsal, or limited-account import proof.
 - The locked owner/J daily loop, accessibility and failure-state matrix on one
   current candidate.
 - The complete provisional-methodology web/iOS parity, kill-switch, retirement,
@@ -44,9 +44,9 @@
 Issue [#772](https://github.com/marathoner-app/marathoner/issues/772) owns
 TestFlight build 10. It must start from reviewed merged `main`, include the
 post-build-9 Garmin recovery, Track heart-rate ordering, safe imported-run
-deletion, and Apple Health heart-rate fallback changes, then become the sole
-candidate for the remaining physical proof unless a documented defect requires
-a replacement.
+deletion, Apple Health heart-rate fallback, Garmin-aware account deletion, and
+run-save stage diagnostics, then become the sole candidate for the remaining
+physical proof unless a documented defect requires a replacement.
 
 No credential, participant identity, account identifier, device identifier,
 private run detail, provider token, App Check token, or unredacted console

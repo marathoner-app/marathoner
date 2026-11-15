@@ -271,8 +271,9 @@ The development/test-only Creator Radar boundary is documented in
   recovery paths are configured in the closed beta, and a real owner-controlled
   post-connection run arrived automatically. Same-provider replay,
   cross-provider duplicate handling, account deletion, limited-account, and the
-  complete disconnect/relaunch matrix remain open in issues #623, #624, and
-  #771.
+  complete disconnect/relaunch matrix remain open in issues #623 and #624.
+  Garmin-aware deletion is implemented in #771; the live destructive rehearsal
+  remains under #124.
 - The Track flow captures date, distance, elapsed time, shoe, optional planned-
   workout association, perceived effort, and notes. The production
   professionally approved-content registry remains empty. The distinct
