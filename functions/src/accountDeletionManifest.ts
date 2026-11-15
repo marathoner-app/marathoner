@@ -118,7 +118,11 @@ export function parseActiveAccountDeletionRequest(
     'updatedAt',
     'userId',
   ]
-  const requiredKeys = allowedKeys.filter((key) => key !== 'lastErrorCode')
+  const optionalKeys = new Set([
+    'garminProviderAccountDigests',
+    'lastErrorCode',
+  ])
+  const requiredKeys = allowedKeys.filter((key) => !optionalKeys.has(key))
   if (
     !data ||
     !requiredKeys.every((key) => key in data) ||
