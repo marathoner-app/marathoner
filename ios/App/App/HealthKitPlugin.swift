@@ -432,7 +432,43 @@ final class HealthKitPlugin: CAPPlugin, CAPBridgedPlugin {
         for workout: HKWorkout,
         completion: @escaping (Int?, Int?) -> Void
     ) {
-        let predicate = HKQuery.predicateForObjects(from: workout)
+        let associatedWorkoutPredicate = HKQuery.predicateForObjects(from: workout)
+        queryHeartRateSummary(predicate: associatedWorkoutPredicate) {
+            [weak self] average, maximum in
+            guard let self else {
+                completion(nil, nil)
+                return
+            }
+            guard average == nil, maximum == nil else {
+                completion(average, maximum)
+                return
+            }
+
+            let workoutWindowPredicate = HKQuery.predicateForSamples(
+                withStart: workout.startDate,
+                end: workout.endDate,
+                options: [.strictStartDate, .strictEndDate]
+            )
+            let workoutSourcePredicate = HKQuery.predicateForObjects(
+                from: Set([workout.sourceRevision.source])
+            )
+            let boundedSourcePredicate = NSCompoundPredicate(
+                andPredicateWithSubpredicates: [
+                    workoutWindowPredicate,
+                    workoutSourcePredicate,
+                ]
+            )
+            self.queryHeartRateSummary(
+                predicate: boundedSourcePredicate,
+                completion: completion
+            )
+        }
+    }
+
+    private func queryHeartRateSummary(
+        predicate: NSPredicate,
+        completion: @escaping (Int?, Int?) -> Void
+    ) {
         let query = HKStatisticsQuery(
             quantityType: heartRateType,
             quantitySamplePredicate: predicate,

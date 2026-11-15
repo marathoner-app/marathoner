@@ -22,7 +22,7 @@ const validProject = {
   bridgeViewController:
     'installStartupOverlay() webView?.scrollView.bounces = false registerPluginInstance(StartupOverlayPlugin()) registerPluginInstance(HealthKitPlugin()) DispatchQueue.main.asyncAfter(deadline: .now() + 10',
   healthKitPlugin:
-    'import HealthKit read: [workoutType, heartRateType] HKAnchoredObjectQuery( HKStatisticsQuery( HKObserverQuery( enableBackgroundDelivery( workout.workoutActivityType == .running legacyAccountScope migrateLegacyStorage(from: legacyScope, to: scope)',
+    'import HealthKit read: [workoutType, heartRateType] HKAnchoredObjectQuery( HKStatisticsQuery( HKQuery.predicateForObjects(from: workout) withStart: workout.startDate end: workout.endDate options: [.strictStartDate, .strictEndDate] from: Set([workout.sourceRevision.source]) NSCompoundPredicate( HKObserverQuery( enableBackgroundDelivery( workout.workoutActivityType == .running legacyAccountScope migrateLegacyStorage(from: legacyScope, to: scope)',
   capacitorConfig: `appId: 'com.marathonerapp.marathoner'\nappName: 'Marathoner'\nwebDir: 'dist-ios'\nbackgroundColor: '#ffffff'\ncontentInset: 'never'\nerrorPath: 'startup-error.html'\nlaunchAutoHide: true\nlaunchShowDuration: 10_000\nbackgroundColor: '#ffffffff'\n'@capacitor-firebase/app-check'\nsymlink: true`,
   debugConfig: '#include? "local.xcconfig"',
   infoPlist:
@@ -96,6 +96,31 @@ describe('iOS boundary policy', () => {
       }),
     ).toContain(
       'HealthKitPlugin.swift is missing migrateLegacyStorage(from: legacyScope, to: scope)',
+    )
+  })
+
+  it('rejects a HealthKit bridge without a bounded source fallback for heart rate', () => {
+    expect(
+      findIosProjectViolations({
+        ...validProject,
+        healthKitPlugin: validProject.healthKitPlugin.replace(
+          'from: Set([workout.sourceRevision.source])',
+          '',
+        ),
+      }),
+    ).toContain(
+      'HealthKitPlugin.swift is missing from: Set([workout.sourceRevision.source])',
+    )
+  })
+
+  it('rejects a HealthKit bridge that reads raw heart-rate samples', () => {
+    expect(
+      findIosProjectViolations({
+        ...validProject,
+        healthKitPlugin: `${validProject.healthKitPlugin} HKSampleQuery(`,
+      }),
+    ).toContain(
+      'HealthKitPlugin.swift must summarize heart rate without retaining raw samples',
     )
   })
 
