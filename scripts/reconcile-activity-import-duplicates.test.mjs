@@ -7,6 +7,7 @@ import {
 import {
   assertActivityImportReconciliationBoundary,
   parseActivityImportReconciliationArguments,
+  withFirebaseCliApplicationDefaultCredential,
 } from './reconcile-activity-import-duplicates.mjs'
 
 const ownerEmail = 'runner@example.com'
@@ -108,5 +109,86 @@ describe('activity-import duplicate reconciliation operator', () => {
         confirmation: 'RECONCILE-ACTIVITY-IMPORT-DUPLICATES:wrong',
       }),
     ).toThrow('exact confirmation')
+  })
+
+  it('uses a permission-restricted temporary ADC and cleans it after success', async () => {
+    const environment = { GOOGLE_APPLICATION_CREDENTIALS: '/existing/adc.json' }
+    const writes = []
+    const removals = []
+
+    const result = await withFirebaseCliApplicationDefaultCredential(
+      { tokens: { refresh_token: 'operator-refresh-token' } },
+      async () => {
+        expect(environment.GOOGLE_APPLICATION_CREDENTIALS).toBe(
+          '/temporary/operator/application-default-credentials.json',
+        )
+        return 'completed'
+      },
+      {
+        clientId: () => 'firebase-cli-client-id',
+        clientSecret: () => 'firebase-cli-client-secret',
+        environment,
+        makeTempDirectory: async () => '/temporary/operator',
+        removeDirectory: async (...arguments_) => removals.push(arguments_),
+        writeCredentialFile: async (...arguments_) => writes.push(arguments_),
+      },
+    )
+
+    expect(result).toBe('completed')
+    expect(environment.GOOGLE_APPLICATION_CREDENTIALS).toBe('/existing/adc.json')
+    expect(writes).toHaveLength(1)
+    expect(writes[0][0]).toBe(
+      '/temporary/operator/application-default-credentials.json',
+    )
+    expect(JSON.parse(writes[0][1])).toEqual({
+      client_id: 'firebase-cli-client-id',
+      client_secret: 'firebase-cli-client-secret',
+      refresh_token: 'operator-refresh-token',
+      type: 'authorized_user',
+    })
+    expect(writes[0][2]).toEqual({
+      encoding: 'utf8',
+      flag: 'wx',
+      mode: 0o600,
+    })
+    expect(removals).toEqual([
+      ['/temporary/operator', { force: true, recursive: true }],
+    ])
+  })
+
+  it('restores an absent ADC environment and cleans it after failure', async () => {
+    const environment = {}
+    const removals = []
+
+    await expect(
+      withFirebaseCliApplicationDefaultCredential(
+        { tokens: { refresh_token: 'operator-refresh-token' } },
+        async () => {
+          expect(environment.GOOGLE_APPLICATION_CREDENTIALS).toBe(
+            '/temporary/operator/application-default-credentials.json',
+          )
+          throw new Error('inspection failed')
+        },
+        {
+          clientId: () => 'firebase-cli-client-id',
+          clientSecret: () => 'firebase-cli-client-secret',
+          environment,
+          makeTempDirectory: async () => '/temporary/operator',
+          removeDirectory: async (...arguments_) => removals.push(arguments_),
+          writeCredentialFile: async () => undefined,
+        },
+      ),
+    ).rejects.toThrow('inspection failed')
+
+    expect(environment).not.toHaveProperty('GOOGLE_APPLICATION_CREDENTIALS')
+    expect(removals).toEqual([
+      ['/temporary/operator', { force: true, recursive: true }],
+    ])
+  })
+
+  it('refuses to create ADC without the selected Firebase CLI refresh token', async () => {
+    await expect(
+      withFirebaseCliApplicationDefaultCredential({}, async () => undefined),
+    ).rejects.toThrow('operator refresh token')
   })
 })

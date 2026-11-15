@@ -1,4 +1,7 @@
+import { mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { createRequire } from 'node:module'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import { pathToFileURL } from 'node:url'
 
 import {
@@ -12,6 +15,7 @@ const require = createRequire(import.meta.url)
 const { getAccessToken, getGlobalDefaultAccount } = require(
   'firebase-tools/lib/auth.js',
 )
+const { clientId, clientSecret } = require('firebase-tools/lib/api.js')
 
 const ACTIONS = new Set(['inspect', 'apply'])
 const BASE_OPTIONS = new Set(['--owner-email', '--owner-uid', '--project'])
@@ -94,6 +98,57 @@ export function assertActivityImportReconciliationBoundary(options) {
   }
 }
 
+export async function withFirebaseCliApplicationDefaultCredential(
+  account,
+  task,
+  dependencies = {},
+) {
+  const refreshToken = account?.tokens?.refresh_token
+  if (typeof refreshToken !== 'string' || refreshToken.length === 0) {
+    throw new Error('Firebase CLI did not provide an operator refresh token.')
+  }
+
+  const environment = dependencies.environment ?? process.env
+  const makeTempDirectory = dependencies.makeTempDirectory ?? mkdtemp
+  const removeDirectory = dependencies.removeDirectory ?? rm
+  const writeCredentialFile = dependencies.writeCredentialFile ?? writeFile
+  const resolveClientId = dependencies.clientId ?? clientId
+  const resolveClientSecret = dependencies.clientSecret ?? clientSecret
+  const previousCredentialPath = environment.GOOGLE_APPLICATION_CREDENTIALS
+  let tempDirectory
+
+  try {
+    tempDirectory = await makeTempDirectory(
+      join(tmpdir(), 'marathoner-duplicate-reconciliation-'),
+    )
+    const credentialPath = join(
+      tempDirectory,
+      'application-default-credentials.json',
+    )
+    await writeCredentialFile(
+      credentialPath,
+      `${JSON.stringify({
+        type: 'authorized_user',
+        client_id: resolveClientId(),
+        client_secret: resolveClientSecret(),
+        refresh_token: refreshToken,
+      })}\n`,
+      { encoding: 'utf8', flag: 'wx', mode: 0o600 },
+    )
+    environment.GOOGLE_APPLICATION_CREDENTIALS = credentialPath
+    return await task()
+  } finally {
+    if (previousCredentialPath === undefined) {
+      delete environment.GOOGLE_APPLICATION_CREDENTIALS
+    } else {
+      environment.GOOGLE_APPLICATION_CREDENTIALS = previousCredentialPath
+    }
+    if (tempDirectory !== undefined) {
+      await removeDirectory(tempDirectory, { force: true, recursive: true })
+    }
+  }
+}
+
 async function operatorAccessToken() {
   const account = getGlobalDefaultAccount()
   if (account?.user?.email !== FOUNDING_BETA_OPERATOR_EMAIL) {
@@ -107,6 +162,7 @@ async function operatorAccessToken() {
     throw new Error('Firebase CLI did not provide an operator access token.')
   }
   return {
+    account,
     accessToken: token.access_token,
     operatorEmail: account.user.email,
   }
@@ -116,7 +172,7 @@ async function run() {
   const options = parseActivityImportReconciliationArguments(
     process.argv.slice(2),
   )
-  const { accessToken, operatorEmail } = await operatorAccessToken()
+  const { account, accessToken, operatorEmail } = await operatorAccessToken()
   const ownerAccount = await lookupAuthAccount({
     accessToken,
     projectId: options.projectId,
@@ -129,41 +185,43 @@ async function run() {
     ownerAccount,
   })
 
-  const moduleUrl = new URL(
-    '../functions/lib/functions/src/firestoreActivityImportDuplicateReconciliation.js',
-    import.meta.url,
-  ).href
-  const [{ deleteApp, initializeApp }, { getFirestore }, reconciliationModule] =
-    await Promise.all([
+  await withFirebaseCliApplicationDefaultCredential(account, async () => {
+    const moduleUrl = new URL(
+      '../functions/lib/functions/src/firestoreActivityImportDuplicateReconciliation.js',
+      import.meta.url,
+    ).href
+    const [
+      { applicationDefault, deleteApp, initializeApp },
+      { getFirestore },
+      reconciliationModule,
+    ] = await Promise.all([
       import('firebase-admin/app'),
       import('firebase-admin/firestore'),
       import(/* @vite-ignore */ moduleUrl),
     ])
-  const credential = {
-    getAccessToken: async () => ({ access_token: accessToken, expires_in: 3_600 }),
-  }
-  const app = initializeApp(
-    { credential, projectId: options.projectId },
-    `activity-import-duplicate-reconciliation-${Date.now()}`,
-  )
-  const reconciliation =
-    new reconciliationModule.FirestoreActivityImportDuplicateReconciliation(
-      getFirestore(app),
-      { projectId: options.projectId },
+    const app = initializeApp(
+      { credential: applicationDefault(), projectId: options.projectId },
+      `activity-import-duplicate-reconciliation-${Date.now()}`,
     )
+    const reconciliation =
+      new reconciliationModule.FirestoreActivityImportDuplicateReconciliation(
+        getFirestore(app),
+        { projectId: options.projectId },
+      )
 
-  try {
-    const result =
-      options.action === 'inspect'
-        ? await reconciliation.inspect(options.ownerUid)
-        : await reconciliation.reconcile({
-            confirmation: options.confirmation,
-            ownerId: options.ownerUid,
-          })
-    console.log(JSON.stringify(result, null, 2))
-  } finally {
-    await deleteApp(app)
-  }
+    try {
+      const result =
+        options.action === 'inspect'
+          ? await reconciliation.inspect(options.ownerUid)
+          : await reconciliation.reconcile({
+              confirmation: options.confirmation,
+              ownerId: options.ownerUid,
+            })
+      console.log(JSON.stringify(result, null, 2))
+    } finally {
+      await deleteApp(app)
+    }
+  })
 }
 
 const executedFile = process.argv[1]
