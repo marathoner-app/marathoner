@@ -4,7 +4,6 @@ import {
 } from "../persistence/operationTiming";
 
 const STORAGE_KEY = "marathoner:slow-run-diagnostics:v1";
-const SCHEMA_VERSION = 1;
 const SLOW_OPERATION_THRESHOLD_MILLISECONDS = 5_000;
 const RETENTION_MILLISECONDS = 14 * 24 * 60 * 60 * 1_000;
 const MAX_RECORDS = 3;
@@ -13,8 +12,7 @@ type Runtime = "web" | "ios-app";
 type Platform = "ios" | "android" | "macos" | "windows" | "other";
 type Browser = "safari" | "chrome" | "firefox" | "edge" | "other";
 
-export interface SlowRunDiagnostic {
-  readonly schemaVersion: 1;
+interface SlowRunDiagnosticContext {
   readonly capturedAt: string;
   readonly bundle: string;
   readonly runtime: Runtime;
@@ -23,6 +21,10 @@ export interface SlowRunDiagnostic {
   readonly online: boolean;
   readonly visibility: DocumentVisibilityState | "unavailable";
   readonly plannedWorkout: boolean;
+}
+
+export interface SlowRunDiagnosticV1 extends SlowRunDiagnosticContext {
+  readonly schemaVersion: 1;
   readonly outcome: OperationMeasurement["outcome"];
   readonly milliseconds: {
     readonly submissionTotal: number;
@@ -33,9 +35,36 @@ export interface SlowRunDiagnostic {
   };
 }
 
+type CommandOutcome = "committed" | "failed" | "outcome_unknown";
+type ListenerConfirmationStatus =
+  | "confirmed"
+  | "timed_out"
+  | "not_applicable";
+
+export interface SlowRunDiagnosticV2 extends SlowRunDiagnosticContext {
+  readonly schemaVersion: 2;
+  readonly outcome: OperationMeasurement["outcome"];
+  readonly commandOutcome: CommandOutcome;
+  readonly listenerConfirmationStatus: ListenerConfirmationStatus;
+  readonly milliseconds: SlowRunDiagnosticV1["milliseconds"] & {
+    readonly commandClientAcquisition: number | null;
+    readonly firstSubmission: number | null;
+    readonly safeRetry: number | null;
+    readonly commandResolution: number | null;
+    readonly listenerConfirmation: number | null;
+  };
+}
+
+export type SlowRunDiagnostic = SlowRunDiagnosticV1 | SlowRunDiagnosticV2;
+
 interface RecordSlowRunDiagnosticInput {
   readonly submission: OperationMeasurement;
   readonly plannedWorkout: boolean;
+  readonly commandOutcome?: CommandOutcome;
+  readonly listenerConfirmation?: Readonly<{
+    durationMilliseconds: number | null;
+    status: ListenerConfirmationStatus;
+  }>;
 }
 
 function latestDuration(name: string, startedAtMilliseconds: number): number | null {
@@ -85,12 +114,10 @@ function currentBundle(): string {
   }
 }
 
-function isSlowRunDiagnostic(value: unknown): value is SlowRunDiagnostic {
-  if (typeof value !== "object" || value === null) return false;
-  const candidate = value as Partial<SlowRunDiagnostic>;
-
+function hasDiagnosticContext(
+  candidate: Partial<SlowRunDiagnostic>,
+): boolean {
   return (
-    candidate.schemaVersion === SCHEMA_VERSION &&
     typeof candidate.capturedAt === "string" &&
     typeof candidate.bundle === "string" &&
     (candidate.runtime === "web" || candidate.runtime === "ios-app") &&
@@ -103,6 +130,33 @@ function isSlowRunDiagnostic(value: unknown): value is SlowRunDiagnostic {
     typeof candidate.milliseconds === "object" &&
     candidate.milliseconds !== null &&
     typeof candidate.milliseconds.submissionTotal === "number"
+  );
+}
+
+function isNullableDuration(value: unknown): value is number | null {
+  return value === null || (typeof value === "number" && Number.isFinite(value));
+}
+
+function isSlowRunDiagnostic(value: unknown): value is SlowRunDiagnostic {
+  if (typeof value !== "object" || value === null) return false;
+  const candidate = value as Partial<SlowRunDiagnostic>;
+
+  if (!hasDiagnosticContext(candidate)) return false;
+  if (candidate.schemaVersion === 1) return true;
+  if (candidate.schemaVersion !== 2) return false;
+  const current = candidate as Partial<SlowRunDiagnosticV2>;
+  return (
+    (current.commandOutcome === "committed" ||
+      current.commandOutcome === "failed" ||
+      current.commandOutcome === "outcome_unknown") &&
+    (current.listenerConfirmationStatus === "confirmed" ||
+      current.listenerConfirmationStatus === "timed_out" ||
+      current.listenerConfirmationStatus === "not_applicable") &&
+    isNullableDuration(current.milliseconds?.commandClientAcquisition) &&
+    isNullableDuration(current.milliseconds?.firstSubmission) &&
+    isNullableDuration(current.milliseconds?.safeRetry) &&
+    isNullableDuration(current.milliseconds?.commandResolution) &&
+    isNullableDuration(current.milliseconds?.listenerConfirmation)
   );
 }
 
@@ -145,10 +199,14 @@ export function readSlowRunDiagnostics(now = Date.now()): SlowRunDiagnostic[] {
 export function recordSlowRunDiagnostic({
   submission,
   plannedWorkout,
+  commandOutcome,
+  listenerConfirmation,
 }: RecordSlowRunDiagnosticInput): void {
+  const listenerDuration = listenerConfirmation?.durationMilliseconds ?? null;
   if (
     !Number.isFinite(submission.durationMilliseconds) ||
-    submission.durationMilliseconds < SLOW_OPERATION_THRESHOLD_MILLISECONDS
+    Math.max(submission.durationMilliseconds, listenerDuration ?? 0) <
+      SLOW_OPERATION_THRESHOLD_MILLISECONDS
   ) {
     return;
   }
@@ -158,8 +216,8 @@ export function recordSlowRunDiagnostic({
 
   try {
     const userAgent = globalThis.navigator?.userAgent ?? "";
-    const record: SlowRunDiagnostic = {
-      schemaVersion: SCHEMA_VERSION,
+    const record: SlowRunDiagnosticV2 = {
+      schemaVersion: 2,
       capturedAt: new Date().toISOString(),
       bundle: currentBundle(),
       runtime: detectRuntime(),
@@ -169,8 +227,31 @@ export function recordSlowRunDiagnostic({
       visibility: globalThis.document?.visibilityState ?? "unavailable",
       plannedWorkout,
       outcome: submission.outcome,
+      commandOutcome:
+        commandOutcome ??
+        (submission.outcome === "succeeded" ? "committed" : "failed"),
+      listenerConfirmationStatus:
+        listenerConfirmation?.status ?? "not_applicable",
       milliseconds: {
         submissionTotal: Math.round(submission.durationMilliseconds),
+        commandClientAcquisition: latestDuration(
+          runCreationTimingNames.commandClientAcquisition,
+          submission.startedAtMilliseconds,
+        ),
+        firstSubmission: latestDuration(
+          runCreationTimingNames.firstSubmission,
+          submission.startedAtMilliseconds,
+        ),
+        safeRetry: latestDuration(
+          runCreationTimingNames.safeRetry,
+          submission.startedAtMilliseconds,
+        ),
+        commandResolution: latestDuration(
+          runCreationTimingNames.commandResolution,
+          submission.startedAtMilliseconds,
+        ),
+        listenerConfirmation:
+          listenerDuration === null ? null : Math.round(listenerDuration),
         repositoryTotal: latestDuration(
           runCreationTimingNames.total,
           submission.startedAtMilliseconds,

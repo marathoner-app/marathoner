@@ -26,6 +26,7 @@ import { recordSlowRunDiagnostic } from "../diagnostics/slowRunDiagnostics";
 import {
   measureOperation,
   runCreationTimingNames,
+  type OperationMeasurement,
 } from "../persistence/operationTiming";
 import type {
   CreateCompletedRunInput,
@@ -135,6 +136,24 @@ type PendingRunUpdate = {
   readonly changes: UpdateCompletedRunInput;
   readonly submission: RunUpdateSubmission;
 };
+
+type PendingRunConvergence = {
+  readonly runId: CompletedRunId;
+  readonly plannedWorkout: boolean;
+  readonly startedAtMilliseconds: number;
+  submission: OperationMeasurement | null;
+  listenerDurationMilliseconds: number | null;
+  listenerStatus: "confirmed" | "timed_out" | null;
+  timeout: ReturnType<typeof setTimeout> | null;
+};
+
+function performanceNow(): number {
+  try {
+    return globalThis.performance?.now() ?? Date.now();
+  } catch {
+    return Date.now();
+  }
+}
 
 function messageFor(error: unknown): string {
   return error instanceof Error
@@ -338,6 +357,7 @@ export default function TrainingDataProvider({
   );
   const pendingRunDeletionRef = useRef<PendingRunDeletion | null>(null);
   const pendingRunUpdateRef = useRef<PendingRunUpdate | null>(null);
+  const pendingRunConvergenceRef = useRef<PendingRunConvergence | null>(null);
   const unsubscribeRef = useRef<(() => void) | null>(null);
   const sessionGenerationRef = useRef(0);
   const [synchronization, setSynchronization] = useState(() =>
@@ -345,6 +365,30 @@ export default function TrainingDataProvider({
       ownerId: userId,
       sessionGeneration: 0,
     }),
+  );
+
+  const finishRunConvergence = useCallback(
+    (pending: PendingRunConvergence) => {
+      if (
+        pendingRunConvergenceRef.current !== pending ||
+        pending.submission === null ||
+        pending.listenerStatus === null
+      ) {
+        return;
+      }
+      if (pending.timeout !== null) clearTimeout(pending.timeout);
+      recordSlowRunDiagnostic({
+        submission: pending.submission,
+        plannedWorkout: pending.plannedWorkout,
+        commandOutcome: "committed",
+        listenerConfirmation: {
+          durationMilliseconds: pending.listenerDurationMilliseconds,
+          status: pending.listenerStatus,
+        },
+      });
+      pendingRunConvergenceRef.current = null;
+    },
+    [],
   );
 
   const rememberPendingRunSave = useCallback(
@@ -378,6 +422,11 @@ export default function TrainingDataProvider({
     restorePendingRunSave();
     pendingRunDeletionRef.current = null;
     pendingRunUpdateRef.current = null;
+    const priorConvergence = pendingRunConvergenceRef.current;
+    if (priorConvergence?.timeout != null) {
+      clearTimeout(priorConvergence.timeout);
+    }
+    pendingRunConvergenceRef.current = null;
     setSynchronization(
       createTrainingSynchronizationKernel({
         ownerId: userId,
@@ -398,6 +447,36 @@ export default function TrainingDataProvider({
       completedRunCommandClientRef.current = completedRunCommandClient;
       const unsubscribe = source.subscribe((events) => {
         if (generation !== sessionGenerationRef.current) return;
+
+        const pending = pendingRunConvergenceRef.current;
+        const runs = events.find(
+          (event) => event.type === "source_snapshot" && event.source === "runs",
+        );
+        if (
+          pending !== null &&
+          runs?.type === "source_snapshot" &&
+          runs.source === "runs" &&
+          runs.value.some((run) => run.id === pending.runId)
+        ) {
+          const endedAt = performanceNow();
+          pending.listenerDurationMilliseconds = Math.max(
+            0,
+            endedAt - pending.startedAtMilliseconds,
+          );
+          pending.listenerStatus = "confirmed";
+          try {
+            globalThis.performance?.measure(
+              runCreationTimingNames.listenerConfirmation,
+              {
+                start: pending.startedAtMilliseconds,
+                end: endedAt,
+              },
+            );
+          } catch {
+            // Listener timing must never change synchronization behavior.
+          }
+          finishRunConvergence(pending);
+        }
 
         setSynchronization((current) =>
           events.reduce(reduceTrainingSynchronization, current),
@@ -431,6 +510,7 @@ export default function TrainingDataProvider({
     liveReadSourceFactory,
     repositoryFactory,
     restorePendingRunSave,
+    finishRunConvergence,
     userId,
   ]);
 
@@ -445,6 +525,11 @@ export default function TrainingDataProvider({
       completedRunCommandClientRef.current = null;
       pendingRunDeletionRef.current = null;
       pendingRunUpdateRef.current = null;
+      const pendingConvergence = pendingRunConvergenceRef.current;
+      if (pendingConvergence?.timeout != null) {
+        clearTimeout(pendingConvergence.timeout);
+      }
+      pendingRunConvergenceRef.current = null;
     };
   }, [startSynchronization]);
 
@@ -580,11 +665,37 @@ export default function TrainingDataProvider({
   }, [clearPendingRunSave, requireCompletedRunCommandClient]);
 
   const createRun = useCallback(
-    (input: CreateCompletedRunInput) =>
-      measureOperation(
+    (input: CreateCompletedRunInput) => {
+      let commandOutcome: "committed" | "failed" | "outcome_unknown" =
+        "failed";
+      const convergenceStartedAt = performanceNow();
+      const plannedWorkoutSelected =
+        input.plannedWorkoutPlanId !== undefined &&
+        input.plannedWorkoutId !== undefined;
+      const rememberConvergence = (run: CompletedRun) => {
+        const alreadyConfirmed =
+          synchronizedSnapshot?.runs.some(({ id }) => id === run.id) ?? false;
+        pendingRunConvergenceRef.current = {
+          runId: run.id,
+          plannedWorkout: plannedWorkoutSelected,
+          startedAtMilliseconds: convergenceStartedAt,
+          submission: null,
+          listenerDurationMilliseconds: alreadyConfirmed
+            ? Math.max(0, performanceNow() - convergenceStartedAt)
+            : null,
+          listenerStatus: alreadyConfirmed ? "confirmed" : null,
+          timeout: null,
+        };
+        return run;
+      };
+
+      return measureOperation(
         runCreationTimingNames.submissionTotal,
         async () => {
-          const commandClient = requireCompletedRunCommandClient();
+          const commandClient = await measureOperation(
+            runCreationTimingNames.commandClientAcquisition,
+            async () => requireCompletedRunCommandClient(),
+          );
           const pending = pendingRunCompletionRef.current;
 
           if (pending !== null) {
@@ -594,7 +705,10 @@ export default function TrainingDataProvider({
             if (resolved.status === "run_completed") {
               clearPendingRunSave();
               if (pending.input !== undefined) {
-                return completedRunFromReceipt(userId, pending.input, resolved);
+                commandOutcome = "committed";
+                return rememberConvergence(
+                  completedRunFromReceipt(userId, pending.input, resolved),
+                );
               }
               throw new Error(
                 "Your earlier run was saved. It will appear in Logged Runs when synchronization finishes.",
@@ -637,26 +751,50 @@ export default function TrainingDataProvider({
           }
           if (result.status === "run_completed") {
             clearPendingRunSave();
-            return completedRunFromReceipt(userId, input, result);
+            commandOutcome = "committed";
+            return rememberConvergence(
+              completedRunFromReceipt(userId, input, result),
+            );
           }
           if (result.status !== "outcome_unknown") {
             clearPendingRunSave();
           } else {
+            commandOutcome = "outcome_unknown";
             setPendingRunSaveCommandId(submission.commandId);
           }
           throw completionFailure(result);
         },
-        (submission) =>
+        (submission) => {
+          const convergence = pendingRunConvergenceRef.current;
+          if (commandOutcome === "committed" && convergence !== null) {
+            convergence.submission = submission;
+            if (convergence.listenerStatus !== null) {
+              finishRunConvergence(convergence);
+              return;
+            }
+            convergence.timeout = setTimeout(() => {
+              if (pendingRunConvergenceRef.current !== convergence) return;
+              convergence.listenerDurationMilliseconds = Math.max(
+                0,
+                performanceNow() - convergence.startedAtMilliseconds,
+              );
+              convergence.listenerStatus = "timed_out";
+              finishRunConvergence(convergence);
+            }, 5_000);
+            return;
+          }
           recordSlowRunDiagnostic({
             submission,
-            plannedWorkout:
-              input.plannedWorkoutPlanId !== undefined &&
-              input.plannedWorkoutId !== undefined,
-          }),
-      ),
+            plannedWorkout: plannedWorkoutSelected,
+            commandOutcome,
+          });
+        },
+      );
+    },
     [
       clearPendingRunSave,
       createCompletedRunCommandId,
+      finishRunConvergence,
       rememberPendingRunSave,
       requireCompletedRunCommandClient,
       synchronizedSnapshot,

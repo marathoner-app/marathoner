@@ -633,28 +633,10 @@ describe("TrainingDataProvider", () => {
       targetDistance: milesToMeters(5),
     });
     const shoe = await repositories.shoes.create({ name: "Daily Trainer" });
-    vi.mocked(completedRunCommandClient.submitCompletion).mockResolvedValue({
-      status: "run_completed",
-      commandId: "run-complete-test-command",
-      completedRunId: createCompletedRunId("listener-confirmed-run"),
-      completedRunUpdatedAt: timestamp,
-      completedPlannedWorkout: {
-        planId: workout.planId,
-        workoutId: workout.id,
-        updatedAt: timestamp,
-      },
-    });
     const user = userEvent.setup();
     renderProvider();
     const source = await waitForSource();
     await publishRepositories(source);
-
-    expect(await screen.findByText("Workout: planned")).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: "Complete workout" }));
-    await waitFor(() =>
-      expect(completedRunCommandClient.submitCompletion).toHaveBeenCalledOnce(),
-    );
-    expect(screen.getByText("Runs: 0")).toBeInTheDocument();
 
     const run = await repositories.runs.create({
       plannedWorkoutPlanId: workout.planId,
@@ -665,6 +647,25 @@ describe("TrainingDataProvider", () => {
       distance: milesToMeters(3),
       duration: createDurationSeconds(1_800),
     });
+    vi.mocked(completedRunCommandClient.submitCompletion).mockResolvedValue({
+      status: "run_completed",
+      commandId: "run-complete-test-command",
+      completedRunId: run.id,
+      completedRunUpdatedAt: timestamp,
+      completedPlannedWorkout: {
+        planId: workout.planId,
+        workoutId: workout.id,
+        updatedAt: timestamp,
+      },
+    });
+
+    expect(await screen.findByText("Workout: planned")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Complete workout" }));
+    await waitFor(() =>
+      expect(completedRunCommandClient.submitCompletion).toHaveBeenCalledOnce(),
+    );
+    expect(screen.getByText("Runs: 0")).toBeInTheDocument();
+
     await repositories.workouts.update(workout.planId, workout.id, {
       status: "completed",
     });
@@ -674,6 +675,11 @@ describe("TrainingDataProvider", () => {
     expect(mockedRecordSlowRunDiagnostic).toHaveBeenCalledWith({
       submission: expect.objectContaining({ outcome: "succeeded" }),
       plannedWorkout: true,
+      commandOutcome: "committed",
+      listenerConfirmation: {
+        durationMilliseconds: expect.any(Number),
+        status: "confirmed",
+      },
     });
     expect(screen.getByText("Workout: completed")).toBeInTheDocument();
     expect(screen.getByText("Total: 3")).toBeInTheDocument();
@@ -733,11 +739,25 @@ describe("TrainingDataProvider", () => {
       targetDistance: milesToMeters(5),
     });
     const shoe = await repositories.shoes.create({ name: "Daily Trainer" });
+    const user = userEvent.setup();
+    renderProvider();
+    const source = await waitForSource();
+    await publishRepositories(source);
+
+    const run = await repositories.runs.create({
+      plannedWorkoutPlanId: workout.planId,
+      plannedWorkoutId: workout.id,
+      shoeId: shoe.id,
+      startedAt: createUtcDateTime("2026-08-03T14:00:00Z"),
+      timeZone,
+      distance: milesToMeters(3),
+      duration: createDurationSeconds(1_800),
+    });
     const directCreate = vi.spyOn(repositories.runs, "create");
     vi.mocked(completedRunCommandClient.submitCompletion).mockResolvedValue({
       status: "run_completed",
       commandId: "run-complete-test-command",
-      completedRunId: createCompletedRunId("run-command-confirmed"),
+      completedRunId: run.id,
       completedRunUpdatedAt: timestamp,
       completedPlannedWorkout: {
         planId: workout.planId,
@@ -745,10 +765,6 @@ describe("TrainingDataProvider", () => {
         updatedAt: timestamp,
       },
     });
-    const user = userEvent.setup();
-    renderProvider();
-    const source = await waitForSource();
-    await publishRepositories(source);
 
     await user.click(screen.getByRole("button", { name: "Complete workout" }));
 
@@ -775,26 +791,23 @@ describe("TrainingDataProvider", () => {
     expect(directCreate).not.toHaveBeenCalled();
     expect(screen.getByText("Runs: 0")).toBeInTheDocument();
     expect(screen.getByText("Workout: planned")).toBeInTheDocument();
-    expect(mockedRecordSlowRunDiagnostic).toHaveBeenCalledWith({
-      submission: expect.objectContaining({ outcome: "succeeded" }),
-      plannedWorkout: true,
-    });
+    expect(mockedRecordSlowRunDiagnostic).not.toHaveBeenCalled();
 
-    await repositories.runs.create({
-      plannedWorkoutPlanId: workout.planId,
-      plannedWorkoutId: workout.id,
-      shoeId: shoe.id,
-      startedAt: createUtcDateTime("2026-08-03T14:00:00Z"),
-      timeZone,
-      distance: milesToMeters(3),
-      duration: createDurationSeconds(1_800),
-    });
     await repositories.workouts.update(workout.planId, workout.id, {
       status: "completed",
     });
     await publishRepositories(source);
 
     expect(await screen.findByText("Runs: 1")).toBeInTheDocument();
+    expect(mockedRecordSlowRunDiagnostic).toHaveBeenCalledWith({
+      submission: expect.objectContaining({ outcome: "succeeded" }),
+      plannedWorkout: true,
+      commandOutcome: "committed",
+      listenerConfirmation: {
+        durationMilliseconds: expect.any(Number),
+        status: "confirmed",
+      },
+    });
     expect(screen.getByText("Workout: completed")).toBeInTheDocument();
   });
 

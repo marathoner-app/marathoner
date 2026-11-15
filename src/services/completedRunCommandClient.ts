@@ -27,6 +27,7 @@ import {
   createMaterialCommandClient,
   type MaterialCommandClientOptions,
 } from './materialCommandClient'
+import { runCreationTimingNames } from '../persistence/operationTiming'
 
 export interface RunCompletionSubmission {
   commandId: string
@@ -173,6 +174,11 @@ export function createCompletedRunCommandClient(
   const materialCommandClient = createMaterialCommandClient({
     ...options,
     retryIdempotentSubmissionsOnce: true,
+    timingNames: {
+      firstSubmission: runCreationTimingNames.firstSubmission,
+      safeRetry: runCreationTimingNames.safeRetry,
+      commandResolution: runCreationTimingNames.commandResolution,
+    },
   })
 
   return {

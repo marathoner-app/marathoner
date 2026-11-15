@@ -1,5 +1,10 @@
 export const runCreationTimingNames = {
   submissionTotal: "marathoner:run-create:submission-total",
+  commandClientAcquisition: "marathoner:run-create:command-client-acquisition",
+  firstSubmission: "marathoner:run-create:first-submission",
+  safeRetry: "marathoner:run-create:safe-retry",
+  commandResolution: "marathoner:run-create:command-resolution",
+  listenerConfirmation: "marathoner:run-create:listener-confirmation",
   total: "marathoner:run-create:total",
   associations: "marathoner:run-create:associations",
   writeAcknowledgement: "marathoner:run-create:write-acknowledgement",
