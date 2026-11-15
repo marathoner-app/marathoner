@@ -15,8 +15,8 @@ import {
 } from "firebase/firestore";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import {
+  createCompletedRunId,
   createDistanceMeters,
-  createDurationSeconds,
   createIanaTimeZone,
   createPlannedWorkoutId,
   createTrainingPlanId,
@@ -766,13 +766,18 @@ describe("Firestore training-data ownership rules", () => {
     await assertFails(setDoc(reference, incompleteRun));
   });
 
-  it("preserves immutable run fields and monotonic update time", async () => {
+  it("denies every direct mutation of a server-committed run", async () => {
     const database = testEnvironment
       .authenticatedContext(firstUserId)
       .firestore();
     const reference = doc(database, `users/${firstUserId}/runs/run-1`);
 
-    await assertSucceeds(setDoc(reference, runDocument()));
+    await testEnvironment.withSecurityRulesDisabled(async (context) => {
+      await setDoc(
+        doc(context.firestore(), `users/${firstUserId}/runs/run-1`),
+        runDocument(),
+      );
+    });
     await assertFails(
       setDoc(
         reference,
@@ -941,7 +946,7 @@ describe("Firestore retired mobile-spike boundary", () => {
 });
 
 describe("Firestore repository integration", () => {
-  it("persists client-owned data and reloads server-owned plan data", async () => {
+  it("persists client-owned data and reloads server-owned training data", async () => {
     await seedPlanAndWorkout();
     const database = testEnvironment
       .authenticatedContext(firstUserId)
@@ -973,16 +978,21 @@ describe("Firestore repository integration", () => {
       throw new Error("Expected the server-seeded plan and workout.");
     }
     const shoe = await repositories.shoes.create({ name: "Daily trainer" });
-    const run = await repositories.runs.create({
-      plannedWorkoutPlanId: planId,
-      plannedWorkoutId: workoutId,
-      shoeId: shoe.id,
-      startedAt: createUtcDateTime("2026-08-02T14:00:00.000Z"),
-      timeZone: createIanaTimeZone("America/Los_Angeles"),
-      distance: createDistanceMeters(5_000),
-      duration: createDurationSeconds(1_800),
-      perceivedEffort: "about_right",
+    await testEnvironment.withSecurityRulesDisabled(async (context) => {
+      await setDoc(
+        doc(context.firestore(), `users/${firstUserId}/runs/run-1`),
+        runDocument(firstUserId, {
+          plannedWorkoutPlanId: planId,
+          plannedWorkoutId: workoutId,
+          shoeId: shoe.id,
+          startedAt: new Date("2026-08-02T14:00:00.000Z"),
+          timeZone: "America/Los_Angeles",
+        }),
+      );
     });
+    const runId = createCompletedRunId("run-1");
+    const run = await repositories.runs.get(runId);
+    if (run === null) throw new Error("Expected the server-seeded run.");
 
     await expect(repositories.profile.load()).resolves.toEqual(profile);
     await expect(repositories.plans.get(planId)).resolves.toEqual(plan);
@@ -990,6 +1000,6 @@ describe("Firestore repository integration", () => {
       workout,
     );
     await expect(repositories.shoes.get(shoe.id)).resolves.toEqual(shoe);
-    await expect(repositories.runs.get(run.id)).resolves.toEqual(run);
+    await expect(repositories.runs.get(runId)).resolves.toEqual(run);
   });
 });
