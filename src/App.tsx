@@ -751,7 +751,7 @@ function AuthenticatedExperience({
       {activeSection && activeSectionDetails && (
         <motion.section
           id={`${activeSection}-panel`}
-          className="section-panel"
+          className={`section-panel section-panel--${activeSection}`}
           aria-labelledby={`${activeSection}-panel-title`}
           initial={{ opacity: 0, scale: 0.98 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -823,7 +823,7 @@ function SectionContent({
         );
   return (
     <motion.div
-      className="section-panel-content"
+      className={`section-panel-content section-panel-content--${section}`}
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
