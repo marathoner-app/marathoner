@@ -327,21 +327,15 @@ describe("founding-beta membership rules", () => {
     await assertFails(deleteDoc(reference));
   });
 
-  it.each([
-    ["runs/run-1", runDocument()],
-    ["shoes/shoe-1", shoeDocument()],
-  ])(
-    "allows an approved verified owner to write and read %s",
-    async (relativePath, data) => {
-      await seedMembership(firstUserId);
-      const database = authenticatedContext(firstUserId)
-        .firestore() as unknown as Firestore;
-      const reference = doc(database, `users/${firstUserId}/${relativePath}`);
+  it("allows an approved verified owner to write and read owned shoes", async () => {
+    await seedMembership(firstUserId);
+    const database = authenticatedContext(firstUserId)
+      .firestore() as unknown as Firestore;
+    const reference = doc(database, `users/${firstUserId}/shoes/shoe-1`);
 
-      await assertSucceeds(setDoc(reference, data));
-      await assertSucceeds(getDoc(reference));
-    },
-  );
+    await assertSucceeds(setDoc(reference, shoeDocument()));
+    await assertSucceeds(getDoc(reference));
+  });
 
   it("denies a verified account with no membership", async () => {
     await seedPlanAndWorkout();
@@ -352,7 +346,7 @@ describe("founding-beta membership rules", () => {
     await assertFails(getDoc(reference));
   });
 
-  it("keeps workout definitions server-owned with one temporary status transition", async () => {
+  it("keeps workout definitions and status transitions server-owned", async () => {
     await seedMembership(firstUserId);
     await seedMembership(secondUserId);
     await seedPlanAndWorkout();
@@ -377,13 +371,13 @@ describe("founding-beta membership rules", () => {
         notes: "Replacement workout",
       }),
     );
-    await assertSucceeds(
+    await assertFails(
       updateDoc(ownerReference, {
         status: "completed",
         updatedAt: new Date("2026-07-30T13:00:00.000Z"),
       }),
     );
-    await assertSucceeds(
+    await assertFails(
       updateDoc(ownerReference, {
         status: "planned",
         updatedAt: new Date("2026-07-30T14:00:00.000Z"),
@@ -446,7 +440,7 @@ describe("founding-beta membership rules", () => {
     await assertFails(deleteDoc(reference));
   });
 
-  it("enforces the exact completed-run lifecycle for an approved member", async () => {
+  it("allows approved owners to read server runs but denies direct writes", async () => {
     await seedMembership(firstUserId);
     await seedMembership(secondUserId);
     const ownerDatabase = authenticatedContext(firstUserId).firestore();
@@ -455,9 +449,17 @@ describe("founding-beta membership rules", () => {
     const ownerReference = doc(ownerDatabase, path);
     const otherReference = doc(otherDatabase, path);
 
-    await assertSucceeds(setDoc(ownerReference, runDocument()));
+    await testEnvironment.withSecurityRulesDisabled(async (context) => {
+      await setDoc(doc(context.firestore(), path), runDocument());
+    });
     await assertSucceeds(getDoc(ownerReference));
-    await assertSucceeds(
+    await assertFails(
+      setDoc(
+        doc(ownerDatabase, `users/${firstUserId}/runs/run-2`),
+        runDocument(),
+      ),
+    );
+    await assertFails(
       updateDoc(ownerReference, {
         durationSeconds: 1_750,
         notes: "Felt controlled throughout.",
@@ -499,7 +501,7 @@ describe("founding-beta membership rules", () => {
     );
     await assertFails(getDoc(otherReference));
     await assertFails(deleteDoc(otherReference));
-    await assertSucceeds(deleteDoc(ownerReference));
+    await assertFails(deleteDoc(ownerReference));
   });
 
   it("keeps imported-run provenance server-owned for approved members", async () => {
@@ -517,7 +519,7 @@ describe("founding-beta membership rules", () => {
     const database = authenticatedContext(firstUserId).firestore();
     const reference = doc(database, path);
 
-    await assertSucceeds(
+    await assertFails(
       updateDoc(reference, {
         shoeId: "shoe-2",
         perceivedEffort: "about_right",

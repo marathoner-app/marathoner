@@ -15,8 +15,8 @@ import {
 } from "firebase/firestore";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import {
+  createCompletedRunId,
   createDistanceMeters,
-  createDurationSeconds,
   createIanaTimeZone,
   createPlannedWorkoutId,
   createTrainingPlanId,
@@ -384,7 +384,7 @@ describe("Firestore training-data ownership rules", () => {
     await assertFails(deleteDoc(reference));
   });
 
-  it("temporarily permits only run-linked workout completion and reopening", async () => {
+  it("denies every direct workout update after command migration", async () => {
     await seedPlanAndWorkout();
     const database = testEnvironment
       .authenticatedContext(firstUserId)
@@ -394,13 +394,13 @@ describe("Firestore training-data ownership rules", () => {
       `users/${firstUserId}/plans/plan-1/workouts/workout-1`,
     );
 
-    await assertSucceeds(
+    await assertFails(
       updateDoc(reference, {
         status: "completed",
         updatedAt: new Date("2026-07-30T13:00:00.000Z"),
       }),
     );
-    await assertSucceeds(
+    await assertFails(
       updateDoc(reference, {
         status: "planned",
         updatedAt: new Date("2026-07-30T14:00:00.000Z"),
@@ -634,7 +634,7 @@ describe("Firestore training-data ownership rules", () => {
     },
   );
 
-  it("accepts the exact completed-run lifecycle for its owner", async () => {
+  it("keeps server-committed runs readable but denies every direct write", async () => {
     const ownerDatabase = testEnvironment
       .authenticatedContext(firstUserId)
       .firestore();
@@ -645,10 +645,18 @@ describe("Firestore training-data ownership rules", () => {
     const ownerReference = doc(ownerDatabase, path);
     const otherReference = doc(otherDatabase, path);
 
-    await assertSucceeds(setDoc(ownerReference, runDocument()));
+    await testEnvironment.withSecurityRulesDisabled(async (context) => {
+      await setDoc(doc(context.firestore(), path), runDocument());
+    });
     await assertSucceeds(getDoc(ownerReference));
     await assertFails(getDoc(otherReference));
-    await assertSucceeds(
+    await assertFails(
+      setDoc(
+        doc(ownerDatabase, `users/${firstUserId}/runs/run-2`),
+        runDocument(),
+      ),
+    );
+    await assertFails(
       updateDoc(ownerReference, {
         distanceMeters: 5_100,
         perceivedEffort: "easier_than_expected",
@@ -662,10 +670,10 @@ describe("Firestore training-data ownership rules", () => {
       }),
     );
     await assertFails(deleteDoc(otherReference));
-    await assertSucceeds(deleteDoc(ownerReference));
+    await assertFails(deleteDoc(ownerReference));
   });
 
-  it("keeps imported-run provenance server-owned while allowing enrichment", async () => {
+  it("keeps imported runs entirely server-owned", async () => {
     const path = `users/${firstUserId}/runs/imported-run-1`;
     await testEnvironment.withSecurityRulesDisabled(async (context) => {
       await setDoc(
@@ -683,7 +691,7 @@ describe("Firestore training-data ownership rules", () => {
       .firestore();
     const reference = doc(database, path);
 
-    await assertSucceeds(
+    await assertFails(
       updateDoc(reference, {
         perceivedEffort: "harder_than_expected",
         notes: "Warm afternoon.",
@@ -758,13 +766,18 @@ describe("Firestore training-data ownership rules", () => {
     await assertFails(setDoc(reference, incompleteRun));
   });
 
-  it("preserves immutable run fields and monotonic update time", async () => {
+  it("denies every direct mutation of a server-committed run", async () => {
     const database = testEnvironment
       .authenticatedContext(firstUserId)
       .firestore();
     const reference = doc(database, `users/${firstUserId}/runs/run-1`);
 
-    await assertSucceeds(setDoc(reference, runDocument()));
+    await testEnvironment.withSecurityRulesDisabled(async (context) => {
+      await setDoc(
+        doc(context.firestore(), `users/${firstUserId}/runs/run-1`),
+        runDocument(),
+      );
+    });
     await assertFails(
       setDoc(
         reference,
@@ -933,7 +946,7 @@ describe("Firestore retired mobile-spike boundary", () => {
 });
 
 describe("Firestore repository integration", () => {
-  it("persists client-owned data and reloads server-owned plan data", async () => {
+  it("persists client-owned data and reloads server-owned training data", async () => {
     await seedPlanAndWorkout();
     const database = testEnvironment
       .authenticatedContext(firstUserId)
@@ -965,16 +978,21 @@ describe("Firestore repository integration", () => {
       throw new Error("Expected the server-seeded plan and workout.");
     }
     const shoe = await repositories.shoes.create({ name: "Daily trainer" });
-    const run = await repositories.runs.create({
-      plannedWorkoutPlanId: planId,
-      plannedWorkoutId: workoutId,
-      shoeId: shoe.id,
-      startedAt: createUtcDateTime("2026-08-02T14:00:00.000Z"),
-      timeZone: createIanaTimeZone("America/Los_Angeles"),
-      distance: createDistanceMeters(5_000),
-      duration: createDurationSeconds(1_800),
-      perceivedEffort: "about_right",
+    await testEnvironment.withSecurityRulesDisabled(async (context) => {
+      await setDoc(
+        doc(context.firestore(), `users/${firstUserId}/runs/run-1`),
+        runDocument(firstUserId, {
+          plannedWorkoutPlanId: planId,
+          plannedWorkoutId: workoutId,
+          shoeId: shoe.id,
+          startedAt: new Date("2026-08-02T14:00:00.000Z"),
+          timeZone: "America/Los_Angeles",
+        }),
+      );
     });
+    const runId = createCompletedRunId("run-1");
+    const run = await repositories.runs.get(runId);
+    if (run === null) throw new Error("Expected the server-seeded run.");
 
     await expect(repositories.profile.load()).resolves.toEqual(profile);
     await expect(repositories.plans.get(planId)).resolves.toEqual(plan);
@@ -982,6 +1000,6 @@ describe("Firestore repository integration", () => {
       workout,
     );
     await expect(repositories.shoes.get(shoe.id)).resolves.toEqual(shoe);
-    await expect(repositories.runs.get(run.id)).resolves.toEqual(run);
+    await expect(repositories.runs.get(runId)).resolves.toEqual(run);
   });
 });

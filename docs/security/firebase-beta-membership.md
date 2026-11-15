@@ -86,7 +86,8 @@ revocation alone does not perform those actions.
 ## Rules and test isolation
 
 - `firestore.rules` remains the deployed development/prototype ruleset.
-- `firestore.beta.rules` is the pre-deployment beta candidate.
+- `firestore.beta.rules` is the next beta candidate; the live beta project
+  retains its previously verified rules until a separately approved deploy.
 - `firebase.json` points to development rules, while `firebase.beta.json`
   points to beta rules.
 - Each configuration runs a predeploy guard against the exact project alias in
@@ -98,21 +99,23 @@ revocation alone does not perform those actions.
 
 The beta suite covers approved verified access plus anonymous, unverified,
 absent, pending, deletion-pending, malformed, cross-owner, and client
-membership-mutation denial. It also runs the exact profile, plan, workout, run,
-and shoe lifecycle fixtures behind that access gate and proves that protected
+membership-mutation denial. It also runs the exact profile and shoe lifecycle,
+owned plan/workout/run reads, direct material-write denial, and server-owned
+path fixtures behind that access gate and proves that protected
 deletion requests and operator controls cannot be read or written through a
 participant client. The complete negative-case and remaining-write inventory is
 the [Firestore rules acceptance record](firestore-rules-acceptance.md).
 
-The tracked beta candidate now contains the #121 exact-shape hardening. That
-does not mean all material writes are server commands: #72 and #115 still own
-the migration and later removal of their direct client permissions.
+The tracked candidate now contains the final #121 direct-material-write denial.
+Normal plan, workout, run, and provider-import mutations use trusted server
+commands. Profile and one-way shoe lifecycle writes remain the explicit
+participant-write exceptions. This source change does not deploy either ruleset.
 
 ## Live verification evidence
 
-The reviewed alias and public configuration merged before the rules were
+The reviewed alias and public configuration merged before the prior rules were
 deployed to `marathonerapp-beta` on October 1, 2026. The guarded live verifier
-then proved:
+then proved for that historical ruleset:
 
 1. approved verified owner's membership and training reads and training writes
    succeed;
@@ -125,7 +128,6 @@ then proved:
 The exact command, HTTP outcomes, cleanup guarantee, project controls, and
 quota procedure are recorded in
 [the founding-beta project record](firebase-beta-project.md). App Check,
-support, incident response, deletion activation and rehearsal, command
-deployment, and workflow migration remain owned by #161, #124, #121, #72, and
-#115. The local #158, #195, and #197 boundaries do not bypass those invitation
-gates.
+support, incident response, deletion activation and rehearsal, rules deployment,
+and post-deploy verification remain owned by #161, #124, and #121. The local
+#158, #195, and #197 boundaries do not bypass those invitation gates.
