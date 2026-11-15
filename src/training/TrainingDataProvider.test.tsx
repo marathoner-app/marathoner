@@ -384,6 +384,73 @@ function IntegrationProbe() {
   );
 }
 
+function RunAssociationProbe() {
+  const training = useTrainingData();
+
+  if (training.status === "loading" || training.status === "error") {
+    return <p>{training.status}</p>;
+  }
+
+  const run = training.runs[0];
+  const firstWorkout = training.workouts[0];
+  const secondWorkout = training.workouts[1];
+
+  return (
+    <div>
+      <p>First workout: {firstWorkout?.status ?? "none"}</p>
+      <p>Second workout: {secondWorkout?.status ?? "none"}</p>
+      <p>Run workout: {run?.plannedWorkoutId ?? "none"}</p>
+      <button
+        type="button"
+        disabled={!training.canWrite || !run || !firstWorkout}
+        onClick={() =>
+          run &&
+          firstWorkout &&
+          void training
+            .updateRun(run.id, {
+              plannedWorkoutPlanId: firstWorkout.planId,
+              plannedWorkoutId: firstWorkout.id,
+            })
+            .catch(() => undefined)
+        }
+      >
+        Attach first workout
+      </button>
+      <button
+        type="button"
+        disabled={!training.canWrite || !run || !secondWorkout}
+        onClick={() =>
+          run &&
+          secondWorkout &&
+          void training
+            .updateRun(run.id, {
+              plannedWorkoutPlanId: secondWorkout.planId,
+              plannedWorkoutId: secondWorkout.id,
+            })
+            .catch(() => undefined)
+        }
+      >
+        Attach second workout
+      </button>
+      <button
+        type="button"
+        disabled={!training.canWrite || !run}
+        onClick={() =>
+          run &&
+          void training
+            .updateRun(run.id, {
+              plannedWorkoutPlanId: null,
+              plannedWorkoutId: null,
+            })
+            .catch(() => undefined)
+        }
+      >
+        Remove workout
+      </button>
+    </div>
+  );
+}
+
 function RunCommandProbe() {
   const training = useTrainingData();
   const [outcome, setOutcome] = useState("idle");
@@ -1248,6 +1315,108 @@ describe("TrainingDataProvider", () => {
     expect(directUpdate).not.toHaveBeenCalled();
     expect(await screen.findByText("Total: 4")).toBeInTheDocument();
     expect(screen.getByText("Status: current")).toBeInTheDocument();
+  });
+
+  it("projects workout completion, reassociation, and reopening from update receipts", async () => {
+    const plan = await repositories.plans.create({
+      name: "First Marathon Journey",
+      startDate: createDateOnly("2026-08-03"),
+      targetRaceDate: createDateOnly("2027-01-10"),
+    });
+    const firstWorkout = await repositories.workouts.create({
+      planId: plan.id,
+      scheduledDate: createDateOnly("2026-08-03"),
+      phase: "base_building",
+      kind: "run",
+      purpose: "long",
+      targetDistance: milesToMeters(9),
+    });
+    const secondWorkout = await repositories.workouts.create({
+      planId: plan.id,
+      scheduledDate: createDateOnly("2026-08-04"),
+      phase: "base_building",
+      kind: "run",
+      purpose: "easy",
+      targetDistance: milesToMeters(4),
+    });
+    const run = await repositories.runs.create({
+      startedAt: createUtcDateTime("2026-08-03T14:00:00Z"),
+      timeZone,
+      distance: milesToMeters(9),
+      duration: createDurationSeconds(5_400),
+    });
+    const firstUpdateTime = createUtcDateTime("2026-08-03T15:00:00Z");
+    const secondUpdateTime = createUtcDateTime("2026-08-03T15:01:00Z");
+    const thirdUpdateTime = createUtcDateTime("2026-08-03T15:02:00Z");
+    vi.mocked(completedRunCommandClient.submitUpdate)
+      .mockResolvedValueOnce({
+        status: "run_updated",
+        commandId: "run-update-test-command",
+        completedRunId: run.id,
+        completedRunUpdatedAt: firstUpdateTime,
+        reopenedPlannedWorkout: null,
+        completedPlannedWorkout: {
+          planId: firstWorkout.planId,
+          workoutId: firstWorkout.id,
+          updatedAt: firstUpdateTime,
+        },
+      })
+      .mockResolvedValueOnce({
+        status: "run_updated",
+        commandId: "run-update-test-command",
+        completedRunId: run.id,
+        completedRunUpdatedAt: secondUpdateTime,
+        reopenedPlannedWorkout: {
+          planId: firstWorkout.planId,
+          workoutId: firstWorkout.id,
+          updatedAt: secondUpdateTime,
+        },
+        completedPlannedWorkout: {
+          planId: secondWorkout.planId,
+          workoutId: secondWorkout.id,
+          updatedAt: secondUpdateTime,
+        },
+      })
+      .mockResolvedValueOnce({
+        status: "run_updated",
+        commandId: "run-update-test-command",
+        completedRunId: run.id,
+        completedRunUpdatedAt: thirdUpdateTime,
+        reopenedPlannedWorkout: {
+          planId: secondWorkout.planId,
+          workoutId: secondWorkout.id,
+          updatedAt: thirdUpdateTime,
+        },
+        completedPlannedWorkout: null,
+      });
+
+    const user = userEvent.setup();
+    renderProvider(<RunAssociationProbe />);
+    const source = await waitForSource();
+    await publishRepositories(source);
+
+    await user.click(
+      screen.getByRole("button", { name: "Attach first workout" }),
+    );
+    expect(
+      await screen.findByText("First workout: completed"),
+    ).toBeInTheDocument();
+    expect(screen.getByText(`Run workout: ${firstWorkout.id}`)).toBeInTheDocument();
+
+    await user.click(
+      screen.getByRole("button", { name: "Attach second workout" }),
+    );
+    expect(
+      await screen.findByText("First workout: planned"),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Second workout: completed")).toBeInTheDocument();
+    expect(screen.getByText(`Run workout: ${secondWorkout.id}`)).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Remove workout" }));
+    expect(
+      await screen.findByText("Second workout: planned"),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Run workout: none")).toBeInTheDocument();
   });
 
   it("keeps imported source facts unchanged during local update projection", async () => {

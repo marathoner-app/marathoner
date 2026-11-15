@@ -13,6 +13,7 @@ import {
   type CompletedRun,
   type CompletedRunId,
   type DateOnly,
+  type PlannedWorkout,
   type Shoe,
   type ShoeId,
   type UserId,
@@ -21,6 +22,7 @@ import {
 import type {
   PlannedWorkoutCommandReferenceV1,
   RunCompletionReceiptResult,
+  RunUpdateReceiptResult,
 } from "../domain/materialCommands/contract";
 import { recordSlowRunDiagnostic } from "../diagnostics/slowRunDiagnostics";
 import {
@@ -268,6 +270,37 @@ function updatedRun(
   };
 }
 
+function workoutsFromRunUpdateReceipt(
+  workouts: readonly PlannedWorkout[],
+  receipt: RunUpdateReceiptResult,
+): PlannedWorkout[] {
+  return workouts.map((workout) => {
+    if (
+      receipt.completedPlannedWorkout?.planId === workout.planId &&
+      receipt.completedPlannedWorkout.workoutId === workout.id
+    ) {
+      return {
+        ...workout,
+        status: "completed",
+        updatedAt: receipt.completedPlannedWorkout.updatedAt,
+      };
+    }
+
+    if (
+      receipt.reopenedPlannedWorkout?.planId === workout.planId &&
+      receipt.reopenedPlannedWorkout.workoutId === workout.id
+    ) {
+      return {
+        ...workout,
+        status: "planned",
+        updatedAt: receipt.reopenedPlannedWorkout.updatedAt,
+      };
+    }
+
+    return workout;
+  });
+}
+
 function completedRunFromReceipt(
   userId: UserId,
   input: CreateCompletedRunInput,
@@ -319,6 +352,7 @@ function updateFailure(result: RunUpdateClientResult): Error {
 
 type AcknowledgedSource =
   | { readonly source: "profile"; readonly value: UserProfile | null }
+  | { readonly source: "workouts"; readonly value: readonly PlannedWorkout[] }
   | { readonly source: "runs"; readonly value: readonly CompletedRun[] }
   | { readonly source: "shoes"; readonly value: readonly Shoe[] };
 
@@ -803,12 +837,19 @@ export default function TrainingDataProvider({
   );
 
   const acknowledgeRunUpdate = useCallback(
-    (run: CompletedRun) => {
+    (run: CompletedRun, receipt: RunUpdateReceiptResult) => {
       acknowledgeServerWrites((kernel) => [
         {
           source: "runs",
           value: replaceById(kernel.sources.runs.value, run).sort((left, right) =>
             right.startedAt.localeCompare(left.startedAt),
+          ),
+        },
+        {
+          source: "workouts",
+          value: workoutsFromRunUpdateReceipt(
+            kernel.sources.workouts.value,
+            receipt,
           ),
         },
       ]);
@@ -835,6 +876,7 @@ export default function TrainingDataProvider({
                 pending.changes,
                 resolved.completedRunUpdatedAt,
               ),
+              resolved,
             );
           }
         } else {
@@ -883,6 +925,7 @@ export default function TrainingDataProvider({
         pendingRunUpdateRef.current = null;
         return acknowledgeRunUpdate(
           updatedRun(prior, changes, result.completedRunUpdatedAt),
+          result,
         );
       }
       if (result.status !== "outcome_unknown") {
