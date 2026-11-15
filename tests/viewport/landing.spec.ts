@@ -421,6 +421,31 @@ test("keeps the surrounding page fixed during the automatic preview walkthrough"
   await expectFollowingSectionToStayPut();
 });
 
+test("scrolls from ordinary landing-page content at desktop width", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1_280, height: 720 });
+  await page.goto("tests/viewport/landing.html");
+
+  const heroHeading = page.getByRole("heading", {
+    name: "Training for a marathon is enough work.",
+  });
+  const heroHeadingBounds = await heroHeading.boundingBox();
+  if (heroHeadingBounds === null) {
+    throw new Error("Landing hero heading should have visible bounds");
+  }
+
+  await page.mouse.move(
+    heroHeadingBounds.x + heroHeadingBounds.width / 2,
+    heroHeadingBounds.y + heroHeadingBounds.height / 2,
+  );
+  await page.mouse.wheel(0, 500);
+
+  await expect
+    .poll(() => page.evaluate(() => window.scrollY))
+    .toBeGreaterThan(0);
+});
+
 test("keeps the stabilized preview static when reduced motion is requested", async ({
   page,
 }) => {

@@ -316,7 +316,7 @@ test("keeps mobile navigation anchored at the document scroll boundary", async (
   });
 
   await expect(page.locator("html")).toHaveCSS("overscroll-behavior-y", "none");
-  await expect(page.locator("body")).toHaveCSS("overscroll-behavior-y", "none");
+  await expect(page.locator("body")).toHaveCSS("overscroll-behavior-y", "auto");
 
   const layout = await page.evaluate(() => ({
     viewportHeight: window.innerHeight,

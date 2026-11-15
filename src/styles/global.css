@@ -53,9 +53,12 @@ body {
   width: 100%;
   min-height: 100%;
   overflow-x: hidden;
-  overscroll-behavior-y: none;
   background: var(--app-canvas);
   text-rendering: optimizeLegibility;
+}
+
+html {
+  overscroll-behavior-y: none;
 }
 
 #root {
