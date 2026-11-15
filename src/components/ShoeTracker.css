@@ -150,6 +150,12 @@
   font-weight: 750;
 }
 
+.imported-run-match {
+  margin: 0;
+  color: var(--app-success);
+  font-weight: 700;
+}
+
 .imported-run-facts {
   display: grid;
   gap: 0.65rem;

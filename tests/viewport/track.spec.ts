@@ -354,6 +354,21 @@ test("keeps imported-run details usable at phone width", async ({ page }) => {
   await expectTrackerCardsToContainControls(page, "imported-run details");
 });
 
+test("shows an imported run's planned-workout match without overflow", async ({
+  page,
+}) => {
+  await page.goto("tests/viewport/track.html?imported=1&matched=1");
+
+  await expect(
+    page.getByText("Matched to 2026-10-21: Long run"),
+  ).toBeVisible();
+  await expectNoHorizontalOverflow(
+    page,
+    "Track",
+    "with an imported planned-workout match",
+  );
+});
+
 test("keeps uncertain run recovery clear and usable at phone width", async ({
   page,
 }) => {

@@ -812,6 +812,47 @@ describe("ShoeTracker", () => {
     ).toBeInTheDocument();
   });
 
+  it("shows the planned workout matched to an imported run", () => {
+    const workout: PlannedWorkout = {
+      id: createPlannedWorkoutId("workout-1"),
+      userId,
+      planId: createTrainingPlanId("plan-1"),
+      scheduledDate: createDateOnly("2026-08-05"),
+      phase: "marathon_training",
+      status: "completed",
+      kind: "run",
+      purpose: "long",
+      targetDistance: createDistanceMeters(14_484),
+      createdAt: timestamp,
+      updatedAt: timestamp,
+    };
+    const run: CompletedRun = {
+      id: createCompletedRunId("run-1"),
+      userId,
+      plannedWorkoutPlanId: workout.planId,
+      plannedWorkoutId: workout.id,
+      startedAt: timestamp,
+      timeZone: createIanaTimeZone("America/Los_Angeles"),
+      distance: createDistanceMeters(15_000),
+      duration: createDurationSeconds(5_400),
+      importProvider: "garmin_connect",
+      reportedOrigin: "garmin",
+      createdAt: timestamp,
+      updatedAt: timestamp,
+    };
+
+    render(
+      <Harness
+        initialRuns={[run]}
+        initialPlannedWorkouts={[workout]}
+      />,
+    );
+
+    expect(
+      screen.getByText("Matched to 2026-08-05: Long run"),
+    ).toBeVisible();
+  });
+
   it("enriches an imported run without asking the runner to re-enter source facts", async () => {
     const shoe: Shoe = {
       id: createShoeId("shoe-1"),

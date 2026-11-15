@@ -179,8 +179,19 @@ The normal daily loop is:
 1. the watch or recording app completes and synchronizes a run;
 2. Marathoner imports the provider facts automatically;
 3. the run appears without asking for date, distance, or time again;
-4. the runner may add effort, notes, shoes, or resolve a plan match; and
-5. feedback and bounded adaptation use the same owned completed-run record.
+4. Marathoner completes the one unambiguous compatible workout scheduled for
+   that local date, or leaves the run unplanned when confirmation is safer;
+5. the runner may add effort, notes, shoes, or change the plan match; and
+6. feedback and bounded adaptation use the same owned completed-run record.
+
+Automatic plan matching is intentionally one-sided and conservative. A new
+import matches only when the runner has exactly one active plan and exactly one
+incomplete non-rest workout on the run's local date. The import must reach at
+least 90% of the workout's distance target, or 90% of its duration target when
+no distance target exists. Meeting or exceeding the target remains compatible.
+Targetless workouts, multiple same-day candidates, existing completion guards,
+inactive plans, held duplicate evidence, and shorter imports remain unplanned.
+The runner can change or remove a match through the guarded run-update path.
 
 Pending, delayed, disconnected, denied, duplicate, and failed states use calm
 product language. They must not expose command IDs, provider IDs, token status,

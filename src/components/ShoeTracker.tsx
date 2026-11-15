@@ -729,6 +729,11 @@ export default function ShoeTracker({
                       (workout.planId === run.plannedWorkoutPlanId &&
                         workout.id === run.plannedWorkoutId)),
                 );
+                const matchedWorkout = plannedWorkouts.find(
+                  (workout) =>
+                    workout.planId === run.plannedWorkoutPlanId &&
+                    workout.id === run.plannedWorkoutId,
+                );
 
                 return (
                   <li key={run.id}>
@@ -982,6 +987,13 @@ export default function ShoeTracker({
                         {isImported && (
                           <p className="imported-run-source">
                             Imported from {importSource}
+                          </p>
+                        )}
+                        {isImported && matchedWorkout && (
+                          <p className="imported-run-match">
+                            Matched to {matchedWorkout.scheduledDate}: {workoutName(
+                              matchedWorkout,
+                            )}
                           </p>
                         )}
                         <span>
