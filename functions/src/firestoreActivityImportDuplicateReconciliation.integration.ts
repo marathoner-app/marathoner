@@ -465,7 +465,12 @@ describe('Firestore activity-import duplicate reconciliation', () => {
 
   it('refuses conflicting Apple Health HR copies instead of choosing one', async () => {
     const { noHeartRateEvent, noHeartRateRun } =
-      await seedSameProviderEnrichmentPair()
+      await seedSameProviderEnrichmentPair({
+        heartRateRunChanges: {
+          notes: undefined,
+          perceivedEffort: undefined,
+        },
+      })
     const changedEvent: CompletedActivityUpsertV1 = {
       ...noHeartRateEvent,
       averageHeartRateBpm: createHeartRateBpm(145),
