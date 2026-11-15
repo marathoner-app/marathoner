@@ -346,7 +346,10 @@ export interface ActivityImportReceiptResult {
 export interface ActivityImportReviewRequiredResult
   extends MaterialCommandFailure {
   status: 'activity_import_review_required'
-  code: 'cross-provider-duplicate-candidate' | 'provider-update-ambiguous'
+  code:
+    | 'cross-provider-duplicate-candidate'
+    | 'same-provider-duplicate-candidate'
+    | 'provider-update-ambiguous'
   canonicalCommandId: string
   candidateCompletedRunId: CompletedRunId | null
   recordedAt: UtcDateTime
@@ -1627,6 +1630,7 @@ export function isActivityImportReviewRequiredResult(
     ]) &&
     value.status === 'activity_import_review_required' &&
     (value.code === 'cross-provider-duplicate-candidate' ||
+      value.code === 'same-provider-duplicate-candidate' ||
       value.code === 'provider-update-ambiguous') &&
     typeof value.message === 'string' &&
     typeof value.commandId === 'string' &&

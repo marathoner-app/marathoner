@@ -356,6 +356,8 @@ function reviewResult(options: {
     message:
       options.code === 'cross-provider-duplicate-candidate'
         ? 'A matching activity from another provider requires duplicate review.'
+        : options.code === 'same-provider-duplicate-candidate'
+          ? 'A matching activity from this provider requires duplicate review.'
         : 'This provider update has the same ordering time but different facts and requires review.',
     canonicalCommandId: options.canonicalCommandId,
     candidateCompletedRunId: options.candidateCompletedRunId,
@@ -416,6 +418,58 @@ function findCrossProviderCandidate(
     if (assessment.kind !== 'not_candidate') return { assessment, record }
   }
   return null
+}
+
+function findSameProviderAppleHealthCandidates(
+  incoming: CompletedActivityUpsertV1,
+  records: readonly ActivityImportRecordV1[],
+) {
+  if (
+    incoming.provider !== 'apple_health' ||
+    incoming.reportedOrigin !== 'garmin'
+  ) {
+    return []
+  }
+  const incomingFingerprint = createCrossProviderDuplicateFingerprint(incoming)
+  return records
+    .filter(
+      (
+        record,
+      ): record is ActivityImportRecordV1 & {
+        completedRunId: CompletedRunId
+        event: CompletedActivityUpsertV1
+      } =>
+        record.state === 'active' &&
+        record.completedRunId !== null &&
+        record.event.operation === 'upsert' &&
+        record.event.provider === 'apple_health' &&
+        record.event.reportedOrigin === 'garmin' &&
+        createProviderActivityIdentityKey(record.event) !==
+          createProviderActivityIdentityKey(incoming) &&
+        createCrossProviderDuplicateFingerprint(record.event) ===
+          incomingFingerprint,
+    )
+    .sort((left, right) =>
+      createProviderActivityIdentityKey(left.event).localeCompare(
+        createProviderActivityIdentityKey(right.event),
+      ),
+    )
+}
+
+function eventHasHeartRate(event: CompletedActivityUpsertV1) {
+  return (
+    event.averageHeartRateBpm !== undefined ||
+    event.maximumHeartRateBpm !== undefined
+  )
+}
+
+function duplicateReviewCode(
+  event: CompletedActivityUpsertV1,
+  candidateRun: CompletedRun | null,
+): ActivityImportReviewRequiredResult['code'] {
+  return candidateRun?.importProvider === event.provider
+    ? 'same-provider-duplicate-candidate'
+    : 'cross-provider-duplicate-candidate'
 }
 
 export class FirestoreActivityImportStore implements ActivityImportStore {
@@ -547,6 +601,7 @@ export class FirestoreActivityImportStore implements ActivityImportStore {
       }
 
       let existingRun: CompletedRun | null = null
+      let existingReviewCandidateRun: CompletedRun | null = null
       let activeRunIsMissing = false
       if (existing?.completedRunId !== null && existing?.completedRunId !== undefined) {
         const runSnapshot = await transaction.get(
@@ -561,6 +616,20 @@ export class FirestoreActivityImportStore implements ActivityImportStore {
         } else if (existingRun === null || existingRun.userId !== ownerId) {
           throw new Error('The imported completed run is unavailable.')
         }
+      }
+      if (
+        existing?.state === 'review_required' &&
+        existing.candidateCompletedRunId !== null
+      ) {
+        const candidateSnapshot = await transaction.get(
+          this.database.doc(
+            runDocumentPath(ownerId, existing.candidateCompletedRunId),
+          ),
+        )
+        existingReviewCandidateRun = completedRunFromAdminDocument(
+          candidateSnapshot.id,
+          candidateSnapshot.data(),
+        )
       }
 
       if (
@@ -638,7 +707,10 @@ export class FirestoreActivityImportStore implements ActivityImportStore {
                 canonicalCommandId,
                 candidateCompletedRunId:
                   existing.candidateCompletedRunId,
-                code: 'cross-provider-duplicate-candidate',
+                code:
+                  event.operation === 'upsert'
+                    ? duplicateReviewCode(event, existingReviewCandidateRun)
+                    : 'cross-provider-duplicate-candidate',
                 recordedAt: processedAt,
               })
             : appliedResult({
@@ -789,6 +861,79 @@ export class FirestoreActivityImportStore implements ActivityImportStore {
         .filter((document) => document.id !== importId)
         .map((document) => importRecordFromDocument(document.data()))
         .filter((record): record is ActivityImportRecordV1 => record !== null)
+      const sameProviderCandidates = findSameProviderAppleHealthCandidates(
+        event,
+        allRecords,
+      )
+      if (sameProviderCandidates.length > 0) {
+        const candidate =
+          sameProviderCandidates.length === 1
+            ? sameProviderCandidates[0]
+            : null
+        let candidateRun: CompletedRun | null = null
+        if (candidate !== null) {
+          const candidateRunSnapshot = await transaction.get(
+            this.database.doc(
+              runDocumentPath(ownerId, candidate.completedRunId),
+            ),
+          )
+          candidateRun = completedRunFromAdminDocument(
+            candidateRunSnapshot.id,
+            candidateRunSnapshot.data(),
+          )
+          if (
+            candidateRun === null ||
+            candidateRun.userId !== ownerId ||
+            candidateRun.importProvider !== 'apple_health' ||
+            candidateRun.reportedOrigin !== 'garmin'
+          ) {
+            throw new Error(
+              'The same-provider duplicate candidate run is unavailable.',
+            )
+          }
+        }
+
+        const result = reviewResult({
+          commandId: options.envelope.commandId,
+          canonicalCommandId,
+          candidateCompletedRunId: candidate?.completedRunId ?? null,
+          code: 'same-provider-duplicate-candidate',
+          recordedAt: processedAt,
+        })
+        if (candidate !== null && candidateRun !== null) {
+          const enrichedRun =
+            eventHasHeartRate(event) && !eventHasHeartRate(candidate.event)
+              ? updatedImportedRun(candidateRun, event, processedAt)
+              : candidateRun
+          if (enrichedRun !== candidateRun) {
+            transaction.set(
+              this.database.doc(runDocumentPath(ownerId, enrichedRun.id)),
+              completedRunAdminDocument(enrichedRun),
+            )
+          }
+          transaction.set(
+            importReference,
+            importRecordDocument({
+              schemaVersion: ACTIVITY_IMPORT_RECORD_SCHEMA_VERSION,
+              trainingSchemaVersion: TRAINING_SCHEMA_VERSION,
+              userId: ownerId,
+              canonicalCommandId,
+              state: 'review_required',
+              event,
+              completedRunId: null,
+              candidateCompletedRunId: candidate.completedRunId,
+              candidateKind: 'duplicate_candidate',
+              crossProviderFingerprint:
+                createCrossProviderDuplicateFingerprint(event),
+              startedAtEpochMilliseconds,
+              createdAt: existing?.createdAt ?? createUtcDateTime(processedAt),
+              updatedAt: createUtcDateTime(processedAt),
+            }),
+          )
+        }
+        writeReceipt(result)
+        return { kind: 'review-required' as const, result }
+      }
       const candidate = findCrossProviderCandidate(event, allRecords)
       if (candidate !== null) {
         const result = reviewResult({
