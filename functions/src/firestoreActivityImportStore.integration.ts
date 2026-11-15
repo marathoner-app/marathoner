@@ -440,6 +440,44 @@ describe('Firestore activity-import persistence', () => {
     ).resolves.toEqual(expect.objectContaining({ size: 1 }))
   })
 
+  it('holds a cross-provider timezone mismatch without creating a second run', async () => {
+    const persistence = store()
+    const first = await persistence.commit({
+      envelope: createActivityImportCommand(
+        'import-timezone-duplicate-command-0001',
+        garminEvent(),
+      ),
+      ownerId,
+    })
+    if (first.kind !== 'applied') throw new Error('Expected an imported run.')
+
+    const duplicate = await persistence.commit({
+      envelope: createActivityImportCommand(
+        'import-timezone-duplicate-command-0002',
+        {
+          ...garminEvent(),
+          provider: 'apple_health',
+          providerActivityId: 'health-timezone-activity-001',
+          providerUpdatedAt: null,
+          timeZone: createIanaTimeZone('Etc/GMT+8'),
+        },
+      ),
+      ownerId,
+    })
+
+    expect(duplicate).toEqual({
+      kind: 'review-required',
+      result: expect.objectContaining({
+        status: 'activity_import_review_required',
+        code: 'cross-provider-duplicate-candidate',
+        candidateCompletedRunId: first.result.completedRunId,
+      }),
+    })
+    await expect(
+      database.collection(`users/${ownerId}/runs`).get(),
+    ).resolves.toEqual(expect.objectContaining({ size: 1 }))
+  })
+
   it('recovers a legacy active import whose visible run is missing', async () => {
     const persistence = store()
     const first = await persistence.commit({

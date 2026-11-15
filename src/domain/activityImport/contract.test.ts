@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { createUtcDateTime } from "../training/dates";
+import { createIanaTimeZone, createUtcDateTime } from "../training/dates";
 import { createUserId } from "../training/identifiers";
 import {
   acceptedAppleHealthActivityFixture,
@@ -363,6 +363,20 @@ describe("cross-provider duplicate assessment", () => {
         "distance",
         "reported_origin",
       ],
+    });
+  });
+
+  it("holds matching provider facts for review when timezone labels differ", () => {
+    expect(
+      assessCrossProviderDuplicate(acceptedAppleHealthActivityFixture, {
+        ...exactGarminDuplicateFixture,
+        timeZone: createIanaTimeZone("Etc/GMT+8"),
+      }),
+    ).toMatchObject({
+      kind: "ambiguous_candidate",
+      automaticMergeAllowed: false,
+      reviewRequired: true,
+      differences: ["time_zone"],
     });
   });
 
