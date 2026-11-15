@@ -17,7 +17,12 @@ const { getAccessToken, getGlobalDefaultAccount } = require(
 )
 const { clientId, clientSecret } = require('firebase-tools/lib/api.js')
 
-const ACTIONS = new Set(['inspect', 'apply'])
+const ACTIONS = new Set([
+  'inspect',
+  'apply',
+  'inspect-orphan',
+  'apply-orphan',
+])
 const BASE_OPTIONS = new Set(['--owner-email', '--owner-uid', '--project'])
 
 function normalizedEmail(email) {
@@ -31,13 +36,16 @@ function validUid(uid) {
 export function parseActivityImportReconciliationArguments(argv) {
   const [action, ...pairs] = argv
   if (!ACTIONS.has(action)) {
-    throw new Error('Use inspect or apply with the exact owner and beta project boundary.')
+    throw new Error(
+      'Use inspect, apply, inspect-orphan, or apply-orphan with the exact owner and beta project boundary.',
+    )
   }
   if (pairs.length % 2 !== 0) {
     throw new Error('Every duplicate-reconciliation option requires a value.')
   }
-  const allowedOptions =
-    action === 'apply' ? new Set([...BASE_OPTIONS, '--confirm']) : BASE_OPTIONS
+  const allowedOptions = action.startsWith('apply')
+    ? new Set([...BASE_OPTIONS, '--confirm'])
+    : BASE_OPTIONS
   const values = new Map()
   for (let index = 0; index < pairs.length; index += 2) {
     const name = pairs[index]
@@ -95,6 +103,16 @@ export function assertActivityImportReconciliationBoundary(options) {
     )
   ) {
     throw new Error('Apply requires the exact confirmation from the current dry run.')
+  }
+  if (
+    options.action === 'apply-orphan' &&
+    !/^NORMALIZE-ORPHAN-ACTIVITY-IMPORT:[a-f0-9]{24}$/u.test(
+      options.confirmation ?? '',
+    )
+  ) {
+    throw new Error(
+      'Apply-orphan requires the exact confirmation from the current orphan dry run.',
+    )
   }
 }
 
@@ -210,13 +228,24 @@ async function run() {
       )
 
     try {
-      const result =
-        options.action === 'inspect'
-          ? await reconciliation.inspect(options.ownerUid)
-          : await reconciliation.reconcile({
-              confirmation: options.confirmation,
-              ownerId: options.ownerUid,
-            })
+      let result
+      if (options.action === 'inspect') {
+        result = await reconciliation.inspect(options.ownerUid)
+      } else if (options.action === 'apply') {
+        result = await reconciliation.reconcile({
+          confirmation: options.confirmation,
+          ownerId: options.ownerUid,
+        })
+      } else if (options.action === 'inspect-orphan') {
+        result = await reconciliation.inspectOrphanImportNormalization(
+          options.ownerUid,
+        )
+      } else {
+        result = await reconciliation.normalizeOrphanImport({
+          confirmation: options.confirmation,
+          ownerId: options.ownerUid,
+        })
+      }
       console.log(JSON.stringify(result, null, 2))
     } finally {
       await deleteApp(app)

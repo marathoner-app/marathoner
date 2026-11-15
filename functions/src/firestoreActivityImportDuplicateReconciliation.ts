@@ -36,6 +36,8 @@ import {
 } from './firestoreCompletedRunDocuments.js'
 
 const CONFIRMATION_PREFIX = 'RECONCILE-ACTIVITY-IMPORT-DUPLICATES'
+const ORPHAN_NORMALIZATION_CONFIRMATION_PREFIX =
+  'NORMALIZE-ORPHAN-ACTIVITY-IMPORT'
 
 type CandidateKind = Exclude<
   CrossProviderDuplicateAssessment,
@@ -50,6 +52,13 @@ type BlockedReason =
   | 'missing_run'
   | 'multiple_candidates'
   | 'provider_mismatch'
+
+type OrphanNormalizationBlockedReason =
+  | 'conflicting_heart_rate'
+  | 'duplicate_has_runner_fields'
+  | 'import_run_mismatch'
+  | 'invalid_cluster_shape'
+  | 'multiple_candidate_clusters'
 
 interface ActiveImport {
   readonly id: string
@@ -84,6 +93,25 @@ interface ReconciliationPlan {
   readonly sameProviderCandidatePairCount: number
 }
 
+interface EligibleOrphanNormalization {
+  readonly canonical: ActiveImport
+  readonly canonicalRun: CompletedRun
+  readonly canonicalRunUpdateTimeMilliseconds: number
+  readonly noHeartRateCopy: ActiveImport
+  readonly noHeartRateRun: CompletedRun
+  readonly noHeartRateRunUpdateTimeMilliseconds: number
+  readonly orphan: ActiveImport
+}
+
+interface OrphanNormalizationPlan {
+  readonly blockedReasonCounts: Readonly<
+    Record<OrphanNormalizationBlockedReason, number>
+  >
+  readonly candidateClusterCount: number
+  readonly confirmation: string | null
+  readonly eligibleNormalization: EligibleOrphanNormalization | null
+}
+
 export interface ActivityImportDuplicateReconciliationInspection {
   readonly blockedPairCount: number
   readonly blockedReasonCounts: Readonly<Record<BlockedReason, number>>
@@ -104,6 +132,26 @@ export type ActivityImportDuplicateReconciliationResult =
       readonly reconciledPairCount: number
     }
 
+export interface ActivityImportOrphanNormalizationInspection {
+  readonly blockedClusterCount: number
+  readonly blockedReasonCounts: Readonly<
+    Record<OrphanNormalizationBlockedReason, number>
+  >
+  readonly candidateClusterCount: number
+  readonly confirmation: string | null
+  readonly eligibleClusterCount: number
+}
+
+export type ActivityImportOrphanNormalizationResult =
+  | {
+      readonly normalizedImportCount: 0
+      readonly status: 'already_normalized'
+    }
+  | {
+      readonly normalizedImportCount: 1
+      readonly status: 'normalized'
+    }
+
 export interface FirestoreActivityImportDuplicateReconciliationOptions {
   readonly now?: () => Date
   readonly projectId: string
@@ -118,6 +166,19 @@ function emptyBlockedCounts(): Record<BlockedReason, number> {
     missing_run: 0,
     multiple_candidates: 0,
     provider_mismatch: 0,
+  }
+}
+
+function emptyOrphanNormalizationBlockedCounts(): Record<
+  OrphanNormalizationBlockedReason,
+  number
+> {
+  return {
+    conflicting_heart_rate: 0,
+    duplicate_has_runner_fields: 0,
+    import_run_mismatch: 0,
+    invalid_cluster_shape: 0,
+    multiple_candidate_clusters: 0,
   }
 }
 
@@ -192,6 +253,13 @@ function eventHasHeartRate(event: CompletedActivityUpsertV1) {
   return (
     event.averageHeartRateBpm !== undefined ||
     event.maximumHeartRateBpm !== undefined
+  )
+}
+
+function runHasHeartRate(run: CompletedRun) {
+  return (
+    run.averageHeartRateBpm !== undefined ||
+    run.maximumHeartRateBpm !== undefined
   )
 }
 
@@ -309,6 +377,216 @@ function confirmationFor(
     .digest('hex')
     .slice(0, 24)
   return `${CONFIRMATION_PREFIX}:${digest}`
+}
+
+function orphanNormalizationConfirmationFor(
+  projectId: string,
+  ownerId: UserId,
+  normalization: EligibleOrphanNormalization | null,
+) {
+  if (normalization === null) return null
+  const evidence = [
+    normalization.canonical.id,
+    normalization.canonical.updateTimeMilliseconds,
+    normalization.canonicalRun.id,
+    normalization.canonicalRunUpdateTimeMilliseconds,
+    normalization.noHeartRateCopy.id,
+    normalization.noHeartRateCopy.updateTimeMilliseconds,
+    normalization.noHeartRateRun.id,
+    normalization.noHeartRateRunUpdateTimeMilliseconds,
+    normalization.orphan.id,
+    normalization.orphan.updateTimeMilliseconds,
+  ].join(':')
+  const digest = createHash('sha256')
+    .update(`${projectId}\n${ownerId}\n${evidence}`)
+    .digest('hex')
+    .slice(0, 24)
+  return `${ORPHAN_NORMALIZATION_CONFIRMATION_PREFIX}:${digest}`
+}
+
+function buildOrphanNormalizationPlan(options: {
+  imports: readonly QueryDocumentSnapshot<DocumentData>[]
+  ownerId: UserId
+  projectId: string
+  runs: readonly QueryDocumentSnapshot<DocumentData>[]
+}): OrphanNormalizationPlan {
+  const imports = options.imports
+    .map((snapshot) => activeImportFromSnapshot(snapshot, options.ownerId))
+    .filter((record): record is ActiveImport => record !== null)
+    .filter(({ event }) => event.reportedOrigin === 'garmin')
+  const runSnapshots = new Map(options.runs.map((run) => [run.id, run]))
+  const importsByFingerprint = new Map<string, ActiveImport[]>()
+  for (const activityImport of imports) {
+    const fingerprint = createCrossProviderDuplicateFingerprint(
+      activityImport.event,
+    )
+    const group = importsByFingerprint.get(fingerprint) ?? []
+    group.push(activityImport)
+    importsByFingerprint.set(fingerprint, group)
+  }
+  const candidateClusters = [...importsByFingerprint.values()].filter(
+    (group) =>
+      group.some(
+        (activityImport) =>
+          !runSnapshots.has(activityImport.completedRunId),
+      ),
+  )
+  const blockedReasonCounts = emptyOrphanNormalizationBlockedCounts()
+  if (candidateClusters.length > 1) {
+    blockedReasonCounts.multiple_candidate_clusters = candidateClusters.length
+    return {
+      blockedReasonCounts,
+      candidateClusterCount: candidateClusters.length,
+      confirmation: null,
+      eligibleNormalization: null,
+    }
+  }
+  const cluster = candidateClusters[0]
+  if (cluster === undefined) {
+    return {
+      blockedReasonCounts,
+      candidateClusterCount: 0,
+      confirmation: null,
+      eligibleNormalization: null,
+    }
+  }
+  const missingRunImports = cluster.filter(
+    (activityImport) => !runSnapshots.has(activityImport.completedRunId),
+  )
+  const orphan = missingRunImports[0]
+  if (
+    cluster.length !== 3 ||
+    cluster.some(({ event }) => event.provider !== 'apple_health') ||
+    new Set(
+      cluster.map(({ event }) => createProviderActivityIdentityKey(event)),
+    ).size !== 3 ||
+    missingRunImports.length !== 1 ||
+    orphan === undefined ||
+    eventHasHeartRate(orphan.event)
+  ) {
+    blockedReasonCounts.invalid_cluster_shape = 1
+    return {
+      blockedReasonCounts,
+      candidateClusterCount: 1,
+      confirmation: null,
+      eligibleNormalization: null,
+    }
+  }
+
+  const presentImports = cluster.filter(
+    (activityImport) => runSnapshots.has(activityImport.completedRunId),
+  )
+  if (
+    presentImports.length !== 2 ||
+    new Set(presentImports.map(({ completedRunId }) => completedRunId)).size !==
+      2
+  ) {
+    blockedReasonCounts.invalid_cluster_shape = 1
+    return {
+      blockedReasonCounts,
+      candidateClusterCount: 1,
+      confirmation: null,
+      eligibleNormalization: null,
+    }
+  }
+  const presentRecords = presentImports.map((activityImport) => {
+    const runSnapshot = runSnapshots.get(activityImport.completedRunId)
+    if (runSnapshot === undefined) {
+      throw new Error('An orphan-normalization run disappeared while planning.')
+    }
+    return {
+      activityImport,
+      run: completedRunFromAdminDocument(runSnapshot.id, runSnapshot.data()),
+      runSnapshot,
+    }
+  })
+  if (
+    presentRecords.some(
+      ({ activityImport, run }) =>
+        run === null || !runMatchesEvent(run, activityImport.event),
+    )
+  ) {
+    blockedReasonCounts.import_run_mismatch = 1
+    return {
+      blockedReasonCounts,
+      candidateClusterCount: 1,
+      confirmation: null,
+      eligibleNormalization: null,
+    }
+  }
+  const validPresentRecords = presentRecords.flatMap(
+    ({ activityImport, run, runSnapshot }) =>
+      run === null ? [] : [{ activityImport, run, runSnapshot }],
+  )
+  if (
+    validPresentRecords.some(
+      ({ activityImport, run }) =>
+        !heartRateMatchesEvent(run, activityImport.event),
+    )
+  ) {
+    blockedReasonCounts.conflicting_heart_rate = 1
+    return {
+      blockedReasonCounts,
+      candidateClusterCount: 1,
+      confirmation: null,
+      eligibleNormalization: null,
+    }
+  }
+  const heartRateRecords = validPresentRecords.filter(
+    ({ activityImport, run }) =>
+      eventHasHeartRate(activityImport.event) &&
+      runHasHeartRate(run),
+  )
+  const noHeartRateRecords = validPresentRecords.filter(
+    ({ activityImport, run }) =>
+      !eventHasHeartRate(activityImport.event) &&
+      !runHasHeartRate(run),
+  )
+  if (heartRateRecords.length !== 1 || noHeartRateRecords.length !== 1) {
+    blockedReasonCounts.conflicting_heart_rate = 1
+    return {
+      blockedReasonCounts,
+      candidateClusterCount: 1,
+      confirmation: null,
+      eligibleNormalization: null,
+    }
+  }
+  const canonicalRecord = heartRateRecords[0]
+  const noHeartRateRecord = noHeartRateRecords[0]
+  if (
+    canonicalRecord === undefined ||
+    noHeartRateRecord === undefined ||
+    hasRunnerOwnedFields(noHeartRateRecord.run)
+  ) {
+    blockedReasonCounts.duplicate_has_runner_fields = 1
+    return {
+      blockedReasonCounts,
+      candidateClusterCount: 1,
+      confirmation: null,
+      eligibleNormalization: null,
+    }
+  }
+  const eligibleNormalization: EligibleOrphanNormalization = {
+    canonical: canonicalRecord.activityImport,
+    canonicalRun: canonicalRecord.run,
+    canonicalRunUpdateTimeMilliseconds:
+      canonicalRecord.runSnapshot.updateTime.toMillis(),
+    noHeartRateCopy: noHeartRateRecord.activityImport,
+    noHeartRateRun: noHeartRateRecord.run,
+    noHeartRateRunUpdateTimeMilliseconds:
+      noHeartRateRecord.runSnapshot.updateTime.toMillis(),
+    orphan,
+  }
+  return {
+    blockedReasonCounts,
+    candidateClusterCount: 1,
+    confirmation: orphanNormalizationConfirmationFor(
+      options.projectId,
+      options.ownerId,
+      eligibleNormalization,
+    ),
+    eligibleNormalization,
+  }
 }
 
 function buildPlan(options: {
@@ -442,6 +720,21 @@ function inspectionFromPlan(
   }
 }
 
+function orphanNormalizationInspectionFromPlan(
+  plan: OrphanNormalizationPlan,
+): ActivityImportOrphanNormalizationInspection {
+  return {
+    blockedClusterCount: Object.values(plan.blockedReasonCounts).reduce(
+      (total, count) => total + count,
+      0,
+    ),
+    blockedReasonCounts: plan.blockedReasonCounts,
+    candidateClusterCount: plan.candidateClusterCount,
+    confirmation: plan.confirmation,
+    eligibleClusterCount: plan.eligibleNormalization === null ? 0 : 1,
+  }
+}
+
 export class FirestoreActivityImportDuplicateReconciliation {
   private readonly now: () => Date
 
@@ -466,6 +759,28 @@ export class FirestoreActivityImportDuplicateReconciliation {
     }
     return inspectionFromPlan(
       buildPlan({
+        imports: imports.docs,
+        ownerId,
+        projectId: this.options.projectId,
+        runs: runs.docs,
+      }),
+    )
+  }
+
+  async inspectOrphanImportNormalization(
+    ownerIdValue: string,
+  ): Promise<ActivityImportOrphanNormalizationInspection> {
+    const ownerId = createUserId(ownerIdValue)
+    const [membership, imports, runs] = await Promise.all([
+      this.database.doc(approvedBetaMembershipPath(ownerId)).get(),
+      this.database.collection(activityImportsCollectionPath(ownerId)).get(),
+      this.database.collection(runsCollectionPath(ownerId)).get(),
+    ])
+    if (!isApprovedBetaMembership(membership.data(), ownerId)) {
+      throw new Error('The selected owner does not have approved beta membership.')
+    }
+    return orphanNormalizationInspectionFromPlan(
+      buildOrphanNormalizationPlan({
         imports: imports.docs,
         ownerId,
         projectId: this.options.projectId,
@@ -537,6 +852,56 @@ export class FirestoreActivityImportDuplicateReconciliation {
         status: 'reconciled',
         reconciledPairCount: plan.eligiblePairs.length,
       }
+    })
+  }
+
+  async normalizeOrphanImport(options: {
+    confirmation: string
+    ownerId: string
+  }): Promise<ActivityImportOrphanNormalizationResult> {
+    const ownerId = createUserId(options.ownerId)
+    return this.database.runTransaction(async (transaction) => {
+      const [membership, imports, runs] = await Promise.all([
+        transaction.get(this.database.doc(approvedBetaMembershipPath(ownerId))),
+        transaction.get(
+          this.database.collection(activityImportsCollectionPath(ownerId)),
+        ),
+        transaction.get(this.database.collection(runsCollectionPath(ownerId))),
+      ])
+      if (!isApprovedBetaMembership(membership.data(), ownerId)) {
+        throw new Error(
+          'The selected owner does not have approved beta membership.',
+        )
+      }
+      const plan = buildOrphanNormalizationPlan({
+        imports: imports.docs,
+        ownerId,
+        projectId: this.options.projectId,
+        runs: runs.docs,
+      })
+      const inspection = orphanNormalizationInspectionFromPlan(plan)
+      if (inspection.blockedClusterCount > 0) {
+        throw new Error(
+          'Orphan import normalization found a blocked candidate and made no changes.',
+        )
+      }
+      if (plan.eligibleNormalization === null) {
+        return { status: 'already_normalized', normalizedImportCount: 0 }
+      }
+      if (options.confirmation !== plan.confirmation) {
+        throw new Error(
+          'Orphan import normalization requires the exact current dry-run confirmation.',
+        )
+      }
+
+      transaction.update(plan.eligibleNormalization.orphan.reference, {
+        candidateCompletedRunId: plan.eligibleNormalization.canonicalRun.id,
+        candidateKind: 'duplicate_candidate',
+        completedRunId: null,
+        state: 'review_required',
+        updatedAt: this.now().toISOString(),
+      })
+      return { status: 'normalized', normalizedImportCount: 1 }
     })
   }
 }
