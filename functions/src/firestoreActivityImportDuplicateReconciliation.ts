@@ -8,6 +8,8 @@ import type {
 
 import {
   assessCrossProviderDuplicate,
+  createCrossProviderDuplicateFingerprint,
+  createProviderActivityIdentityKey,
   parseCompletedActivityImportEvent,
   resolveActivityDurationSeconds,
   type CompletedActivityUpsertV1,
@@ -58,28 +60,28 @@ interface ActiveImport {
 }
 
 interface CandidateEdge {
-  readonly apple: ActiveImport
-  readonly assessment: Exclude<
-    CrossProviderDuplicateAssessment,
-    { kind: 'not_candidate' }
-  >
-  readonly garmin: ActiveImport
+  readonly assessmentKind: CandidateKind
+  readonly canonical: ActiveImport
+  readonly duplicate: ActiveImport
+  readonly kind: 'cross_provider' | 'same_provider_enrichment'
 }
 
 interface EligiblePair extends CandidateEdge {
-  readonly appleRun: CompletedRun
-  readonly appleRunReference: QueryDocumentSnapshot<DocumentData>['ref']
-  readonly appleRunUpdateTimeMilliseconds: number
-  readonly garminRun: CompletedRun
-  readonly garminRunReference: QueryDocumentSnapshot<DocumentData>['ref']
-  readonly garminRunUpdateTimeMilliseconds: number
+  readonly canonicalRun: CompletedRun
+  readonly canonicalRunReference: QueryDocumentSnapshot<DocumentData>['ref']
+  readonly canonicalRunUpdateTimeMilliseconds: number
+  readonly duplicateRun: CompletedRun
+  readonly duplicateRunReference: QueryDocumentSnapshot<DocumentData>['ref']
+  readonly duplicateRunUpdateTimeMilliseconds: number
 }
 
 interface ReconciliationPlan {
   readonly blockedReasonCounts: Readonly<Record<BlockedReason, number>>
   readonly candidatePairCount: number
   readonly confirmation: string | null
+  readonly crossProviderCandidatePairCount: number
   readonly eligiblePairs: readonly EligiblePair[]
+  readonly sameProviderCandidatePairCount: number
 }
 
 export interface ActivityImportDuplicateReconciliationInspection {
@@ -87,7 +89,9 @@ export interface ActivityImportDuplicateReconciliationInspection {
   readonly blockedReasonCounts: Readonly<Record<BlockedReason, number>>
   readonly candidatePairCount: number
   readonly confirmation: string | null
+  readonly crossProviderCandidatePairCount: number
   readonly eligiblePairCount: number
+  readonly sameProviderCandidatePairCount: number
 }
 
 export type ActivityImportDuplicateReconciliationResult =
@@ -135,7 +139,8 @@ function activeImportFromSnapshot(
     parsedEvent.value.operation !== 'upsert' ||
     parsedEvent.value.ownerId !== ownerId ||
     parsedEvent.value.provider !== provider ||
-    typeof data.crossProviderFingerprint !== 'string' ||
+    data.crossProviderFingerprint !==
+      createCrossProviderDuplicateFingerprint(parsedEvent.value) ||
     data.startedAtEpochMilliseconds !== Date.parse(parsedEvent.value.startedAt)
   ) {
     throw new Error('A relevant activity-import record is invalid.')
@@ -183,69 +188,96 @@ function heartRateMatchesEvent(
   )
 }
 
+function eventHasHeartRate(event: CompletedActivityUpsertV1) {
+  return (
+    event.averageHeartRateBpm !== undefined ||
+    event.maximumHeartRateBpm !== undefined
+  )
+}
+
 function blockedReason(
   edge: CandidateEdge,
   runSnapshots: ReadonlyMap<string, QueryDocumentSnapshot<DocumentData>>,
 ): { reason: BlockedReason } | { pair: EligiblePair } {
-  const garminRunSnapshot = runSnapshots.get(edge.garmin.completedRunId)
-  const appleRunSnapshot = runSnapshots.get(edge.apple.completedRunId)
-  if (garminRunSnapshot === undefined || appleRunSnapshot === undefined) {
+  const canonicalRunSnapshot = runSnapshots.get(edge.canonical.completedRunId)
+  const duplicateRunSnapshot = runSnapshots.get(edge.duplicate.completedRunId)
+  if (canonicalRunSnapshot === undefined || duplicateRunSnapshot === undefined) {
     return { reason: 'missing_run' }
   }
 
-  const garminRun = completedRunFromAdminDocument(
-    garminRunSnapshot.id,
-    garminRunSnapshot.data(),
+  const canonicalRun = completedRunFromAdminDocument(
+    canonicalRunSnapshot.id,
+    canonicalRunSnapshot.data(),
   )
-  const appleRun = completedRunFromAdminDocument(
-    appleRunSnapshot.id,
-    appleRunSnapshot.data(),
+  const duplicateRun = completedRunFromAdminDocument(
+    duplicateRunSnapshot.id,
+    duplicateRunSnapshot.data(),
   )
-  if (garminRun === null || appleRun === null) return { reason: 'missing_run' }
+  if (canonicalRun === null || duplicateRun === null) {
+    return { reason: 'missing_run' }
+  }
+  const providersMatch =
+    edge.kind === 'cross_provider'
+      ? canonicalRun.importProvider === 'garmin_connect' &&
+        duplicateRun.importProvider === 'apple_health'
+      : canonicalRun.importProvider === 'apple_health' &&
+        duplicateRun.importProvider === 'apple_health'
   if (
-    garminRun.importProvider !== 'garmin_connect' ||
-    garminRun.reportedOrigin !== 'garmin' ||
-    appleRun.importProvider !== 'apple_health' ||
-    appleRun.reportedOrigin !== 'garmin'
+    !providersMatch ||
+    canonicalRun.reportedOrigin !== 'garmin' ||
+    duplicateRun.reportedOrigin !== 'garmin'
   ) {
     return { reason: 'provider_mismatch' }
   }
   if (
-    !runMatchesEvent(garminRun, edge.garmin.event) ||
-    !runMatchesEvent(appleRun, edge.apple.event)
+    !runMatchesEvent(canonicalRun, edge.canonical.event) ||
+    !runMatchesEvent(duplicateRun, edge.duplicate.event)
   ) {
     return { reason: 'import_run_mismatch' }
   }
-  if (hasRunnerOwnedFields(appleRun)) {
+  if (hasRunnerOwnedFields(duplicateRun)) {
     return { reason: 'duplicate_has_runner_fields' }
   }
   if (
-    garminRun.averageHeartRateBpm !== undefined ||
-    garminRun.maximumHeartRateBpm !== undefined ||
-    edge.garmin.event.averageHeartRateBpm !== undefined ||
-    edge.garmin.event.maximumHeartRateBpm !== undefined
+    !heartRateMatchesEvent(canonicalRun, edge.canonical.event) ||
+    !heartRateMatchesEvent(duplicateRun, edge.duplicate.event)
   ) {
     return { reason: 'conflicting_heart_rate' }
   }
+  const heartRateSourceRun =
+    edge.kind === 'cross_provider' ? duplicateRun : canonicalRun
+  const heartRateSourceEvent =
+    edge.kind === 'cross_provider' ? edge.duplicate.event : edge.canonical.event
+  const noHeartRateRun =
+    edge.kind === 'cross_provider' ? canonicalRun : duplicateRun
+  const noHeartRateEvent =
+    edge.kind === 'cross_provider' ? edge.canonical.event : edge.duplicate.event
   if (
-    appleRun.averageHeartRateBpm === undefined ||
-    edge.apple.event.averageHeartRateBpm === undefined
+    !eventHasHeartRate(heartRateSourceEvent) ||
+    (heartRateSourceRun.averageHeartRateBpm === undefined &&
+      heartRateSourceRun.maximumHeartRateBpm === undefined)
   ) {
     return { reason: 'missing_heart_rate' }
   }
-  if (!heartRateMatchesEvent(appleRun, edge.apple.event)) {
+  if (
+    noHeartRateRun.averageHeartRateBpm !== undefined ||
+    noHeartRateRun.maximumHeartRateBpm !== undefined ||
+    eventHasHeartRate(noHeartRateEvent)
+  ) {
     return { reason: 'conflicting_heart_rate' }
   }
 
   return {
     pair: {
       ...edge,
-      appleRun,
-      appleRunReference: appleRunSnapshot.ref,
-      appleRunUpdateTimeMilliseconds: appleRunSnapshot.updateTime.toMillis(),
-      garminRun,
-      garminRunReference: garminRunSnapshot.ref,
-      garminRunUpdateTimeMilliseconds: garminRunSnapshot.updateTime.toMillis(),
+      canonicalRun,
+      canonicalRunReference: canonicalRunSnapshot.ref,
+      canonicalRunUpdateTimeMilliseconds:
+        canonicalRunSnapshot.updateTime.toMillis(),
+      duplicateRun,
+      duplicateRunReference: duplicateRunSnapshot.ref,
+      duplicateRunUpdateTimeMilliseconds:
+        duplicateRunSnapshot.updateTime.toMillis(),
     },
   }
 }
@@ -259,14 +291,15 @@ function confirmationFor(
   const evidence = pairs
     .map((pair) =>
       [
-        pair.garmin.id,
-        pair.garmin.updateTimeMilliseconds,
-        pair.garminRun.id,
-        pair.garminRunUpdateTimeMilliseconds,
-        pair.apple.id,
-        pair.apple.updateTimeMilliseconds,
-        pair.appleRun.id,
-        pair.appleRunUpdateTimeMilliseconds,
+        pair.kind,
+        pair.canonical.id,
+        pair.canonical.updateTimeMilliseconds,
+        pair.canonicalRun.id,
+        pair.canonicalRunUpdateTimeMilliseconds,
+        pair.duplicate.id,
+        pair.duplicate.updateTimeMilliseconds,
+        pair.duplicateRun.id,
+        pair.duplicateRunUpdateTimeMilliseconds,
       ].join(':'),
     )
     .sort()
@@ -300,23 +333,68 @@ function buildPlan(options: {
     for (const apple of appleImports) {
       const assessment = assessCrossProviderDuplicate(garmin.event, apple.event)
       if (assessment.kind !== 'not_candidate') {
-        edges.push({ apple, assessment, garmin })
+        edges.push({
+          assessmentKind: assessment.kind,
+          canonical: garmin,
+          duplicate: apple,
+          kind: 'cross_provider',
+        })
       }
+    }
+  }
+  for (let leftIndex = 0; leftIndex < appleImports.length; leftIndex += 1) {
+    for (
+      let rightIndex = leftIndex + 1;
+      rightIndex < appleImports.length;
+      rightIndex += 1
+    ) {
+      const left = appleImports[leftIndex]
+      const right = appleImports[rightIndex]
+      if (
+        createProviderActivityIdentityKey(left.event) ===
+          createProviderActivityIdentityKey(right.event) ||
+        createCrossProviderDuplicateFingerprint(left.event) !==
+          createCrossProviderDuplicateFingerprint(right.event)
+      ) {
+        continue
+      }
+      const leftHasHeartRate = eventHasHeartRate(left.event)
+      const rightHasHeartRate = eventHasHeartRate(right.event)
+      const canonical =
+        leftHasHeartRate !== rightHasHeartRate
+          ? leftHasHeartRate
+            ? left
+            : right
+          : left.id.localeCompare(right.id) <= 0
+            ? left
+            : right
+      edges.push({
+        assessmentKind: 'duplicate_candidate',
+        canonical,
+        duplicate: canonical === left ? right : left,
+        kind: 'same_provider_enrichment',
+      })
     }
   }
 
   const edgeCounts = new Map<string, number>()
   for (const edge of edges) {
-    edgeCounts.set(edge.garmin.id, (edgeCounts.get(edge.garmin.id) ?? 0) + 1)
-    edgeCounts.set(edge.apple.id, (edgeCounts.get(edge.apple.id) ?? 0) + 1)
+    edgeCounts.set(
+      edge.canonical.id,
+      (edgeCounts.get(edge.canonical.id) ?? 0) + 1,
+    )
+    edgeCounts.set(
+      edge.duplicate.id,
+      (edgeCounts.get(edge.duplicate.id) ?? 0) + 1,
+    )
   }
   const runSnapshots = new Map(options.runs.map((run) => [run.id, run]))
   const blockedReasonCounts = emptyBlockedCounts()
   const eligiblePairs: EligiblePair[] = []
   for (const edge of edges) {
     if (
-      edgeCounts.get(edge.garmin.id) !== 1 ||
-      edgeCounts.get(edge.apple.id) !== 1
+      edgeCounts.get(edge.canonical.id) !== 1 ||
+      edgeCounts.get(edge.duplicate.id) !== 1
     ) {
       blockedReasonCounts.multiple_candidates += 1
       continue
@@ -332,8 +410,18 @@ function buildPlan(options: {
   return {
     blockedReasonCounts,
     candidatePairCount: edges.length,
-    confirmation: confirmationFor(options.projectId, options.ownerId, eligiblePairs),
+    confirmation: confirmationFor(
+      options.projectId,
+      options.ownerId,
+      eligiblePairs,
+    ),
+    crossProviderCandidatePairCount: edges.filter(
+      ({ kind }) => kind === 'cross_provider',
+    ).length,
     eligiblePairs,
+    sameProviderCandidatePairCount: edges.filter(
+      ({ kind }) => kind === 'same_provider_enrichment',
+    ).length,
   }
 }
 
@@ -348,7 +436,9 @@ function inspectionFromPlan(
     blockedReasonCounts: plan.blockedReasonCounts,
     candidatePairCount: plan.candidatePairCount,
     confirmation: plan.confirmation,
+    crossProviderCandidatePairCount: plan.crossProviderCandidatePairCount,
     eligiblePairCount: plan.eligiblePairs.length,
+    sameProviderCandidatePairCount: plan.sameProviderCandidatePairCount,
   }
 }
 
@@ -419,17 +509,24 @@ export class FirestoreActivityImportDuplicateReconciliation {
 
       const reconciledAt = this.now().toISOString()
       for (const pair of plan.eligiblePairs) {
-        transaction.update(pair.garminRunReference, {
-          averageHeartRateBpm: pair.appleRun.averageHeartRateBpm,
-          ...(pair.appleRun.maximumHeartRateBpm === undefined
-            ? {}
-            : { maximumHeartRateBpm: pair.appleRun.maximumHeartRateBpm }),
-          updatedAt: adminTimestamp(reconciledAt),
-        })
-        transaction.delete(pair.appleRunReference)
-        transaction.update(pair.apple.reference, {
-          candidateCompletedRunId: pair.garminRun.id,
-          candidateKind: pair.assessment.kind as CandidateKind,
+        if (pair.kind === 'cross_provider') {
+          transaction.update(pair.canonicalRunReference, {
+            ...(pair.duplicateRun.averageHeartRateBpm === undefined
+              ? {}
+              : {
+                  averageHeartRateBpm:
+                    pair.duplicateRun.averageHeartRateBpm,
+                }),
+            ...(pair.duplicateRun.maximumHeartRateBpm === undefined
+              ? {}
+              : { maximumHeartRateBpm: pair.duplicateRun.maximumHeartRateBpm }),
+            updatedAt: adminTimestamp(reconciledAt),
+          })
+        }
+        transaction.delete(pair.duplicateRunReference)
+        transaction.update(pair.duplicate.reference, {
+          candidateCompletedRunId: pair.canonicalRun.id,
+          candidateKind: pair.assessmentKind,
           completedRunId: null,
           state: 'review_required',
           updatedAt: reconciledAt,
