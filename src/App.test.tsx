@@ -899,6 +899,19 @@ describe('App training sections', () => {
     }
   })
 
+  it('marks the Analyze panel for its viewport-specific presentation', async () => {
+    const user = userEvent.setup()
+    renderSignedInApp()
+
+    await user.click(screen.getByRole('button', { name: 'Analyze' }))
+
+    const panel = screen.getByRole('region', { name: 'Analyze Your Progress' })
+    expect(panel).toHaveClass('section-panel--analyze')
+    expect(panel.firstElementChild).toHaveClass(
+      'section-panel-content--analyze'
+    )
+  })
+
   it('returns focus to the runner profile trigger after canceling setup', async () => {
     const user = userEvent.setup()
     renderSignedInApp()

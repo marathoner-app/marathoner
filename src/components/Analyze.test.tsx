@@ -1,4 +1,4 @@
-import { render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { expect, it, vi } from "vitest";
 import {
   createCompletedRunId,
@@ -117,7 +117,8 @@ it("shows sensible values for an empty history", async () => {
   );
 
   expect(screen.getByText(/log your first run/i)).toBeInTheDocument();
-  expect(screen.queryByText("Latest run")).not.toBeInTheDocument();
+  expect(screen.getByText("Latest run")).toBeInTheDocument();
+  expect(screen.getByRole("heading", { name: "No runs yet" })).toBeInTheDocument();
   expect(screen.getAllByText("0 mi")).toHaveLength(2);
   expect(screen.getByText("Not enough data")).toBeInTheDocument();
   expect(await screen.findByTestId("weekly-distance-trend")).toHaveTextContent(
@@ -126,6 +127,44 @@ it("shows sensible values for an empty history", async () => {
   expect(await screen.findByTestId("recent-pace-trend")).toHaveTextContent(
     "mile:",
   );
+});
+
+it("moves between analysis cards with explicit carousel controls", () => {
+  render(
+    <Analyze
+      runs={[run]}
+      shoes={[shoe]}
+      distanceUnit="mile"
+      timeZone={createIanaTimeZone("America/Los_Angeles")}
+      now={new Date("2026-08-06T12:00:00Z")}
+    />,
+  );
+
+  const previous = screen.getByRole("button", {
+    name: "Previous analysis card",
+  });
+  const next = screen.getByRole("button", { name: "Next analysis card" });
+
+  expect(previous).toBeDisabled();
+  expect(next).toBeEnabled();
+  expect(screen.getByText("Latest run · 1 of 5")).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Show Latest run card" })).toHaveAttribute(
+    "aria-current",
+    "true",
+  );
+
+  fireEvent.click(next);
+
+  expect(previous).toBeEnabled();
+  expect(screen.getByText("Training summary · 2 of 5")).toBeInTheDocument();
+  expect(
+    screen.getByRole("button", { name: "Show Training summary card" }),
+  ).toHaveAttribute("aria-current", "true");
+
+  fireEvent.click(screen.getByRole("button", { name: "Show Recent effort card" }));
+
+  expect(screen.getByText("Recent effort · 5 of 5")).toBeInTheDocument();
+  expect(next).toBeDisabled();
 });
 
 it("uses the runner distance preference for analytics and trends", async () => {

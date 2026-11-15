@@ -1,4 +1,4 @@
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useRef, useState, type UIEvent } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import {
   calculatePace,
@@ -21,6 +21,14 @@ import RecentRunEffortPattern from "./RecentRunEffortPattern";
 
 const WeeklyDistanceTrend = lazy(() => import("./WeeklyDistanceTrend"));
 const RecentRunPaceTrend = lazy(() => import("./RecentRunPaceTrend"));
+
+const ANALYZE_CARD_LABELS = [
+  "Latest run",
+  "Training summary",
+  "Weekly distance",
+  "Recent pace",
+  "Recent effort",
+] as const;
 
 type AnalyzeProps = {
   readonly runs: readonly CompletedRun[];
@@ -107,6 +115,9 @@ export default function Analyze({
   now = new Date(),
 }: AnalyzeProps) {
   const reduceMotion = useReducedMotion();
+  const carouselRef = useRef<HTMLDivElement | null>(null);
+  const cardRefs = useRef<Array<HTMLDivElement | null>>([]);
+  const [activeCardIndex, setActiveCardIndex] = useState(0);
   const currentWeekStart = mondayFor(now, timeZone);
   const analytics = calculateTrainingAnalytics(runs, currentWeekStart, distanceUnit);
   const weeklyDistance = calculateWeeklyDistanceTrend(runs, currentWeekStart, 8);
@@ -115,6 +126,39 @@ export default function Analyze({
   const latestRun = findLatestRun(runs);
   const latestRunShoe = shoes.find((shoe) => shoe.id === latestRun?.shoeId);
 
+  const showCard = (requestedIndex: number) => {
+    const nextIndex = Math.min(
+      Math.max(requestedIndex, 0),
+      ANALYZE_CARD_LABELS.length - 1,
+    );
+    const carousel = carouselRef.current;
+    const card = cardRefs.current[nextIndex];
+
+    setActiveCardIndex(nextIndex);
+    if (carousel === null || card === null) return;
+
+    carousel.scrollTo?.({
+      left: card.offsetLeft,
+      behavior: reduceMotion ? "auto" : "smooth",
+    });
+  };
+
+  const updateActiveCard = (event: UIEvent<HTMLDivElement>) => {
+    const carousel = event.currentTarget;
+    const nearestCard = cardRefs.current.reduce(
+      (nearest, card, index) => {
+        if (card === null) return nearest;
+        const distance = Math.abs(card.offsetLeft - carousel.scrollLeft);
+        return distance < nearest.distance ? { distance, index } : nearest;
+      },
+      { distance: Number.POSITIVE_INFINITY, index: activeCardIndex },
+    );
+
+    if (nearestCard.index !== activeCardIndex) {
+      setActiveCardIndex(nearestCard.index);
+    }
+  };
+
   return (
     <motion.div
       className="analyze-container"
@@ -122,111 +166,227 @@ export default function Analyze({
       animate={{ opacity: 1 }}
       transition={{ duration: reduceMotion ? 0 : 0.8 }}
     >
-      {runs.length === 0 && (
-        <p className="training-empty-state">
-          Log your first run to begin building your training picture.
-        </p>
-      )}
-      {latestRun !== undefined && (
-        <section className="latest-run-summary" aria-labelledby="latest-run-heading">
-          <div>
-            <p className="latest-run-eyebrow">Latest run</p>
-            <h2 id="latest-run-heading">
-              <time dateTime={latestRun.startedAt}>{formatRunDate(latestRun)}</time>
-            </h2>
+      <section className="analyze-carousel" aria-label="Training analysis">
+        <div
+          className="analyze-carousel-viewport"
+          ref={carouselRef}
+          onScroll={updateActiveCard}
+        >
+          <div
+            className="analyze-slide"
+            role="group"
+            aria-label="1 of 5: Latest run"
+            ref={(element) => {
+              cardRefs.current[0] = element;
+            }}
+          >
+            <section
+              className="latest-run-summary"
+              aria-labelledby="latest-run-heading"
+            >
+              <div>
+                <p className="latest-run-eyebrow">Latest run</p>
+                <h2 id="latest-run-heading">
+                  {latestRun === undefined ? (
+                    "No runs yet"
+                  ) : (
+                    <time dateTime={latestRun.startedAt}>
+                      {formatRunDate(latestRun)}
+                    </time>
+                  )}
+                </h2>
+              </div>
+              {latestRun === undefined ? (
+                <p className="training-empty-state">
+                  Log your first run to begin building your training picture.
+                </p>
+              ) : (
+                <dl className="latest-run-details">
+                  <div>
+                    <dt>Distance</dt>
+                    <dd>{formatDistance(latestRun.distance, distanceUnit)}</dd>
+                  </div>
+                  <div>
+                    <dt>Elapsed time</dt>
+                    <dd>{formatDuration(latestRun.duration)}</dd>
+                  </div>
+                  <div>
+                    <dt>Pace</dt>
+                    <dd>
+                      {formatPace(
+                        calculatePace(
+                          latestRun.distance,
+                          latestRun.duration,
+                          distanceUnit,
+                        )?.secondsPerUnit,
+                        distanceUnit,
+                      )}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt>Shoe</dt>
+                    <dd>{latestRunShoe?.name ?? "Not recorded"}</dd>
+                  </div>
+                  <div>
+                    <dt>Perceived effort</dt>
+                    <dd>{formatPerceivedEffort(latestRun.perceivedEffort)}</dd>
+                  </div>
+                  {latestRun.averageHeartRateBpm !== undefined && (
+                    <div>
+                      <dt>Average heart rate</dt>
+                      <dd>{latestRun.averageHeartRateBpm} bpm</dd>
+                    </div>
+                  )}
+                  {latestRun.maximumHeartRateBpm !== undefined && (
+                    <div>
+                      <dt>Maximum heart rate</dt>
+                      <dd>{latestRun.maximumHeartRateBpm} bpm</dd>
+                    </div>
+                  )}
+                </dl>
+              )}
+            </section>
           </div>
-          <dl className="latest-run-details">
-            <div>
-              <dt>Distance</dt>
-              <dd>{formatDistance(latestRun.distance, distanceUnit)}</dd>
-            </div>
-            <div>
-              <dt>Elapsed time</dt>
-              <dd>{formatDuration(latestRun.duration)}</dd>
-            </div>
-            <div>
-              <dt>Pace</dt>
-              <dd>
-                {formatPace(
-                  calculatePace(
-                    latestRun.distance,
-                    latestRun.duration,
-                    distanceUnit,
-                  )?.secondsPerUnit,
-                  distanceUnit,
-                )}
-              </dd>
-            </div>
-            <div>
-              <dt>Shoe</dt>
-              <dd>{latestRunShoe?.name ?? "Not recorded"}</dd>
-            </div>
-            <div>
-              <dt>Perceived effort</dt>
-              <dd>{formatPerceivedEffort(latestRun.perceivedEffort)}</dd>
-            </div>
-            {latestRun.averageHeartRateBpm !== undefined && (
-              <div>
-                <dt>Average heart rate</dt>
-                <dd>{latestRun.averageHeartRateBpm} bpm</dd>
+
+          <div
+            className="analyze-slide"
+            role="group"
+            aria-label="2 of 5: Training summary"
+            ref={(element) => {
+              cardRefs.current[1] = element;
+            }}
+          >
+            <section
+              className="analyze-summary"
+              aria-labelledby="analyze-summary-heading"
+            >
+              <p className="analyze-summary-eyebrow">At a glance</p>
+              <h2 id="analyze-summary-heading">Training summary</h2>
+              <div className="analyze-cards">
+                <div className="analyze-card">
+                  <h3>Total Distance</h3>
+                  <p>{formatDistance(analytics.totalDistance, distanceUnit)}</p>
+                </div>
+                <div className="analyze-card">
+                  <h3>This Week</h3>
+                  <p>{formatDistance(analytics.weeklyDistance, distanceUnit)}</p>
+                </div>
+                <div className="analyze-card">
+                  <h3>Average Pace</h3>
+                  <p>
+                    {formatPace(
+                      analytics.averagePace?.secondsPerUnit,
+                      distanceUnit,
+                    )}
+                  </p>
+                </div>
+                <div className="analyze-card">
+                  <h3>Total Runs</h3>
+                  <p>{analytics.totalRuns}</p>
+                </div>
+                <div className="analyze-card">
+                  <h3>Runs This Week</h3>
+                  <p>{analytics.runsThisWeek}</p>
+                </div>
               </div>
-            )}
-            {latestRun.maximumHeartRateBpm !== undefined && (
-              <div>
-                <dt>Maximum heart rate</dt>
-                <dd>{latestRun.maximumHeartRateBpm} bpm</dd>
-              </div>
-            )}
-          </dl>
-        </section>
-      )}
-      <div className="analyze-cards">
-        <div className="analyze-card">
-          <h2>Total Distance</h2>
-          <p>{formatDistance(analytics.totalDistance, distanceUnit)}</p>
+            </section>
+          </div>
+
+          <div
+            className="analyze-slide"
+            role="group"
+            aria-label="3 of 5: Weekly distance"
+            ref={(element) => {
+              cardRefs.current[2] = element;
+            }}
+          >
+            <Suspense
+              fallback={
+                <p className="training-status" role="status">
+                  Loading weekly distance chart...
+                </p>
+              }
+            >
+              <WeeklyDistanceTrend
+                buckets={weeklyDistance}
+                distanceUnit={distanceUnit}
+              />
+            </Suspense>
+          </div>
+
+          <div
+            className="analyze-slide"
+            role="group"
+            aria-label="4 of 5: Recent pace"
+            ref={(element) => {
+              cardRefs.current[3] = element;
+            }}
+          >
+            <Suspense
+              fallback={
+                <p className="training-status" role="status">
+                  Loading recent pace chart...
+                </p>
+              }
+            >
+              <RecentRunPaceTrend
+                points={recentPace}
+                distanceUnit={distanceUnit}
+              />
+            </Suspense>
+          </div>
+
+          <div
+            className="analyze-slide"
+            role="group"
+            aria-label="5 of 5: Recent effort"
+            ref={(element) => {
+              cardRefs.current[4] = element;
+            }}
+          >
+            <RecentRunEffortPattern points={recentEffort} />
+          </div>
         </div>
-        <div className="analyze-card">
-          <h2>This Week</h2>
-          <p>{formatDistance(analytics.weeklyDistance, distanceUnit)}</p>
+
+        <div className="analyze-carousel-controls">
+          <button
+            type="button"
+            className="analyze-carousel-arrow"
+            aria-label="Previous analysis card"
+            disabled={activeCardIndex === 0}
+            onClick={() => showCard(activeCardIndex - 1)}
+          >
+            <span aria-hidden="true">‹</span>
+          </button>
+          <div className="analyze-carousel-position">
+            <p className="analyze-carousel-status" aria-live="polite">
+              {ANALYZE_CARD_LABELS[activeCardIndex]} · {activeCardIndex + 1} of{" "}
+              {ANALYZE_CARD_LABELS.length}
+            </p>
+            <div className="analyze-carousel-dots" aria-label="Choose analysis card">
+              {ANALYZE_CARD_LABELS.map((label, index) => (
+                <button
+                  type="button"
+                  className="analyze-carousel-dot"
+                  aria-label={`Show ${label} card`}
+                  aria-current={index === activeCardIndex ? "true" : undefined}
+                  key={label}
+                  onClick={() => showCard(index)}
+                />
+              ))}
+            </div>
+          </div>
+          <button
+            type="button"
+            className="analyze-carousel-arrow"
+            aria-label="Next analysis card"
+            disabled={activeCardIndex === ANALYZE_CARD_LABELS.length - 1}
+            onClick={() => showCard(activeCardIndex + 1)}
+          >
+            <span aria-hidden="true">›</span>
+          </button>
         </div>
-        <div className="analyze-card">
-          <h2>Average Pace</h2>
-          <p>{formatPace(analytics.averagePace?.secondsPerUnit, distanceUnit)}</p>
-        </div>
-        <div className="analyze-card">
-          <h2>Total Runs</h2>
-          <p>{analytics.totalRuns}</p>
-        </div>
-        <div className="analyze-card">
-          <h2>Runs This Week</h2>
-          <p>{analytics.runsThisWeek}</p>
-        </div>
-      </div>
-      <Suspense
-        fallback={
-          <p className="training-status" role="status">
-            Loading weekly distance chart...
-          </p>
-        }
-      >
-        <WeeklyDistanceTrend
-          buckets={weeklyDistance}
-          distanceUnit={distanceUnit}
-        />
-      </Suspense>
-      <Suspense
-        fallback={
-          <p className="training-status" role="status">
-            Loading recent pace chart...
-          </p>
-        }
-      >
-        <RecentRunPaceTrend
-          points={recentPace}
-          distanceUnit={distanceUnit}
-        />
-      </Suspense>
-      <RecentRunEffortPattern points={recentEffort} />
+      </section>
     </motion.div>
   );
 }
