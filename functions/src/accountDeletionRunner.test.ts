@@ -23,7 +23,7 @@ const completedAt = '2027-01-16T08:00:00.000Z'
 function activeRequest(): ActiveAccountDeletionRequest {
   return {
     schemaVersion: 1,
-    manifestVersion: 1,
+    manifestVersion: 2,
     requestId,
     userId,
     commandId,
@@ -89,7 +89,7 @@ class InMemoryWorkflowStore implements AccountDeletionWorkflowStore {
     this.events.push('anonymize')
     this.receipt = {
       schemaVersion: 1,
-      manifestVersion: 1,
+      manifestVersion: 2,
       requestId,
       status: 'completed',
       requestedAt: this.request.requestedAt,
@@ -163,12 +163,15 @@ describe('account-deletion runner orchestration', () => {
     expect(store.events.indexOf('verify-manifest')).toBeLessThan(
       store.events.indexOf('delete-auth'),
     )
+    expect(store.events.indexOf('delete-private-records')).toBeLessThan(
+      store.events.indexOf('delete-user-tree'),
+    )
     expect(store.events.indexOf('verify-private-records')).toBeLessThan(
       store.events.indexOf('delete-auth'),
     )
     expect(store.receipt).toEqual({
       schemaVersion: 1,
-      manifestVersion: 1,
+      manifestVersion: 2,
       requestId,
       status: 'completed',
       requestedAt: '2027-01-15T08:00:00.000Z',

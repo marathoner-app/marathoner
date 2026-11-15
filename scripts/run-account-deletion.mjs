@@ -99,33 +99,40 @@ async function run() {
     '../functions/lib/functions/src/firebaseAccountAccessManager.js',
     import.meta.url,
   ).href
+  const privateRecordsModuleUrl = new URL(
+    '../functions/lib/functions/src/firestoreGarminAccountDeletionGateway.js',
+    import.meta.url,
+  ).href
   const [
     { deleteApp, initializeApp },
     { getAuth },
     { getFirestore },
     runnerModule,
     accountAccessModule,
+    privateRecordsModule,
   ] = await Promise.all([
       import('firebase-admin/app'),
       import('firebase-admin/auth'),
       import('firebase-admin/firestore'),
       import(/* @vite-ignore */ runnerModuleUrl),
       import(/* @vite-ignore */ accountAccessModuleUrl),
+      import(/* @vite-ignore */ privateRecordsModuleUrl),
     ])
   const app = initializeApp(
     { projectId: options.projectId },
     `account-deletion-operator-${Date.now()}`,
   )
-  const privateRecords = {
-    deleteDeclaredRecords: async () => undefined,
-    verifyDeclaredRecordsAbsent: async () => undefined,
-  }
+  const database = getFirestore(app)
+  const privateRecords =
+    new privateRecordsModule.FirestoreGarminAccountDeletionGateway(database, {
+      revoke: async () => ({ status: 'revoked', httpStatus: 204 }),
+    })
   const runner = new runnerModule.AccountDeletionRunner({
     accountAccess: new accountAccessModule.FirebaseAccountAccessManager(
       getAuth(app),
     ),
     store: new runnerModule.FirestoreAccountDeletionWorkflowStore(
-      getFirestore(app),
+      database,
     ),
     privateRecords,
     now: () => new Date(),

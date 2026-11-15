@@ -13,6 +13,12 @@ import {
   type AccountDeletionRunnerStep,
 } from './accountDeletionRunner.js'
 import { FirebaseAccountAccessManager } from './firebaseAccountAccessManager.js'
+import { FirestoreGarminAccountDeletionGateway } from './firestoreGarminAccountDeletionGateway.js'
+import {
+  FirestoreGarminOAuthStore,
+  garminProviderAccountDigest,
+} from './firestoreGarminOAuthStore.js'
+import { GarminRevocationFailure } from './garminOAuthHandler.js'
 
 const projectId = 'demo-marathoner'
 const requestId = '11111111-1111-4111-8111-111111111111'
@@ -143,7 +149,7 @@ async function seedRequest(
 ): Promise<void> {
   await database.doc(`accountDeletionRequests/${requestId}`).set({
     schemaVersion: 1,
-    manifestVersion: 1,
+    manifestVersion: 2,
     requestId,
     userId: ownerId,
     commandId,
@@ -172,6 +178,63 @@ async function seedFixture() {
     seedOwnedData(database, otherOwnerId, 'approved'),
     seedRequest(),
   ])
+}
+
+async function seedGarminData(userId: string, providerUserId: string) {
+  const digest = garminProviderAccountDigest(providerUserId)
+  await Promise.all([
+    database.doc(`users/${userId}/providerConnections/garmin`).set({
+      schemaVersion: 1,
+      provider: 'garmin_connect',
+      status: 'connected',
+      environment: 'beta',
+      ownerId: userId,
+      providerAccountDigest: digest,
+      accessToken: `${userId}-access-token`,
+      refreshToken: `${userId}-refresh-token`,
+      expiresAt: '2027-01-20T08:00:00.000Z',
+      connectedAt: requestedAt,
+      updatedAt: requestedAt,
+      pendingRevocationGrants: [
+        {
+          accessToken: `${userId}-prior-access-token`,
+          refreshToken: `${userId}-prior-refresh-token`,
+          expiresAt: '2027-01-19T08:00:00.000Z',
+        },
+      ],
+    }),
+    database.doc(`providerAccountLinks/${digest}`).set({
+      schemaVersion: 1,
+      provider: 'garmin_connect',
+      environment: 'beta',
+      ownerId: userId,
+      updatedAt: requestedAt,
+    }),
+    database.doc(`providerOAuthStates/${userId}-state`).set({
+      schemaVersion: 1,
+      provider: 'garmin_connect',
+      status: 'pending',
+      environment: 'beta',
+      ownerId: userId,
+      codeVerifier: `${userId}-verifier`,
+      createdAt: requestedAt,
+      expiresAt: '2027-01-16T08:10:00.000Z',
+    }),
+    database.doc(`garminPushDeliveries/${userId}-delivery`).set({
+      queueSchemaVersion: 1,
+      schemaVersion: 1,
+      kind: 'activity',
+      deliveryId: `${userId}-delivery`,
+      providerAccountDigest: digest,
+      providerActivityId: `${userId}-activity`,
+      observedAt: requestedAt,
+      startedAt: requestedAt,
+      durationSeconds: 1_800,
+      distanceMeters: 5_000,
+      status: 'pending',
+    }),
+  ])
+  return digest
 }
 
 function createRunner(options: {
@@ -266,6 +329,120 @@ afterAll(async () => {
 })
 
 describe('account-deletion runner', () => {
+  it('revokes Garmin grants and removes only the deleted owner global state', async () => {
+    await seedFixture()
+    const [ownerDigest, otherDigest] = await Promise.all([
+      seedGarminData(ownerId, 'owner-provider-account'),
+      seedGarminData(otherOwnerId, 'other-provider-account'),
+    ])
+    const revokedTokens: string[] = []
+    const privateRecords = new FirestoreGarminAccountDeletionGateway(database, {
+      revoke: async (grant) => {
+        revokedTokens.push(grant.accessToken)
+        return { status: 'revoked', httpStatus: 204 }
+      },
+    })
+    const runner = new AccountDeletionRunner({
+      accountAccess: new FirebaseAccountAccessManager(auth),
+      store: new FirestoreAccountDeletionWorkflowStore(database),
+      privateRecords,
+      now: () => new Date(completedAt),
+      log: () => undefined,
+    })
+
+    await expect(runner.run(requestId)).resolves.toEqual(
+      expect.objectContaining({ status: 'completed' }),
+    )
+
+    expect(revokedTokens).toEqual([
+      `${ownerId}-access-token`,
+      `${ownerId}-prior-access-token`,
+    ])
+    await expectOwnerDeletedAndOtherOwnerUntouched()
+    await expect(
+      new FirestoreGarminOAuthStore(database).resolvePushOwner({
+        environment: 'beta',
+        providerAccountDigest: ownerDigest,
+      }),
+    ).resolves.toBeNull()
+    for (const path of [
+      `providerAccountLinks/${ownerDigest}`,
+      `providerOAuthStates/${ownerId}-state`,
+      `garminPushDeliveries/${ownerId}-delivery`,
+    ]) {
+      await expect(database.doc(path).get()).resolves.toEqual(
+        expect.objectContaining({ exists: false }),
+      )
+    }
+    for (const path of [
+      `users/${otherOwnerId}/providerConnections/garmin`,
+      `providerAccountLinks/${otherDigest}`,
+      `providerOAuthStates/${otherOwnerId}-state`,
+      `garminPushDeliveries/${otherOwnerId}-delivery`,
+    ]) {
+      await expect(database.doc(path).get()).resolves.toEqual(
+        expect.objectContaining({ exists: true }),
+      )
+    }
+  })
+
+  it('persists a refreshed Garmin grant and resumes the same deletion safely', async () => {
+    await seedFixture()
+    const digest = await seedGarminData(ownerId, 'retry-provider-account')
+    const retryGrant = {
+      accessToken: 'replacement-access-token',
+      refreshToken: 'replacement-refresh-token',
+      expiresAt: '2027-01-20T09:00:00.000Z',
+    }
+    const first = new FirestoreGarminAccountDeletionGateway(database, {
+      revoke: async () => {
+        throw new GarminRevocationFailure({
+          category: 'transient',
+          httpStatus: 503,
+          retryGrant,
+        })
+      },
+    })
+
+    await expect(
+      first.deleteDeclaredRecords({ requestId, userId: ownerId }),
+    ).rejects.toMatchObject({ category: 'transient', httpStatus: 503 })
+    await expect(
+      database.doc(`users/${ownerId}/providerConnections/garmin`).get(),
+    ).resolves.toEqual(
+      expect.objectContaining({
+        exists: true,
+        data: expect.any(Function),
+      }),
+    )
+    const connection = (
+      await database.doc(`users/${ownerId}/providerConnections/garmin`).get()
+    ).data()
+    expect(connection).toMatchObject({
+      status: 'disconnecting',
+      accessToken: retryGrant.accessToken,
+      refreshToken: retryGrant.refreshToken,
+    })
+    const request = (
+      await database.doc(`accountDeletionRequests/${requestId}`).get()
+    ).data()
+    expect(request?.garminProviderAccountDigests).toEqual([digest])
+
+    const retriedTokens: string[] = []
+    const retry = new FirestoreGarminAccountDeletionGateway(database, {
+      revoke: async (grant) => {
+        retriedTokens.push(grant.accessToken)
+        return { status: 'revoked', httpStatus: 204 }
+      },
+    })
+    await retry.deleteDeclaredRecords({ requestId, userId: ownerId })
+    await retry.verifyDeclaredRecordsAbsent({ requestId, userId: ownerId })
+    expect(retriedTokens).toEqual([
+      retryGrant.accessToken,
+      `${ownerId}-prior-access-token`,
+    ])
+  })
+
   it('deletes the exact owner manifest, preserves another owner, and anonymizes the receipt', async () => {
     await seedFixture()
     const { logs, privateRecords, runner } = createRunner()
@@ -290,7 +467,7 @@ describe('account-deletion runner', () => {
     ).data()
     expect(receipt).toEqual({
       schemaVersion: 1,
-      manifestVersion: 1,
+      manifestVersion: 2,
       requestId,
       status: 'completed',
       requestedAt,
@@ -415,7 +592,7 @@ describe('account-deletion runner', () => {
       status: 'deletion_pending',
     })
     await database.doc(`accountDeletionRequests/${requestId}`).update({
-      manifestVersion: 2,
+      manifestVersion: 1,
     })
     await expect(runner.run(requestId)).rejects.toMatchObject({
       code: 'request-invalid',

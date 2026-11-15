@@ -1,11 +1,12 @@
 # Account and training-data deletion
 
-- **Status:** Local request/account-lock, deletion runner, and shared client experience complete; private-store activation, live deployment, and rehearsal remain open
+- **Status:** Local request/account-lock, Garmin-aware deletion runner, and shared client experience complete; live deployment and rehearsal remain open
 - **Decision date:** 2026-10-05
 - **Decision owner:** Marathoner maintainer
 - **Tracking issue:** [#79](https://github.com/marathoner-app/marathoner/issues/79)
 - **Request implementation:** [#195](https://github.com/marathoner-app/marathoner/issues/195)
 - **Deletion runner:** [#197](https://github.com/marathoner-app/marathoner/issues/197)
+- **Garmin-aware manifest:** [#771](https://github.com/marathoner-app/marathoner/issues/771)
 - **Client experience:** [#196](https://github.com/marathoner-app/marathoner/issues/196)
 - **Readiness rehearsal:** [#124](https://github.com/marathoner-app/marathoner/issues/124)
 
@@ -77,10 +78,10 @@ table and the deletion runner in the same pull request.
 | `materialCommandReceipts/{uid}/commands/{commandId}` | Server idempotency receipts for completed-run, import, deletion-request, plan-approval, and recommendation-decision commands | Recursively delete the owner document path and descendants. The trusted store is deployed in the private environments that enable the corresponding command. |
 | `materialCommandProofs/{uid}` | Development-only server-boundary proof state | Delete. This path remains local/development proof infrastructure. |
 | `accountDeletionRequests/{requestId}` | Server-only workflow state, including the UID only while work is pending | Remove all identity fields after completion, retain the anonymous completion receipt for 30 days, then delete it. The request handler and runner are deployed to the beta project. |
-| `providerOAuthStates/{stateDigest}` | Server-only pending Garmin authorization state keyed by a one-way state digest | Required before external beta: remove pending states owned by the account. This global path is not yet part of manifest version 1 and is owned by #623/#124. |
-| `users/{uid}/providerConnections/garmin` | Server-only Garmin grant material and connection status | Covered by recursive deletion of `users/{uid}`, but provider revocation must be attempted before the user tree is removed. |
-| `providerAccountLinks/{providerDigest}` | One-way Garmin account digest mapped to one Marathoner owner | Required before external beta: delete the owner mapping so later pushes cannot resolve an owner. This global path is not yet part of manifest version 1 and is owned by #623/#124. |
-| `garminPushDeliveries/{deliveryId}` | Minimal normalized, server-only Garmin delivery queue state keyed by provider digests | Required before external beta: define bounded retention and remove pending or retained deliveries attributable to the deleted connection. This global path is not yet part of manifest version 1 and is owned by #623/#124. |
+| `providerOAuthStates/{stateDigest}` | Server-only pending Garmin authorization state keyed by a one-way state digest | Manifest version 2 deletes every state whose protected owner is the account before removing the user tree. |
+| `users/{uid}/providerConnections/garmin` | Server-only Garmin grant material and connection status | Manifest version 2 revokes current and pending grants, then deletes the connection only after its global records are absent. |
+| `providerAccountLinks/{providerDigest}` | One-way Garmin account digest mapped to one Marathoner owner | Manifest version 2 persists the digest temporarily on the protected request, removes every owner mapping, and verifies a later push cannot resolve the deleted owner. |
+| `garminPushDeliveries/{deliveryId}` | Minimal normalized, server-only Garmin delivery queue state keyed by provider digests | Manifest version 2 deletes every delivery for the temporarily retained account digests and verifies those queues are empty before completion. |
 | Current client memory | Current-session authentication and training state | Clear immediately when the request is accepted; persistent participant-data caching remains prohibited. |
 
 The retired `users/{uid}/mobileSpikeProofs/issue-87-shared-record` path is not a
@@ -88,19 +89,12 @@ current data store. The proof document was deleted and its explicit rule was
 removed. Recursive deletion of the user tree would nevertheless remove any
 unexpected descendant left below that owner.
 
-Manifest version `1` remains valid for plan activation, revision snapshots, and
-recommendation evidence because no deletion root changed: active state,
-generation provenance, plan snapshots, and recommendation evidence are
-descendants of the already recursive `users/{uid}` root, and material-command
-receipts are descendants of the already recursive
-`materialCommandReceipts/{uid}` root. Emulator fixtures seed these exact paths
-and verify owner deletion and cross-owner preservation. The global
+Manifest version `2` adds the global Garmin provider state and delivery roots
+named above. The protected request temporarily retains only one-way provider
+account digests so a retry can finish and verify cleanup after the user tree is
+gone. Receipt anonymization removes those digests. The global
 `operatorControls/recommendationActivation` record contains no participant
 identity or training data and is not part of an individual account deletion.
-The Garmin integration adds the global provider state and delivery roots named
-above. Manifest version `1` is therefore not sufficient for an external-beta
-account with Garmin state until #623/#124 add the adapter, cleanup order,
-retention rule, verification, and failure recovery.
 
 Marathoner currently has no Cloud Storage participant objects, analytics event
 store, app-managed export, or app-managed backup. Issue #124 may add a
@@ -191,9 +185,9 @@ The fixed stages are:
 | --- | --- |
 | 1. Validate | Load the protected request by random request ID, confirm its project and supported manifest version, and prove its membership is no longer `approved`. |
 | 2. Lock | Re-disable the Authentication user and revoke refresh tokens. This is idempotent and closes a partial failure from request acceptance. |
-| 3. Delete user tree | Recursively delete the exact `users/{uid}` document so known and unexpected descendant subcollections are removed. |
-| 4. Delete server records | Recursively delete `materialCommandReceipts/{uid}` and delete `materialCommandProofs/{uid}`. |
-| 5. Delete declared private records | Complete every participant-linked external-system step registered by issue #124 and record only pass/fail against the request ID. |
+| 3. Delete declared private records | Persist the one-way Garmin account digest on the protected request, revoke current and pending grants, delete attributable push deliveries and pending OAuth states, remove owner links, and delete the user connection last. |
+| 4. Delete user tree | Recursively delete the exact `users/{uid}` document so known and unexpected descendant subcollections are removed. |
+| 5. Delete server records | Recursively delete `materialCommandReceipts/{uid}` and delete `materialCommandProofs/{uid}`. |
 | 6. Remove membership | Delete `betaMemberships/{uid}`. Missing membership is success on a retry. |
 | 7. Verify | Query every manifest path and require zero owned records. Verify the user tree has no descendant collections. Stop before Authentication deletion on any non-zero result. |
 | 8. Delete Authentication | Delete the Firebase Authentication user. `user-not-found` is success on a retry after all data checks pass. |

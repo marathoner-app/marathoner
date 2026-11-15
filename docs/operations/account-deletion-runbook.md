@@ -1,7 +1,7 @@
 # Account-deletion operator runbook
 
 - **Status:** Emulator-proven runner; live projects intentionally blocked
-- **Implementation issue:** [#197](https://github.com/marathoner-app/marathoner/issues/197)
+- **Implementation issues:** [#197](https://github.com/marathoner-app/marathoner/issues/197), [#771](https://github.com/marathoner-app/marathoner/issues/771)
 - **Approved design:** [Account and training-data deletion](../architecture/account-deletion.md)
 - **Final rehearsal:** [#124](https://github.com/marathoner-app/marathoner/issues/124)
 
@@ -44,10 +44,11 @@ The runner owns one manifest version and performs these stages in order:
 
 1. validate the protected request and prove membership is not `approved`;
 2. disable the Authentication user and revoke refresh tokens;
-3. recursively delete `users/{uid}`, including unknown descendants;
-4. recursively delete `materialCommandReceipts/{uid}` and delete
+3. revoke Garmin grants and remove the account's global OAuth state, account
+   links, and push deliveries before deleting the Garmin connection;
+4. recursively delete `users/{uid}`, including unknown descendants;
+5. recursively delete `materialCommandReceipts/{uid}` and delete
    `materialCommandProofs/{uid}`;
-5. complete the declared private-record deletion adapter;
 6. delete `betaMemberships/{uid}`;
 7. verify every Firestore manifest root and the private adapter are empty;
 8. delete the Authentication user, treating `user-not-found` as success only
@@ -80,10 +81,13 @@ The normal verification path is the automated emulator suite:
 npm run test:material-commands
 ```
 
-It creates only fictional records, injects an interruption after every stage,
-reruns the same request, proves a second owner is untouched, proves Auth is not
-deleted before manifest verification, and checks the final receipt and logs for
-identifiers.
+It creates only fictional records, including Garmin grants and global provider
+state; injects an interruption after every stage; reruns the same request;
+proves a second owner is untouched; proves Auth is not deleted before manifest
+verification; and checks the final receipt and logs for identifiers. The
+emulator operator uses a synthetic successful Garmin revoker. Live activation
+must instead bind the reviewed HTTP Garmin provider and remains separately
+blocked below.
 
 ## Completion receipt and cleanup
 

@@ -23,9 +23,9 @@ import type { AccountAccessManager } from './accountDeletionRequestHandler.js'
 export const ACCOUNT_DELETION_RUNNER_STEPS = [
   'validated',
   'access_locked',
+  'private_records_deleted',
   'user_tree_deleted',
   'server_records_deleted',
-  'private_records_deleted',
   'membership_removed',
   'manifest_verified',
   'authentication_deleted',
@@ -91,8 +91,14 @@ export interface AccountDeletionAuthGateway extends AccountAccessManager {
 }
 
 export interface AccountDeletionPrivateRecordGateway {
-  deleteDeclaredRecords(requestId: string): Promise<void>
-  verifyDeclaredRecordsAbsent(requestId: string): Promise<void>
+  deleteDeclaredRecords(options: {
+    requestId: string
+    userId: string
+  }): Promise<void>
+  verifyDeclaredRecordsAbsent(options: {
+    requestId: string
+    userId: string
+  }): Promise<void>
 }
 
 interface AccountDeletionRunnerDependencies {
@@ -440,6 +446,19 @@ export class AccountDeletionRunner {
           this.dependencies.accountAccess.disableAndRevoke(request!.userId),
       })
 
+      failedStep = 'private_records_deleted'
+      await this.performStep({
+        request,
+        stage: 'private_records_deleted',
+        step: 'private_records_deleted',
+        errorCode: 'private-record-delete-failed',
+        operation: () =>
+          this.dependencies.privateRecords.deleteDeclaredRecords({
+            requestId,
+            userId: request!.userId,
+          }),
+      })
+
       failedStep = 'user_tree_deleted'
       await this.performStep({
         request,
@@ -457,16 +476,6 @@ export class AccountDeletionRunner {
         errorCode: 'server-record-delete-failed',
         operation: () =>
           this.dependencies.store.deleteServerRecords(request!.userId),
-      })
-
-      failedStep = 'private_records_deleted'
-      await this.performStep({
-        request,
-        stage: 'private_records_deleted',
-        step: 'private_records_deleted',
-        errorCode: 'private-record-delete-failed',
-        operation: () =>
-          this.dependencies.privateRecords.deleteDeclaredRecords(requestId),
       })
 
       failedStep = 'membership_removed'
@@ -487,9 +496,10 @@ export class AccountDeletionRunner {
         errorCode: 'manifest-verification-failed',
         operation: async () => {
           await this.dependencies.store.verifyManifestEmpty(request!.userId)
-          await this.dependencies.privateRecords.verifyDeclaredRecordsAbsent(
+          await this.dependencies.privateRecords.verifyDeclaredRecordsAbsent({
             requestId,
-          )
+            userId: request!.userId,
+          })
         },
       })
 
