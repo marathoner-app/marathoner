@@ -22,6 +22,8 @@ const ACTIONS = new Set([
   'apply',
   'inspect-orphan',
   'apply-orphan',
+  'inspect-legacy',
+  'apply-legacy',
 ])
 const BASE_OPTIONS = new Set(['--owner-email', '--owner-uid', '--project'])
 
@@ -37,7 +39,7 @@ export function parseActivityImportReconciliationArguments(argv) {
   const [action, ...pairs] = argv
   if (!ACTIONS.has(action)) {
     throw new Error(
-      'Use inspect, apply, inspect-orphan, or apply-orphan with the exact owner and beta project boundary.',
+      'Use inspect, apply, inspect-orphan, apply-orphan, inspect-legacy, or apply-legacy with the exact owner and beta project boundary.',
     )
   }
   if (pairs.length % 2 !== 0) {
@@ -112,6 +114,16 @@ export function assertActivityImportReconciliationBoundary(options) {
   ) {
     throw new Error(
       'Apply-orphan requires the exact confirmation from the current orphan dry run.',
+    )
+  }
+  if (
+    options.action === 'apply-legacy' &&
+    !/^RECONCILE-LEGACY-IMPORTED-RUN-DUPLICATES:[a-f0-9]{24}$/u.test(
+      options.confirmation ?? '',
+    )
+  ) {
+    throw new Error(
+      'Apply-legacy requires the exact confirmation from the current legacy dry run.',
     )
   }
 }
@@ -208,14 +220,20 @@ async function run() {
       '../functions/lib/functions/src/firestoreActivityImportDuplicateReconciliation.js',
       import.meta.url,
     ).href
+    const legacyModuleUrl = new URL(
+      '../functions/lib/functions/src/firestoreLegacyImportedRunDuplicateReconciliation.js',
+      import.meta.url,
+    ).href
     const [
       { applicationDefault, deleteApp, initializeApp },
       { getFirestore },
       reconciliationModule,
+      legacyReconciliationModule,
     ] = await Promise.all([
       import('firebase-admin/app'),
       import('firebase-admin/firestore'),
       import(/* @vite-ignore */ moduleUrl),
+      import(/* @vite-ignore */ legacyModuleUrl),
     ])
     const app = initializeApp(
       { credential: applicationDefault(), projectId: options.projectId },
@@ -223,6 +241,11 @@ async function run() {
     )
     const reconciliation =
       new reconciliationModule.FirestoreActivityImportDuplicateReconciliation(
+        getFirestore(app),
+        { projectId: options.projectId },
+      )
+    const legacyReconciliation =
+      new legacyReconciliationModule.FirestoreLegacyImportedRunDuplicateReconciliation(
         getFirestore(app),
         { projectId: options.projectId },
       )
@@ -240,8 +263,15 @@ async function run() {
         result = await reconciliation.inspectOrphanImportNormalization(
           options.ownerUid,
         )
-      } else {
+      } else if (options.action === 'apply-orphan') {
         result = await reconciliation.normalizeOrphanImport({
+          confirmation: options.confirmation,
+          ownerId: options.ownerUid,
+        })
+      } else if (options.action === 'inspect-legacy') {
+        result = await legacyReconciliation.inspect(options.ownerUid)
+      } else {
+        result = await legacyReconciliation.reconcile({
           confirmation: options.confirmation,
           ownerId: options.ownerUid,
         })
