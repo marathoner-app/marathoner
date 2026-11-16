@@ -33,6 +33,51 @@ contain heart-rate summaries. The heart-rate-bearing Apple run remains
 canonical. In either pattern, the redundant run must contain no runner-entered
 or planned-workout fields.
 
+## Audit active imports whose completed run is missing
+
+Use this read-only boundary when an aggregate inspection finds an active import
+whose referenced completed-run document is missing:
+
+```sh
+npm run reconcile:activity-import-duplicates -- inspect-missing-run \
+  --project marathonerapp-beta \
+  --owner-email OWNER_EMAIL \
+  --owner-uid OWNER_UID
+```
+
+The output contains aggregate counts only: provider-replay recreation risk,
+unrelated singleton count, related import states, existing-run references, and
+distinct missing-run references. The normal import path recreates an active
+missing run on provider replay, but a missing document alone does not prove
+whether the runner intended to restore or delete the activity.
+
+Record changed aggregate evidence in the tracking issue. Privately verify the
+exact activity with the owner, then document a no-action conclusion or design a
+confirmation-gated resolution for the observed relationship shape. Never infer
+deletion intent from a missing run or apply the ordinary duplicate
+reconciliation confirmation to this audit.
+
+The current apply boundary is deliberately narrower than the inspection. It
+emits a confirmation only for one exact three-record cluster: one active import
+whose run is missing, two `review_required` records with the same fingerprint,
+all three referencing the same missing run, and no reference to an existing
+run. After the owner confirms that activity should remain deleted, obtain a
+separate explicit live-mutation approval and use the unchanged confirmation:
+
+```sh
+npm run reconcile:activity-import-duplicates -- apply-missing-run \
+  --project marathonerapp-beta \
+  --owner-email OWNER_EMAIL \
+  --owner-uid OWNER_UID \
+  --confirm SUPPRESS-MISSING-RUN-IMPORT-CLUSTER:CURRENT_DIGEST
+```
+
+Apply re-reads all evidence in one transaction. It refuses a stale confirmation
+or any different relationship shape, creates or deletes no run, and marks only
+the three exact import records `user_deleted`. Provider replay for any of those
+identities then remains suppressed. Repeating apply after success is an
+idempotent no-op.
+
 ## Normalize one orphaned import first
 
 If the ordinary inspection reports three overlapping same-provider edges for

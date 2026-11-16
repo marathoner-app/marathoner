@@ -21,7 +21,9 @@ function argumentsFor(action = 'inspect') {
         ? 'NORMALIZE-ORPHAN-ACTIVITY-IMPORT:0123456789abcdef01234567'
         : action === 'apply-legacy'
           ? 'RECONCILE-LEGACY-IMPORTED-RUN-DUPLICATES:0123456789abcdef01234567'
-        : undefined
+          : action === 'apply-missing-run'
+            ? 'SUPPRESS-MISSING-RUN-IMPORT-CLUSTER:0123456789abcdef01234567'
+            : undefined
   return [
     action,
     '--project',
@@ -110,6 +112,29 @@ describe('activity-import duplicate reconciliation operator', () => {
       ownerUid,
       projectId: FOUNDING_BETA_TARGET_PROJECT_ID,
     })
+    expect(
+      parseActivityImportReconciliationArguments(
+        argumentsFor('inspect-missing-run'),
+      ),
+    ).toEqual({
+      action: 'inspect-missing-run',
+      confirmation: undefined,
+      ownerEmail,
+      ownerUid,
+      projectId: FOUNDING_BETA_TARGET_PROJECT_ID,
+    })
+    expect(
+      parseActivityImportReconciliationArguments(
+        argumentsFor('apply-missing-run'),
+      ),
+    ).toEqual({
+      action: 'apply-missing-run',
+      confirmation:
+        'SUPPRESS-MISSING-RUN-IMPORT-CLUSTER:0123456789abcdef01234567',
+      ownerEmail,
+      ownerUid,
+      projectId: FOUNDING_BETA_TARGET_PROJECT_ID,
+    })
     expect(() =>
       parseActivityImportReconciliationArguments([
         ...argumentsFor(),
@@ -119,7 +144,7 @@ describe('activity-import duplicate reconciliation operator', () => {
     ).toThrow('exact and unique')
     expect(() =>
       parseActivityImportReconciliationArguments(argumentsFor('delete')),
-    ).toThrow('Use inspect, apply, inspect-orphan, apply-orphan, inspect-legacy, or apply-legacy')
+    ).toThrow('Use inspect, apply, inspect-orphan, apply-orphan, inspect-legacy, apply-legacy, inspect-missing-run, or apply-missing-run')
   })
 
   it('requires the beta project, dedicated operator, and verified exact owner', () => {
@@ -174,6 +199,16 @@ describe('activity-import duplicate reconciliation operator', () => {
           'NORMALIZE-ORPHAN-ACTIVITY-IMPORT:0123456789abcdef01234567',
       }),
     ).toThrow('current legacy dry run')
+    expect(() =>
+      assertActivityImportReconciliationBoundary(boundary('apply-missing-run')),
+    ).not.toThrow()
+    expect(() =>
+      assertActivityImportReconciliationBoundary({
+        ...boundary('apply-missing-run'),
+        confirmation:
+          'NORMALIZE-ORPHAN-ACTIVITY-IMPORT:0123456789abcdef01234567',
+      }),
+    ).toThrow('current missing-run dry run')
   })
 
   it('uses a permission-restricted temporary ADC and cleans it after success', async () => {

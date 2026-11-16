@@ -38,6 +38,8 @@ import {
 const CONFIRMATION_PREFIX = 'RECONCILE-ACTIVITY-IMPORT-DUPLICATES'
 const ORPHAN_NORMALIZATION_CONFIRMATION_PREFIX =
   'NORMALIZE-ORPHAN-ACTIVITY-IMPORT'
+const MISSING_RUN_CLUSTER_SUPPRESSION_CONFIRMATION_PREFIX =
+  'SUPPRESS-MISSING-RUN-IMPORT-CLUSTER'
 
 type CandidateKind = Exclude<
   CrossProviderDuplicateAssessment,
@@ -112,6 +114,31 @@ interface OrphanNormalizationPlan {
   readonly eligibleNormalization: EligibleOrphanNormalization | null
 }
 
+interface MissingRunImportAuditPlan {
+  readonly activeMissingRunCount: number
+  readonly confirmation: string | null
+  readonly distinctMissingRunReferenceCount: number
+  readonly eligibleCluster: EligibleMissingRunClusterSuppression | null
+  readonly providerReplayRecreationRiskCount: number
+  readonly relatedExistingRunReferenceCount: number
+  readonly relatedMissingRunReferenceCount: number
+  readonly relatedImportStateCounts: Readonly<
+    Record<'active' | 'deleted' | 'review_required' | 'user_deleted' | 'unknown', number>
+  >
+  readonly relatedMissingRunCount: number
+  readonly unrelatedSingletonCount: number
+}
+
+interface EligibleMissingRunClusterSuppression {
+  readonly activityImports: readonly ActiveImportReference[]
+}
+
+interface ActiveImportReference {
+  readonly id: string
+  readonly reference: QueryDocumentSnapshot<DocumentData>['ref']
+  readonly updateTimeMilliseconds: number
+}
+
 export interface ActivityImportDuplicateReconciliationInspection {
   readonly blockedPairCount: number
   readonly blockedReasonCounts: Readonly<Record<BlockedReason, number>>
@@ -150,6 +177,31 @@ export type ActivityImportOrphanNormalizationResult =
   | {
       readonly normalizedImportCount: 1
       readonly status: 'normalized'
+    }
+
+export interface ActivityImportMissingRunInspection {
+  readonly activeMissingRunCount: number
+  readonly confirmation: string | null
+  readonly distinctMissingRunReferenceCount: number
+  readonly eligibleClusterCount: number
+  readonly providerReplayRecreationRiskCount: number
+  readonly relatedExistingRunReferenceCount: number
+  readonly relatedMissingRunReferenceCount: number
+  readonly relatedImportStateCounts: Readonly<
+    Record<'active' | 'deleted' | 'review_required' | 'user_deleted' | 'unknown', number>
+  >
+  readonly relatedMissingRunCount: number
+  readonly unrelatedSingletonCount: number
+}
+
+export type ActivityImportMissingRunSuppressionResult =
+  | {
+      readonly status: 'no_active_missing_run'
+      readonly suppressedImportCount: 0
+    }
+  | {
+      readonly status: 'suppressed'
+      readonly suppressedImportCount: 3
     }
 
 export interface FirestoreActivityImportDuplicateReconciliationOptions {
@@ -402,6 +454,197 @@ function orphanNormalizationConfirmationFor(
     .digest('hex')
     .slice(0, 24)
   return `${ORPHAN_NORMALIZATION_CONFIRMATION_PREFIX}:${digest}`
+}
+
+function missingRunClusterSuppressionConfirmationFor(
+  projectId: string,
+  ownerId: UserId,
+  cluster: EligibleMissingRunClusterSuppression | null,
+) {
+  if (cluster === null) return null
+  const evidence = [...cluster.activityImports]
+    .sort((left, right) => left.id.localeCompare(right.id))
+    .map(
+      ({ id, updateTimeMilliseconds }) =>
+        `${id}:${updateTimeMilliseconds}`,
+    )
+    .join('\n')
+  const digest = createHash('sha256')
+    .update(`${projectId}\n${ownerId}\n${evidence}`)
+    .digest('hex')
+    .slice(0, 24)
+  return `${MISSING_RUN_CLUSTER_SUPPRESSION_CONFIRMATION_PREFIX}:${digest}`
+}
+
+function buildMissingRunImportAuditPlan(options: {
+  imports: readonly QueryDocumentSnapshot<DocumentData>[]
+  ownerId: UserId
+  projectId: string
+  runs: readonly QueryDocumentSnapshot<DocumentData>[]
+}): MissingRunImportAuditPlan {
+  const activeImports = options.imports
+    .map((snapshot) => activeImportFromSnapshot(snapshot, options.ownerId))
+    .filter((record): record is ActiveImport => record !== null)
+  const runIds = new Set(options.runs.map(({ id }) => id))
+  const fingerprintCounts = new Map<string, number>()
+  for (const snapshot of options.imports) {
+    const fingerprint = snapshot.data().crossProviderFingerprint
+    if (typeof fingerprint !== 'string') continue
+    fingerprintCounts.set(
+      fingerprint,
+      (fingerprintCounts.get(fingerprint) ?? 0) + 1,
+    )
+  }
+  const activeMissingRunImports = activeImports.filter(
+    ({ completedRunId }) => !runIds.has(completedRunId),
+  )
+  const activeMissingRunIds = new Set(
+    activeMissingRunImports.map(({ id }) => id),
+  )
+  const missingRunReferences = new Set(
+    activeMissingRunImports.map(({ completedRunId }) => completedRunId),
+  )
+  const missingFingerprints = new Set<string>(
+    activeMissingRunImports.map(({ event }) =>
+      createCrossProviderDuplicateFingerprint(event),
+    ),
+  )
+  const relatedImportStateCounts = {
+    active: 0,
+    deleted: 0,
+    review_required: 0,
+    user_deleted: 0,
+    unknown: 0,
+  }
+  let relatedExistingRunReferenceCount = 0
+  let relatedMissingRunReferenceCount = 0
+  const distinctMissingRunReferences = new Set(missingRunReferences)
+  const relatedImportSnapshots: QueryDocumentSnapshot<DocumentData>[] = []
+  for (const snapshot of options.imports) {
+    if (activeMissingRunIds.has(snapshot.id)) continue
+    const data = snapshot.data()
+    if (
+      typeof data.crossProviderFingerprint !== 'string' ||
+      !missingFingerprints.has(data.crossProviderFingerprint)
+    ) {
+      continue
+    }
+    relatedImportSnapshots.push(snapshot)
+    const state = data.state
+    if (
+      state === 'active' ||
+      state === 'deleted' ||
+      state === 'review_required' ||
+      state === 'user_deleted'
+    ) {
+      const relatedState:
+        | 'active'
+        | 'deleted'
+        | 'review_required'
+        | 'user_deleted' = state
+      relatedImportStateCounts[relatedState] += 1
+    } else {
+      relatedImportStateCounts.unknown += 1
+    }
+    const referencedRunIds = [
+      data.completedRunId,
+      data.candidateCompletedRunId,
+    ].filter((value): value is string => typeof value === 'string')
+    if (referencedRunIds.some((runId) => runIds.has(runId))) {
+      relatedExistingRunReferenceCount += 1
+    }
+    const relatedMissingReferences = referencedRunIds.filter(
+      (runId) => !runIds.has(runId),
+    )
+    if (
+      relatedMissingReferences.some((runId) =>
+        missingRunReferences.has(createCompletedRunId(runId)),
+      )
+    ) {
+      relatedMissingRunReferenceCount += 1
+    }
+    for (const runId of relatedMissingReferences) {
+      distinctMissingRunReferences.add(createCompletedRunId(runId))
+    }
+  }
+  const unrelatedSingletons = activeMissingRunImports.filter(
+    ({ event }) =>
+      fingerprintCounts.get(createCrossProviderDuplicateFingerprint(event)) ===
+      1,
+  )
+  const relatedMissingRunCount =
+    activeMissingRunImports.length - unrelatedSingletons.length
+  const activeMissingRun = activeMissingRunImports[0]
+  const eligibleRelatedImports =
+    activeMissingRunImports.length === 1 &&
+    activeMissingRun !== undefined &&
+    relatedImportSnapshots.length === 2
+      ? relatedImportSnapshots
+          .map((snapshot): ActiveImportReference | null => {
+            const data = snapshot.data()
+            const parsedEvent = parseCompletedActivityImportEvent(data.event)
+            if (
+              data.userId !== options.ownerId ||
+              data.state !== 'review_required' ||
+              data.completedRunId !== null ||
+              data.candidateCompletedRunId !== activeMissingRun.completedRunId ||
+              (data.candidateKind !== 'duplicate_candidate' &&
+                data.candidateKind !== 'ambiguous_candidate') ||
+              !parsedEvent.ok ||
+              parsedEvent.value.operation !== 'upsert' ||
+              parsedEvent.value.ownerId !== options.ownerId ||
+              data.crossProviderFingerprint !==
+                createCrossProviderDuplicateFingerprint(parsedEvent.value) ||
+              data.startedAtEpochMilliseconds !==
+                Date.parse(parsedEvent.value.startedAt)
+            ) {
+              return null
+            }
+            return {
+              id: snapshot.id,
+              reference: snapshot.ref,
+              updateTimeMilliseconds: snapshot.updateTime.toMillis(),
+            }
+          })
+          .filter((record): record is ActiveImportReference => record !== null)
+      : []
+  const eligibleCluster =
+    activeMissingRun !== undefined &&
+    activeMissingRunImports.length === 1 &&
+    unrelatedSingletons.length === 0 &&
+    relatedImportSnapshots.length === 2 &&
+    eligibleRelatedImports.length === 2 &&
+    relatedExistingRunReferenceCount === 0 &&
+    relatedMissingRunReferenceCount === 2 &&
+    distinctMissingRunReferences.size === 1
+      ? {
+          activityImports: [
+            {
+              id: activeMissingRun.id,
+              reference: activeMissingRun.reference,
+              updateTimeMilliseconds: activeMissingRun.updateTimeMilliseconds,
+            },
+            ...eligibleRelatedImports,
+          ],
+        }
+      : null
+  const confirmation = missingRunClusterSuppressionConfirmationFor(
+    options.projectId,
+    options.ownerId,
+    eligibleCluster,
+  )
+  return {
+    activeMissingRunCount: activeMissingRunImports.length,
+    confirmation,
+    distinctMissingRunReferenceCount: distinctMissingRunReferences.size,
+    eligibleCluster,
+    providerReplayRecreationRiskCount: activeMissingRunImports.length,
+    relatedExistingRunReferenceCount,
+    relatedMissingRunReferenceCount,
+    relatedImportStateCounts,
+    relatedMissingRunCount,
+    unrelatedSingletonCount: unrelatedSingletons.length,
+  }
 }
 
 function buildOrphanNormalizationPlan(options: {
@@ -736,6 +979,24 @@ function orphanNormalizationInspectionFromPlan(
   }
 }
 
+function missingRunInspectionFromPlan(
+  plan: MissingRunImportAuditPlan,
+): ActivityImportMissingRunInspection {
+  return {
+    activeMissingRunCount: plan.activeMissingRunCount,
+    confirmation: plan.confirmation,
+    distinctMissingRunReferenceCount: plan.distinctMissingRunReferenceCount,
+    eligibleClusterCount: plan.eligibleCluster === null ? 0 : 1,
+    providerReplayRecreationRiskCount:
+      plan.providerReplayRecreationRiskCount,
+    relatedExistingRunReferenceCount: plan.relatedExistingRunReferenceCount,
+    relatedMissingRunReferenceCount: plan.relatedMissingRunReferenceCount,
+    relatedImportStateCounts: plan.relatedImportStateCounts,
+    relatedMissingRunCount: plan.relatedMissingRunCount,
+    unrelatedSingletonCount: plan.unrelatedSingletonCount,
+  }
+}
+
 export class FirestoreActivityImportDuplicateReconciliation {
   private readonly now: () => Date
 
@@ -782,6 +1043,28 @@ export class FirestoreActivityImportDuplicateReconciliation {
     }
     return orphanNormalizationInspectionFromPlan(
       buildOrphanNormalizationPlan({
+        imports: imports.docs,
+        ownerId,
+        projectId: this.options.projectId,
+        runs: runs.docs,
+      }),
+    )
+  }
+
+  async inspectMissingRunImportRelationships(
+    ownerIdValue: string,
+  ): Promise<ActivityImportMissingRunInspection> {
+    const ownerId = createUserId(ownerIdValue)
+    const [membership, imports, runs] = await Promise.all([
+      this.database.doc(approvedBetaMembershipPath(ownerId)).get(),
+      this.database.collection(activityImportsCollectionPath(ownerId)).get(),
+      this.database.collection(runsCollectionPath(ownerId)).get(),
+    ])
+    if (!isApprovedBetaMembership(membership.data(), ownerId)) {
+      throw new Error('The selected owner does not have approved beta membership.')
+    }
+    return missingRunInspectionFromPlan(
+      buildMissingRunImportAuditPlan({
         imports: imports.docs,
         ownerId,
         projectId: this.options.projectId,
@@ -905,4 +1188,55 @@ export class FirestoreActivityImportDuplicateReconciliation {
       return { status: 'normalized', normalizedImportCount: 1 }
     })
   }
+
+  async suppressMissingRunImportCluster(options: {
+    confirmation: string
+    ownerId: string
+  }): Promise<ActivityImportMissingRunSuppressionResult> {
+    const ownerId = createUserId(options.ownerId)
+    return this.database.runTransaction(async (transaction) => {
+      const [membership, imports, runs] = await Promise.all([
+        transaction.get(this.database.doc(approvedBetaMembershipPath(ownerId))),
+        transaction.get(
+          this.database.collection(activityImportsCollectionPath(ownerId)),
+        ),
+        transaction.get(this.database.collection(runsCollectionPath(ownerId))),
+      ])
+      if (!isApprovedBetaMembership(membership.data(), ownerId)) {
+        throw new Error(
+          'The selected owner does not have approved beta membership.',
+        )
+      }
+      const plan = buildMissingRunImportAuditPlan({
+        imports: imports.docs,
+        ownerId,
+        projectId: this.options.projectId,
+        runs: runs.docs,
+      })
+      if (plan.activeMissingRunCount === 0) {
+        return { status: 'no_active_missing_run', suppressedImportCount: 0 }
+      }
+      if (plan.eligibleCluster === null || plan.confirmation === null) {
+        throw new Error(
+          'Missing-run suppression requires one exact eligible three-record cluster.',
+        )
+      }
+      if (options.confirmation !== plan.confirmation) {
+        throw new Error(
+          'Missing-run suppression requires the exact current dry-run confirmation.',
+        )
+      }
+      for (const activityImport of plan.eligibleCluster.activityImports) {
+        transaction.update(activityImport.reference, {
+          candidateCompletedRunId: null,
+          candidateKind: null,
+          completedRunId: null,
+          state: 'user_deleted',
+          updatedAt: this.now().toISOString(),
+        })
+      }
+      return { status: 'suppressed', suppressedImportCount: 3 }
+    })
+  }
+
 }

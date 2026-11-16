@@ -343,6 +343,249 @@ afterAll(async () => {
 })
 
 describe('Firestore activity-import duplicate reconciliation', () => {
+  it('reports one exact unrelated singleton and proves its replay recreation risk', async () => {
+    const singletonEvent = appleEventWithoutHeartRate(
+      'unrelated-singleton-orphan',
+      { startedAt: createUtcDateTime('2026-11-15T15:00:00.000Z') },
+    )
+    await seedImport(
+      'unrelated-singleton-orphan-import',
+      singletonEvent,
+      'unrelated-singleton-orphan-run',
+      '2026-11-15T17:10:00.000Z',
+    )
+
+    const inspection =
+      await reconciliation().inspectMissingRunImportRelationships(ownerId)
+    expect(inspection).toEqual({
+      activeMissingRunCount: 1,
+      confirmation: null,
+      distinctMissingRunReferenceCount: 1,
+      eligibleClusterCount: 0,
+      providerReplayRecreationRiskCount: 1,
+      relatedExistingRunReferenceCount: 0,
+      relatedMissingRunReferenceCount: 0,
+      relatedImportStateCounts: {
+        active: 0,
+        deleted: 0,
+        review_required: 0,
+        user_deleted: 0,
+        unknown: 0,
+      },
+      relatedMissingRunCount: 0,
+      unrelatedSingletonCount: 1,
+    })
+
+    const { ownerId: _ownerId, ...replayEvent } = singletonEvent
+    void _ownerId
+    await expect(
+      new FirestoreActivityImportStore(database, {
+        createRunId: () => 'unused-recovery-id',
+        now: () => new Date('2026-11-15T18:10:00.000Z'),
+      }).commit({
+        envelope: createActivityImportCommand(
+          'singleton-suppression-replay-command-0001',
+          replayEvent,
+        ),
+        ownerId,
+      }),
+    ).resolves.toEqual({
+      kind: 'applied',
+      result: expect.objectContaining({
+        completedRunId: 'unrelated-singleton-orphan-run',
+        operation: 'created',
+        status: 'activity_imported',
+      }),
+    })
+    await expect(
+      database
+        .doc(`users/${ownerId}/runs/unrelated-singleton-orphan-run`)
+        .get(),
+    ).resolves.toEqual(expect.objectContaining({ exists: true }))
+  })
+
+  it('reports multiple unrelated missing-run imports without choosing one', async () => {
+    const firstEvent = appleEventWithoutHeartRate('singleton-one', {
+      startedAt: createUtcDateTime('2026-11-15T15:00:00.000Z'),
+    })
+    const secondEvent = appleEventWithoutHeartRate('singleton-two', {
+      startedAt: createUtcDateTime('2026-11-16T15:00:00.000Z'),
+    })
+    await Promise.all([
+      seedImport(
+        'singleton-one-import',
+        firstEvent,
+        'singleton-one-run',
+        '2026-11-15T17:10:00.000Z',
+      ),
+      seedImport(
+        'singleton-two-import',
+        secondEvent,
+        'singleton-two-run',
+        '2026-11-16T17:10:00.000Z',
+      ),
+    ])
+
+    const inspection =
+      await reconciliation().inspectMissingRunImportRelationships(ownerId)
+    expect(inspection).toEqual({
+      activeMissingRunCount: 2,
+      confirmation: null,
+      distinctMissingRunReferenceCount: 2,
+      eligibleClusterCount: 0,
+      providerReplayRecreationRiskCount: 2,
+      relatedExistingRunReferenceCount: 0,
+      relatedMissingRunReferenceCount: 0,
+      relatedImportStateCounts: {
+        active: 0,
+        deleted: 0,
+        review_required: 0,
+        user_deleted: 0,
+        unknown: 0,
+      },
+      relatedMissingRunCount: 0,
+      unrelatedSingletonCount: 2,
+    })
+  })
+
+  it('reports a related review cluster as one missing-run relationship', async () => {
+    const activeEvent = garminEvent('related-active', {
+      startedAt: createUtcDateTime('2026-11-15T15:00:00.000Z'),
+    })
+    const firstReviewEvent = appleEventWithoutHeartRate('related-review-one', {
+      startedAt: activeEvent.startedAt,
+    })
+    const secondReviewEvent = appleEventWithoutHeartRate('related-review-two', {
+      startedAt: activeEvent.startedAt,
+    })
+    const missingRunId = 'related-missing-run'
+    await seedImport(
+      'related-active-import',
+      activeEvent,
+      missingRunId,
+      '2026-11-15T17:10:00.000Z',
+    )
+    await Promise.all(
+      [
+        ['related-review-one-import', firstReviewEvent],
+        ['related-review-two-import', secondReviewEvent],
+      ].map(([importId, event]) =>
+        database.doc(`users/${ownerId}/activityImports/${importId}`).set({
+          schemaVersion: 1,
+          trainingSchemaVersion: TRAINING_SCHEMA_VERSION,
+          userId: ownerId,
+          canonicalCommandId: `reconciliation-command-${importId}-0001`,
+          state: 'review_required',
+          event,
+          completedRunId: null,
+          candidateCompletedRunId: missingRunId,
+          candidateKind: 'duplicate_candidate',
+          crossProviderFingerprint:
+            createCrossProviderDuplicateFingerprint(event),
+          startedAtEpochMilliseconds: Date.parse(event.startedAt),
+          createdAt: '2026-11-15T17:10:00.000Z',
+          updatedAt: '2026-11-15T17:10:00.000Z',
+        }),
+      ),
+    )
+
+    const inspection =
+      await reconciliation().inspectMissingRunImportRelationships(ownerId)
+    expect(inspection).toEqual({
+      activeMissingRunCount: 1,
+      confirmation: expect.stringMatching(
+        /^SUPPRESS-MISSING-RUN-IMPORT-CLUSTER:[a-f0-9]{24}$/u,
+      ),
+      distinctMissingRunReferenceCount: 1,
+      eligibleClusterCount: 1,
+      providerReplayRecreationRiskCount: 1,
+      relatedExistingRunReferenceCount: 0,
+      relatedMissingRunReferenceCount: 2,
+      relatedImportStateCounts: {
+        active: 0,
+        deleted: 0,
+        review_required: 2,
+        user_deleted: 0,
+        unknown: 0,
+      },
+      relatedMissingRunCount: 1,
+      unrelatedSingletonCount: 0,
+    })
+    if (inspection.confirmation === null) {
+      throw new Error('Expected a missing-run cluster confirmation.')
+    }
+
+    await expect(
+      reconciliation().suppressMissingRunImportCluster({
+        confirmation: 'SUPPRESS-MISSING-RUN-IMPORT-CLUSTER:wrong',
+        ownerId,
+      }),
+    ).rejects.toThrow('exact current dry-run confirmation')
+    await expect(
+      reconciliation().suppressMissingRunImportCluster({
+        confirmation: inspection.confirmation,
+        ownerId,
+      }),
+    ).resolves.toEqual({ status: 'suppressed', suppressedImportCount: 3 })
+
+    for (const importId of [
+      'related-active-import',
+      'related-review-one-import',
+      'related-review-two-import',
+    ]) {
+      const activityImport = await database
+        .doc(`users/${ownerId}/activityImports/${importId}`)
+        .get()
+      expect(activityImport.data()).toMatchObject({
+        candidateCompletedRunId: null,
+        candidateKind: null,
+        completedRunId: null,
+        state: 'user_deleted',
+        updatedAt: reconciliationTime.toISOString(),
+      })
+    }
+
+    for (const [index, activityEvent] of [
+      activeEvent,
+      firstReviewEvent,
+      secondReviewEvent,
+    ].entries()) {
+      const { ownerId: _ownerId, ...replayEvent } = activityEvent
+      void _ownerId
+      await expect(
+        new FirestoreActivityImportStore(database, {
+          createRunId: () => 'must-not-be-created',
+          now: () => new Date('2026-11-15T18:10:00.000Z'),
+        }).commit({
+          envelope: createActivityImportCommand(
+            `missing-run-cluster-replay-command-000${index + 1}`,
+            replayEvent,
+          ),
+          ownerId,
+        }),
+      ).resolves.toEqual({
+        kind: 'applied',
+        result: expect.objectContaining({
+          completedRunId: null,
+          operation: 'deleted',
+          status: 'activity_imported',
+        }),
+      })
+    }
+    await expect(
+      database.doc(`users/${ownerId}/runs/${missingRunId}`).get(),
+    ).resolves.toEqual(expect.objectContaining({ exists: false }))
+    await expect(
+      reconciliation().suppressMissingRunImportCluster({
+        confirmation: inspection.confirmation,
+        ownerId,
+      }),
+    ).resolves.toEqual({
+      status: 'no_active_missing_run',
+      suppressedImportCount: 0,
+    })
+  })
+
   it('normalizes only the exact orphan import so the existing recovery can proceed', async () => {
     const { heartRateRun, noHeartRateRun, orphanEvent, orphanImportId } =
       await seedOrphanNormalizationCluster()
