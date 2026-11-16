@@ -19,6 +19,8 @@ function argumentsFor(action = 'inspect') {
       ? 'RECONCILE-ACTIVITY-IMPORT-DUPLICATES:0123456789abcdef01234567'
       : action === 'apply-orphan'
         ? 'NORMALIZE-ORPHAN-ACTIVITY-IMPORT:0123456789abcdef01234567'
+        : action === 'apply-legacy'
+          ? 'RECONCILE-LEGACY-IMPORTED-RUN-DUPLICATES:0123456789abcdef01234567'
         : undefined
   return [
     action,
@@ -46,7 +48,7 @@ function boundary(action = 'inspect') {
 }
 
 describe('activity-import duplicate reconciliation operator', () => {
-  it('parses only the exact duplicate and orphan dry-run/apply boundaries', () => {
+  it('parses only the exact duplicate, orphan, and legacy dry-run/apply boundaries', () => {
     expect(
       parseActivityImportReconciliationArguments(argumentsFor()),
     ).toEqual({
@@ -87,6 +89,27 @@ describe('activity-import duplicate reconciliation operator', () => {
       ownerUid,
       projectId: FOUNDING_BETA_TARGET_PROJECT_ID,
     })
+    expect(
+      parseActivityImportReconciliationArguments(
+        argumentsFor('inspect-legacy'),
+      ),
+    ).toEqual({
+      action: 'inspect-legacy',
+      confirmation: undefined,
+      ownerEmail,
+      ownerUid,
+      projectId: FOUNDING_BETA_TARGET_PROJECT_ID,
+    })
+    expect(
+      parseActivityImportReconciliationArguments(argumentsFor('apply-legacy')),
+    ).toEqual({
+      action: 'apply-legacy',
+      confirmation:
+        'RECONCILE-LEGACY-IMPORTED-RUN-DUPLICATES:0123456789abcdef01234567',
+      ownerEmail,
+      ownerUid,
+      projectId: FOUNDING_BETA_TARGET_PROJECT_ID,
+    })
     expect(() =>
       parseActivityImportReconciliationArguments([
         ...argumentsFor(),
@@ -96,7 +119,7 @@ describe('activity-import duplicate reconciliation operator', () => {
     ).toThrow('exact and unique')
     expect(() =>
       parseActivityImportReconciliationArguments(argumentsFor('delete')),
-    ).toThrow('Use inspect, apply, inspect-orphan, or apply-orphan')
+    ).toThrow('Use inspect, apply, inspect-orphan, apply-orphan, inspect-legacy, or apply-legacy')
   })
 
   it('requires the beta project, dedicated operator, and verified exact owner', () => {
@@ -141,6 +164,16 @@ describe('activity-import duplicate reconciliation operator', () => {
           'RECONCILE-ACTIVITY-IMPORT-DUPLICATES:0123456789abcdef01234567',
       }),
     ).toThrow('current orphan dry run')
+    expect(() =>
+      assertActivityImportReconciliationBoundary(boundary('apply-legacy')),
+    ).not.toThrow()
+    expect(() =>
+      assertActivityImportReconciliationBoundary({
+        ...boundary('apply-legacy'),
+        confirmation:
+          'NORMALIZE-ORPHAN-ACTIVITY-IMPORT:0123456789abcdef01234567',
+      }),
+    ).toThrow('current legacy dry run')
   })
 
   it('uses a permission-restricted temporary ADC and cleans it after success', async () => {
