@@ -114,6 +114,12 @@ function completedRun(
   }
 }
 
+function activityImportDocumentId(event: CompletedActivityUpsertV1): string {
+  return createHash('sha256')
+    .update(createProviderActivityIdentityKey(event))
+    .digest('hex')
+}
+
 async function seedImport(
   importId: string,
   event: CompletedActivityUpsertV1,
@@ -348,8 +354,9 @@ describe('Firestore activity-import duplicate reconciliation', () => {
       'unrelated-singleton-orphan',
       { startedAt: createUtcDateTime('2026-11-15T15:00:00.000Z') },
     )
+    const singletonImportId = activityImportDocumentId(singletonEvent)
     await seedImport(
-      'unrelated-singleton-orphan-import',
+      singletonImportId,
       singletonEvent,
       'unrelated-singleton-orphan-run',
       '2026-11-15T17:10:00.000Z',
@@ -454,21 +461,26 @@ describe('Firestore activity-import duplicate reconciliation', () => {
     })
     const firstReviewEvent = appleEventWithoutHeartRate('related-review-one', {
       startedAt: activeEvent.startedAt,
+      timeZone: activeEvent.timeZone,
     })
     const secondReviewEvent = appleEventWithoutHeartRate('related-review-two', {
       startedAt: activeEvent.startedAt,
+      timeZone: activeEvent.timeZone,
     })
+    const activeImportId = activityImportDocumentId(activeEvent)
+    const firstReviewImportId = activityImportDocumentId(firstReviewEvent)
+    const secondReviewImportId = activityImportDocumentId(secondReviewEvent)
     const missingRunId = 'related-missing-run'
     await seedImport(
-      'related-active-import',
+      activeImportId,
       activeEvent,
       missingRunId,
       '2026-11-15T17:10:00.000Z',
     )
     await Promise.all(
       [
-        ['related-review-one-import', firstReviewEvent],
-        ['related-review-two-import', secondReviewEvent],
+        [firstReviewImportId, firstReviewEvent],
+        [secondReviewImportId, secondReviewEvent],
       ].map(([importId, event]) =>
         database.doc(`users/${ownerId}/activityImports/${importId}`).set({
           schemaVersion: 1,
@@ -529,9 +541,9 @@ describe('Firestore activity-import duplicate reconciliation', () => {
     ).resolves.toEqual({ status: 'suppressed', suppressedImportCount: 3 })
 
     for (const importId of [
-      'related-active-import',
-      'related-review-one-import',
-      'related-review-two-import',
+      activeImportId,
+      firstReviewImportId,
+      secondReviewImportId,
     ]) {
       const activityImport = await database
         .doc(`users/${ownerId}/activityImports/${importId}`)
