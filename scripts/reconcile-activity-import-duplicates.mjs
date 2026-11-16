@@ -24,6 +24,8 @@ const ACTIONS = new Set([
   'apply-orphan',
   'inspect-legacy',
   'apply-legacy',
+  'inspect-missing-run',
+  'apply-missing-run',
 ])
 const BASE_OPTIONS = new Set(['--owner-email', '--owner-uid', '--project'])
 
@@ -39,7 +41,7 @@ export function parseActivityImportReconciliationArguments(argv) {
   const [action, ...pairs] = argv
   if (!ACTIONS.has(action)) {
     throw new Error(
-      'Use inspect, apply, inspect-orphan, apply-orphan, inspect-legacy, or apply-legacy with the exact owner and beta project boundary.',
+      'Use inspect, apply, inspect-orphan, apply-orphan, inspect-legacy, apply-legacy, inspect-missing-run, or apply-missing-run with the exact owner and beta project boundary.',
     )
   }
   if (pairs.length % 2 !== 0) {
@@ -124,6 +126,16 @@ export function assertActivityImportReconciliationBoundary(options) {
   ) {
     throw new Error(
       'Apply-legacy requires the exact confirmation from the current legacy dry run.',
+    )
+  }
+  if (
+    options.action === 'apply-missing-run' &&
+    !/^SUPPRESS-MISSING-RUN-IMPORT-CLUSTER:[a-f0-9]{24}$/u.test(
+      options.confirmation ?? '',
+    )
+  ) {
+    throw new Error(
+      'Apply-missing-run requires the exact confirmation from the current missing-run dry run.',
     )
   }
 }
@@ -270,8 +282,17 @@ async function run() {
         })
       } else if (options.action === 'inspect-legacy') {
         result = await legacyReconciliation.inspect(options.ownerUid)
-      } else {
+      } else if (options.action === 'apply-legacy') {
         result = await legacyReconciliation.reconcile({
+          confirmation: options.confirmation,
+          ownerId: options.ownerUid,
+        })
+      } else if (options.action === 'inspect-missing-run') {
+        result = await reconciliation.inspectMissingRunImportRelationships(
+          options.ownerUid,
+        )
+      } else {
+        result = await reconciliation.suppressMissingRunImportCluster({
           confirmation: options.confirmation,
           ownerId: options.ownerUid,
         })
