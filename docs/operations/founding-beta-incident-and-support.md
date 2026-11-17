@@ -150,6 +150,7 @@ Relevant technical procedures:
 - [GitHub Pages custom-domain recovery](github-pages-custom-domain.md)
 - [Beta Functions deployment and rollback](beta-functions-deployment.md)
 - [Account-deletion operator runbook](account-deletion-runbook.md)
+- [Development backup and restore rehearsal](development-backup-and-restore.md)
 - [Firebase beta membership boundary](../security/firebase-beta-membership.md)
 
 ## Participant communication patterns
