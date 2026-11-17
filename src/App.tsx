@@ -523,8 +523,10 @@ function AuthenticatedExperience({
   }, [nextWorkout, planSurfaceData.activePlan, training.runs.length, training.shoes]);
   const hasReadableTraining =
     training.status === "current" || training.status === "stale";
+  const hasSynchronizationError = training.error !== null;
   const hasOtherStaleReason =
     training.status === "stale" &&
+    !hasSynchronizationError &&
     training.staleReasons.some((reason) => reason !== "pending_writes");
   const showSynchronizationNotice = useDelayedStaleNotice(hasOtherStaleReason);
   const showOnboarding =
@@ -574,7 +576,7 @@ function AuthenticatedExperience({
         </div>
       )}
 
-      {!activeSection && training.status === "error" && (
+      {!activeSection && hasSynchronizationError && (
         <div className="training-home-status training-error" role="alert">
           <p>{training.error}</p>
           <button type="button" onClick={() => void training.reload()}>
@@ -803,6 +805,7 @@ function SectionContent({
   const training = useTrainingData();
   const hasReadableTraining =
     training.status === "current" || training.status === "stale";
+  const hasSynchronizationError = training.error !== null;
   const synchronizedActivePlan =
     training.plans.find((plan) => plan.status === "active") ??
     training.plans.find((plan) => plan.status === "draft") ??
@@ -844,7 +847,7 @@ function SectionContent({
           Loading your training data...
         </p>
       )}
-      {training.status === "error" && (
+      {hasSynchronizationError && (
         <div className="training-error" role="alert">
           <p>{training.error}</p>
           <button type="button" onClick={() => void training.reload()}>

@@ -73,6 +73,7 @@ class ControlledLiveReadSource implements TrainingLiveReadSource {
     snapshot: SynchronizedTrainingSnapshot,
     origin: TrainingSnapshotOrigin = "server",
     hasPendingWrites = false,
+    workoutsCompleteForCurrentConnection = true,
   ) {
     const session = {
       ownerId: this.ownerId,
@@ -90,7 +91,13 @@ class ControlledLiveReadSource implements TrainingLiveReadSource {
         value: snapshot.activePlanState,
       },
       { ...session, type: "source_snapshot", source: "plans", value: snapshot.plans },
-      { ...session, type: "source_snapshot", source: "workouts", value: snapshot.workouts },
+      {
+        ...session,
+        type: "source_snapshot",
+        source: "workouts",
+        value: snapshot.workouts,
+        completeForCurrentConnection: workoutsCompleteForCurrentConnection,
+      },
       { ...session, type: "source_snapshot", source: "runs", value: snapshot.runs },
       { ...session, type: "source_snapshot", source: "shoes", value: snapshot.shoes },
     ];
@@ -297,6 +304,14 @@ function IntegrationProbe() {
 
   return (
     <div>
+      {training.error && (
+        <div>
+          <p>{`${training.status}: ${training.error}`}</p>
+          <button type="button" onClick={() => void training.reload()}>
+            Retry sync
+          </button>
+        </div>
+      )}
       <p>Status: {training.status}</p>
       <p>Runs: {training.runs.length}</p>
       <p>Profile: {training.profile?.displayName ?? "none"}</p>
@@ -583,6 +598,55 @@ describe("TrainingDataProvider", () => {
 
     expect(await screen.findByText("Status: current")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Save profile" })).toBeEnabled();
+  });
+
+  it("keeps an incomplete workout source readable but blocks writes until it is complete", async () => {
+    await repositories.profile.save({
+      displayName: "Partial runner",
+      preferredDistanceUnit: "mile",
+      timeZone,
+    });
+    renderProvider();
+    const source = await waitForSource();
+    const snapshot = await snapshotFromRepositories(userId, repositories);
+
+    act(() => source.emitSnapshot(snapshot, "server", false, false));
+
+    expect(await screen.findByText("Status: stale")).toBeInTheDocument();
+    expect(screen.getByText("Profile: Partial runner")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Save profile" })).toBeDisabled();
+
+    act(() => source.emitSnapshot(snapshot));
+
+    expect(await screen.findByText("Status: current")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Save profile" })).toBeEnabled();
+  });
+
+  it("keeps a readable snapshot visible when a secondary listener fails", async () => {
+    await repositories.profile.save({
+      displayName: "Readable runner",
+      preferredDistanceUnit: "mile",
+      timeZone,
+    });
+    const user = userEvent.setup();
+    renderProvider();
+    const source = await waitForSource();
+    const snapshot = await snapshotFromRepositories(userId, repositories);
+    act(() => source.emitSnapshot(snapshot, "server", false, false));
+
+    act(() => source.emitError("Historical workouts are temporarily unavailable."));
+
+    expect(
+      await screen.findByText(
+        "stale: Historical workouts are temporarily unavailable.",
+      ),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Profile: Readable runner")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Save profile" })).toBeDisabled();
+
+    await user.click(screen.getByRole("button", { name: "Retry sync" }));
+    expect(source.unsubscribe).toHaveBeenCalledOnce();
+    expect(await waitForSource(1)).toBeDefined();
   });
 
   it("publishes an acknowledged repository write without waiting for listener metadata", async () => {

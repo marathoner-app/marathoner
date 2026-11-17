@@ -113,6 +113,7 @@ interface TrainingSourceSlot<Value> {
   readonly value: Value
   readonly origin: TrainingSnapshotOrigin
   readonly hasPendingWrites: boolean
+  readonly completeForCurrentConnection: boolean
   readonly confirmedInConnection: boolean
   readonly observedAt: UtcDateTime | null
 }
@@ -161,6 +162,7 @@ interface SourceSnapshotEventBase extends SessionEvent {
   readonly type: 'source_snapshot'
   readonly origin: TrainingSnapshotOrigin
   readonly hasPendingWrites: boolean
+  readonly completeForCurrentConnection?: boolean
   readonly observedAt: UtcDateTime
 }
 
@@ -239,6 +241,7 @@ function emptySlot<Value>(value: Value): TrainingSourceSlot<Value> {
     value,
     origin: 'cache',
     hasPendingWrites: false,
+    completeForCurrentConnection: false,
     confirmedInConnection: false,
     observedAt: null,
   }
@@ -361,10 +364,18 @@ function staleReasons(
     reasons.add('cache_only')
   }
   if (
+    sources.some(
+      (source) => source.received && !source.completeForCurrentConnection,
+    )
+  ) {
+    reasons.add('feature_incomplete')
+  }
+  if (
     kernel.connected &&
     sources.some(
       (source) =>
         source.received &&
+        source.completeForCurrentConnection &&
         source.origin === 'server' &&
         !source.hasPendingWrites &&
         !source.confirmedInConnection,
@@ -481,8 +492,13 @@ function sourceSnapshot(
     value,
     origin: event.origin,
     hasPendingWrites: event.hasPendingWrites,
+    completeForCurrentConnection:
+      event.completeForCurrentConnection !== false,
     confirmedInConnection:
-      kernel.connected && event.origin === 'server' && !event.hasPendingWrites,
+      kernel.connected &&
+      event.origin === 'server' &&
+      !event.hasPendingWrites &&
+      event.completeForCurrentConnection !== false,
     observedAt: event.observedAt,
   })
 

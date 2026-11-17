@@ -602,11 +602,16 @@ export default function TrainingDataProvider({
   );
 
   const synchronizedSnapshot = snapshotFor(synchronization.state);
+  const hasRecoverableSnapshotError =
+    synchronization.state.status === "error" &&
+    synchronizedSnapshot !== null &&
+    synchronization.state.recoverable;
   const status =
     synchronization.state.status === "current"
       ? "current"
       : synchronization.state.status === "stale" ||
-          synchronization.state.status === "saving"
+          synchronization.state.status === "saving" ||
+          hasRecoverableSnapshotError
         ? "stale"
         : synchronization.state.status === "loading"
           ? "loading"
@@ -1017,7 +1022,9 @@ export default function TrainingDataProvider({
     staleReasons:
       synchronization.state.status === "stale"
         ? synchronization.state.reasons
-        : [],
+        : hasRecoverableSnapshotError
+          ? ["reconnecting"]
+          : [],
     lastServerConfirmedAt:
       "freshness" in synchronization.state
         ? synchronization.state.freshness.lastServerConfirmedAt

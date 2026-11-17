@@ -265,6 +265,29 @@ describe('training synchronization kernel', () => {
     expect(current.state.serverConfirmedAt).toBe(observedAt.shoes)
   })
 
+  it('keeps a partial source readable but stale until the full source arrives', () => {
+    const events = sourceEvents({ plans: [plan] })
+    const partialWorkouts: WorkoutsSourceEvent = {
+      ...events[3],
+      completeForCurrentConnection: false,
+    }
+    const partial = applyEvents(
+      createTrainingSynchronizationKernel({ ownerId, sessionGeneration }),
+      [...events.slice(0, 3), partialWorkouts, ...events.slice(4)],
+    )
+
+    expect(partial.state.status).toBe('stale')
+    if (partial.state.status !== 'stale') return
+    expect(partial.state.snapshot.plans).toEqual([plan])
+    expect(partial.state.reasons).toContain('feature_incomplete')
+
+    const complete = reduceTrainingSynchronization(partial, events[3])
+
+    expect(complete.state.status).toBe('current')
+    if (complete.state.status !== 'current') return
+    expect(complete.state.snapshot.plans).toEqual([plan])
+  })
+
   it('keeps the authoritative active-plan revision in the synchronized snapshot', () => {
     const synchronized = applyEvents(
       createTrainingSynchronizationKernel({ ownerId, sessionGeneration }),
