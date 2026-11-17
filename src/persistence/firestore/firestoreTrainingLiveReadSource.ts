@@ -185,6 +185,16 @@ function combinedWorkoutMetadata(
   }
 }
 
+function primaryPlanId(plans: readonly TrainingPlan[]): TrainingPlanId | null {
+  return (
+    plans.find((plan) => plan.status === 'active') ??
+    plans.find((plan) => plan.status === 'draft') ??
+    plans.find((plan) => plan.status !== 'archived') ??
+    plans[0] ??
+    null
+  )?.id ?? null
+}
+
 export function createFirestoreTrainingLiveReadSourceWithBackend({
   backend,
   ownerId,
@@ -196,8 +206,9 @@ export function createFirestoreTrainingLiveReadSourceWithBackend({
       let active = true
       let workoutGeneration = 0
       let currentPlanIds: readonly TrainingPlanId[] | null = null
+      let currentPrimaryPlanId: TrainingPlanId | null = null
       let currentPlansEvent: TrainingLiveReadEvent | null = null
-      let workoutGroupReady = false
+      let workoutGroupPublished = false
       let workoutUnsubscribes: Unsubscribe[] = []
 
       const emit = (events: TrainingLiveReadEventBatch): void => {
@@ -236,6 +247,7 @@ export function createFirestoreTrainingLiveReadSourceWithBackend({
           | 'shoes',
         value: SnapshotValue,
         metadata: TrainingListenerMetadata,
+        completeForCurrentConnection = true,
       ): TrainingLiveReadEvent =>
         ({
           type: 'source_snapshot',
@@ -245,6 +257,9 @@ export function createFirestoreTrainingLiveReadSourceWithBackend({
           sessionGeneration,
           origin: originFor(metadata),
           hasPendingWrites: metadata.hasPendingWrites,
+          ...(completeForCurrentConnection
+            ? {}
+            : { completeForCurrentConnection: false }),
           observedAt: clock(),
         }) as TrainingLiveReadEvent
 
@@ -262,11 +277,12 @@ export function createFirestoreTrainingLiveReadSourceWithBackend({
         stopWorkoutListeners()
         const generation = workoutGeneration
         const snapshots = new Map<TrainingPlanId, WorkoutSnapshot>()
+        const primaryId = primaryPlanId(plans)
         currentPlansEvent = plansEvent
-        workoutGroupReady = false
+        workoutGroupPublished = false
 
         if (plans.length === 0) {
-          workoutGroupReady = true
+          workoutGroupPublished = true
           emit([
             plansEvent,
             sourceSnapshot('workouts', [], plansMetadata),
@@ -275,27 +291,34 @@ export function createFirestoreTrainingLiveReadSourceWithBackend({
         }
 
         const publishWorkouts = (): void => {
-          if (
-            !active ||
-            generation !== workoutGeneration ||
-            snapshots.size !== plans.length
-          ) {
-            return
-          }
+          if (!active || generation !== workoutGeneration) return
 
-          const workouts = plans
-            .flatMap((plan) => snapshots.get(plan.id)?.workouts ?? [])
-            .sort((left, right) =>
-              left.scheduledDate.localeCompare(right.scheduledDate),
-            )
+          const complete = snapshots.size === plans.length
+          const primarySnapshot =
+            primaryId === null ? undefined : snapshots.get(primaryId)
+          if (!complete && primarySnapshot === undefined) return
+
+          const workouts = [
+            ...(complete
+              ? plans.flatMap(
+                  (plan) => snapshots.get(plan.id)?.workouts ?? [],
+                )
+              : primarySnapshot?.workouts ?? []),
+          ].sort((left, right) =>
+            left.scheduledDate.localeCompare(right.scheduledDate),
+          )
+          const metadata = complete
+            ? combinedWorkoutMetadata(snapshots.values())
+            : primarySnapshot?.metadata ?? plansMetadata
           const workoutsEvent = sourceSnapshot(
             'workouts',
             workouts,
-            combinedWorkoutMetadata(snapshots.values()),
+            metadata,
+            complete,
           )
 
-          if (!workoutGroupReady) {
-            workoutGroupReady = true
+          if (!workoutGroupPublished) {
+            workoutGroupPublished = true
             emit([currentPlansEvent ?? plansEvent, workoutsEvent])
           } else {
             emit([workoutsEvent])
@@ -439,13 +462,15 @@ export function createFirestoreTrainingLiveReadSourceWithBackend({
               const planIds = plans
                 .map((plan) => plan.id)
                 .sort((left, right) => left.localeCompare(right))
+              const nextPrimaryPlanId = primaryPlanId(plans)
 
               if (
                 currentPlanIds !== null &&
-                samePlanIds(currentPlanIds, planIds)
+                samePlanIds(currentPlanIds, planIds) &&
+                currentPrimaryPlanId === nextPrimaryPlanId
               ) {
                 currentPlansEvent = plansEvent
-                if (workoutGroupReady) {
+                if (workoutGroupPublished) {
                   emit(
                     plans.length === 0
                       ? [
@@ -459,6 +484,7 @@ export function createFirestoreTrainingLiveReadSourceWithBackend({
               }
 
               currentPlanIds = planIds
+              currentPrimaryPlanId = nextPrimaryPlanId
               listenForWorkouts(plans, plansEvent, snapshot.metadata)
             } catch (error) {
               sourceError('plans', error)

@@ -364,6 +364,52 @@ describe('Firestore training live-read source', () => {
     ])
   })
 
+  it('publishes primary-plan workouts while archived plans are still loading', () => {
+    const { backend, batches } = createHarness()
+
+    backend.latestCollection(plansCollectionPath(ownerId)).onSnapshot(
+      collectionSnapshot([planDocument(planTwo), planDocument(planOne)]),
+    )
+
+    backend
+      .latestCollection(workoutsCollectionPath(ownerId, planOne.id))
+      .onSnapshot(
+        collectionSnapshot([
+          { id: workout.id, data: plannedWorkoutToDocument(workout) },
+        ]),
+      )
+
+    expect(batches).toHaveLength(1)
+    expect(batches[0]).toEqual([
+      expect.objectContaining({
+        source: 'plans',
+        value: [planOne, planTwo],
+      }),
+      expect.objectContaining({
+        source: 'workouts',
+        value: [workout],
+        completeForCurrentConnection: false,
+      }),
+    ])
+
+    backend
+      .latestCollection(workoutsCollectionPath(ownerId, planTwo.id))
+      .onSnapshot(collectionSnapshot())
+
+    expect(batches).toHaveLength(2)
+    expect(batches[1]).toEqual([
+      expect.objectContaining({
+        source: 'workouts',
+        value: [workout],
+        origin: 'server',
+        hasPendingWrites: false,
+      }),
+    ])
+    expect(batches[1]?.[0]).not.toHaveProperty(
+      'completeForCurrentConnection',
+    )
+  })
+
   it('publishes an empty initial plan and workout set without waiting', () => {
     const { backend, batches } = createHarness()
 

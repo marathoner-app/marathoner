@@ -150,7 +150,13 @@ vi.mock('./components/RecommendationDecisionSurface', () => ({
 
 const trainingMock = vi.hoisted(() => ({
   status: 'current' as 'current' | 'stale',
-  staleReasons: [] as ('cache_only' | 'pending_writes')[],
+  error: null as string | null,
+  staleReasons: [] as (
+    | 'cache_only'
+    | 'feature_incomplete'
+    | 'pending_writes'
+    | 'reconnecting'
+  )[],
   profile: null as object | null,
   activePlanState: null as object | null,
   plans: [] as object[],
@@ -162,7 +168,7 @@ const trainingMock = vi.hoisted(() => ({
 vi.mock('./training/useTrainingData', () => ({
   useTrainingData: () => ({
     status: trainingMock.status,
-    error: null,
+    error: trainingMock.error,
     profile: trainingMock.profile,
     activePlanState: trainingMock.activePlanState,
     plans: trainingMock.plans,
@@ -286,6 +292,7 @@ beforeEach(() => {
   sessionLifecycleEvents = []
   recommendationProviderInstanceSequence = 0
   trainingMock.status = 'current'
+  trainingMock.error = null
   trainingMock.staleReasons = []
   trainingMock.profile = completeRunnerProfile
   trainingMock.plans = []
@@ -971,6 +978,27 @@ describe('App training sections', () => {
     } finally {
       vi.useRealTimers()
     }
+  })
+
+  it('keeps readable training visible and offers retry after a secondary listener fails', async () => {
+    const user = userEvent.setup()
+    trainingMock.status = 'stale'
+    trainingMock.error = 'Historical workouts are temporarily unavailable.'
+    trainingMock.staleReasons = ['reconnecting']
+    renderSignedInApp()
+
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      'Historical workouts are temporarily unavailable.'
+    )
+    expect(
+      screen.getByRole('navigation', { name: 'Training sections' })
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole('button', { name: 'Edit runner profile' })
+    ).toBeDisabled()
+
+    await user.click(screen.getByRole('button', { name: 'Try again' }))
+    expect(trainingMock.reload).toHaveBeenCalledOnce()
   })
 
   it('never presents pending listener metadata as a global user action', () => {
