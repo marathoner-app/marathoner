@@ -262,9 +262,27 @@ export function validateDevelopmentSnapshot(
   return snapshot
 }
 
-function rewriteFirestoreValue(value, sourceUid, targetUid) {
+function rewriteCrossProviderFingerprint(value, sourceUid, targetUid) {
+  const parts = value.split('|')
+  if (
+    parts.length !== 7 ||
+    parts[0] !== 'cross-provider-duplicate-fingerprint@1' ||
+    decodeURIComponent(parts[1] ?? '') !== sourceUid
+  ) {
+    throw new Error('A source UID appears in an unsupported string field.')
+  }
+  parts[1] = encodeURIComponent(targetUid)
+  return parts.join('|')
+}
+
+function rewriteFirestoreValue(value, sourceUid, targetUid, fieldPath = []) {
   if (Array.isArray(value)) {
-    return value.map((item) => rewriteFirestoreValue(item, sourceUid, targetUid))
+    return value.map((item, index) =>
+      rewriteFirestoreValue(item, sourceUid, targetUid, [
+        ...fieldPath,
+        String(index),
+      ]),
+    )
   }
   if (!value || typeof value !== 'object') return value
 
@@ -275,6 +293,12 @@ function rewriteFirestoreValue(value, sourceUid, targetUid) {
         result[key] = targetUid
       } else if (child === `users/${sourceUid}` || child.startsWith(`users/${sourceUid}/`)) {
         result[key] = `users/${targetUid}${child.slice(`users/${sourceUid}`.length)}`
+      } else if (fieldPath.at(-1) === 'crossProviderFingerprint') {
+        result[key] = rewriteCrossProviderFingerprint(
+          child,
+          sourceUid,
+          targetUid,
+        )
       } else {
         if (child.includes(sourceUid)) {
           throw new Error('A source UID appears in an unsupported string field.')
@@ -291,7 +315,10 @@ function rewriteFirestoreValue(value, sourceUid, targetUid) {
       result[key] = child.replace(marker, `/documents/users/${targetUid}`)
       continue
     }
-    result[key] = rewriteFirestoreValue(child, sourceUid, targetUid)
+    result[key] = rewriteFirestoreValue(child, sourceUid, targetUid, [
+      ...fieldPath,
+      key,
+    ])
   }
   return result
 }

@@ -1,7 +1,8 @@
 # Development backup and restore rehearsal
 
-- **Status:** Development-only operator implemented; dated live-development
-  rehearsal remains part of [#124](https://github.com/marathoner-app/marathoner/issues/124)
+- **Status:** Development-only data-layer rehearsal passed on November 17,
+  2026; see the
+  [privacy-safe evidence record](evidence/2026-11-17-development-backup-restore-rehearsal.md)
 - **Owner:** Kevin Tulloch
 - **Project boundary:** `marathoner-d9bf9` only
 - **Operator login:** `kevin-admin@marathonerapp.com`
@@ -118,7 +119,10 @@ npm run rehearse:development-backup-restore -- verify \
 
 On the development app, sign in as the fictional target and confirm the runner
 profile, plan, workouts, runs, and Analyze history are representative. Do not
-connect an external provider or use the account as a real runner.
+connect an external provider or use the account as a real runner. If the
+supported localhost App Check credential is unavailable, do not weaken App
+Check to complete this optional visual check. Record that limitation separately
+from the required restore and independent read-back result.
 
 ## Version-guarded cleanup
 

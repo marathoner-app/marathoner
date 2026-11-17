@@ -58,6 +58,9 @@ function snapshot() {
         documentPath: `users/${sourceUid}/runs/run-one`,
         fields: {
           userId: { stringValue: sourceUid },
+          crossProviderFingerprint: {
+            stringValue: `cross-provider-duplicate-fingerprint@1|${sourceUid}|running|2026-11-17T08:00:00.000Z|1800|5000|America%2FLos_Angeles`,
+          },
           profile: {
             referenceValue: `projects/demo/databases/(default)/documents/users/${sourceUid}`,
           },
@@ -189,6 +192,9 @@ describe('development backup and restore rehearsal', () => {
         documentPath: `users/${targetUid}/runs/run-one`,
         fields: {
           userId: { stringValue: targetUid },
+          crossProviderFingerprint: {
+            stringValue: `cross-provider-duplicate-fingerprint@1|${targetUid}|running|2026-11-17T08:00:00.000Z|1800|5000|America%2FLos_Angeles`,
+          },
           profile: {
             referenceValue: `projects/demo/databases/(default)/documents/users/${targetUid}`,
           },
@@ -202,6 +208,13 @@ describe('development backup and restore rehearsal', () => {
     expect(() => rewriteSnapshotForTarget(unsupported, targetUid)).toThrow(
       'unsupported string field',
     )
+    const malformedFingerprint = snapshot()
+    malformedFingerprint.documents[1].fields.crossProviderFingerprint = {
+      stringValue: `unknown-fingerprint@1|${sourceUid}`,
+    }
+    expect(() =>
+      rewriteSnapshotForTarget(malformedFingerprint, targetUid),
+    ).toThrow('unsupported string field')
   })
 
   it('validates a cleanup manifest only inside the exact target tree', () => {
