@@ -12,6 +12,12 @@ already removed. Recovery from an interruption means running the same request
 ID again until its manifest verifies empty and its anonymous completion receipt
 is written.
 
+The separate
+[development backup and restore rehearsal](development-backup-and-restore.md)
+proves recovery of an allowlisted training-history export into a fictional
+development account. It is not a backup taken before deletion and cannot be
+used to undo a participant's deletion request.
+
 The command accepts only:
 
 - the exact `emulator` environment;
