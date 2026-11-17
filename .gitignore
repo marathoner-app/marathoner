@@ -18,6 +18,7 @@ functions/.env.*
 playwright-report
 test-results
 *.local
+.agent-worktrees/
 ios/App/App/GoogleService-Info.plist
 ios/**/xcuserdata/
 *.xcuserstate

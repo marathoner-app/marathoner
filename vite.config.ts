@@ -244,6 +244,7 @@ export default defineConfig(({ command, mode }) => {
       environment: 'jsdom',
       exclude: [
         ...configDefaults.exclude,
+        '.agent-worktrees/**',
         'functions/lib/**',
         'tests/viewport/**',
       ],
