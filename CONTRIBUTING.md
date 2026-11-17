@@ -33,6 +33,31 @@ Do not commit Firebase service accounts, private keys, passwords, participant
 records, raw research notes, or other secrets. The Firebase web configuration
 identifies a public client; it is not authorization.
 
+### Keep linked worktrees outside the checkout
+
+Create every linked worktree as a sibling of this repository or under a
+dedicated worktree root. Never place another Marathoner checkout or a different
+project inside this checkout. For example:
+
+```bash
+git fetch origin
+git worktree add ../marathoner-issue-810 -b issue-810-short-description origin/main
+```
+
+The local `.agent-worktrees/` path is ignored defensively by Git, ESLint, and
+Vitest so an accidentally nested checkout cannot contaminate the active
+repository's status, lint results, or test discovery. That guard is not a
+supported storage location; move new work outside the checkout instead.
+
+Before removing an old worktree, verify that it has no tracked or untracked
+changes and that its branch is retained in the common repository or remote.
+Then use `git worktree remove <exact-path>` rather than deleting its directory
+manually. `git worktree prune` removes only stale registrations whose working
+directories no longer exist.
+
+If another linked worktree currently owns `main`, do not detach or disturb it.
+After `git fetch origin`, start the focused branch directly from `origin/main`.
+
 ## 2. Select or create a focused issue
 
 Start every change from an open issue. Use the bug, product/feature, or focused
