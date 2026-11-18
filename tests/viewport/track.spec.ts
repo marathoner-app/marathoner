@@ -16,6 +16,36 @@ async function expectMinimumTouchTargets(
   }
 }
 
+async function expectComfortableLargeTextControl(
+  locator: Locator,
+  label: string,
+) {
+  const dimensions = await locator.evaluate((element) => {
+    const style = window.getComputedStyle(element);
+    const fontSize = Number.parseFloat(style.fontSize);
+    const bounds = element.getBoundingClientRect();
+    return {
+      fontSize,
+      height: bounds.height,
+      paddingTop: Number.parseFloat(style.paddingTop),
+      paddingBottom: Number.parseFloat(style.paddingBottom),
+    };
+  });
+
+  expect(
+    dimensions.height,
+    `${label} should grow with its enlarged text`,
+  ).toBeGreaterThanOrEqual(dimensions.fontSize * 2.25);
+  expect(
+    dimensions.paddingTop,
+    `${label} should keep top inset around enlarged text`,
+  ).toBeGreaterThanOrEqual(dimensions.fontSize * 0.3);
+  expect(
+    dimensions.paddingBottom,
+    `${label} should keep bottom inset around enlarged text`,
+  ).toBeGreaterThanOrEqual(dimensions.fontSize * 0.3);
+}
+
 async function expectEvenDurationSegments(
   segments: readonly [Locator, Locator, Locator],
   textSizeLabel: string,
@@ -295,6 +325,44 @@ test("keeps the complete Track workflow usable with 200% text", async ({
   await expectNoHorizontalOverflow(page, "Track", "before interaction at 200% text");
 
   await exerciseTrackWorkflow(page, "200% text");
+});
+
+test("grows run-entry controls around dynamically enlarged text", async ({
+  page,
+}) => {
+  await page.goto("tests/viewport/track.html");
+  await page.addStyleTag({
+    content: `
+      .run-entry-form select,
+      .run-entry-form textarea {
+        font-size: 200% !important;
+      }
+    `,
+  });
+
+  const plannedWorkout = page.getByRole("combobox", { name: "Planned workout" });
+  const perceivedEffort = page.getByRole("combobox", {
+    name: "Perceived effort (optional)",
+  });
+  const runNotes = page.getByRole("textbox", { name: "Run notes (optional)" });
+
+  await expectComfortableLargeTextControl(
+    plannedWorkout,
+    "Planned workout selector",
+  );
+  await expectComfortableLargeTextControl(
+    perceivedEffort,
+    "Perceived effort selector",
+  );
+  await expectComfortableLargeTextControl(runNotes, "Run notes input");
+
+  await runNotes.fill("Comfortable large-text entry");
+  await expect(runNotes).toHaveValue("Comfortable large-text entry");
+  await expectNoHorizontalOverflow(
+    page,
+    "Track",
+    "with dynamically enlarged run-entry text",
+  );
 });
 
 test("keeps imported-run details usable at phone width", async ({ page }) => {

@@ -43,17 +43,21 @@
 }
 
 .tracker textarea {
-  min-height: 5rem;
+  min-height: max(5rem, 5em);
   resize: vertical;
 }
 
 .tracker input,
 .tracker select,
 .tracker textarea {
+  height: auto;
+  min-block-size: max(2.75rem, 2.75em);
+  padding: max(0.65rem, 0.65em) 0.75rem;
   border: 1px solid var(--app-border-strong);
   border-radius: var(--app-radius-small);
   background: var(--app-surface);
   color: var(--app-ink);
+  line-height: 1.35;
 }
 
 .tracker input:focus-visible,

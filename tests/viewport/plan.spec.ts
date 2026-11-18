@@ -1,4 +1,4 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Locator, type Page } from "@playwright/test";
 import {
   expectMinimumTouchTarget,
   expectNoHorizontalOverflow,
@@ -7,6 +7,24 @@ import {
 const phoneViewport = { width: 390, height: 844 };
 
 test.use({ viewport: phoneViewport });
+
+async function expectContentContained(locator: Locator, label: string) {
+  const overflow = await locator.evaluate((element) => ({
+    clientHeight: element.clientHeight,
+    clientWidth: element.clientWidth,
+    scrollHeight: element.scrollHeight,
+    scrollWidth: element.scrollWidth,
+  }));
+
+  expect(
+    overflow.scrollWidth,
+    `${label} should not overflow horizontally`,
+  ).toBeLessThanOrEqual(overflow.clientWidth + 1);
+  expect(
+    overflow.scrollHeight,
+    `${label} should not overflow vertically`,
+  ).toBeLessThanOrEqual(overflow.clientHeight + 1);
+}
 
 test("uses the shared Plan surface and workout hierarchy", async ({ page }) => {
   await page.goto("tests/viewport/plan.html");
@@ -129,4 +147,25 @@ test("keeps Plan browsing usable with 200% text", async ({ page }) => {
   );
 
   await exercisePlan(page, "200% text");
+});
+
+test("contains dynamically enlarged week-navigation labels", async ({ page }) => {
+  await page.goto("tests/viewport/plan.html");
+  await page.addStyleTag({
+    content: ".plan-week-controls button { font-size: 350% !important; }",
+  });
+
+  await expectContentContained(
+    page.getByRole("button", { name: "Previous week" }),
+    "Previous week at the largest dynamic text size",
+  );
+  await expectContentContained(
+    page.getByRole("button", { name: "Next week" }),
+    "Next week at the largest dynamic text size",
+  );
+  await expectNoHorizontalOverflow(
+    page,
+    "Plan",
+    "with dynamically enlarged week-navigation labels",
+  );
 });
