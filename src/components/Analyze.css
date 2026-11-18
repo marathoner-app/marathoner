@@ -123,6 +123,8 @@
   color: var(--app-muted);
   font-size: 0.9rem;
   font-weight: 700;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
 }
 
 .analyze-card p {
@@ -130,6 +132,8 @@
   color: var(--app-ink);
   font-size: 1.35rem;
   font-weight: 700;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
 }
 
 .weekly-trend,

@@ -36,6 +36,32 @@ async function showCard(page: Page, label: string, position: number) {
   return card;
 }
 
+async function expectSummaryTextInsideCards(page: Page, textSizeLabel: string) {
+  const overflow = await page.locator(".analyze-card").evaluateAll((cards) =>
+    cards.flatMap((card, cardIndex) => {
+      const cardBounds = card.getBoundingClientRect();
+      return Array.from(card.querySelectorAll<HTMLElement>("h3, p"))
+        .filter((content) => {
+          const bounds = content.getBoundingClientRect();
+          return (
+            content.scrollWidth > content.clientWidth + 1 ||
+            content.scrollHeight > content.clientHeight + 1 ||
+            bounds.left < cardBounds.left - 0.5 ||
+            bounds.right > cardBounds.right + 0.5 ||
+            bounds.top < cardBounds.top - 0.5 ||
+            bounds.bottom > cardBounds.bottom + 0.5
+          );
+        })
+        .map((content) => `card ${cardIndex + 1}: ${content.textContent?.trim()}`);
+    }),
+  );
+
+  expect(
+    overflow,
+    `Analyze summary text should remain inside its cards at ${textSizeLabel}`,
+  ).toEqual([]);
+}
+
 test("presents Analyze as a contained, swipeable phone carousel", async ({
   page,
 }) => {
@@ -170,6 +196,25 @@ test("keeps the carousel usable with 200% text", async ({ page }) => {
     .toBe("32px");
 
   await exerciseAnalyzeFeedback(page, "200% text");
+});
+
+test("contains dynamically enlarged training-summary text", async ({ page }) => {
+  await page.goto("tests/viewport/analyze.html");
+  await page.addStyleTag({
+    content: `
+      .analyze-card h3,
+      .analyze-card p {
+        font-size: 200% !important;
+      }
+    `,
+  });
+
+  await showCard(page, "Training summary", 2);
+  await expectSummaryTextInsideCards(page, "the largest dynamic text size");
+  await expectPhoneAnalyzeFrame(
+    page,
+    "with dynamically enlarged training-summary text",
+  );
 });
 
 test("keeps Analyze as an all-at-once desktop dashboard", async ({ page }) => {
