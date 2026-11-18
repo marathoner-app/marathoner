@@ -167,6 +167,56 @@ it("moves between analysis cards with explicit carousel controls", () => {
   expect(next).toBeDisabled();
 });
 
+it("synchronizes carousel controls with the visually selected scrolled card", () => {
+  const { container } = render(
+    <Analyze
+      runs={[run]}
+      shoes={[shoe]}
+      distanceUnit="mile"
+      timeZone={createIanaTimeZone("America/Los_Angeles")}
+      now={new Date("2026-08-06T12:00:00Z")}
+    />,
+  );
+
+  const carousel = container.querySelector<HTMLElement>(
+    ".analyze-carousel-viewport",
+  );
+  const slides = Array.from(
+    container.querySelectorAll<HTMLElement>(".analyze-slide"),
+  );
+  expect(carousel).not.toBeNull();
+  expect(slides).toHaveLength(5);
+  if (carousel === null) return;
+
+  const rectangle = (left: number, width = 300): DOMRect => ({
+    bottom: 500,
+    height: 500,
+    left,
+    right: left + width,
+    top: 0,
+    width,
+    x: left,
+    y: 0,
+    toJSON: () => ({}),
+  });
+  vi.spyOn(carousel, "getBoundingClientRect").mockReturnValue(rectangle(0));
+  slides.forEach((slide, index) => {
+    vi.spyOn(slide, "getBoundingClientRect").mockReturnValue(
+      rectangle((index - 1) * 320),
+    );
+  });
+
+  fireEvent.scroll(carousel);
+
+  expect(screen.getByText("Training summary · 2 of 5")).toBeInTheDocument();
+  expect(
+    screen.getByRole("button", { name: "Show Training summary card" }),
+  ).toHaveAttribute("aria-current", "true");
+  expect(
+    screen.getByRole("button", { name: "Previous analysis card" }),
+  ).toBeEnabled();
+});
+
 it("uses the runner distance preference for analytics and trends", async () => {
   render(
     <Analyze

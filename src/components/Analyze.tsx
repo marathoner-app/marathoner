@@ -137,21 +137,31 @@ export default function Analyze({
     setActiveCardIndex(nextIndex);
     if (carousel === null || card === null) return;
 
+    const carouselBounds = carousel.getBoundingClientRect();
+    const cardBounds = card.getBoundingClientRect();
     carousel.scrollTo?.({
-      left: card.offsetLeft,
+      left: carousel.scrollLeft + cardBounds.left - carouselBounds.left,
       behavior: reduceMotion ? "auto" : "smooth",
     });
   };
 
   const updateActiveCard = (event: UIEvent<HTMLDivElement>) => {
     const carousel = event.currentTarget;
+    const carouselBounds = carousel.getBoundingClientRect();
     const nearestCard = cardRefs.current.reduce(
       (nearest, card, index) => {
         if (card === null) return nearest;
-        const distance = Math.abs(card.offsetLeft - carousel.scrollLeft);
-        return distance < nearest.distance ? { distance, index } : nearest;
+        const cardBounds = card.getBoundingClientRect();
+        const visibleWidth = Math.max(
+          0,
+          Math.min(cardBounds.right, carouselBounds.right) -
+            Math.max(cardBounds.left, carouselBounds.left),
+        );
+        return visibleWidth > nearest.visibleWidth
+          ? { visibleWidth, index }
+          : nearest;
       },
-      { distance: Number.POSITIVE_INFINITY, index: activeCardIndex },
+      { visibleWidth: 0, index: activeCardIndex },
     );
 
     if (nearestCard.index !== activeCardIndex) {
