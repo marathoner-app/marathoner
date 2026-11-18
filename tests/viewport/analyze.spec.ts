@@ -217,6 +217,38 @@ test("contains dynamically enlarged training-summary text", async ({ page }) => 
   );
 });
 
+test("synchronizes large-text carousel state after a horizontal scroll", async ({
+  page,
+}) => {
+  await page.goto("tests/viewport/analyze.html");
+  await page.addStyleTag({
+    content: ":root { font-size: 200% !important; }",
+  });
+
+  const viewport = page.locator(".analyze-carousel-viewport");
+  await viewport.evaluate((carousel) => {
+    const target = carousel.querySelectorAll<HTMLElement>(".analyze-slide")[1];
+    if (target === undefined) throw new Error("Training summary card is missing.");
+    const carouselBounds = carousel.getBoundingClientRect();
+    const targetBounds = target.getBoundingClientRect();
+    carousel.scrollTo({
+      left: carousel.scrollLeft + targetBounds.left - carouselBounds.left,
+      behavior: "auto",
+    });
+  });
+
+  await expect(page.getByText("Training summary · 2 of 5")).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Show Training summary card" }),
+  ).toHaveAttribute("aria-current", "true");
+  await expect(
+    page.getByRole("button", { name: "Previous analysis card" }),
+  ).toBeEnabled();
+  await expect(
+    page.getByRole("button", { name: "Next analysis card" }),
+  ).toBeEnabled();
+});
+
 test("keeps Analyze as an all-at-once desktop dashboard", async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 900 });
   await page.goto("tests/viewport/analyze.html");
