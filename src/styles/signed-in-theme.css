@@ -6,17 +6,57 @@
  */
 
 .session-controls {
-  gap: 0.625rem;
-  padding: 0.75rem clamp(1rem, 3vw, 2rem);
-  border-color: rgb(210 210 215 / 80%);
+  position: fixed;
+  top: 0;
+  right: 0;
+  left: 0;
+  z-index: 10;
+  flex-wrap: nowrap;
+  justify-content: flex-end;
+  gap: clamp(0.75rem, 2vw, 1.5rem);
+  width: 100%;
+  height: var(--signed-in-header-height);
+  min-height: var(--signed-in-header-height);
+  margin: 0;
+  padding: env(safe-area-inset-top) max(1rem, env(safe-area-inset-right)) 0
+    max(1rem, env(safe-area-inset-left));
+  border-color: rgb(210 210 215 / 88%);
   background: var(--app-banner);
+  box-shadow: 0 0.25rem 1.5rem rgb(0 0 0 / 6%);
   backdrop-filter: saturate(160%) blur(18px);
 }
 
 .session-user {
+  display: flex;
+  flex: 1 1 auto;
+  align-items: center;
+  gap: 0.65rem;
+  min-width: 0;
   color: var(--app-muted);
   font-size: 0.8125rem;
   letter-spacing: 0.005em;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.session-brand {
+  flex: 0 0 auto;
+  width: 32px;
+  height: 32px;
+  border-radius: 0.45rem;
+}
+
+.session-email {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.session-actions {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 .account-settings-btn,
@@ -31,6 +71,39 @@
   background: rgb(255 255 255 / 82%);
   box-shadow: none;
   color: var(--app-ink);
+}
+
+.session-actions .account-settings-btn,
+.session-actions .logout-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  width: auto;
+  min-height: 44px;
+  padding: 0.45rem 0.75rem;
+  font-size: 0.875rem;
+  line-height: 1.15;
+}
+
+.session-action-icon {
+  flex: 0 0 auto;
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentcolor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
+}
+
+.session-auth-error {
+  position: fixed;
+  top: calc(var(--signed-in-header-height) + 0.75rem);
+  right: 1rem;
+  z-index: 9;
+  width: min(calc(100% - 2rem), 32rem);
+  margin: 0;
 }
 
 .account-settings-btn:hover,
@@ -131,6 +204,50 @@
 
 @media (max-width: 768px) {
   .session-controls {
-    padding-top: max(0.75rem, env(safe-area-inset-top));
+    flex-wrap: nowrap;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    width: 100%;
+    margin: 0;
+    padding-top: env(safe-area-inset-top);
+    padding-right: max(0.75rem, env(safe-area-inset-right));
+    padding-left: max(0.75rem, env(safe-area-inset-left));
+  }
+
+  .session-email {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  .session-actions .account-settings-btn,
+  .session-actions .logout-btn {
+    width: 44px;
+    min-width: 44px;
+    height: 44px;
+    min-height: 44px;
+    padding: 0;
+    border-radius: 50%;
+  }
+
+  .session-action-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  .session-auth-error {
+    right: 0.75rem;
+    width: calc(100% - 1.5rem);
   }
 }

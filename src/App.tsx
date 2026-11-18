@@ -31,6 +31,7 @@ import NextWorkoutSummary from "./components/NextWorkoutSummary";
 import RecommendationDecisionSurface from "./components/RecommendationDecisionSurface";
 import ClosedBetaAdaptationSurface from "./components/ClosedBetaAdaptationSurface";
 import TrainingSectionNavigation from "./components/TrainingSectionNavigation";
+import SignedInAppHeader from "./components/SignedInAppHeader";
 import {
   trainingSections,
   type TrainingSection,
@@ -331,6 +332,26 @@ function App() {
 
       {!deletionReceipt &&
         !logoutPending &&
+        auth.status === "signedIn" && (
+          <SignedInAppHeader
+            email={auth.user.email}
+            accountSettingsTriggerRef={accountSettingsTriggerRef}
+            onOpenAccountSettings={() => setAccountSettingsOpen(true)}
+            onLogout={handleLogout}
+          />
+        )}
+
+      {!deletionReceipt &&
+        !logoutPending &&
+        auth.status === "signedIn" &&
+        logoutError && (
+          <p className="auth-message auth-error session-auth-error" role="alert">
+            {logoutError}
+          </p>
+        )}
+
+      {!deletionReceipt &&
+        !logoutPending &&
         (auth.status === "signedIn" || auth.status === "signedOut") &&
         !activeSection && (
           auth.status === "signedOut" ? (
@@ -340,33 +361,8 @@ function App() {
             />
           ) : (
             <>
-              <div className="session-controls">
-                <p className="session-user">
-                  Signed in as {auth.user.email ?? "Marathoner user"}
-                </p>
-                <button
-                  ref={accountSettingsTriggerRef}
-                  type="button"
-                  className="account-settings-btn"
-                  onClick={() => setAccountSettingsOpen(true)}
-                >
-                  Account settings
-                </button>
-                <button
-                  type="button"
-                  className="logout-btn"
-                  onClick={handleLogout}
-                >
-                  Log out
-                </button>
-              </div>
               <Title />
               <Subtitle />
-              {logoutError && (
-                <p className="auth-message auth-error" role="alert">
-                  {logoutError}
-                </p>
-              )}
             </>
           )
         )}

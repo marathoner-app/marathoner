@@ -5,6 +5,7 @@ import NextWorkoutSummary from "../../src/components/NextWorkoutSummary";
 import Subtitle from "../../src/components/Subtitle";
 import Title from "../../src/components/Title";
 import TrainingSectionNavigation from "../../src/components/TrainingSectionNavigation";
+import SignedInAppHeader from "../../src/components/SignedInAppHeader";
 import {
   trainingSections,
   type TrainingSection,
@@ -28,17 +29,14 @@ export function SignedInHomeFixture() {
 
   return (
     <main className={`main${activeSection === null ? " signed-in-home" : ""}`}>
+      <SignedInAppHeader
+        email="runner@example.com"
+        onOpenAccountSettings={() => undefined}
+        onLogout={() => undefined}
+      />
+
       {activeSection === null && (
         <>
-          <div className="session-controls">
-            <p className="session-user">Signed in as runner@example.com</p>
-            <button type="button" className="account-settings-btn">
-              Account settings
-            </button>
-            <button type="button" className="logout-btn">
-              Log out
-            </button>
-          </div>
           <Title />
           <Subtitle />
           <div className="runner-profile-entry">

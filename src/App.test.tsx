@@ -906,6 +906,31 @@ describe('App training sections', () => {
     }
   })
 
+  it('keeps the same account header available across every training section', async () => {
+    const user = userEvent.setup()
+    renderSignedInApp()
+
+    const accountHeader = screen.getByRole('banner')
+
+    for (const sectionName of ['Plan', 'Track', 'Analyze']) {
+      await user.click(screen.getByRole('button', { name: sectionName }))
+
+      expect(screen.getByRole('banner')).toBe(accountHeader)
+      await user.click(
+        screen.getByRole('button', { name: 'Account settings' })
+      )
+      expect(
+        screen.getByRole('dialog', { name: 'Account settings' })
+      ).toBeInTheDocument()
+      await user.click(
+        screen.getByRole('button', { name: 'Close account settings' })
+      )
+    }
+
+    await user.click(screen.getByRole('button', { name: 'Log out' }))
+    expect(mockedLogOut).toHaveBeenCalledOnce()
+  })
+
   it('marks the Analyze panel for its viewport-specific presentation', async () => {
     const user = userEvent.setup()
     renderSignedInApp()
