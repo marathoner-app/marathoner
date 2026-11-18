@@ -302,11 +302,6 @@
     flex-direction: column;
   }
 
-  .section-panel-content--analyze .section-heading {
-    flex: 0 0 auto;
-    margin-bottom: 0.75rem;
-  }
-
   .analyze-container {
     display: flex;
     width: 100%;

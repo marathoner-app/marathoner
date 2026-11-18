@@ -1111,8 +1111,8 @@ describe('App training sections', () => {
       await user.click(sectionTrigger)
 
       expect(
-        screen.getByRole('heading', { level: 1, name: sectionHeading })
-      ).toBeInTheDocument()
+        screen.queryByRole('heading', { level: 1, name: sectionHeading })
+      ).not.toBeInTheDocument()
       expect(
         screen.getByRole('region', { name: sectionHeading })
       ).toBeInTheDocument()

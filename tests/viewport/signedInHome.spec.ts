@@ -113,7 +113,7 @@ async function expectHomeVisible(page: Page) {
   );
 }
 
-test("uses the shared canvas, banner, and card surface hierarchy", async ({
+test("uses the shared canvas, docked header, and card surface hierarchy", async ({
   page,
 }) => {
   await page.setViewportSize({ width: 390, height: 844 });
@@ -139,10 +139,10 @@ test("uses the shared canvas, banner, and card surface hierarchy", async ({
   await expect
     .poll(() =>
       panel.evaluate((element) =>
-        window.getComputedStyle(element, "::before").backgroundColor,
+        window.getComputedStyle(element, "::before").content,
       ),
     )
-    .toBe("rgb(233, 238, 248)");
+    .toBe("none");
 });
 
 test("keeps the signed-in home below the docked header at phone width", async ({
@@ -229,6 +229,24 @@ test("keeps the signed-in home usable with 200% text", async ({ page }) => {
     "signed-in home",
     "at phone width with 200% text",
   );
+
+  await page.getByRole("button", { name: "Plan", exact: true }).click();
+  const closePlan = page.getByRole("button", {
+    name: "Close Plan Your Workouts panel",
+  });
+  const planContent = page.getByRole("region", { name: "Plan sample content" });
+  await expect(closePlan).toBeVisible();
+  await expect(planContent).toBeVisible();
+  await expectBefore(closePlan, planContent, "large-text close control and Plan content");
+  await expect(
+    page.getByRole("heading", { level: 1, name: "Plan Your Workouts" }),
+  ).toHaveCount(0);
+  await expectMobileBottomNavigation(page);
+  await expectNoHorizontalOverflow(
+    page,
+    "signed-in Plan section",
+    "at phone width with 200% text",
+  );
 });
 
 test("hides training destinations until runner setup is complete", async ({
@@ -288,6 +306,9 @@ test("keeps mobile navigation available while switching sections", async ({
     page.getByRole("region", { name: "Plan Your Workouts" }),
   ).toBeVisible();
   await expect(
+    page.getByRole("heading", { level: 1, name: "Plan Your Workouts" }),
+  ).toHaveCount(0);
+  await expect(
     page.getByRole("button", { name: "Plan", exact: true }),
   ).toHaveAttribute("aria-current", "page");
   await expectMobileBottomNavigation(page);
@@ -297,6 +318,9 @@ test("keeps mobile navigation available while switching sections", async ({
   await expect(
     page.getByRole("region", { name: "Track Your Runs" }),
   ).toBeVisible();
+  await expect(
+    page.getByRole("heading", { level: 1, name: "Track Your Runs" }),
+  ).toHaveCount(0);
   await expect(
     page.getByRole("button", { name: "Plan", exact: true }),
   ).not.toHaveAttribute("aria-current");
@@ -309,6 +333,9 @@ test("keeps mobile navigation available while switching sections", async ({
   await expect(
     page.getByRole("region", { name: "Analyze Your Progress" }),
   ).toBeVisible();
+  await expect(
+    page.getByRole("heading", { level: 1, name: "Analyze Your Progress" }),
+  ).toHaveCount(0);
   await expect(
     page.getByRole("button", { name: "Analyze", exact: true }),
   ).toHaveAttribute("aria-current", "page");

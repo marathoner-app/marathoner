@@ -750,7 +750,7 @@ function AuthenticatedExperience({
         <motion.section
           id={`${activeSection}-panel`}
           className={`section-panel section-panel--${activeSection}`}
-          aria-labelledby={`${activeSection}-panel-title`}
+          aria-label={activeSectionDetails.title}
           initial={{ opacity: 0, scale: 0.98 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: sectionTransitionDuration }}
@@ -837,7 +837,6 @@ function SectionContent({
       >
         <span aria-hidden="true">X</span>
       </button>
-      <h1 id={`${section}-panel-title`} className="section-heading">{title}</h1>
       {training.status === "loading" && (
         <p className="training-status" role="status">
           Loading your training data...
