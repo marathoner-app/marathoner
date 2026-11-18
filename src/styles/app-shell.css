@@ -129,17 +129,6 @@
   text-align: center;
 }
 
-.section-panel::before {
-  position: absolute;
-  top: 0;
-  right: 0;
-  left: 0;
-  height: 8.5rem;
-  border-bottom: 1px solid var(--app-border);
-  background: var(--app-banner);
-  content: "";
-}
-
 .section-panel-content {
   position: relative;
   z-index: 1;
@@ -147,7 +136,7 @@
   width: min(100%, 1200px);
   min-height: 100%;
   margin: 0 auto;
-  padding: 2rem clamp(1rem, 4vw, 3rem) 3rem;
+  padding: 4.75rem clamp(1rem, 4vw, 3rem) 3rem;
 }
 
 .training-stale {
@@ -269,7 +258,7 @@
   }
 
   .section-panel-content {
-    padding: 1.25rem 1rem
+    padding: 4.5rem 1rem
       calc(6.25rem + env(safe-area-inset-bottom));
   }
 

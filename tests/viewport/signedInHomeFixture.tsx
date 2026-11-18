@@ -86,7 +86,7 @@ export function SignedInHomeFixture() {
         <section
           id={`${activeSection}-panel`}
           className="section-panel"
-          aria-labelledby={`${activeSection}-panel-title`}
+          aria-label={activeDetails.title}
         >
           <div className="section-panel-content">
             <button
@@ -97,9 +97,6 @@ export function SignedInHomeFixture() {
             >
               <span aria-hidden="true">X</span>
             </button>
-            <h1 id={`${activeSection}-panel-title`} className="section-heading">
-              {activeDetails.title}
-            </h1>
             <section
               aria-label={`${activeDetails.label} sample content`}
               style={{
