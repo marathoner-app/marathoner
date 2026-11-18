@@ -52,6 +52,37 @@ async function expectMobileBottomNavigation(page: Page) {
   expect(trackBounds.x).toBeLessThan(analyzeBounds.x);
 }
 
+async function expectDockedAccountHeader(page: Page) {
+  const header = page.locator(".session-controls");
+  const headerBounds = await header.boundingBox();
+  expect(headerBounds, "signed-in header should have bounds").not.toBeNull();
+  if (!headerBounds) return;
+
+  await expect(header).toHaveCSS("position", "fixed");
+  expect(headerBounds.x, "signed-in header should meet the left edge").toBeCloseTo(
+    0,
+    0,
+  );
+  expect(
+    headerBounds.x + headerBounds.width,
+    "signed-in header should meet the right edge",
+  ).toBeCloseTo(await page.evaluate(() => window.innerWidth), 0);
+  expect(headerBounds.y, "signed-in header should meet the top edge").toBeCloseTo(
+    0,
+    0,
+  );
+
+  await expect(page.getByRole("img", { name: "Marathoner" })).toBeVisible();
+  await expectMinimumTouchTarget(
+    page.getByRole("button", { name: "Account settings" }),
+    "docked account settings action",
+  );
+  await expectMinimumTouchTarget(
+    page.getByRole("button", { name: "Log out" }),
+    "docked log out action",
+  );
+}
+
 async function expectAboveNavigation(
   content: Locator,
   navigation: Locator,
@@ -70,7 +101,7 @@ async function expectAboveNavigation(
 }
 
 async function expectHomeVisible(page: Page) {
-  await expect(page.getByText("Signed in as runner@example.com")).toBeVisible();
+  await expectDockedAccountHeader(page);
   await expect(page.getByRole("heading", { level: 1, name: "Marathoner." })).toBeVisible();
   await expect(page.getByText("Welcome to your training companion")).toBeVisible();
   await expect(page.getByRole("button", { name: "Edit runner profile" })).toBeVisible();
@@ -114,7 +145,9 @@ test("uses the shared canvas, banner, and card surface hierarchy", async ({
     .toBe("rgb(233, 238, 248)");
 });
 
-test("keeps the signed-in home in normal flow at phone width", async ({ page }) => {
+test("keeps the signed-in home below the docked header at phone width", async ({
+  page,
+}) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("tests/viewport/signedInHome.html");
   await expectHomeVisible(page);
@@ -130,6 +163,7 @@ test("keeps the signed-in home in normal flow at phone width", async ({ page }) 
   await expectBefore(title, subtitle, "brand and welcome copy");
   await expectBefore(subtitle, profile, "welcome copy and runner setup");
   await expectBefore(profile, nextWorkout, "runner setup and next workout");
+  await expectDockedAccountHeader(page);
   await expectMobileBottomNavigation(page);
 
   for (const name of [
@@ -149,6 +183,7 @@ test("keeps the signed-in home in normal flow at phone width", async ({ page }) 
   }
   const finalAction = page.getByRole("button", { name: "Final signed-in action" });
   await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+  await expectDockedAccountHeader(page);
   await expect(finalAction).toBeInViewport();
   await expectAboveNavigation(finalAction, navigation, "final signed-in action");
   await expectNoHorizontalOverflow(page, "signed-in home", "at phone width");
@@ -179,6 +214,7 @@ test("keeps the signed-in home usable with 200% text", async ({ page }) => {
   await expectBefore(title, subtitle, "large-text brand and welcome copy");
   await expectBefore(subtitle, profile, "large-text welcome copy and runner setup");
   await expectBefore(profile, nextWorkout, "large-text runner setup and next workout");
+  await expectDockedAccountHeader(page);
   await expectMobileBottomNavigation(page);
   const finalAction = page.getByRole("button", { name: "Final signed-in action" });
   await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
@@ -204,6 +240,7 @@ test("hides training destinations until runner setup is complete", async ({
   await expect(
     page.getByRole("button", { name: "Resume runner setup" }),
   ).toBeVisible();
+  await expectDockedAccountHeader(page);
   await expect(
     page.getByRole("navigation", { name: "Training sections" }),
   ).toHaveCount(0);
@@ -219,7 +256,7 @@ test("hides training destinations until runner setup is complete", async ({
   );
 });
 
-test("keeps the desktop signed-in banner in normal flow", async ({ page }) => {
+test("keeps the desktop signed-in header docked above the page", async ({ page }) => {
   await page.setViewportSize({ width: 1_440, height: 900 });
   await page.goto("tests/viewport/signedInHome.html");
   await expectHomeVisible(page);
@@ -227,12 +264,13 @@ test("keeps the desktop signed-in banner in normal flow", async ({ page }) => {
   const controls = page.locator(".session-controls");
   const title = page.getByRole("heading", { level: 1, name: "Marathoner." });
 
-  await expect(controls).toHaveCSS("position", "static");
+  await expect(controls).toHaveCSS("position", "fixed");
   await expect(controls).toHaveCSS(
     "background-color",
     "rgb(233, 238, 248)",
   );
-  await expectBefore(controls, title, "desktop account banner and brand");
+  await expectBefore(controls, title, "desktop account header and brand");
+  await expect(page.getByText("Signed in as runner@example.com")).toBeVisible();
   await expect(
     page.getByRole("navigation", { name: "Training sections" }),
   ).toHaveCSS("position", "static");
@@ -253,6 +291,7 @@ test("keeps mobile navigation available while switching sections", async ({
     page.getByRole("button", { name: "Plan", exact: true }),
   ).toHaveAttribute("aria-current", "page");
   await expectMobileBottomNavigation(page);
+  await expectDockedAccountHeader(page);
 
   await page.getByRole("button", { name: "Track", exact: true }).click();
   await expect(
@@ -264,6 +303,7 @@ test("keeps mobile navigation available while switching sections", async ({
   await expect(
     page.getByRole("button", { name: "Track", exact: true }),
   ).toHaveAttribute("aria-current", "page");
+  await expectDockedAccountHeader(page);
 
   await page.getByRole("button", { name: "Analyze", exact: true }).click();
   await expect(
@@ -272,6 +312,7 @@ test("keeps mobile navigation available while switching sections", async ({
   await expect(
     page.getByRole("button", { name: "Analyze", exact: true }),
   ).toHaveAttribute("aria-current", "page");
+  await expectDockedAccountHeader(page);
 
   const finalAction = page.getByRole("button", { name: "Final section action" });
   await finalAction.scrollIntoViewIfNeeded();

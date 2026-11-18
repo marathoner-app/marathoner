@@ -1,6 +1,6 @@
 .onboarding-panel {
   position: absolute;
-  inset: 0;
+  inset: var(--signed-in-header-height) 0 0;
   z-index: 4;
   box-sizing: border-box;
   overflow-y: auto;
@@ -15,8 +15,7 @@
   width: min(100%, 70rem);
   min-height: 100%;
   margin: 0 auto;
-  padding: calc(clamp(1rem, 4vw, 3rem) + env(safe-area-inset-top))
-    clamp(1rem, 4vw, 3rem)
+  padding: clamp(1rem, 4vw, 3rem) clamp(1rem, 4vw, 3rem)
     max(1rem, env(safe-area-inset-bottom));
 }
 
