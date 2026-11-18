@@ -13,12 +13,15 @@ Release initialize App Attest before JavaScript Firebase services; the
 development Debug workflow uses a private fixed debug token. Paid-team Debug
 and Release signing, the production App Attest entitlement, physical-device
 installation, and launch passed on November 12, 2026. The historical first
-App Store Connect upload was version 1.0 build 2. Internal TestFlight build 9
+App Store Connect upload was version 1.0 build 2. Internal TestFlight build 15
 has since been processed, assigned to the internal group, installed, and used
-by the owner and operating partner. Valid beta App Check traffic is observable
-while enforcement remains off. External TestFlight App Review, the locked
-build-10 proof matrix, staged App Check enforcement, accessibility, and Android
-remain open under #122, #140, #161, #624, #691, and #772.
+by the owner. Build 16 is the selected successor from merged `main`; it includes
+the large-text, docked-header, and compact-section-shell corrections found
+during the build-15 rehearsal and remains pending verification and upload.
+Valid beta App Check traffic is observable while enforcement remains off.
+External TestFlight App Review, the build-16 proof matrix, staged App Check
+enforcement, accessibility, and Android remain open under #122, #140, #161,
+#624, and #691.
 
 ## Prerequisites
 
@@ -348,9 +351,10 @@ compliance answer was recorded, the build advanced to **Ready to Submit**.
 See the
 [dated archive and upload evidence](evidence/2026-11-12-app-store-connect-archive-upload.md).
 That record remains the historical first-upload proof. Later internal builds
-advanced through build 9 and have been exercised by the owner and operating
-partner. External TestFlight App Review and the locked build-10 release matrix
-remain open; internal availability is not external invitation approval.
+advanced through build 15; build 16 is the selected successor from merged
+`main` for the consolidated owner/J rehearsal and external TestFlight review.
+External TestFlight App Review and the build-16 release matrix remain open;
+internal availability is not external invitation approval.
 
 After `npm run check:ios` and local signing configuration:
 
