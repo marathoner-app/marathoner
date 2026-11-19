@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 
 import {
   CLOSED_BETA_ADAPTATION_RECOMMENDATION_SCHEMA_VERSION,
@@ -55,43 +55,16 @@ function adaptationVersion(
   );
 }
 
-function StatusCard({
-  kind,
-  title,
-  message,
-  action,
+function TrainingCheckGraphic({
+  active = false,
+  large = false,
 }: {
-  readonly kind: "status" | "alert";
-  readonly title: string;
-  readonly message: string;
-  readonly action?: { readonly label: string; readonly run: () => void };
+  readonly active?: boolean;
+  readonly large?: boolean;
 }) {
   return (
-    <section
-      className="closed-beta-adaptation-surface closed-beta-adaptation-surface--outcome"
-      aria-labelledby="closed-beta-adaptation-title"
-      role={kind}
-    >
-      <p className="closed-beta-adaptation-eyebrow">Training check</p>
-      <h2 id="closed-beta-adaptation-title">{title}</h2>
-      <p>{message}</p>
-      {action && (
-        <button
-          className="closed-beta-adaptation-action"
-          type="button"
-          onClick={action.run}
-        >
-          {action.label}
-        </button>
-      )}
-    </section>
-  );
-}
-
-function TrainingCheckGraphic({ active = false }: { readonly active?: boolean }) {
-  return (
     <div
-      className={`closed-beta-adaptation-graphic${active ? " is-active" : ""}`}
+      className={`closed-beta-adaptation-graphic${active ? " is-active" : ""}${large ? " is-large" : ""}`}
       aria-hidden="true"
     >
       <span className="closed-beta-adaptation-graphic-pulse" />
@@ -127,10 +100,15 @@ export default function ClosedBetaAdaptationSurface({
   client = firebaseClosedBetaAdaptationRecommendationClient,
   createCommandId = defaultCommandId,
 }: ClosedBetaAdaptationSurfaceProps) {
+  const titleId = useId();
   const evidenceState = useRecommendationEvidence();
   const [generationState, setGenerationState] = useState<GenerationState>({
     kind: "idle",
   });
+  const [experienceOpen, setExperienceOpen] = useState(false);
+  const entryActionRef = useRef<HTMLButtonElement>(null);
+  const experienceRef = useRef<HTMLElement>(null);
+  const experienceWasOpenRef = useRef(false);
   const trigger = useMemo(
     () => selectInternalAdaptationTrigger(activePlanState, workouts, runs),
     [activePlanState, runs, workouts],
@@ -148,6 +126,55 @@ export default function ClosedBetaAdaptationSurface({
     ({ decision }) => decision === "pending",
   ).length;
   const artifactVersion = adaptationVersion(manifest);
+  const checkAvailable =
+    evidenceState.status === "ready" &&
+    evidenceState.origin === "server" &&
+    !evidenceState.hasPendingWrites &&
+    activePlanState !== null &&
+    trigger !== null &&
+    triggerKey !== null &&
+    artifactVersion !== null;
+
+  useEffect(() => {
+    if (!experienceOpen) return;
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [experienceOpen]);
+
+  useEffect(() => {
+    if (experienceOpen) {
+      experienceRef.current?.focus();
+    } else if (experienceWasOpenRef.current) {
+      entryActionRef.current?.focus();
+    }
+    experienceWasOpenRef.current = experienceOpen;
+  }, [experienceOpen]);
+
+  useEffect(() => {
+    if (
+      experienceOpen &&
+      pendingCount === 0 &&
+      visibleGenerationState.kind === "idle"
+    ) {
+      setExperienceOpen(false);
+    }
+  }, [experienceOpen, pendingCount, visibleGenerationState.kind]);
+
+  const experienceCanClose = visibleGenerationState.kind !== "submitting";
+
+  useEffect(() => {
+    if (!experienceOpen || !experienceCanClose) return;
+
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setExperienceOpen(false);
+    };
+    window.addEventListener("keydown", closeOnEscape);
+    return () => window.removeEventListener("keydown", closeOnEscape);
+  }, [experienceCanClose, experienceOpen]);
 
   const submit = async (
     existingCommand?: ClosedBetaAdaptationRecommendationCommand,
@@ -173,140 +200,197 @@ export default function ClosedBetaAdaptationSurface({
     }
   };
 
-  if (pendingCount > 0) return <RecommendationDecisionSurface />;
-  if (
-    evidenceState.status !== "ready" ||
-    evidenceState.origin !== "server" ||
-    evidenceState.hasPendingWrites ||
-    activePlanState === null ||
-    trigger === null ||
-    triggerKey === null ||
-    artifactVersion === null
-  ) {
-    return null;
+  if (pendingCount === 0 && !checkAvailable) return null;
+
+  let entryTitle = "See whether your plan still fits";
+  let entryCopy =
+    "Marathoner can compare your recent completed training with the current beta rules. It will never change your plan without showing you the exact recommendation first.";
+  let entryAction = "Check recent training";
+
+  if (pendingCount > 0) {
+    entryTitle = "Review your plan recommendation";
+    entryCopy =
+      "Your training check is ready. Review the exact recommendation before deciding whether anything changes.";
+    entryAction = "Review recommendation";
+  } else if (visibleGenerationState.kind === "error") {
+    entryTitle = "Your training check needs confirmation";
+    entryCopy =
+      "Return to the same request so Marathoner can confirm its outcome without creating a duplicate recommendation.";
+    entryAction = "Return to training check";
+  } else if (visibleGenerationState.kind === "result") {
+    entryTitle = "Your training check is ready";
+    entryCopy =
+      "Marathoner finished comparing your latest completed training with your current plan.";
+    entryAction = "View training check";
   }
 
-  if (visibleGenerationState.kind === "submitting") {
-    return (
-      <section
-        className="closed-beta-adaptation-surface closed-beta-adaptation-surface--working"
-        aria-labelledby="closed-beta-adaptation-title"
-        role="status"
-        aria-live="polite"
-      >
-        <div className="closed-beta-adaptation-heading-row">
-          <div>
-            <p className="closed-beta-adaptation-eyebrow">Training check</p>
-            <h2 id="closed-beta-adaptation-title">Checking recent training</h2>
-          </div>
-          <TrainingCheckGraphic active />
-        </div>
-        <p className="closed-beta-adaptation-copy">
-          Marathoner is comparing your latest completed workout with the
-          recent pattern and your current plan.
-        </p>
-        <TrainingCheckInputs />
-        <p className="closed-beta-adaptation-assurance">
-          Your plan stays unchanged while this check finishes.
-        </p>
-      </section>
-    );
-  }
+  const openExperience = () => {
+    setExperienceOpen(true);
+    if (
+      pendingCount === 0 &&
+      visibleGenerationState.kind === "idle"
+    ) {
+      void submit();
+    }
+  };
+
+  let experienceTitle = "Checking recent training";
+  let experienceMessage =
+    "Marathoner is comparing your latest completed workout with the recent pattern and your current plan.";
+  let experienceRole: "status" | "alert" = "status";
+  let experienceAction:
+    | { readonly label: string; readonly run: () => void }
+    | undefined;
+
   if (visibleGenerationState.kind === "error") {
-    return (
-      <StatusCard
-        kind="alert"
-        title="The training check needs confirmation"
-        message="Marathoner could not confirm the result. Check the same request again so a second recommendation cannot be created."
-        action={{
-          label: "Check the same request again",
-          run: () => void submit(visibleGenerationState.command),
-        }}
-      />
-    );
-  }
-  if (visibleGenerationState.kind === "result") {
+    experienceTitle = "The training check needs confirmation";
+    experienceMessage =
+      "Marathoner could not confirm the result. Check the same request again so a second recommendation cannot be created.";
+    experienceRole = "alert";
+    experienceAction = {
+      label: "Check the same request again",
+      run: () => void submit(visibleGenerationState.command),
+    };
+  } else if (visibleGenerationState.kind === "result") {
     const { result } = visibleGenerationState;
     if (result.status === "pending_recommendation_created") {
-      return (
-        <StatusCard
-          kind="status"
-          title="Preparing your plan recommendation"
-          message="The recommendation was saved. Marathoner is waiting for the server-confirmed review to appear; your plan is still unchanged."
-        />
-      );
+      experienceTitle = "Preparing your plan recommendation";
+      experienceMessage =
+        "The recommendation was saved. Marathoner is waiting for the server-confirmed review to appear; your plan is still unchanged.";
+    } else if (result.status === "no_change") {
+      experienceTitle = "Your current plan still fits";
+      experienceMessage =
+        "The current beta rules did not find a supported change for this training pattern. Nothing was changed.";
+    } else if (result.status === "retryable_error") {
+      experienceTitle = "The training check is temporarily unavailable";
+      experienceMessage =
+        "Your plan is unchanged. Reconnect, then try the same check again.";
+      experienceRole = "alert";
+      experienceAction = {
+        label: "Try the same check again",
+        run: () => void submit(visibleGenerationState.command),
+      };
+    } else {
+      const paused =
+        result.status === "disabled" ||
+        result.status === "stale_version" ||
+        result.status === "unavailable";
+      experienceTitle =
+        result.status === "refused"
+          ? "No plan change is recommended"
+          : paused
+            ? "Plan recommendations are unavailable"
+            : "The training check could not be completed";
+      experienceMessage = `${result.message} Your active plan is unchanged.`;
+      experienceRole = result.status === "refused" ? "status" : "alert";
     }
-    if (result.status === "no_change") {
-      return (
-        <StatusCard
-          kind="status"
-          title="Your current plan still fits"
-          message="The current beta rules did not find a supported change for this training pattern. Nothing was changed."
-        />
-      );
-    }
-    if (result.status === "retryable_error") {
-      return (
-        <StatusCard
-          kind="alert"
-          title="The training check is temporarily unavailable"
-          message="Your plan is unchanged. Reconnect, then try the same check again."
-          action={{
-            label: "Try the same check again",
-            run: () => void submit(visibleGenerationState.command),
-          }}
-        />
-      );
-    }
-    const paused =
-      result.status === "disabled" ||
-      result.status === "stale_version" ||
-      result.status === "unavailable";
-    return (
-      <StatusCard
-        kind={result.status === "refused" ? "status" : "alert"}
-        title={
-          result.status === "refused"
-            ? "No plan change is recommended"
-            : paused
-              ? "Plan recommendations are unavailable"
-              : "The training check could not be completed"
-        }
-        message={`${result.message} Your active plan is unchanged.`}
-      />
-    );
+  }
+
+  const reviewingRecommendation = pendingCount > 0;
+  if (reviewingRecommendation) {
+    experienceTitle = "Review your plan recommendation";
+    experienceMessage =
+      "See what Marathoner observed, what it means, and the exact proposed change before making a choice.";
   }
 
   return (
-    <section
-      className="closed-beta-adaptation-surface closed-beta-adaptation-surface--idle"
-      aria-labelledby="closed-beta-adaptation-title"
-    >
-      <div className="closed-beta-adaptation-heading-row">
-        <div>
-          <p className="closed-beta-adaptation-eyebrow">Training check</p>
-          <h2 id="closed-beta-adaptation-title">
-            See whether your plan still fits
-          </h2>
-        </div>
-        <TrainingCheckGraphic />
-      </div>
-      <p className="closed-beta-adaptation-copy">
-        Marathoner can compare your recent completed training with the current
-        beta rules. It will never change your plan without showing you the
-        exact recommendation first.
-      </p>
-      <TrainingCheckInputs />
-      <button
-        className="closed-beta-adaptation-action"
-        type="button"
-        onClick={() => void submit()}
+    <>
+      <section
+        className="closed-beta-adaptation-surface closed-beta-adaptation-surface--entry"
+        aria-labelledby={`${titleId}-entry`}
+        hidden={experienceOpen}
       >
-        <span>Check recent training</span>
-        <span className="closed-beta-adaptation-action-arrow" aria-hidden="true">
-          →
-        </span>
-      </button>
-    </section>
+        <TrainingCheckGraphic />
+        <div className="closed-beta-adaptation-entry-heading">
+          <p className="closed-beta-adaptation-eyebrow">Training check</p>
+          <h2 id={`${titleId}-entry`}>{entryTitle}</h2>
+        </div>
+        <p className="closed-beta-adaptation-copy">{entryCopy}</p>
+        <TrainingCheckInputs />
+        <button
+          ref={entryActionRef}
+          className="closed-beta-adaptation-action"
+          type="button"
+          onClick={openExperience}
+        >
+          <span>{entryAction}</span>
+          <span
+            className="closed-beta-adaptation-action-arrow"
+            aria-hidden="true"
+          >
+            →
+          </span>
+        </button>
+      </section>
+
+      {experienceOpen && (
+        <section
+          ref={experienceRef}
+          className={`closed-beta-adaptation-experience${reviewingRecommendation ? " closed-beta-adaptation-experience--review" : ""}`}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby={`${titleId}-experience`}
+          aria-busy={visibleGenerationState.kind === "submitting"}
+          tabIndex={-1}
+        >
+          <div className="closed-beta-adaptation-experience-shell">
+            <div
+              className="closed-beta-adaptation-experience-intro"
+              role={reviewingRecommendation ? undefined : experienceRole}
+              aria-live={
+                !reviewingRecommendation && experienceRole === "status"
+                  ? "polite"
+                  : undefined
+              }
+            >
+              <TrainingCheckGraphic
+                active={visibleGenerationState.kind === "submitting"}
+                large
+              />
+              <p className="closed-beta-adaptation-eyebrow">
+                Training check
+              </p>
+              <h2 id={`${titleId}-experience`}>{experienceTitle}</h2>
+              <div className="closed-beta-adaptation-experience-message">
+                <p>{experienceMessage}</p>
+              </div>
+              {!reviewingRecommendation && <TrainingCheckInputs />}
+              {visibleGenerationState.kind === "submitting" && (
+                <p className="closed-beta-adaptation-assurance">
+                  Your plan stays unchanged while this check finishes.
+                </p>
+              )}
+            </div>
+
+            {reviewingRecommendation && (
+              <div className="closed-beta-adaptation-review">
+                <RecommendationDecisionSurface />
+              </div>
+            )}
+
+            {experienceCanClose && (
+              <div className="closed-beta-adaptation-experience-actions">
+                {experienceAction && (
+                  <button
+                    className="closed-beta-adaptation-action"
+                    type="button"
+                    onClick={experienceAction.run}
+                  >
+                    {experienceAction.label}
+                  </button>
+                )}
+                <button
+                  className="closed-beta-adaptation-return"
+                  type="button"
+                  onClick={() => setExperienceOpen(false)}
+                >
+                  Back to Home
+                </button>
+              </div>
+            )}
+          </div>
+        </section>
+      )}
+    </>
   );
 }
