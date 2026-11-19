@@ -26,6 +26,72 @@ async function expectContentContained(locator: Locator, label: string) {
   ).toBeLessThanOrEqual(overflow.clientHeight + 1);
 }
 
+async function expectEqualWeekButtonDimensions(
+  previousWeek: Locator,
+  nextWeek: Locator,
+  stateLabel: string,
+) {
+  const [previousBounds, nextBounds] = await Promise.all([
+    previousWeek.boundingBox(),
+    nextWeek.boundingBox(),
+  ]);
+  if (previousBounds === null || nextBounds === null) {
+    throw new Error(`Week-navigation buttons were not visible ${stateLabel}.`);
+  }
+
+  expect(
+    Math.abs(previousBounds.width - nextBounds.width),
+    `week-navigation widths should match ${stateLabel}`,
+  ).toBeLessThanOrEqual(0.5);
+  expect(
+    Math.abs(previousBounds.height - nextBounds.height),
+    `week-navigation heights should match ${stateLabel}`,
+  ).toBeLessThanOrEqual(0.5);
+
+  return previousBounds;
+}
+
+async function exerciseEqualWeekButtonDimensions(
+  page: Page,
+  textSizeLabel: string,
+) {
+  const previousWeek = page.getByRole("button", { name: "Previous week" });
+  const nextWeek = page.getByRole("button", { name: "Next week" });
+
+  await expect(previousWeek).toBeDisabled();
+  await expect(nextWeek).toBeEnabled();
+  const firstWeekBounds = await expectEqualWeekButtonDimensions(
+    previousWeek,
+    nextWeek,
+    `on the first week at ${textSizeLabel}`,
+  );
+
+  await nextWeek.click();
+  await expect(page.getByRole("heading", { name: "Week 2 of 3" })).toBeVisible();
+  await expect(previousWeek).toBeEnabled();
+  await expect(nextWeek).toBeEnabled();
+  const middleWeekBounds = await expectEqualWeekButtonDimensions(
+    previousWeek,
+    nextWeek,
+    `on a middle week at ${textSizeLabel}`,
+  );
+
+  await nextWeek.click();
+  await expect(page.getByRole("heading", { name: "Week 3 of 3" })).toBeVisible();
+  await expect(previousWeek).toBeEnabled();
+  await expect(nextWeek).toBeDisabled();
+  const finalWeekBounds = await expectEqualWeekButtonDimensions(
+    previousWeek,
+    nextWeek,
+    `on the final week at ${textSizeLabel}`,
+  );
+
+  expect(middleWeekBounds.width).toBeCloseTo(firstWeekBounds.width, 1);
+  expect(middleWeekBounds.height).toBeCloseTo(firstWeekBounds.height, 1);
+  expect(finalWeekBounds.width).toBeCloseTo(firstWeekBounds.width, 1);
+  expect(finalWeekBounds.height).toBeCloseTo(firstWeekBounds.height, 1);
+}
+
 test("uses the shared Plan surface and workout hierarchy", async ({ page }) => {
   await page.goto("tests/viewport/plan.html");
 
@@ -168,4 +234,17 @@ test("contains dynamically enlarged week-navigation labels", async ({ page }) =>
     "Plan",
     "with dynamically enlarged week-navigation labels",
   );
+});
+
+test("keeps week-navigation buttons equal across boundary states", async ({
+  page,
+}) => {
+  await page.goto("tests/viewport/plan.html");
+  await exerciseEqualWeekButtonDimensions(page, "default text size");
+
+  await page.goto("tests/viewport/plan.html");
+  await page.addStyleTag({
+    content: ":root { font-size: 200% !important; }",
+  });
+  await exerciseEqualWeekButtonDimensions(page, "200% text");
 });
