@@ -23,8 +23,11 @@ describe('Firebase bootstrap gate', () => {
       </FirebaseBootstrapGate>,
     )
 
+    expect(
+      screen.getByRole('heading', { level: 1, name: 'Marathoner.' }),
+    ).toBeInTheDocument()
     expect(screen.getByRole('status')).toHaveTextContent(
-      'Verifying this Marathoner app...',
+      'Verifying this Marathoner app…',
     )
     expect(screen.queryByText('Protected application')).not.toBeInTheDocument()
 

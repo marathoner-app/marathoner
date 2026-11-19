@@ -1,5 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import Title from './Title'
+import SignedInStartupScreen from './SignedInStartupScreen'
 import { appCheckStartupMessage } from '../services/appCheckBootstrap'
 import { initializeFirebaseClient } from '../services/firebaseClient'
 import { releaseNativeStartupOverlayAfterPaint } from '../services/nativeStartup'
@@ -40,28 +41,26 @@ export default function FirebaseBootstrapGate({
 
   if (status === 'ready') return children
 
+  if (status === 'loading') {
+    return <SignedInStartupScreen statusMessage="Verifying this Marathoner app…" />
+  }
+
   return (
     <main className="main">
       <Title />
-      {status === 'loading' ? (
-        <p className="auth-message" role="status">
-          Verifying this Marathoner app...
+      <div className="startup-error" role="alert">
+        <p>{appCheckStartupMessage}</p>
+        <p>
+          If this continues, contact{' '}
+          <a href="mailto:kevin@marathonerapp.com?subject=Marathoner%20app%20verification%20help">
+            Marathoner support
+          </a>
+          .
         </p>
-      ) : (
-        <div className="startup-error" role="alert">
-          <p>{appCheckStartupMessage}</p>
-          <p>
-            If this continues, contact{' '}
-            <a href="mailto:kevin@marathonerapp.com?subject=Marathoner%20app%20verification%20help">
-              Marathoner support
-            </a>
-            .
-          </p>
-          <button type="button" onClick={() => setAttempt((value) => value + 1)}>
-            Try again
-          </button>
-        </div>
-      )}
+        <button type="button" onClick={() => setAttempt((value) => value + 1)}>
+          Try again
+        </button>
+      </div>
     </main>
   )
 }

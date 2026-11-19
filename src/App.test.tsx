@@ -933,9 +933,7 @@ describe('App training sections', () => {
       screen.queryByRole('navigation', { name: 'Training sections' })
     ).not.toBeInTheDocument()
     expect(screen.queryByRole('banner')).not.toBeInTheDocument()
-    expect(
-      screen.queryByRole('heading', { level: 1, name: 'Marathoner.' })
-    ).not.toBeInTheDocument()
+    expect(document.querySelector('.title')).not.toBeVisible()
   })
 
   it('offers a retry when the same startup sources remain delayed', () => {

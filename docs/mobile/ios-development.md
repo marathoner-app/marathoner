@@ -393,10 +393,11 @@ on the physical test iPhone. A warm foreground transition does not count.
 
 1. Delete the development app from the iPhone, then build and run it from
    Xcode. This is the clean-install launch.
-2. Confirm that the native `Marathoner.` / `Loading your session...` presentation
-   is visible immediately and remains continuous while the native bridge starts
-   and React paints the matching web loading state. There must be no blank or
-   black frame between those layers. Both native overlays have a 10-second
+2. Confirm that the native blue `Marathoner.` / `Loading your session...`
+   presentation is visible immediately and remains continuous while the native
+   bridge starts, the inline web shell paints, and React takes over with the
+   same blue `Marathoner.` wordmark. There must be no white, blank, black, or
+   unbranded frame between those layers. Both native overlays have a 10-second
    safety timeout so a broken web bundle cannot hide behind them indefinitely.
 3. Complete a development-account sign-in, force-quit the app, and reopen it.
    Confirm the signed-in session returns. Repeat enough times to record three
@@ -456,6 +457,11 @@ The accepted sequence uses the immutable Apple launch screen, an immediate
 storyboard bridge overlay, Capacitor's launch overlay, and the matching React
 loading state. React dismisses both native overlays after its first paint; both
 native layers retain the 10-second failure timeout.
+
+That evidence predates the blue startup continuity update tracked in #864. A
+successor candidate must repeat this rehearsal and confirm the native launch,
+inline web shell, Firebase bootstrap gate, authenticated-session check, and
+training startup remain one continuous blue experience before #864 closes.
 
 The local Firestore emulator check could not start because this Mac does not
 have Java installed. Pull-request CI installs Java 21 and remains the required
