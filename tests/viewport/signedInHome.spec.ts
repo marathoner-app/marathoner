@@ -247,17 +247,20 @@ test("keeps the signed-in home usable with 200% text", async ({ page }) => {
   );
 });
 
-test("keeps the signed-in shell usable while startup is delayed", async ({
+test("uses one complete branded surface while startup is delayed", async ({
   page,
 }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("tests/viewport/signedInHome.html?startup=delayed");
 
-  await expectDockedAccountHeader(page);
-  await expectMobileBottomNavigation(page);
+  await expect(page.getByRole("heading", { name: "Marathoner" })).toBeVisible();
+  await expect(page.getByRole("banner")).toHaveCount(0);
+  await expect(
+    page.getByRole("navigation", { name: "Training sections" }),
+  ).toHaveCount(0);
   await expect(
     page.getByText(
-      "This is taking longer than usual. Check your connection, then try again.",
+      "This is taking longer than usual. Check your connection.",
     ),
   ).toBeVisible();
 
@@ -269,6 +272,32 @@ test("keeps the signed-in shell usable while startup is delayed", async ({
     page,
     "signed-in delayed startup",
     "at phone width",
+  );
+});
+
+test("keeps the startup surface contained with enlarged text and reduced motion", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.goto("tests/viewport/signedInHome.html?startup=delayed");
+  await page.addStyleTag({
+    content: ":root { font-size: 200% !important; }",
+  });
+
+  await expect(page.getByRole("heading", { name: "Marathoner" })).toBeVisible();
+  await expect(
+    page.getByText("This is taking longer than usual. Check your connection."),
+  ).toBeVisible();
+  await expect(page.getByRole("button", { name: "Try again" })).toBeVisible();
+  await expect(page.locator(".signed-in-startup-spinner")).toHaveCSS(
+    "animation-name",
+    "none",
+  );
+  await expectNoHorizontalOverflow(
+    page,
+    "signed-in startup",
+    "at phone width with 200% text",
   );
 });
 

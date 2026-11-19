@@ -330,7 +330,7 @@ describe('App authentication state', () => {
     const { unmount } = renderApp()
 
     expect(screen.getByRole('status')).toHaveTextContent(
-      'Loading your session...'
+      'Preparing your training'
     )
     expect(screen.queryByRole('button', { name: 'Log in' })).not.toBeInTheDocument()
     expect(screen.queryByRole('navigation')).not.toBeInTheDocument()
@@ -719,7 +719,7 @@ describe('App authentication state', () => {
 
       expect(mockedSubscribeToAuthState).toHaveBeenCalledTimes(2)
       expect(screen.getByRole('status')).toHaveTextContent(
-        'Loading your session...'
+        'Preparing your training'
       )
     } finally {
       vi.useRealTimers()
@@ -913,7 +913,7 @@ describe('App training sections', () => {
     }
   })
 
-  it('mounts the signed-in navigation with the session while training data loads', () => {
+  it('holds the signed-in shell until the initial training snapshot is coherent', () => {
     trainingMock.status = 'loading'
     trainingMock.pendingSources = [
       'profile',
@@ -925,15 +925,14 @@ describe('App training sections', () => {
     ]
     renderSignedInApp()
 
-    expect(screen.getByRole('status')).toHaveTextContent('Loading your training data')
+    expect(screen.getByRole('status')).toHaveTextContent('Preparing your training')
     expect(
-      screen.getByRole('navigation', { name: 'Training sections' })
-    ).toBeInTheDocument()
-    for (const sectionName of ['Home', 'Plan', 'Track', 'Analyze']) {
-      expect(
-        screen.getByRole('button', { name: sectionName })
-      ).toBeDisabled()
-    }
+      screen.queryByRole('navigation', { name: 'Training sections' })
+    ).not.toBeInTheDocument()
+    expect(screen.queryByRole('banner')).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole('heading', { level: 1, name: 'Marathoner.' })
+    ).not.toBeInTheDocument()
   })
 
   it('offers a retry when the same startup sources remain delayed', () => {
@@ -967,28 +966,37 @@ describe('App training sections', () => {
     }
   })
 
-  it('renders the ready plan while run history and shoes continue loading', async () => {
-    const user = userEvent.setup()
+  it('reveals the complete shell together after all initial Home sources finish', () => {
     trainingMock.status = 'stale'
     trainingMock.staleReasons = ['feature_incomplete']
     trainingMock.pendingSources = ['runs', 'shoes']
     trainingMock.plans = [activePlan]
     trainingMock.workouts = [upcomingWorkout]
-    renderSignedInApp()
+    const view = renderSignedInApp()
 
     expect(screen.getByRole('status')).toHaveTextContent(
-      'Your plan is ready. Marathoner is still loading your run history and shoes.'
+      'Preparing your training'
     )
-    expect(screen.getByRole('heading', { name: 'Easy run' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Plan' })).toBeEnabled()
+    expect(screen.queryByRole('heading', { name: 'Easy run' })).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole('navigation', { name: 'Training sections' })
+    ).not.toBeInTheDocument()
     expect(screen.queryByTestId('recommendation-decision-surface')).not.toBeInTheDocument()
 
-    await user.click(screen.getByRole('button', { name: 'Track' }))
-
-    expect(screen.getByRole('region', { name: 'Track Your Runs' })).toHaveTextContent(
-      'still loading your run history and shoes'
+    trainingMock.status = 'current'
+    trainingMock.staleReasons = []
+    trainingMock.pendingSources = []
+    view.rerender(
+      <AuthProvider>
+        <App />
+      </AuthProvider>
     )
-    expect(screen.queryByRole('button', { name: 'Log Run' })).not.toBeInTheDocument()
+
+    expect(screen.getByRole('heading', { name: 'Easy run' })).toBeInTheDocument()
+    expect(screen.getByRole('banner')).toBeInTheDocument()
+    expect(
+      screen.getByRole('navigation', { name: 'Training sections' })
+    ).toBeInTheDocument()
   })
 
   it('keeps the same account header available across every training section', async () => {

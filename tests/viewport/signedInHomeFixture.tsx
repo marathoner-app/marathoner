@@ -6,7 +6,7 @@ import Subtitle from "../../src/components/Subtitle";
 import Title from "../../src/components/Title";
 import TrainingSectionNavigation from "../../src/components/TrainingSectionNavigation";
 import SignedInAppHeader from "../../src/components/SignedInAppHeader";
-import TrainingStartupStatus from "../../src/components/TrainingStartupStatus";
+import SignedInStartupScreen from "../../src/components/SignedInStartupScreen";
 import {
   trainingSections,
   type TrainingSection,
@@ -30,6 +30,18 @@ export function SignedInHomeFixture() {
     setActiveSection(section);
   };
 
+  if (startupMode !== null) {
+    return (
+      <main className="main signed-in-home">
+        <SignedInStartupScreen
+          delayed={startupMode === "delayed"}
+          onRetry={() => setRetryCount((count) => count + 1)}
+        />
+        {retryCount > 0 && <p role="alert">Retry requested</p>}
+      </main>
+    );
+  }
+
   return (
     <main
       className={`main${
@@ -46,15 +58,6 @@ export function SignedInHomeFixture() {
         <>
           <Title />
           <Subtitle />
-          {startupMode !== null && (
-            <TrainingStartupStatus
-              pendingSources={["runs", "shoes"]}
-              delayed={startupMode === "delayed"}
-              hasReadableSnapshot={startupMode === "partial"}
-              onRetry={() => setRetryCount((count) => count + 1)}
-            />
-          )}
-          {retryCount > 0 && <p role="alert">Retry requested</p>}
           <div className="runner-profile-entry">
             <button type="button">
               {setupComplete ? "Edit runner profile" : "Resume runner setup"}
