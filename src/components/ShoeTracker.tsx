@@ -348,6 +348,8 @@ export default function ShoeTracker({
   const [pendingAction, setPendingAction] = useState<PendingAction | null>(null);
   const pending = pendingAction !== null;
   const [editingRunId, setEditingRunId] = useState<CompletedRunId | null>(null);
+  const [runHistoryDate, setRunHistoryDate] = useState("");
+  const [showAllRuns, setShowAllRuns] = useState(false);
   const [runToDelete, setRunToDelete] = useState<CompletedRun | null>(null);
   const [shoeToRetire, setShoeToRetire] = useState<Shoe | null>(null);
   const runDateInputRef = useRef<HTMLInputElement | null>(null);
@@ -372,6 +374,22 @@ export default function ShoeTracker({
       ),
     [runs, shoes],
   );
+  const sortedRuns = useMemo(
+    () => [...runs].sort((left, right) => right.startedAt.localeCompare(left.startedAt)),
+    [runs],
+  );
+  const matchingRuns = useMemo(
+    () =>
+      runHistoryDate
+        ? sortedRuns.filter((run) => getRunLocalDate(run) === runHistoryDate)
+        : sortedRuns,
+    [runHistoryDate, sortedRuns],
+  );
+  const visibleRuns = runHistoryDate
+    ? matchingRuns
+    : showAllRuns
+      ? sortedRuns
+      : sortedRuns.slice(0, 1);
 
   useEffect(() => {
     if (editingRunId !== null) {
@@ -393,9 +411,16 @@ export default function ShoeTracker({
     }
 
     if (initialFocusTarget?.kind === "review-run") {
-      editRunButtonRefs.current.get(initialFocusTarget.runId)?.focus();
+      const reviewButton = editRunButtonRefs.current.get(initialFocusTarget.runId);
+      if (reviewButton) {
+        reviewButton.focus();
+        return;
+      }
+
+      const targetRun = runs.find((run) => run.id === initialFocusTarget.runId);
+      if (targetRun) setRunHistoryDate(getRunLocalDate(targetRun));
     }
-  }, [initialFocusTarget]);
+  }, [initialFocusTarget, runHistoryDate, runs]);
 
   const closeRunEditor = (runId: CompletedRunId) => {
     editButtonToRestoreRef.current = runId;
@@ -577,7 +602,6 @@ export default function ShoeTracker({
         </p>
       )}
       <div className="entry">
-        <h2>Run</h2>
         {runSaveConfirmation && (
           <p className="run-save-confirmation" role="status">
             {runSaveConfirmation}
@@ -704,20 +728,60 @@ export default function ShoeTracker({
             {pendingAction === "create-run" ? "Logging run…" : "Log Run"}
           </button>
         </form>
+      </div>
 
-        <div className="mt-4">
-          <h3
-            ref={loggedRunsHeadingRef}
-            className="text-lg font-medium"
-            tabIndex={-1}
-          >
-            Logged Runs
-          </h3>
+      <section
+        className="run-history"
+        aria-labelledby="logged-runs-heading"
+      >
+        <div className="run-history-heading">
+            <h3
+              id="logged-runs-heading"
+              ref={loggedRunsHeadingRef}
+              className="text-lg font-medium"
+              tabIndex={-1}
+            >
+              Logged Runs
+            </h3>
+            {runs.length > 0 && (
+              <label className="run-history-date-filter">
+                Find by date
+                <input
+                  aria-describedby="run-history-date-help"
+                  type="date"
+                  value={runHistoryDate}
+                  onChange={(event) => {
+                    setEditingRunId(null);
+                    setShowAllRuns(false);
+                    setRunHistoryDate(event.target.value);
+                  }}
+                />
+              </label>
+            )}
+          </div>
+          {runs.length > 0 && (
+            <p id="run-history-date-help" className="training-field-hint">
+              Choose a date to find every run logged for that local day.
+            </p>
+          )}
           {runs.length === 0 ? (
             <p className="training-empty-state">No runs logged yet.</p>
+          ) : matchingRuns.length === 0 ? (
+            <div className="run-history-empty">
+              <p className="training-empty-state">
+                No runs logged on {runHistoryDate}.
+              </p>
+              <button
+                type="button"
+                onClick={() => setRunHistoryDate("")}
+              >
+                Clear date
+              </button>
+            </div>
           ) : (
-            <ul>
-              {runs.map((run) => {
+            <>
+              <ul>
+                {visibleRuns.map((run) => {
                 const shoe = shoes.find((candidate) => candidate.id === run.shoeId);
                 const isEditing = editingRunId === run.id;
                 const importSource = importedRunSource(run);
@@ -1053,11 +1117,34 @@ export default function ShoeTracker({
                     )}
                   </li>
                 );
-              })}
-            </ul>
+                })}
+              </ul>
+              <div className="run-history-actions">
+                {runHistoryDate ? (
+                  <button
+                    type="button"
+                    onClick={() => setRunHistoryDate("")}
+                  >
+                    Clear date
+                  </button>
+                ) : sortedRuns.length > 1 ? (
+                  <button
+                    type="button"
+                    aria-expanded={showAllRuns}
+                    onClick={() => {
+                      setEditingRunId(null);
+                      setShowAllRuns((current) => !current);
+                    }}
+                  >
+                    {showAllRuns
+                      ? "Show fewer"
+                      : `Show all ${sortedRuns.length} runs`}
+                  </button>
+                ) : null}
+              </div>
+            </>
           )}
-        </div>
-      </div>
+      </section>
 
       {runToDelete !== null && (
         <ConfirmationDialog
