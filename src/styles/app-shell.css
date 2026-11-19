@@ -33,6 +33,7 @@
   min-height: 100vh;
   min-height: 100dvh;
   padding-top: var(--signed-in-header-height);
+  padding-bottom: 7rem;
   overflow: visible;
 }
 
@@ -58,22 +59,23 @@
 }
 
 .section-navigation {
+  position: fixed;
+  right: 0;
+  bottom: 1rem;
+  left: 0;
+  z-index: 4;
   display: flex;
   justify-content: center;
   gap: 0.25rem;
   box-sizing: border-box;
   width: min(calc(100% - 2rem), 33rem);
-  margin: 0.5rem auto 2rem;
+  margin: 0 auto;
   padding: 0.35rem;
   border: 1px solid var(--app-border);
   border-radius: var(--app-radius-large);
   background: rgb(255 255 255 / 90%);
   box-shadow: var(--app-shadow-small);
   backdrop-filter: blur(16px);
-}
-
-.main:not(.signed-in-home) .section-navigation {
-  display: none;
 }
 
 .section-trigger {
@@ -106,6 +108,12 @@
   color: var(--app-accent);
 }
 
+.section-trigger:disabled {
+  color: var(--app-muted);
+  cursor: wait;
+  opacity: 0.62;
+}
+
 .section-trigger-icon {
   display: none;
 }
@@ -136,7 +144,7 @@
   width: min(100%, 1200px);
   min-height: 100%;
   margin: 0 auto;
-  padding: 4.75rem clamp(1rem, 4vw, 3rem) 3rem;
+  padding: 2rem clamp(1rem, 4vw, 3rem) 7rem;
 }
 
 .training-stale {
@@ -166,29 +174,6 @@
   text-align: left;
 }
 
-.close {
-  position: absolute;
-  top: 1.5rem;
-  right: 1rem;
-  z-index: 3;
-  width: 2.75rem;
-  height: 2.75rem;
-  padding: 0;
-  border: 1px solid var(--app-border-strong);
-  border-radius: 50%;
-  background: rgb(255 255 255 / 88%);
-  box-shadow: var(--app-shadow-small);
-  color: var(--app-ink);
-  font-size: 1.5rem;
-  line-height: 1;
-  cursor: pointer;
-}
-
-.close:hover {
-  border-color: var(--app-ink);
-  background: var(--app-surface);
-}
-
 @media (max-width: 768px) {
   .main.signed-in-home {
     justify-content: flex-start;
@@ -215,10 +200,6 @@
     background: rgb(245 245 247 / 92%);
     box-shadow: 0 -0.5rem 2rem rgb(0 0 0 / 7%);
     backdrop-filter: saturate(180%) blur(18px);
-  }
-
-  .main:not(.signed-in-home) .section-navigation {
-    display: grid;
   }
 
   .section-trigger {
@@ -258,7 +239,7 @@
   }
 
   .section-panel-content {
-    padding: 4.5rem 1rem
+    padding: 1.5rem 1rem
       calc(6.25rem + env(safe-area-inset-bottom));
   }
 
@@ -279,8 +260,4 @@
     font-size: clamp(2rem, 10vw, 2.6rem);
   }
 
-  .close {
-    top: 1rem;
-    right: 1rem;
-  }
 }

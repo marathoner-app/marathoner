@@ -126,27 +126,15 @@ function App() {
     null,
   );
   const [deletionSignOutAttempt, setDeletionSignOutAttempt] = useState(0);
-  const lastActiveSection = useRef<Section | null>(null);
   const homeTriggerRef = useRef<HTMLButtonElement | null>(null);
   const restoreHomeFocus = useRef(false);
   const accountSettingsTriggerRef = useRef<HTMLButtonElement | null>(null);
   const restoreAccountSettingsFocus = useRef(false);
   const lastSignedInUserId = useRef<string | null>(null);
-  const triggerRefs = useRef<Record<Section, HTMLButtonElement | null>>({
-    plan: null,
-    track: null,
-    analyze: null,
-  });
-
   useEffect(() => {
     if (!activeSection && restoreHomeFocus.current) {
       homeTriggerRef.current?.focus();
       restoreHomeFocus.current = false;
-      return;
-    }
-    if (!activeSection && lastActiveSection.current) {
-      triggerRefs.current[lastActiveSection.current]?.focus();
-      lastActiveSection.current = null;
     }
   }, [activeSection]);
 
@@ -236,7 +224,6 @@ function App() {
   ) => {
     document.documentElement.scrollTop = 0;
     document.body.scrollTop = 0;
-    lastActiveSection.current = section;
     setTrackInitialFocusTarget(
       section === "track" ? initialFocusTarget : null,
     );
@@ -251,7 +238,6 @@ function App() {
   const selectHome = () => {
     if (activeSection !== null) {
       restoreHomeFocus.current = true;
-      lastActiveSection.current = null;
     }
     closeSection();
   };
@@ -381,12 +367,8 @@ function App() {
                 reduceMotion={Boolean(reduceMotion)}
                 onOpenSection={openSection}
                 onSelectHome={selectHome}
-                onCloseSection={closeSection}
                 onRegisterHomeTrigger={(element) => {
                   homeTriggerRef.current = element;
-                }}
-                onRegisterTrigger={(section, element) => {
-                  triggerRefs.current[section] = element;
                 }}
               />
             </RecommendationEvidenceProvider>
@@ -425,12 +407,7 @@ type AuthenticatedExperienceProps = {
     initialFocusTarget?: ShoeTrackerInitialFocusTarget | null,
   ) => void;
   onSelectHome: () => void;
-  onCloseSection: () => void;
   onRegisterHomeTrigger: (element: HTMLButtonElement | null) => void;
-  onRegisterTrigger: (
-    section: Section,
-    element: HTMLButtonElement | null,
-  ) => void;
 };
 
 function AuthenticatedExperience({
@@ -441,9 +418,7 @@ function AuthenticatedExperience({
   reduceMotion,
   onOpenSection,
   onSelectHome,
-  onCloseSection,
   onRegisterHomeTrigger,
-  onRegisterTrigger,
 }: AuthenticatedExperienceProps) {
   const training = useTrainingData();
   const closedBetaMethodologyManifest =
@@ -528,6 +503,9 @@ function AuthenticatedExperience({
   const showOnboarding =
     hasReadableTraining &&
     (isOnboardingOpen || (!onboardingComplete && !onboardingDeferred));
+  const navigationPending = !hasReadableTraining;
+  const showNavigation =
+    navigationPending || (onboardingComplete && !showOnboarding);
   const sectionTransitionDuration = reduceMotion ? 0 : 0.25;
 
   const closeOnboarding = () => {
@@ -692,14 +670,14 @@ function AuthenticatedExperience({
         </>
       )}
 
-      {hasReadableTraining && onboardingComplete && !showOnboarding && (
+      {showNavigation && (
         <TrainingSectionNavigation
           activeSection={activeSection}
           transitionDuration={sectionTransitionDuration}
+          disabled={navigationPending}
           onSelectHome={onSelectHome}
           onRegisterHomeTrigger={onRegisterHomeTrigger}
           onSelect={onOpenSection}
-          onRegisterTrigger={onRegisterTrigger}
         />
       )}
 
@@ -754,20 +732,15 @@ function AuthenticatedExperience({
           initial={{ opacity: 0, scale: 0.98 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: sectionTransitionDuration }}
-          onKeyDown={(event) => {
-            if (event.key === "Escape") onCloseSection();
-          }}
         >
           <SectionContent
             section={activeSection}
-            title={activeSectionDetails.title}
             transitionDuration={sectionTransitionDuration}
             showSynchronizationNotice={showSynchronizationNotice}
             sessionPlanProjection={sessionPlanProjection}
             isSessionAdaptationActive={isSessionAdaptationActive}
             trackInitialFocusTarget={trackInitialFocusTarget}
             onEditRunnerProfile={editRunnerProfile}
-            onClose={onCloseSection}
           />
         </motion.section>
       )}
@@ -777,26 +750,22 @@ function AuthenticatedExperience({
 
 type SectionContentProps = {
   section: Section;
-  title: string;
   transitionDuration: number;
   showSynchronizationNotice: boolean;
   sessionPlanProjection: GeneratedPlanEntityProjection | null;
   isSessionAdaptationActive: boolean;
   trackInitialFocusTarget: ShoeTrackerInitialFocusTarget | null;
   onEditRunnerProfile: () => void;
-  onClose: () => void;
 };
 
 function SectionContent({
   section,
-  title,
   transitionDuration,
   showSynchronizationNotice,
   sessionPlanProjection,
   isSessionAdaptationActive,
   trackInitialFocusTarget,
   onEditRunnerProfile,
-  onClose,
 }: SectionContentProps) {
   const training = useTrainingData();
   const hasReadableTraining =
@@ -828,15 +797,6 @@ function SectionContent({
       exit={{ opacity: 0 }}
       transition={{ duration: transitionDuration }}
     >
-      <button
-        type="button"
-        onClick={onClose}
-        className="close"
-        aria-label={`Close ${title} panel`}
-        autoFocus
-      >
-        <span aria-hidden="true">X</span>
-      </button>
       {training.status === "loading" && (
         <p className="training-status" role="status">
           Loading your training data...

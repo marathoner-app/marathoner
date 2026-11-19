@@ -51,3 +51,29 @@ test('keeps Garmin controls reachable with 200% text', async ({ page }) => {
     'at phone width with 200% text',
   )
 })
+
+test('keeps account settings below the iPhone safe area', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.goto('tests/viewport/accountSettings.html')
+  await page.addStyleTag({
+    content: `
+      :root {
+        --app-safe-area-top: 47px;
+        --app-safe-area-right: 0px;
+        --app-safe-area-bottom: 34px;
+        --app-safe-area-left: 0px;
+      }
+    `,
+  })
+
+  const dialog = page.getByRole('dialog', { name: 'Account settings' })
+  const bounds = await dialog.boundingBox()
+  expect(bounds).not.toBeNull()
+  expect(bounds?.y ?? 0).toBeGreaterThanOrEqual(55)
+  expect((bounds?.y ?? 0) + (bounds?.height ?? 0)).toBeLessThanOrEqual(802)
+  await expectNoHorizontalOverflow(
+    page,
+    'account settings',
+    'with iPhone safe-area insets',
+  )
+})

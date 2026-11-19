@@ -28,7 +28,11 @@ export function SignedInHomeFixture() {
   };
 
   return (
-    <main className={`main${activeSection === null ? " signed-in-home" : ""}`}>
+    <main
+      className={`main${
+        activeSection === null ? " signed-in-home" : ""
+      }`}
+    >
       <SignedInAppHeader
         email="runner@example.com"
         onOpenAccountSettings={() => undefined}
@@ -89,14 +93,6 @@ export function SignedInHomeFixture() {
           aria-label={activeDetails.title}
         >
           <div className="section-panel-content">
-            <button
-              type="button"
-              className="close"
-              aria-label={`Close ${activeDetails.title} panel`}
-              onClick={() => setActiveSection(null)}
-            >
-              <span aria-hidden="true">X</span>
-            </button>
             <section
               aria-label={`${activeDetails.label} sample content`}
               style={{

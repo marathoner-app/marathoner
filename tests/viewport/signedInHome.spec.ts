@@ -231,13 +231,11 @@ test("keeps the signed-in home usable with 200% text", async ({ page }) => {
   );
 
   await page.getByRole("button", { name: "Plan", exact: true }).click();
-  const closePlan = page.getByRole("button", {
-    name: "Close Plan Your Workouts panel",
-  });
   const planContent = page.getByRole("region", { name: "Plan sample content" });
-  await expect(closePlan).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Close Plan Your Workouts panel" }),
+  ).toHaveCount(0);
   await expect(planContent).toBeVisible();
-  await expectBefore(closePlan, planContent, "large-text close control and Plan content");
   await expect(
     page.getByRole("heading", { level: 1, name: "Plan Your Workouts" }),
   ).toHaveCount(0);
@@ -291,7 +289,7 @@ test("keeps the desktop signed-in header docked above the page", async ({ page }
   await expect(page.getByText("Signed in as runner@example.com")).toBeVisible();
   await expect(
     page.getByRole("navigation", { name: "Training sections" }),
-  ).toHaveCSS("position", "static");
+  ).toHaveCSS("position", "fixed");
   await expectNoHorizontalOverflow(page, "signed-in home", "at desktop width");
 });
 
