@@ -35,6 +35,7 @@ type RecentRunPaceChartOption = ComposeOption<
 type RecentRunPaceTrendProps = {
   readonly points: readonly RecentRunPacePoint[];
   readonly distanceUnit: DistanceUnit;
+  readonly isCarouselCardActive: boolean;
 };
 
 function formatDate(value: string): string {
@@ -55,6 +56,7 @@ function formatPace(secondsPerUnit: number, distanceUnit: DistanceUnit): string 
 export default function RecentRunPaceTrend({
   points,
   distanceUnit,
+  isCarouselCardActive,
 }: RecentRunPaceTrendProps) {
   const chartContainerRef = useRef<HTMLDivElement | null>(null);
   const chartRef = useRef<ECharts | null>(null);
@@ -162,6 +164,12 @@ export default function RecentRunPaceTrend({
 
     chartRef.current.setOption(option, { notMerge: true });
   }, [displayPoints, distanceUnit, hasTrend, reduceMotion]);
+
+  useEffect(() => {
+    if (!isCarouselCardActive || chartRef.current === null) return;
+
+    chartRef.current.resize();
+  }, [isCarouselCardActive]);
 
   return (
     <section className="pace-trend" aria-labelledby="pace-trend-heading">
