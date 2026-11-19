@@ -1,4 +1,12 @@
-import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
+import {
+  lazy,
+  Suspense,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import Title from "./components/Title";
 import Subtitle from "./components/Subtitle";
@@ -34,6 +42,7 @@ import ClosedBetaAdaptationSurface from "./components/ClosedBetaAdaptationSurfac
 import TrainingSectionNavigation from "./components/TrainingSectionNavigation";
 import SignedInAppHeader from "./components/SignedInAppHeader";
 import TrainingStartupStatus from "./components/TrainingStartupStatus";
+import SignedInStartupScreen from "./components/SignedInStartupScreen";
 import {
   trainingSections,
   type TrainingSection,
@@ -264,6 +273,29 @@ function App() {
     setDeletionReceipt(receipt);
   };
 
+  const signedInChrome =
+    auth.status === "signedIn" ? (
+      <>
+        <SignedInAppHeader
+          email={auth.user.email}
+          accountSettingsTriggerRef={accountSettingsTriggerRef}
+          onOpenAccountSettings={() => setAccountSettingsOpen(true)}
+          onLogout={handleLogout}
+        />
+        {logoutError && (
+          <p className="auth-message auth-error session-auth-error" role="alert">
+            {logoutError}
+          </p>
+        )}
+        {!activeSection && (
+          <>
+            <Title />
+            <Subtitle />
+          </>
+        )}
+      </>
+    ) : null;
+
   return (
     <motion.main
       className={`main${auth.status === "signedOut" ? " public-entry" : ""}${
@@ -289,12 +321,7 @@ function App() {
       )}
 
       {!deletionReceipt && auth.status === "loading" && (
-        <>
-          <Title />
-          <p className="auth-message" role="status">
-            Loading your session...
-          </p>
-        </>
+        <SignedInStartupScreen />
       )}
 
       {!deletionReceipt && auth.status === "error" && (
@@ -320,43 +347,19 @@ function App() {
 
       {!deletionReceipt &&
         !logoutPending &&
-        auth.status === "signedIn" && (
-          <SignedInAppHeader
-            email={auth.user.email}
-            accountSettingsTriggerRef={accountSettingsTriggerRef}
-            onOpenAccountSettings={() => setAccountSettingsOpen(true)}
-            onLogout={handleLogout}
+        auth.status === "signedOut" &&
+        !activeSection && (
+          <PublicLandingPage
+            supportEmail={publicSupportEmail}
+            statusNotice={auth.notice}
           />
         )}
 
-      {!deletionReceipt &&
-        !logoutPending &&
-        auth.status === "signedIn" &&
-        logoutError && (
-          <p className="auth-message auth-error session-auth-error" role="alert">
-            {logoutError}
-          </p>
-        )}
-
-      {!deletionReceipt &&
-        !logoutPending &&
-        (auth.status === "signedIn" || auth.status === "signedOut") &&
-        !activeSection && (
-          auth.status === "signedOut" ? (
-            <PublicLandingPage
-              supportEmail={publicSupportEmail}
-              statusNotice={auth.notice}
-            />
-          ) : (
-            <>
-              <Title />
-              <Subtitle />
-            </>
-          )
-        )}
-
       {!deletionReceipt && !logoutPending && auth.status === "signedIn" && (
-        <ClosedBetaMethodologyConsentGate ownerId={auth.user.uid}>
+        <ClosedBetaMethodologyConsentGate
+          ownerId={auth.user.uid}
+          chrome={signedInChrome}
+        >
           <TrainingDataProvider key={auth.user.uid} userId={auth.user.uid}>
             <RecommendationEvidenceProvider
               ownerId={createUserId(auth.user.uid)}
@@ -367,6 +370,7 @@ function App() {
                 activeSectionDetails={activeSectionDetails}
                 trackInitialFocusTarget={trackInitialFocusTarget}
                 reduceMotion={Boolean(reduceMotion)}
+                chrome={signedInChrome}
                 onOpenSection={openSection}
                 onSelectHome={selectHome}
                 onRegisterHomeTrigger={(element) => {
@@ -404,6 +408,7 @@ type AuthenticatedExperienceProps = {
   activeSectionDetails: (typeof sections)[number] | undefined;
   trackInitialFocusTarget: ShoeTrackerInitialFocusTarget | null;
   reduceMotion: boolean;
+  chrome: ReactNode;
   onOpenSection: (
     section: Section,
     initialFocusTarget?: ShoeTrackerInitialFocusTarget | null,
@@ -418,6 +423,7 @@ function AuthenticatedExperience({
   activeSectionDetails,
   trackInitialFocusTarget,
   reduceMotion,
+  chrome,
   onOpenSection,
   onSelectHome,
   onRegisterHomeTrigger,
@@ -505,6 +511,25 @@ function AuthenticatedExperience({
   const runsReady = !training.pendingSources.includes("runs");
   const shoesReady = !training.pendingSources.includes("shoes");
   const secondaryTrainingReady = runsReady && shoesReady;
+  const [guidanceResolved, setGuidanceResolved] = useState(
+    closedBetaMethodologyManifest === null,
+  );
+  const [guidanceRetryToken, setGuidanceRetryToken] = useState(0);
+  const [initialStartupComplete, setInitialStartupComplete] = useState(false);
+  const initialHomeSnapshotReady =
+    hasReadableTraining && training.pendingSources.length === 0;
+  const guidanceRequiredForStartup =
+    onboardingComplete && closedBetaMethodologyManifest !== null;
+  const initialExperienceReady =
+    initialHomeSnapshotReady &&
+    (!guidanceRequiredForStartup || guidanceResolved);
+  const experienceReady = initialStartupComplete || initialExperienceReady;
+  const guidanceStartupDelayed = useDelayedTrainingStartupNotice(
+    initialHomeSnapshotReady &&
+      guidanceRequiredForStartup &&
+      !guidanceResolved,
+    `${ownerId}:${guidanceTriggerCodes.join(",")}`,
+  );
   const hasOtherStaleReason =
     training.status === "stale" &&
     !hasSynchronizationError &&
@@ -548,24 +573,41 @@ function AuthenticatedExperience({
     setIsSessionAdaptationActive(false);
   }, [training.profile?.updatedAt]);
 
+  useEffect(() => {
+    if (initialExperienceReady) setInitialStartupComplete(true);
+  }, [initialExperienceReady]);
+
   return (
     <>
-      {showOnboarding && (
-        <RunnerOnboarding
-          profile={training.profile}
-          onSave={training.saveProfile}
-          onClose={closeOnboarding}
+      {!experienceReady && (
+        <SignedInStartupScreen
+          delayed={startupDelayElapsed || guidanceStartupDelayed}
+          onRetry={() => {
+            void training.reload();
+            setGuidanceRetryToken((token) => token + 1);
+          }}
         />
       )}
 
-      {!activeSection && training.status === "loading" && (
-        <TrainingStartupStatus
-          pendingSources={training.pendingSources}
-          delayed={startupDelayElapsed}
-          hasReadableSnapshot={false}
-          onRetry={() => void training.reload()}
-        />
-      )}
+      <div className="signed-in-experience" hidden={!experienceReady}>
+        {chrome}
+
+        {showOnboarding && (
+          <RunnerOnboarding
+            profile={training.profile}
+            onSave={training.saveProfile}
+            onClose={closeOnboarding}
+          />
+        )}
+
+        {!activeSection && training.status === "loading" && (
+          <TrainingStartupStatus
+            pendingSources={training.pendingSources}
+            delayed={startupDelayElapsed}
+            hasReadableSnapshot={false}
+            onRetry={() => void training.reload()}
+          />
+        )}
 
       {!activeSection &&
         hasReadableTraining &&
@@ -578,14 +620,14 @@ function AuthenticatedExperience({
           />
       )}
 
-      {!activeSection && hasSynchronizationError && (
-        <div className="training-home-status training-error" role="alert">
-          <p>{training.error}</p>
-          <button type="button" onClick={() => void training.reload()}>
-            Try again
-          </button>
-        </div>
-      )}
+        {!activeSection && hasSynchronizationError && (
+          <div className="training-home-status training-error" role="alert">
+            <p>{training.error}</p>
+            <button type="button" onClick={() => void training.reload()}>
+              Try again
+            </button>
+          </div>
+        )}
 
       {!activeSection && showSynchronizationNotice && (
         <div className="training-home-status training-stale" role="status">
@@ -596,8 +638,8 @@ function AuthenticatedExperience({
         </div>
       )}
 
-      {!activeSection && hasReadableTraining && !showOnboarding && (
-        <>
+        {!activeSection && hasReadableTraining && !showOnboarding && (
+          <>
           <div className="runner-profile-entry">
             <button
               ref={runnerProfileTriggerRef}
@@ -627,26 +669,34 @@ function AuthenticatedExperience({
             distanceUnit={training.profile?.preferredDistanceUnit ?? "mile"}
             onOpenPlan={() => onOpenSection("plan")}
           />
-          {secondaryTrainingReady && closedBetaMethodologyManifest !== null && (
-            <Suspense
-              fallback={
-                <p className="training-status" role="status">
-                  Loading runner guidance…
-                </p>
-              }
-            >
-              <ClosedBetaGuidanceSurface
-                ownerId={ownerId}
-                activeTriggerCodes={guidanceTriggerCodes}
-                safetyState={
-                  latestRun?.unusualPain === true ? "reported" : "none_reported"
-                }
-                otherConcerningOrPersistentSymptoms={
-                  latestRun?.unusualPain === true
-                }
-              />
-            </Suspense>
+          </>
+        )}
+
+        {secondaryTrainingReady &&
+          onboardingComplete &&
+          closedBetaMethodologyManifest !== null && (
+            <div hidden={activeSection !== null || showOnboarding}>
+              <Suspense fallback={null}>
+                <ClosedBetaGuidanceSurface
+                  key={`${ownerId}:${guidanceRetryToken}`}
+                  ownerId={ownerId}
+                  activeTriggerCodes={guidanceTriggerCodes}
+                  safetyState={
+                    latestRun?.unusualPain === true
+                      ? "reported"
+                      : "none_reported"
+                  }
+                  otherConcerningOrPersistentSymptoms={
+                    latestRun?.unusualPain === true
+                  }
+                  onResolvedChange={setGuidanceResolved}
+                />
+              </Suspense>
+            </div>
           )}
+
+        {!activeSection && hasReadableTraining && !showOnboarding && (
+          <>
           {runsReady &&
             InternalSessionTodayComparison &&
             sessionPlanProjection &&
@@ -698,19 +748,19 @@ function AuthenticatedExperience({
               />
             </Suspense>
           )}
-        </>
-      )}
+          </>
+        )}
 
-      {showNavigation && (
-        <TrainingSectionNavigation
-          activeSection={activeSection}
-          transitionDuration={sectionTransitionDuration}
-          disabled={navigationPending}
-          onSelectHome={onSelectHome}
-          onRegisterHomeTrigger={onRegisterHomeTrigger}
-          onSelect={onOpenSection}
-        />
-      )}
+        {showNavigation && (
+          <TrainingSectionNavigation
+            activeSection={activeSection}
+            transitionDuration={sectionTransitionDuration}
+            disabled={navigationPending}
+            onSelectHome={onSelectHome}
+            onRegisterHomeTrigger={onRegisterHomeTrigger}
+            onSelect={onOpenSection}
+          />
+        )}
 
       {!activeSection && hasReadableTraining && !showOnboarding && (
         <>
@@ -755,27 +805,28 @@ function AuthenticatedExperience({
         </>
       )}
 
-      {activeSection && activeSectionDetails && (
-        <motion.section
-          id={`${activeSection}-panel`}
-          className={`section-panel section-panel--${activeSection}`}
-          aria-label={activeSectionDetails.title}
-          initial={{ opacity: 0, scale: 0.98 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: sectionTransitionDuration }}
-        >
-          <SectionContent
-            section={activeSection}
-            transitionDuration={sectionTransitionDuration}
-            showSynchronizationNotice={showSynchronizationNotice}
-            sessionPlanProjection={sessionPlanProjection}
-            isSessionAdaptationActive={isSessionAdaptationActive}
-            trackInitialFocusTarget={trackInitialFocusTarget}
-            startupDelayElapsed={startupDelayElapsed}
-            onEditRunnerProfile={editRunnerProfile}
-          />
-        </motion.section>
-      )}
+        {activeSection && activeSectionDetails && (
+          <motion.section
+            id={`${activeSection}-panel`}
+            className={`section-panel section-panel--${activeSection}`}
+            aria-label={activeSectionDetails.title}
+            initial={{ opacity: 0, scale: 0.98 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: sectionTransitionDuration }}
+          >
+            <SectionContent
+              section={activeSection}
+              transitionDuration={sectionTransitionDuration}
+              showSynchronizationNotice={showSynchronizationNotice}
+              sessionPlanProjection={sessionPlanProjection}
+              isSessionAdaptationActive={isSessionAdaptationActive}
+              trackInitialFocusTarget={trackInitialFocusTarget}
+              startupDelayElapsed={startupDelayElapsed}
+              onEditRunnerProfile={editRunnerProfile}
+            />
+          </motion.section>
+        )}
+      </div>
     </>
   );
 }

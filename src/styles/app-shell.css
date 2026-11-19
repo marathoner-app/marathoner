@@ -37,8 +37,16 @@
   overflow: visible;
 }
 
-.main.signed-in-home > .title {
+.main.signed-in-home .title {
   margin-top: clamp(3rem, 7vw, 5.5rem);
+}
+
+.signed-in-experience {
+  display: contents;
+}
+
+.signed-in-experience[hidden] {
+  display: none;
 }
 
 .title {

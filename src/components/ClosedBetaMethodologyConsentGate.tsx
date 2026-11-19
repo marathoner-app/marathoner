@@ -16,6 +16,8 @@ import type { ClosedBetaProvisionalMethodologyManifest } from "../domain/methodo
 import { getClosedBetaProvisionalMethodologyManifest } from "../domain/methodology/closedBetaProvisionalMethodologyRegistry";
 import type { ClosedBetaMethodologyConsentClient } from "../services/closedBetaMethodologyConsentClient";
 import { firebaseClosedBetaMethodologyConsentClient } from "../services/firebaseClosedBetaMethodologyConsentClient";
+import useDelayedTrainingStartupNotice from "../training/useDelayedTrainingStartupNotice";
+import SignedInStartupScreen from "./SignedInStartupScreen";
 
 import "./ClosedBetaMethodologyConsentGate.css";
 
@@ -33,6 +35,7 @@ export interface ClosedBetaMethodologyConsentGateProps {
   readonly children: ReactNode;
   readonly client?: ClosedBetaMethodologyConsentClient;
   readonly manifest?: ClosedBetaProvisionalMethodologyManifest | null;
+  readonly chrome?: ReactNode;
 }
 
 function stateFromResult(
@@ -83,6 +86,7 @@ export default function ClosedBetaMethodologyConsentGate({
   children,
   client = firebaseClosedBetaMethodologyConsentClient,
   manifest = getClosedBetaProvisionalMethodologyManifest(),
+  chrome,
 }: ClosedBetaMethodologyConsentGateProps) {
   const headingId = `${useId()}-heading`;
   const headingRef = useRef<HTMLHeadingElement>(null);
@@ -91,31 +95,41 @@ export default function ClosedBetaMethodologyConsentGate({
   );
   const [checked, setChecked] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const requestSequence = useRef(0);
+  const loadingDelayed = useDelayedTrainingStartupNotice(
+    state.kind === "loading",
+    ownerId,
+  );
 
   const loadStatus = useCallback(() => {
     if (manifest === null) return;
+    const requestId = requestSequence.current + 1;
+    requestSequence.current = requestId;
     setChecked(false);
     setState({ kind: "loading" });
-    let active = true;
     void client
       .getStatus()
       .then((result) => {
-        if (active) setState(stateFromResult(result, manifest));
+        if (requestSequence.current === requestId) {
+          setState(stateFromResult(result, manifest));
+        }
       })
       .catch(() => {
-        if (active) {
+        if (requestSequence.current === requestId) {
           setState({
             kind: "error",
             message: "Marathoner could not check beta access. Try again.",
           });
         }
       });
-    return () => {
-      active = false;
-    };
   }, [client, manifest]);
 
-  useEffect(() => loadStatus(), [loadStatus, ownerId]);
+  useEffect(() => {
+    loadStatus();
+    return () => {
+      requestSequence.current += 1;
+    };
+  }, [loadStatus, ownerId]);
 
   useEffect(() => {
     if (state.kind === "required" || state.kind === "error") {
@@ -127,29 +141,33 @@ export default function ClosedBetaMethodologyConsentGate({
 
   if (state.kind === "loading") {
     return (
-      <div className="methodology-consent-status" role="status">
-        Checking beta methodology access…
-      </div>
+      <SignedInStartupScreen
+        delayed={loadingDelayed}
+        onRetry={loadStatus}
+      />
     );
   }
 
   if (state.kind === "error") {
     return (
-      <section
-        className="methodology-consent-gate methodology-consent-error"
-        aria-labelledby={headingId}
-      >
-        <p className="methodology-consent-eyebrow">
-          {closedBetaMethodologyConsentCopy.eyebrow}
-        </p>
-        <h2 id={headingId} ref={headingRef} tabIndex={-1}>
-          Beta access needs attention
-        </h2>
-        <p role="alert">{state.message}</p>
-        <button type="button" onClick={loadStatus}>
-          Try again
-        </button>
-      </section>
+      <>
+        {chrome}
+        <section
+          className="methodology-consent-gate methodology-consent-error"
+          aria-labelledby={headingId}
+        >
+          <p className="methodology-consent-eyebrow">
+            {closedBetaMethodologyConsentCopy.eyebrow}
+          </p>
+          <h2 id={headingId} ref={headingRef} tabIndex={-1}>
+            Beta access needs attention
+          </h2>
+          <p role="alert">{state.message}</p>
+          <button type="button" onClick={loadStatus}>
+            Try again
+          </button>
+        </section>
+      </>
     );
   }
 
@@ -178,44 +196,49 @@ export default function ClosedBetaMethodologyConsentGate({
   };
 
   return (
-    <section
-      className="methodology-consent-gate"
-      aria-labelledby={headingId}
-    >
-      <p className="methodology-consent-eyebrow">
-        {closedBetaMethodologyConsentCopy.eyebrow}
-      </p>
-      <h2 id={headingId} ref={headingRef} tabIndex={-1}>
-        {closedBetaMethodologyConsentCopy.title}
-      </h2>
-      {state.reason === "version_changed" && (
-        <p className="methodology-consent-changed" role="status">
-          The beta methodology version changed. Please review and accept the
-          current version before continuing.
-        </p>
-      )}
-      <p>{closedBetaMethodologyConsentCopy.introduction}</p>
-      <p>{closedBetaMethodologyConsentCopy.testingContext}</p>
-      <p>{closedBetaMethodologyConsentCopy.safetyContext}</p>
-      <p className="methodology-consent-version">
-        Methodology {manifest.manifestVersion} · Consent{" "}
-        {CLOSED_BETA_METHODOLOGY_CONSENT_VERSION}
-      </p>
-      <label className="methodology-consent-agreement">
-        <input
-          type="checkbox"
-          checked={checked}
-          onChange={(event) => setChecked(event.target.checked)}
-        />
-        <span>{closedBetaMethodologyConsentCopy.agreement}</span>
-      </label>
-      <button
-        type="button"
-        disabled={!checked || submitting}
-        onClick={() => void accept()}
+    <>
+      {chrome}
+      <section
+        className="methodology-consent-gate"
+        aria-labelledby={headingId}
       >
-        {submitting ? "Saving acceptance…" : closedBetaMethodologyConsentCopy.action}
-      </button>
-    </section>
+        <p className="methodology-consent-eyebrow">
+          {closedBetaMethodologyConsentCopy.eyebrow}
+        </p>
+        <h2 id={headingId} ref={headingRef} tabIndex={-1}>
+          {closedBetaMethodologyConsentCopy.title}
+        </h2>
+        {state.reason === "version_changed" && (
+          <p className="methodology-consent-changed" role="status">
+            The beta methodology version changed. Please review and accept the
+            current version before continuing.
+          </p>
+        )}
+        <p>{closedBetaMethodologyConsentCopy.introduction}</p>
+        <p>{closedBetaMethodologyConsentCopy.testingContext}</p>
+        <p>{closedBetaMethodologyConsentCopy.safetyContext}</p>
+        <p className="methodology-consent-version">
+          Methodology {manifest.manifestVersion} · Consent{" "}
+          {CLOSED_BETA_METHODOLOGY_CONSENT_VERSION}
+        </p>
+        <label className="methodology-consent-agreement">
+          <input
+            type="checkbox"
+            checked={checked}
+            onChange={(event) => setChecked(event.target.checked)}
+          />
+          <span>{closedBetaMethodologyConsentCopy.agreement}</span>
+        </label>
+        <button
+          type="button"
+          disabled={!checked || submitting}
+          onClick={() => void accept()}
+        >
+          {submitting
+            ? "Saving acceptance…"
+            : closedBetaMethodologyConsentCopy.action}
+        </button>
+      </section>
+    </>
   );
 }

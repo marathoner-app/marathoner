@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import type {
   ClosedBetaGuidancePresentation,
@@ -18,6 +18,7 @@ interface ClosedBetaGuidanceSurfaceProps {
   readonly emergencySignals?: readonly string[];
   readonly otherConcerningOrPersistentSymptoms?: boolean;
   readonly client?: ClosedBetaGuidanceClient;
+  readonly onResolvedChange?: (resolved: boolean) => void;
 }
 
 type SurfaceState =
@@ -49,6 +50,7 @@ export default function ClosedBetaGuidanceSurface({
   emergencySignals = [],
   otherConcerningOrPersistentSymptoms = false,
   client = firebaseClosedBetaGuidanceClient,
+  onResolvedChange,
 }: ClosedBetaGuidanceSurfaceProps) {
   const requestKey = useMemo(
     () =>
@@ -66,8 +68,10 @@ export default function ClosedBetaGuidanceSurface({
     ],
   );
   const [state, setState] = useState<SurfaceState>({ kind: "loading" });
+  const hasResolvedRequest = useRef(false);
+  const resolvedOwnerId = useRef(ownerId);
 
-  const load = useCallback(() => {
+  const load = useCallback((showLoading: boolean) => {
     const request = JSON.parse(requestKey) as {
       activeTriggerCodes: string[];
       safetyState: ClosedBetaGuidanceSafetyState;
@@ -75,11 +79,12 @@ export default function ClosedBetaGuidanceSurface({
       otherConcerningOrPersistentSymptoms: boolean;
     };
     let active = true;
-    setState({ kind: "loading" });
+    if (showLoading) setState({ kind: "loading" });
     void client
       .get(request)
       .then((result) => {
         if (!active) return;
+        hasResolvedRequest.current = true;
         if (result.status === "available") {
           setState({
             kind: "visible",
@@ -94,6 +99,7 @@ export default function ClosedBetaGuidanceSurface({
       })
       .catch(() => {
         if (active) {
+          hasResolvedRequest.current = true;
           setState({
             kind: "error",
             message:
@@ -106,7 +112,18 @@ export default function ClosedBetaGuidanceSurface({
     };
   }, [client, requestKey]);
 
-  useEffect(() => load(), [load, ownerId]);
+  useEffect(() => {
+    const ownerChanged = resolvedOwnerId.current !== ownerId;
+    if (ownerChanged) {
+      resolvedOwnerId.current = ownerId;
+      hasResolvedRequest.current = false;
+    }
+    return load(ownerChanged || !hasResolvedRequest.current);
+  }, [load, ownerId]);
+
+  useEffect(() => {
+    onResolvedChange?.(state.kind !== "loading");
+  }, [onResolvedChange, state.kind]);
 
   if (state.kind === "hidden") return null;
   if (state.kind === "loading") {
@@ -120,7 +137,7 @@ export default function ClosedBetaGuidanceSurface({
     return (
       <section className="training-home-status training-stale" role="alert">
         <p>{state.message}</p>
-        <button type="button" onClick={load}>
+        <button type="button" onClick={() => load(true)}>
           Try again
         </button>
       </section>

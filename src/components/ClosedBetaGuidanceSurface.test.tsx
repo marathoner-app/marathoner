@@ -103,4 +103,55 @@ describe("ClosedBetaGuidanceSurface", () => {
     );
     expect(screen.queryByRole("region")).not.toBeInTheDocument();
   });
+
+  it("keeps resolved guidance mounted across section visibility changes", async () => {
+    const guidanceClient = client();
+    const resolvedChanges: boolean[] = [];
+    const view = render(
+      <div hidden={false}>
+        <ClosedBetaGuidanceSurface
+          ownerId="beta-runner"
+          activeTriggerCodes={["EASY-WORKOUT-UPCOMING"]}
+          safetyState="none_reported"
+          client={guidanceClient}
+          onResolvedChange={(resolved) => resolvedChanges.push(resolved)}
+        />
+      </div>,
+    );
+
+    expect(
+      await screen.findByRole("heading", {
+        name: "Keep easy running conversational",
+      }),
+    ).toBeInTheDocument();
+
+    view.rerender(
+      <div hidden>
+        <ClosedBetaGuidanceSurface
+          ownerId="beta-runner"
+          activeTriggerCodes={["EASY-WORKOUT-UPCOMING"]}
+          safetyState="none_reported"
+          client={guidanceClient}
+          onResolvedChange={(resolved) => resolvedChanges.push(resolved)}
+        />
+      </div>,
+    );
+    view.rerender(
+      <div hidden={false}>
+        <ClosedBetaGuidanceSurface
+          ownerId="beta-runner"
+          activeTriggerCodes={["EASY-WORKOUT-UPCOMING"]}
+          safetyState="none_reported"
+          client={guidanceClient}
+          onResolvedChange={(resolved) => resolvedChanges.push(resolved)}
+        />
+      </div>,
+    );
+
+    expect(guidanceClient.get).toHaveBeenCalledTimes(1);
+    expect(
+      screen.queryByText("Checking runner guidance…"),
+    ).not.toBeInTheDocument();
+    expect(resolvedChanges).toContain(true);
+  });
 });
