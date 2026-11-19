@@ -11,6 +11,8 @@
   --landing-card-shadow: 0 1.5rem 4rem rgba(15, 23, 42, 0.1);
   --landing-space-page: clamp(1rem, 2.25vw, 2rem);
   --landing-space-section: clamp(2rem, 6vw, 4.5rem);
+  --landing-safe-area-top: env(safe-area-inset-top);
+  --landing-safe-area-bottom: env(safe-area-inset-bottom);
 
   box-sizing: border-box;
   width: 100%;
@@ -33,9 +35,9 @@
 .landing-page__frame {
   width: min(100%, var(--landing-content-width));
   margin: 0 auto;
-  padding: calc(clamp(1rem, 3vw, 2rem) + env(safe-area-inset-top))
+  padding: calc(clamp(1rem, 3vw, 2rem) + var(--landing-safe-area-top))
     var(--landing-space-page)
-    var(--landing-space-section);
+    calc(var(--landing-space-section) + var(--landing-safe-area-bottom));
 }
 
 .landing-skip-link {
@@ -1048,8 +1050,8 @@
 
 @media (max-width: 640px) {
   .landing-page__frame {
-    padding-top: 1rem;
-    padding-bottom: 2rem;
+    padding-top: calc(1rem + var(--landing-safe-area-top));
+    padding-bottom: calc(2rem + var(--landing-safe-area-bottom));
   }
 
   .landing-header {

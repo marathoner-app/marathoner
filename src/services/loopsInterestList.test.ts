@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import {
+  assertBetaInterestListConfigurationForMode,
   InterestListSubmissionError,
   isLoopsFormEndpoint,
   submitInterestListSignup,
@@ -13,6 +14,36 @@ describe("loopsInterestList", () => {
     expect(isLoopsFormEndpoint(endpoint)).toBe(true);
     expect(isLoopsFormEndpoint("https://example.com/collect")).toBe(false);
     expect(isLoopsFormEndpoint(undefined)).toBe(false);
+  });
+
+  it("requires the public interest-list configuration in distributed beta modes", () => {
+    for (const mode of ["closed-beta", "ios-beta"]) {
+      expect(() =>
+        assertBetaInterestListConfigurationForMode({
+          mode,
+          endpoint,
+          mailingListId: "public-list-1",
+        }),
+      ).not.toThrow();
+      expect(() =>
+        assertBetaInterestListConfigurationForMode({
+          mode,
+          mailingListId: "public-list-1",
+        }),
+      ).toThrow(/requires the reviewed public Loops/i);
+      expect(() =>
+        assertBetaInterestListConfigurationForMode({
+          mode,
+          endpoint,
+        }),
+      ).toThrow(/requires the reviewed public Loops/i);
+    }
+
+    expect(() =>
+      assertBetaInterestListConfigurationForMode({
+        mode: "development",
+      }),
+    ).not.toThrow();
   });
 
   it("submits normalized consented contact data without a credential", async () => {

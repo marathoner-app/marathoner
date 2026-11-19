@@ -64,8 +64,8 @@ and required sender footer enabled even though the authored body is plain text.
 ## Public build configuration
 
 The provider Form endpoint and mailing-list ID are public identifiers, not
-credentials. Both the current dogfood mode and the explicit closed-beta mode
-carry:
+credentials. The current dogfood mode, explicit closed-beta web mode, and
+explicit iOS-beta mode carry:
 
 ```text
 VITE_LOOPS_FORM_ENDPOINT=https://app.loops.so/api/newsletter-form/<form-id>
@@ -76,6 +76,11 @@ The component accepts only HTTPS Form endpoints hosted at
 `app.loops.so/api/newsletter-form/`. When the endpoint is missing or malformed,
 the page shows a non-interactive unavailable state rather than sending an email
 address to an arbitrary host.
+
+The iOS-beta public identifiers live in tracked `.env.ios-beta`; the ignored
+`.env.ios-beta.local` remains limited to the reviewed beta Firebase API key and
+other local-only values. Vite rejects a closed-beta or iOS-beta build when
+either public interest-list identifier is missing or malformed.
 
 ## Production proof
 
