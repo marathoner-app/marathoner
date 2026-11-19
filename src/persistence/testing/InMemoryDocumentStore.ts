@@ -1,4 +1,8 @@
-import type { DocumentStore, StoredDocument } from "../documentStore";
+import type {
+  DocumentStore,
+  DocumentWrite,
+  StoredDocument,
+} from "../documentStore";
 
 export class InMemoryDocumentStore implements DocumentStore {
   private nextId = 1;
@@ -42,6 +46,10 @@ export class InMemoryDocumentStore implements DocumentStore {
 
   async set(documentPath: string, data: Record<string, unknown>): Promise<void> {
     this.documents.set(documentPath, data);
+  }
+
+  async setMany(documents: readonly DocumentWrite[]): Promise<void> {
+    documents.forEach(({ path, data }) => this.documents.set(path, data));
   }
 
   async delete(documentPath: string): Promise<void> {

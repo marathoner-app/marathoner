@@ -284,10 +284,20 @@ function hasRunnerOwnedFields(run: CompletedRun) {
   return (
     run.plannedWorkoutPlanId !== undefined ||
     run.plannedWorkoutId !== undefined ||
-    run.shoeId !== undefined ||
     run.perceivedEffort !== undefined ||
     run.unusualPain !== undefined ||
     run.notes !== undefined
+  )
+}
+
+function hasConflictingShoeAssignments(
+  canonicalRun: CompletedRun,
+  duplicateRun: CompletedRun,
+) {
+  return (
+    canonicalRun.shoeId !== undefined &&
+    duplicateRun.shoeId !== undefined &&
+    canonicalRun.shoeId !== duplicateRun.shoeId
   )
 }
 
@@ -355,7 +365,10 @@ function blockedReason(
   ) {
     return { reason: 'import_run_mismatch' }
   }
-  if (hasRunnerOwnedFields(duplicateRun)) {
+  if (
+    hasRunnerOwnedFields(duplicateRun) ||
+    hasConflictingShoeAssignments(canonicalRun, duplicateRun)
+  ) {
     return { reason: 'duplicate_has_runner_fields' }
   }
   if (
@@ -800,7 +813,11 @@ function buildOrphanNormalizationPlan(options: {
   if (
     canonicalRecord === undefined ||
     noHeartRateRecord === undefined ||
-    hasRunnerOwnedFields(noHeartRateRecord.run)
+    hasRunnerOwnedFields(noHeartRateRecord.run) ||
+    hasConflictingShoeAssignments(
+      canonicalRecord.run,
+      noHeartRateRecord.run,
+    )
   ) {
     blockedReasonCounts.duplicate_has_runner_fields = 1
     return {
@@ -1108,17 +1125,25 @@ export class FirestoreActivityImportDuplicateReconciliation {
 
       const reconciledAt = this.now().toISOString()
       for (const pair of plan.eligiblePairs) {
-        if (pair.kind === 'cross_provider') {
+        const copyDuplicateShoe =
+          pair.canonicalRun.shoeId === undefined &&
+          pair.duplicateRun.shoeId !== undefined
+        if (pair.kind === 'cross_provider' || copyDuplicateShoe) {
           transaction.update(pair.canonicalRunReference, {
-            ...(pair.duplicateRun.averageHeartRateBpm === undefined
+            ...(pair.kind !== 'cross_provider' ||
+            pair.duplicateRun.averageHeartRateBpm === undefined
               ? {}
               : {
                   averageHeartRateBpm:
                     pair.duplicateRun.averageHeartRateBpm,
                 }),
-            ...(pair.duplicateRun.maximumHeartRateBpm === undefined
+            ...(pair.kind !== 'cross_provider' ||
+            pair.duplicateRun.maximumHeartRateBpm === undefined
               ? {}
               : { maximumHeartRateBpm: pair.duplicateRun.maximumHeartRateBpm }),
+            ...(copyDuplicateShoe
+              ? { shoeId: pair.duplicateRun.shoeId }
+              : {}),
             updatedAt: adminTimestamp(reconciledAt),
           })
         }

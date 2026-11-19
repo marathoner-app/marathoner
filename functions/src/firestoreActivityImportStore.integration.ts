@@ -97,6 +97,30 @@ async function seedMembership(userId: string) {
   })
 }
 
+async function seedDefaultShoe(userId: string, shoeId = 'default-shoe') {
+  const timestamp = Timestamp.fromDate(new Date('2026-11-01T00:00:00.000Z'))
+  await Promise.all([
+    database.doc(`users/${userId}`).set({
+      schemaVersion: 1,
+      userId,
+      defaultShoeId: shoeId,
+      preferredDistanceUnit: 'mile',
+      timeZone: 'America/Los_Angeles',
+      createdAt: timestamp,
+      updatedAt: timestamp,
+    }),
+    database.doc(`users/${userId}/shoes/${shoeId}`).set({
+      schemaVersion: 1,
+      userId,
+      name: 'Daily Trainer',
+      startingDistanceMeters: 0,
+      status: 'active',
+      createdAt: timestamp,
+      updatedAt: timestamp,
+    }),
+  ])
+}
+
 async function seedPlan(options: {
   status?: 'draft' | 'active'
   workouts: readonly {
@@ -247,6 +271,57 @@ describe('Firestore activity-import persistence', () => {
       averageHeartRateBpm: 151,
       maximumHeartRateBpm: 176,
     })
+  })
+
+  it.each([
+    ['Garmin', garminEvent()],
+    ['Apple Health', appleHealthGarminEvent('health-default-shoe-001')],
+  ])('assigns the current default shoe to a new %s import', async (_, event) => {
+    await seedDefaultShoe(ownerId)
+    const command = createActivityImportCommand(
+      `import-default-shoe-${event.provider.replaceAll('_', '-')}`,
+      event,
+    )
+
+    const result = await store().commit({ envelope: command, ownerId })
+
+    expect(result).toEqual({
+      kind: 'applied',
+      result: expect.objectContaining({ operation: 'created' }),
+    })
+    expect(
+      (await database.doc(`users/${ownerId}/runs/imported-run-1`).get()).data(),
+    ).toMatchObject({ shoeId: 'default-shoe' })
+  })
+
+  it('preserves a later manual shoe choice when a provider update arrives', async () => {
+    await seedDefaultShoe(ownerId)
+    const persistence = store()
+    await persistence.commit({
+      envelope: createActivityImportCommand(
+        'import-default-shoe-preservation-0001',
+        garminEvent(),
+      ),
+      ownerId,
+    })
+    await database.doc(`users/${ownerId}/runs/imported-run-1`).update({
+      shoeId: 'manually-selected-shoe',
+    })
+
+    await persistence.commit({
+      envelope: createActivityImportCommand(
+        'import-default-shoe-preservation-0002',
+        garminEvent({
+          providerUpdatedAt: createUtcDateTime('2026-11-04T17:30:00.000Z'),
+          observedAt: createUtcDateTime('2026-11-04T17:35:00.000Z'),
+        }),
+      ),
+      ownerId,
+    })
+
+    expect(
+      (await database.doc(`users/${ownerId}/runs/imported-run-1`).get()).data(),
+    ).toMatchObject({ shoeId: 'manually-selected-shoe' })
   })
 
   it('atomically matches a new imported run to one compatible same-day workout', async () => {

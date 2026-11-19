@@ -175,6 +175,23 @@ service cloud.firestore {
           && data.recentPerformance.durationSeconds > 0);
     }
 
+    function hasValidDefaultShoe(userId, data) {
+      let hasDefault = data.keys().hasAny(['defaultShoeId']);
+      let defaultPath = /databases/$(database)/documents/users/$(userId)/shoes/$(data.get('defaultShoeId', 'missing'));
+      return !hasDefault
+        || (isBoundedIdentifier(data.defaultShoeId)
+          && existsAfter(defaultPath)
+          && getAfter(defaultPath).data.userId == userId
+          && getAfter(defaultPath).data.status == 'active');
+    }
+
+    function profileDoesNotDefaultTo(userId, shoeId) {
+      let profilePath = /databases/$(database)/documents/users/$(userId);
+      return !existsAfter(profilePath)
+        || !getAfter(profilePath).data.keys().hasAny(['defaultShoeId'])
+        || getAfter(profilePath).data.defaultShoeId != shoeId;
+    }
+
     function isValidProfileWrite(userId) {
       let data = request.resource.data;
       return isValidOwnedWrite(userId)
@@ -190,6 +207,7 @@ service cloud.firestore {
           'schemaVersion',
           'userId',
           'displayName',
+          'defaultShoeId',
           'preferredDistanceUnit',
           'timeZone',
           'experienceLevel',
@@ -216,6 +234,7 @@ service cloud.firestore {
         && hasValidOptionalProfileFields(data)
         && hasValidTargetRace(data)
         && hasValidRecentPerformance(data)
+        && hasValidDefaultShoe(userId, data)
         && (!data.keys().hasAny(['preferredLongRunDay'])
           || !data.keys().hasAny(['availableTrainingDays'])
           || data.availableTrainingDays.hasAny([
@@ -502,7 +521,7 @@ service cloud.firestore {
         && request.resource.data.createdAt == request.resource.data.updatedAt;
     }
 
-    function isValidShoeUpdate(userId) {
+    function isValidShoeUpdate(userId, shoeId) {
       let next = request.resource.data;
       let prior = resource.data;
       return isValidShoeWrite(userId)
@@ -511,6 +530,8 @@ service cloud.firestore {
         && next.startingDistanceMeters == prior.startingDistanceMeters
         && next.createdAt == prior.createdAt
         && next.updatedAt >= prior.updatedAt
+        && (next.status == 'active'
+          || profileDoesNotDefaultTo(userId, shoeId))
         && (prior.status == 'active'
           || (prior.status == 'retired'
             && next.status == 'retired'
@@ -590,7 +611,7 @@ service cloud.firestore {
       allow create: if canAccessBetaTrainingData(userId)
         && isValidShoeCreate(userId);
       allow update: if canAccessBetaTrainingData(userId)
-        && isValidShoeUpdate(userId);
+        && isValidShoeUpdate(userId, shoeId);
       allow delete: if false;
     }
   }

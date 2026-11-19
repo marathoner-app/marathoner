@@ -194,6 +194,7 @@ vi.mock('./training/useTrainingData', () => ({
     checkPendingRunSave: vi.fn(),
     saveProfile: trainingMock.saveProfile,
     createShoe: vi.fn(),
+    setDefaultShoe: vi.fn(),
     retireShoe: vi.fn(),
     createRun: vi.fn(),
     updateRun: vi.fn(),

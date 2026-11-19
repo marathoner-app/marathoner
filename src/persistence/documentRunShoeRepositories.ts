@@ -4,6 +4,7 @@ import {
   createShoeId,
   validateCompletedRun,
   validateShoe,
+  validateUserProfile,
   type CompletedRun,
   type CompletedRunId,
   type DateOnly,
@@ -11,6 +12,7 @@ import {
   type Shoe,
   type ShoeId,
   type UserId,
+  type UserProfile,
 } from "../domain/training";
 import type { DocumentStore, StoredDocument } from "./documentStore";
 import type { PersistenceClock } from "./documentTrainingRepositories";
@@ -25,8 +27,11 @@ import {
   completedRunToDocument,
   shoeFromDocument,
   shoeToDocument,
+  userProfileFromDocument,
+  userProfileToDocument,
 } from "./firestore/converters";
 import {
+  profileDocumentPath,
   runDocumentPath,
   runsCollectionPath,
   shoeDocumentPath,
@@ -73,6 +78,17 @@ function requireValidShoe(shoe: Shoe): void {
   }
 }
 
+function requireValidProfile(profile: UserProfile): void {
+  const issues = validateUserProfile(profile);
+
+  if (issues.length > 0) {
+    throw new PersistenceError(
+      "invalid_data",
+      issues.map((issue) => issue.message).join(" "),
+    );
+  }
+}
+
 class DocumentShoeRepository implements ShoeRepository {
   constructor(
     private readonly store: DocumentStore,
@@ -82,6 +98,10 @@ class DocumentShoeRepository implements ShoeRepository {
 
   create(input: CreateShoeInput): Promise<Shoe> {
     return safely(async () => {
+      const [profile, existingShoes] = await Promise.all([
+        this.loadProfile(),
+        this.list(),
+      ]);
       const id = createShoeId(this.store.createId(shoesCollectionPath(this.userId)));
       const now = this.clock();
       const shoe: Shoe = {
@@ -95,7 +115,33 @@ class DocumentShoeRepository implements ShoeRepository {
       };
 
       requireValidShoe(shoe);
-      await this.store.set(shoeDocumentPath(this.userId, id), shoeToDocument(shoe));
+      const becomesDefault =
+        profile !== null &&
+        profile.defaultShoeId === undefined &&
+        existingShoes.every((existing) => existing.status !== "active");
+      if (becomesDefault) {
+        const updatedProfile: UserProfile = {
+          ...profile,
+          defaultShoeId: id,
+          updatedAt: now,
+        };
+        requireValidProfile(updatedProfile);
+        await this.store.setMany([
+          {
+            path: shoeDocumentPath(this.userId, id),
+            data: shoeToDocument(shoe),
+          },
+          {
+            path: profileDocumentPath(this.userId),
+            data: userProfileToDocument(updatedProfile),
+          },
+        ]);
+      } else {
+        await this.store.set(
+          shoeDocumentPath(this.userId, id),
+          shoeToDocument(shoe),
+        );
+      }
       return shoe;
     });
   }
@@ -116,9 +162,46 @@ class DocumentShoeRepository implements ShoeRepository {
     });
   }
 
+  setDefault(id: ShoeId): Promise<UserProfile> {
+    return safely(async () => {
+      const [shoe, profile] = await Promise.all([
+        this.requireShoe(id),
+        this.loadProfile(),
+      ]);
+      if (shoe.status !== "active") {
+        throw new PersistenceError(
+          "conflict",
+          "Choose an active shoe as the default.",
+        );
+      }
+      if (profile === null) {
+        throw new PersistenceError(
+          "not_found",
+          "Create the runner profile before choosing a default shoe.",
+        );
+      }
+
+      const updatedProfile: UserProfile = {
+        ...profile,
+        defaultShoeId: id,
+        updatedAt: this.clock(),
+      };
+      requireValidProfile(updatedProfile);
+      await this.store.set(
+        profileDocumentPath(this.userId),
+        userProfileToDocument(updatedProfile),
+      );
+      return updatedProfile;
+    });
+  }
+
   update(id: ShoeId, changes: UpdateShoeInput): Promise<Shoe> {
     return safely(async () => {
-      const existing = await this.requireShoe(id);
+      const [existing, profile] = await Promise.all([
+        this.requireShoe(id),
+        this.loadProfile(),
+      ]);
+      const updatedAt = this.clock();
       const updated: Shoe = {
         ...existing,
         name: changes.name ?? existing.name,
@@ -128,11 +211,34 @@ class DocumentShoeRepository implements ShoeRepository {
           changes.retiredOn === null
             ? undefined
             : changes.retiredOn ?? existing.retiredOn,
-        updatedAt: this.clock(),
+        updatedAt,
       };
 
       requireValidShoe(updated);
-      await this.store.set(shoeDocumentPath(this.userId, id), shoeToDocument(updated));
+      if (updated.status === "retired" && profile?.defaultShoeId === id) {
+        const { defaultShoeId: _defaultShoeId, ...profileWithoutDefault } = profile;
+        void _defaultShoeId;
+        const updatedProfile: UserProfile = {
+          ...profileWithoutDefault,
+          updatedAt,
+        };
+        requireValidProfile(updatedProfile);
+        await this.store.setMany([
+          {
+            path: shoeDocumentPath(this.userId, id),
+            data: shoeToDocument(updated),
+          },
+          {
+            path: profileDocumentPath(this.userId),
+            data: userProfileToDocument(updatedProfile),
+          },
+        ]);
+      } else {
+        await this.store.set(
+          shoeDocumentPath(this.userId, id),
+          shoeToDocument(updated),
+        );
+      }
       return updated;
     });
   }
@@ -143,7 +249,16 @@ class DocumentShoeRepository implements ShoeRepository {
 
   permanentlyDelete(id: ShoeId): Promise<void> {
     return safely(async () => {
-      await this.requireShoe(id);
+      const [, profile] = await Promise.all([
+        this.requireShoe(id),
+        this.loadProfile(),
+      ]);
+      if (profile?.defaultShoeId === id) {
+        throw new PersistenceError(
+          "conflict",
+          "Choose another default shoe before deleting this one.",
+        );
+      }
       const runDocuments = await this.store.list(runsCollectionPath(this.userId));
       const isInUse = runDocuments
         .map((document) => completedRunFromDocument(document.id, document.data, this.userId))
@@ -168,6 +283,13 @@ class DocumentShoeRepository implements ShoeRepository {
     }
 
     return this.fromDocument(document);
+  }
+
+  private async loadProfile(): Promise<UserProfile | null> {
+    const document = await this.store.get(profileDocumentPath(this.userId));
+    return document === null
+      ? null
+      : userProfileFromDocument(document.id, document.data, this.userId);
   }
 
   private fromDocument(document: StoredDocument): Shoe {

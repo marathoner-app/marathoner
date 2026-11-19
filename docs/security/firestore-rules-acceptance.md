@@ -26,10 +26,10 @@ writes remain the two explicit non-material participant write paths.
 | Scenario | Development rules | Beta rules | Retained evidence |
 | --- | --- | --- | --- |
 | Owner reads profile, plans, workouts, runs, and shoes | Authenticated owner passes | Verified owner with an exact approved membership passes | `firestoreRules.integration.ts` owner and repository round-trip cases; `firestoreBetaAccess.integration.ts` approved-owner cases |
-| Profile create/update | Exact version 1 profile lifecycle passes | Same lifecycle plus beta access gate passes | `allows a runner to create, read, and update only their own profile`; `enforces exact profile lifecycle and scheduling relationships` |
+| Profile create/update | Exact version 1 profile lifecycle passes, including an optional owned active default shoe | Same lifecycle plus beta access gate passes | `allows a runner to create, read, and update only their own profile`; owned/active default-shoe and atomic lifecycle cases; `enforces exact profile lifecycle and scheduling relationships` |
 | Committed plan/workout reads | Authenticated owner reads server-seeded records | Verified owner with an exact approved membership reads server-seeded records | `keeps server-committed plans readable by their owner and immutable to clients`; matching development and beta workout cases |
 | Committed workout and run reads | Authenticated owner reads server-seeded records; every direct mutation fails | Verified approved owner reads server-seeded records; every direct mutation fails | `denies every direct workout update after command migration`; `keeps server-committed runs readable but denies every direct write`; matching beta cases |
-| Shoe create/update/retire | Exact one-way lifecycle passes; delete fails | Same lifecycle plus beta access gate passes | `accepts exact shoe creation and makes retirement terminal`; beta exact one-way shoe lifecycle |
+| Shoe create/update/retire | Exact one-way lifecycle passes; first-default creation and default retirement are atomic; delete fails | Same lifecycle plus beta access gate passes | `accepts exact shoe creation and makes retirement terminal`; default-shoe batch cases; beta exact one-way shoe lifecycle |
 | Membership self-read | Not used by development rules | Verified owner may get only its own record | `allows a verified account to read only its own membership status` |
 
 ## Named negative scenarios

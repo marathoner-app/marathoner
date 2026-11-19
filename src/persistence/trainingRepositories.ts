@@ -167,6 +167,7 @@ export interface ShoeRepository {
   create(input: CreateShoeInput): Promise<Shoe>;
   get(id: ShoeId): Promise<Shoe | null>;
   list(): Promise<Shoe[]>;
+  setDefault(id: ShoeId): Promise<UserProfile>;
   update(id: ShoeId, changes: UpdateShoeInput): Promise<Shoe>;
   retire(id: ShoeId, retiredOn: DateOnly): Promise<Shoe>;
   permanentlyDelete(id: ShoeId): Promise<void>;

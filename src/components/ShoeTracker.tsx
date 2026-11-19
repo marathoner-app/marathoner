@@ -50,10 +50,12 @@ import {
 
 type ShoeTrackerProps = {
   readonly distanceUnit: DistanceUnit;
+  readonly defaultShoeId?: ShoeId;
   readonly runs: readonly CompletedRun[];
   readonly shoes: readonly Shoe[];
   readonly plannedWorkouts: readonly PlannedWorkout[];
   readonly onCreateShoe: (input: CreateShoeInput) => Promise<Shoe>;
+  readonly onSetDefaultShoe: (id: ShoeId) => Promise<unknown>;
   readonly onRetireShoe: (id: ShoeId, retiredOn: DateOnly) => Promise<Shoe>;
   readonly onCreateRun: (input: CreateCompletedRunInput) => Promise<CompletedRun>;
   readonly hasPendingRunSave: boolean;
@@ -76,7 +78,8 @@ type PendingAction =
   | "create-run"
   | "update-run"
   | "delete-run"
-  | "retire-shoe";
+  | "retire-shoe"
+  | "set-default-shoe";
 
 type ConfirmationDialogProps = {
   readonly headingId: string;
@@ -322,10 +325,12 @@ function workoutAssociationFrom(value: FormDataEntryValue | null) {
 
 export default function ShoeTracker({
   distanceUnit,
+  defaultShoeId,
   runs,
   shoes,
   plannedWorkouts,
   onCreateShoe,
+  onSetDefaultShoe,
   onRetireShoe,
   onCreateRun,
   hasPendingRunSave,
@@ -515,6 +520,29 @@ export default function ShoeTracker({
           : "The shoe could not be retired.",
       );
       setShoeToRetire(null);
+    } finally {
+      setPendingAction(null);
+    }
+  };
+
+  const handleDefaultShoeChange = async (
+    event: React.ChangeEvent<HTMLSelectElement>,
+  ) => {
+    if (event.target.value === "") return;
+    const shoeId = createShoeId(event.target.value);
+    const shoe = activeShoes.find((candidate) => candidate.id === shoeId);
+    setError(null);
+    setActionStatus(null);
+    setPendingAction("set-default-shoe");
+    try {
+      await onSetDefaultShoe(shoeId);
+      setActionStatus(`${shoe?.name ?? "Running shoe"} is now the default.`);
+    } catch (caught) {
+      setError(
+        caught instanceof Error
+          ? caught.message
+          : "The default shoe could not be changed.",
+      );
     } finally {
       setPendingAction(null);
     }
@@ -1213,6 +1241,33 @@ export default function ShoeTracker({
           </button>
         </form>
 
+        {activeShoes.length > 0 && (
+          <div className="shoe-default-control">
+            <label>
+              Default shoe for imported runs
+              <select
+                aria-describedby="default-shoe-help"
+                disabled={pending}
+                value={defaultShoeId ?? ""}
+                onChange={(event) => void handleDefaultShoeChange(event)}
+              >
+                <option value="" disabled>
+                  Choose a default shoe
+                </option>
+                {activeShoes.map((shoe) => (
+                  <option key={shoe.id} value={shoe.id}>
+                    {shoe.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <p id="default-shoe-help" className="training-field-hint">
+              New Apple Health and Garmin runs use this shoe. Changing it does
+              not alter runs already in your history.
+            </p>
+          </div>
+        )}
+
         <div className="mt-4">
           <h3
             ref={shoeMileageHeadingRef}
@@ -1236,10 +1291,17 @@ export default function ShoeTracker({
                   <li key={shoe.id}>
                     <span className="shoe-mileage-heading">
                       <strong>{shoe.name}</strong>
-                      <span className={`shoe-status shoe-status--${shoe.status}`}>
-                        {shoe.status === "active"
-                          ? "Active"
-                          : `Retired${shoe.retiredOn ? ` ${shoe.retiredOn}` : ""}`}
+                      <span className="shoe-statuses">
+                        <span className={`shoe-status shoe-status--${shoe.status}`}>
+                          {shoe.status === "active"
+                            ? "Active"
+                            : `Retired${shoe.retiredOn ? ` ${shoe.retiredOn}` : ""}`}
+                        </span>
+                        {shoe.id === defaultShoeId && (
+                          <span className="shoe-status shoe-status--default">
+                            Default
+                          </span>
+                        )}
                       </span>
                     </span>
                     <span className="shoe-mileage-total">
@@ -1297,6 +1359,9 @@ export default function ShoeTracker({
           <p id="shoe-retire-description">
             This shoe will stop appearing when you log new runs. Existing run
             history and mileage will stay intact.
+            {shoeToRetire.id === defaultShoeId
+              ? " Imported runs will have no shoe until you choose another default."
+              : ""}
           </p>
         </ConfirmationDialog>
       )}

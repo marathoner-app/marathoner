@@ -363,6 +363,9 @@ export function userProfileToDocument(profile: UserProfile): Record<string, unkn
   };
 
   if (profile.displayName !== undefined) document.displayName = profile.displayName;
+  if (profile.defaultShoeId !== undefined) {
+    document.defaultShoeId = profile.defaultShoeId;
+  }
   if (profile.experienceLevel !== undefined) {
     document.experienceLevel = profile.experienceLevel;
   }
@@ -433,10 +436,13 @@ export function userProfileFromDocument(
     data,
     "consistentRunningWeeks",
   );
+  const defaultShoeId = readOptionalString(data, "defaultShoeId");
 
   const profile: UserProfile = {
     id: verifyOwner(readString(data, "userId"), expectedUserId),
     displayName: readOptionalString(data, "displayName"),
+    defaultShoeId:
+      defaultShoeId === undefined ? undefined : createShoeId(defaultShoeId),
     preferredDistanceUnit: readEnum(
       data,
       "preferredDistanceUnit",

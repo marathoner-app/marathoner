@@ -58,6 +58,80 @@ async function createPlanAndWorkout() {
 }
 
 describe("shoe repository", () => {
+  it("assigns the first active shoe as default and lets the runner change it", async () => {
+    await repositories.profile.save({
+      preferredDistanceUnit: "mile",
+      timeZone,
+    });
+
+    const first = await repositories.shoes.create({ name: "Daily Trainer" });
+    const second = await repositories.shoes.create({ name: "Tempo Shoe" });
+
+    await expect(repositories.profile.load()).resolves.toMatchObject({
+      defaultShoeId: first.id,
+    });
+
+    await repositories.shoes.setDefault(second.id);
+
+    await expect(repositories.profile.load()).resolves.toMatchObject({
+      defaultShoeId: second.id,
+    });
+  });
+
+  it("clears a retired default without silently selecting another shoe", async () => {
+    await repositories.profile.save({
+      preferredDistanceUnit: "mile",
+      timeZone,
+    });
+    const first = await repositories.shoes.create({ name: "Daily Trainer" });
+    const second = await repositories.shoes.create({ name: "Tempo Shoe" });
+    await repositories.shoes.setDefault(second.id);
+
+    await repositories.shoes.retire(second.id, createDateOnly("2026-12-01"));
+
+    await expect(repositories.profile.load()).resolves.toMatchObject({
+      defaultShoeId: undefined,
+    });
+    await expect(repositories.shoes.setDefault(second.id)).rejects.toMatchObject(
+      { code: "conflict" },
+    );
+    await expect(repositories.shoes.get(first.id)).resolves.toMatchObject({
+      status: "active",
+    });
+  });
+
+  it("preserves the selected default when runner setup is edited", async () => {
+    await repositories.profile.save({
+      preferredDistanceUnit: "mile",
+      timeZone,
+    });
+    const shoe = await repositories.shoes.create({ name: "Daily Trainer" });
+
+    await repositories.profile.save({
+      displayName: "Kevin",
+      preferredDistanceUnit: "mile",
+      timeZone,
+    });
+
+    await expect(repositories.profile.load()).resolves.toMatchObject({
+      defaultShoeId: shoe.id,
+      displayName: "Kevin",
+    });
+  });
+
+  it("does not permanently delete the selected default shoe", async () => {
+    await repositories.profile.save({
+      preferredDistanceUnit: "mile",
+      timeZone,
+    });
+    const shoe = await repositories.shoes.create({ name: "Daily Trainer" });
+
+    await expect(
+      repositories.shoes.permanentlyDelete(shoe.id),
+    ).rejects.toMatchObject({ code: "conflict" });
+    await expect(repositories.shoes.get(shoe.id)).resolves.toEqual(shoe);
+  });
+
   it("creates, reads, updates, lists, and retires shoes", async () => {
     const second = await repositories.shoes.create({ name: "Tempo Shoe" });
     const first = await repositories.shoes.create({

@@ -59,6 +59,7 @@ export interface RecentRunPerformance {
 export interface UserProfile extends EntityTimestamps {
   readonly id: UserId;
   readonly displayName?: string;
+  readonly defaultShoeId?: ShoeId;
   readonly preferredDistanceUnit: DistanceUnit;
   readonly timeZone: IanaTimeZone;
   readonly experienceLevel?: RunningExperienceLevel;

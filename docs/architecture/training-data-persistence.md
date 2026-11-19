@@ -117,6 +117,13 @@ profile. See the
 [runner profile persistence contract](runner-profile-persistence.md) for the
 complete version 1 field table and compatibility rules.
 
+The optional `defaultShoeId` profile field references one owned, active shoe.
+Creating the runner's first active shoe writes that shoe and the initial
+default in one batch. Retiring the selected shoe writes the retired shoe and a
+profile with no default in one batch. The rules reject a missing, foreign, or
+retired selection and prevent retiring a shoe while the post-write profile
+still selects it.
+
 ## Plan documents
 
 Path: `users/{userId}/plans/{planId}`
@@ -327,6 +334,9 @@ Current shoe mileage will remain derived from starting distance plus associated
 run documents. No independently editable mileage total will be stored.
 Shoes referenced by completed runs must be retired instead of permanently
 deleted so historical runs do not lose their equipment association.
+The default selection affects only completed runs created by later Apple Health
+or Garmin imports. It never rewrites historical runs, and provider updates or
+duplicate reconciliation preserve a runner's existing shoe choice.
 
 ## Repository behavior
 

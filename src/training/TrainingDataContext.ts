@@ -41,6 +41,7 @@ export interface TrainingDataContextValue {
   readonly checkPendingRunSave: () => Promise<PendingRunSaveCheckResult>;
   readonly saveProfile: (input: SaveUserProfileInput) => Promise<UserProfile>;
   readonly createShoe: (input: CreateShoeInput) => Promise<Shoe>;
+  readonly setDefaultShoe: (id: ShoeId) => Promise<UserProfile>;
   readonly retireShoe: (id: ShoeId, retiredOn: DateOnly) => Promise<Shoe>;
   readonly createRun: (input: CreateCompletedRunInput) => Promise<CompletedRun>;
   readonly updateRun: (

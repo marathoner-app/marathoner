@@ -14,6 +14,7 @@ import {
   getDocs,
   setDoc,
   updateDoc,
+  writeBatch,
   type Firestore,
 } from "firebase/firestore";
 import { afterAll, beforeAll, beforeEach, describe, it } from "vitest";
@@ -335,6 +336,57 @@ describe("founding-beta membership rules", () => {
 
     await assertSucceeds(setDoc(reference, shoeDocument()));
     await assertSucceeds(getDoc(reference));
+  });
+
+  it("enforces the owned active default-shoe lifecycle for an approved member", async () => {
+    await seedMembership(firstUserId);
+    const database = authenticatedContext(firstUserId)
+      .firestore() as unknown as Firestore;
+    const profileReference = doc(database, `users/${firstUserId}`);
+    const shoeReference = doc(
+      database,
+      `users/${firstUserId}/shoes/shoe-1`,
+    );
+
+    await assertFails(
+      setDoc(profileReference, profileDocument(firstUserId, {
+        defaultShoeId: "missing-shoe",
+      })),
+    );
+    const createBatch = writeBatch(database);
+    createBatch.set(
+      profileReference,
+      profileDocument(firstUserId, { defaultShoeId: "shoe-1" }),
+    );
+    createBatch.set(shoeReference, shoeDocument());
+    await assertSucceeds(createBatch.commit());
+
+    await assertFails(
+      setDoc(
+        shoeReference,
+        shoeDocument(firstUserId, {
+          status: "retired",
+          retiredOn: "2026-10-06",
+          updatedAt: new Date("2026-10-06T12:00:00.000Z"),
+        }),
+      ),
+    );
+    const retireBatch = writeBatch(database);
+    retireBatch.set(
+      profileReference,
+      profileDocument(firstUserId, {
+        updatedAt: new Date("2026-10-06T12:00:00.000Z"),
+      }),
+    );
+    retireBatch.set(
+      shoeReference,
+      shoeDocument(firstUserId, {
+        status: "retired",
+        retiredOn: "2026-10-06",
+        updatedAt: new Date("2026-10-06T12:00:00.000Z"),
+      }),
+    );
+    await assertSucceeds(retireBatch.commit());
   });
 
   it("denies a verified account with no membership", async () => {
