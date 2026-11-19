@@ -45,8 +45,17 @@ const run = {
   plannedWorkoutId: workoutId,
   startedAt: "2026-11-09T18:00:00.000Z",
 } as CompletedRun;
-const pendingClient: ClosedBetaAdaptationRecommendationClient = {
-  generate: () => new Promise<never>(() => undefined),
+const mode = new URLSearchParams(window.location.search).get("mode");
+const client: ClosedBetaAdaptationRecommendationClient = {
+  generate:
+    mode === "result"
+      ? async (command) => ({
+          status: "no_change" as const,
+          commandId: command.commandId,
+          reasonCode: "ADAPT-NO-CHANGE",
+          explanationKey: "adaptation.no_change",
+        })
+      : () => new Promise<never>(() => undefined),
 };
 
 createRoot(root).render(
@@ -73,7 +82,7 @@ createRoot(root).render(
         activePlanState={activePlanState}
         workouts={[workout]}
         runs={[run]}
-        client={pendingClient}
+        client={client}
         createCommandId={() => "viewport-training-check-command"}
       />
     </RecommendationEvidenceContext.Provider>

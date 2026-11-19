@@ -1,72 +1,65 @@
 .closed-beta-adaptation-surface {
   position: relative;
   display: grid;
-  gap: 1rem;
   box-sizing: border-box;
   min-width: 0;
   margin: 1rem 0;
-  padding: clamp(1rem, 4vw, 1.5rem);
-  border: 1px solid var(--app-border);
+  padding: clamp(1.25rem, 4vw, 1.75rem);
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--app-accent) 20%, var(--app-border));
   border-radius: var(--app-radius-large);
-  background: var(--app-surface);
+  background:
+    radial-gradient(circle at 50% 0%, rgb(20 104 204 / 11%), transparent 48%),
+    var(--app-surface);
   box-shadow: var(--app-shadow-small);
   color: var(--app-ink);
-  overflow: hidden;
 }
 
-.closed-beta-adaptation-surface--idle,
-.closed-beta-adaptation-surface--working {
-  border-color: color-mix(in srgb, var(--app-accent) 24%, var(--app-border));
-  background:
-    radial-gradient(circle at 100% 0%, rgb(20 104 204 / 12%), transparent 42%),
-    var(--app-surface);
+.closed-beta-adaptation-surface[hidden] {
+  display: none;
 }
 
-.closed-beta-adaptation-surface--idle::before,
-.closed-beta-adaptation-surface--working::before {
-  position: absolute;
-  inset: 0 auto 0 0;
-  width: 0.28rem;
-  background: var(--app-accent);
-  content: "";
+.closed-beta-adaptation-surface--entry {
+  justify-items: center;
+  gap: 0.9rem;
+  text-align: center;
 }
 
 .closed-beta-adaptation-surface h2,
-.closed-beta-adaptation-surface p {
+.closed-beta-adaptation-surface p,
+.closed-beta-adaptation-experience h2,
+.closed-beta-adaptation-experience p {
   margin: 0;
+}
+
+.closed-beta-adaptation-entry-heading,
+.closed-beta-adaptation-experience-intro {
+  display: grid;
+  justify-items: center;
+  gap: 0.35rem;
+  min-width: 0;
 }
 
 .closed-beta-adaptation-eyebrow {
   color: var(--app-accent);
   font-size: 0.78rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
+  font-weight: 750;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
 }
 
-.closed-beta-adaptation-heading-row {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 1rem;
-  min-width: 0;
-}
-
-.closed-beta-adaptation-heading-row > div:first-child {
-  display: grid;
-  gap: 0.35rem;
-  min-width: 0;
-}
-
-.closed-beta-adaptation-surface h2 {
+.closed-beta-adaptation-surface h2,
+.closed-beta-adaptation-experience h2 {
   max-width: 24ch;
-  font-size: clamp(1.25rem, 3vw, 1.6rem);
-  letter-spacing: -0.02em;
+  font-size: clamp(1.3rem, 4vw, 1.8rem);
+  letter-spacing: -0.025em;
   line-height: 1.15;
+  overflow-wrap: anywhere;
 }
 
-.closed-beta-adaptation-copy {
-  max-width: 62ch;
+.closed-beta-adaptation-copy,
+.closed-beta-adaptation-experience-message {
+  max-width: 58ch;
   color: var(--app-muted);
 }
 
@@ -74,20 +67,33 @@
   position: relative;
   display: grid;
   flex: 0 0 auto;
-  width: 4.25rem;
-  height: 4.25rem;
+  width: 3.9rem;
+  height: 3.9rem;
   border: 1px solid rgb(20 104 204 / 28%);
   border-radius: 50%;
-  background: rgb(238 245 253 / 78%);
+  background: rgb(238 245 253 / 88%);
   place-items: center;
+}
+
+.closed-beta-adaptation-graphic.is-large {
+  width: clamp(5.5rem, 18vw, 7.25rem);
+  height: clamp(5.5rem, 18vw, 7.25rem);
+  margin-bottom: 0.55rem;
+  border-width: 2px;
+  box-shadow: 0 1rem 3rem rgb(20 104 204 / 14%);
 }
 
 .closed-beta-adaptation-graphic svg {
   position: relative;
   z-index: 1;
-  width: 2.8rem;
-  height: 2.8rem;
+  width: 2.55rem;
+  height: 2.55rem;
   overflow: visible;
+}
+
+.closed-beta-adaptation-graphic.is-large svg {
+  width: 65%;
+  height: 65%;
 }
 
 .closed-beta-adaptation-graphic path {
@@ -113,7 +119,9 @@
 }
 
 .closed-beta-adaptation-graphic.is-active {
-  box-shadow: 0 0 0 0.45rem rgb(20 104 204 / 8%);
+  box-shadow:
+    0 0 0 0.6rem rgb(20 104 204 / 8%),
+    0 1rem 3rem rgb(20 104 204 / 18%);
 }
 
 .closed-beta-adaptation-graphic.is-active svg path {
@@ -128,6 +136,7 @@
 .closed-beta-adaptation-inputs {
   display: flex;
   flex-wrap: wrap;
+  justify-content: center;
   gap: 0.5rem;
   margin: 0;
   padding: 0;
@@ -140,9 +149,9 @@
   gap: 0.45rem;
   min-width: 0;
   padding: 0.42rem 0.68rem;
-  border: 1px solid var(--app-border);
+  border: 1px solid rgb(20 104 204 / 22%);
   border-radius: 999px;
-  background: rgb(255 255 255 / 82%);
+  background: rgb(255 255 255 / 88%);
   color: var(--app-muted);
   font-size: 0.86rem;
   font-weight: 650;
@@ -158,42 +167,122 @@
   content: "";
 }
 
-.closed-beta-adaptation-surface--working .closed-beta-adaptation-inputs li {
-  border-color: rgb(20 104 204 / 25%);
-  background: var(--app-accent-surface);
-  color: var(--app-ink);
-}
-
 .closed-beta-adaptation-assurance {
-  padding-top: 0.8rem;
+  width: min(100%, 34rem);
+  margin-top: 0.4rem !important;
+  padding-top: 0.9rem;
   border-top: 1px solid var(--app-border);
   color: var(--app-muted);
   font-size: 0.9rem;
 }
 
-.closed-beta-adaptation-action {
+.closed-beta-adaptation-action,
+.closed-beta-adaptation-return {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  justify-self: start;
   gap: 0.75rem;
   max-width: 100%;
   min-height: 2.75rem;
   padding: 0.72rem 1rem;
-  background: var(--app-accent);
-  color: white;
   font-weight: 700;
   line-height: 1.2;
-  text-align: left;
+  text-align: center;
+}
+
+.closed-beta-adaptation-action {
+  background: var(--app-accent);
+  color: white;
 }
 
 .closed-beta-adaptation-action:hover {
   background: var(--app-accent-hover);
 }
 
+.closed-beta-adaptation-return {
+  border: 1px solid var(--app-border-strong);
+  background: var(--app-surface);
+  color: var(--app-ink);
+}
+
+.closed-beta-adaptation-return:hover {
+  border-color: var(--app-accent);
+  background: var(--app-accent-surface);
+}
+
 .closed-beta-adaptation-action-arrow {
   font-size: 1.2em;
   line-height: 1;
+}
+
+.closed-beta-adaptation-experience {
+  position: fixed;
+  z-index: 1400;
+  inset: 0;
+  display: flex;
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 100dvh;
+  padding:
+    calc(var(--app-safe-area-top) + clamp(1.25rem, 5vw, 3rem))
+    calc(var(--app-safe-area-right) + clamp(1rem, 5vw, 3rem))
+    calc(var(--app-safe-area-bottom) + clamp(1.25rem, 5vw, 3rem))
+    calc(var(--app-safe-area-left) + clamp(1rem, 5vw, 3rem));
+  overflow-x: hidden;
+  overflow-y: auto;
+  background:
+    radial-gradient(circle at 50% 18%, rgb(20 104 204 / 20%), transparent 34rem),
+    linear-gradient(180deg, #f9fbff 0%, var(--app-canvas) 72%);
+  color: var(--app-ink);
+  overscroll-behavior: contain;
+}
+
+.closed-beta-adaptation-experience:focus {
+  outline: none;
+}
+
+.closed-beta-adaptation-experience-shell {
+  display: grid;
+  justify-items: center;
+  gap: clamp(1.25rem, 4vw, 2rem);
+  box-sizing: border-box;
+  width: min(100%, 46rem);
+  min-width: 0;
+  margin: auto;
+  text-align: center;
+}
+
+.closed-beta-adaptation-experience--review .closed-beta-adaptation-experience-shell {
+  width: min(100%, 52rem);
+}
+
+.closed-beta-adaptation-experience-intro {
+  width: min(100%, 38rem);
+  gap: 0.8rem;
+}
+
+.closed-beta-adaptation-experience-message {
+  overflow-wrap: anywhere;
+}
+
+.closed-beta-adaptation-experience-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.75rem;
+  width: 100%;
+}
+
+.closed-beta-adaptation-review {
+  width: 100%;
+  min-width: 0;
+  text-align: left;
+}
+
+.closed-beta-adaptation-review .recommendation-decision-review,
+.closed-beta-adaptation-review .recommendation-decision-inbox-state {
+  margin: 0;
+  box-shadow: var(--app-shadow-medium);
 }
 
 @keyframes closed-beta-adaptation-draw {
@@ -231,31 +320,34 @@
 }
 
 @media (max-width: 420px) {
-  .closed-beta-adaptation-graphic {
-    width: 3.6rem;
-    height: 3.6rem;
-  }
-
-  .closed-beta-adaptation-graphic svg {
-    width: 2.35rem;
-    height: 2.35rem;
+  .closed-beta-adaptation-surface {
+    padding: 1.15rem;
   }
 
   .closed-beta-adaptation-inputs {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: min(100%, 22rem);
+  }
+
+  .closed-beta-adaptation-inputs li {
+    justify-content: center;
   }
 
   .closed-beta-adaptation-inputs li:last-child {
     grid-column: 1 / -1;
   }
+
+  .closed-beta-adaptation-experience-actions {
+    display: grid;
+  }
+
+  .closed-beta-adaptation-experience-actions button {
+    width: 100%;
+  }
 }
 
 @media (max-width: 320px) {
-  .closed-beta-adaptation-heading-row {
-    flex-direction: column;
-  }
-
   .closed-beta-adaptation-inputs {
     grid-template-columns: minmax(0, 1fr);
   }

@@ -8,6 +8,10 @@ import {
   createTrainingPlanId,
   createUserId,
 } from "../domain/training/identifiers";
+import {
+  createRecommendationId,
+  type RecommendationEvidenceV2,
+} from "../domain/recommendations";
 import type {
   ActivePlanState,
   CompletedRun,
@@ -42,12 +46,15 @@ const run = {
   startedAt: "2026-11-09T18:00:00.000Z",
 } as CompletedRun;
 
-function renderSurface(client: ClosedBetaAdaptationRecommendationClient) {
+function renderSurface(
+  client: ClosedBetaAdaptationRecommendationClient,
+  evidence: readonly RecommendationEvidenceV2[] = [],
+) {
   return render(
     <RecommendationEvidenceContext.Provider
       value={{
         status: "ready",
-        evidence: [],
+        evidence,
         origin: "server",
         hasPendingWrites: false,
         error: null,
@@ -82,6 +89,9 @@ describe("ClosedBetaAdaptationSurface", () => {
       screen.getByRole("button", { name: "Check recent training" }),
     );
 
+    expect(
+      screen.getByRole("dialog", { name: "Checking recent training" }),
+    ).toBeInTheDocument();
     const status = screen.getByRole("status");
     expect(status).toHaveTextContent("Checking recent training");
     expect(status).toHaveTextContent(
@@ -117,9 +127,24 @@ describe("ClosedBetaAdaptationSurface", () => {
         evaluationDate: "2026-11-09",
       }),
     );
+    expect(await screen.findByRole("status")).toHaveTextContent(
+      "Your current plan still fits",
+    );
     expect(
-      await screen.findByRole("status"),
-    ).toHaveTextContent("Your current plan still fits");
+      screen.getByRole("dialog", { name: "Your current plan still fits" }),
+    ).toBeInTheDocument();
+    expect(
+      document.querySelector(
+        ".closed-beta-adaptation-experience .closed-beta-adaptation-graphic",
+      ),
+    ).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Back to Home" }));
+
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "View training check" }),
+    ).toHaveFocus();
   });
 
   it("keeps an ambiguous request idempotent when the user checks again", async () => {
@@ -140,6 +165,9 @@ describe("ClosedBetaAdaptationSurface", () => {
     await user.click(
       screen.getByRole("button", { name: "Check recent training" }),
     );
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "The training check needs confirmation",
+    );
     await user.click(
       await screen.findByRole("button", {
         name: "Check the same request again",
@@ -150,5 +178,37 @@ describe("ClosedBetaAdaptationSurface", () => {
     expect(vi.mocked(client.generate).mock.calls[0]?.[0]).toEqual(
       vi.mocked(client.generate).mock.calls[1]?.[0],
     );
+  });
+
+  it("keeps a server-confirmed recommendation review in the branded full-screen shell", async () => {
+    const user = userEvent.setup();
+    const client: ClosedBetaAdaptationRecommendationClient = {
+      generate: vi.fn(),
+    };
+    const pendingEvidence = {
+      recommendationId: createRecommendationId(
+        "closed-beta-recommendation-0001",
+      ),
+      decision: "pending",
+      evaluationInput: { evaluatedPlanRevision: 3 },
+    } as unknown as RecommendationEvidenceV2;
+    renderSurface(client, [pendingEvidence]);
+
+    await user.click(
+      screen.getByRole("button", { name: "Review recommendation" }),
+    );
+
+    expect(
+      screen.getByRole("dialog", { name: "Review your plan recommendation" }),
+    ).toBeInTheDocument();
+    expect(
+      document.querySelector(
+        ".closed-beta-adaptation-experience .closed-beta-adaptation-graphic",
+      ),
+    ).toBeInTheDocument();
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Recommendation explanation is not ready",
+    );
+    expect(client.generate).not.toHaveBeenCalled();
   });
 });
