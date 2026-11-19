@@ -210,20 +210,38 @@ function sessionEvent<Event extends object>(event: Event) {
 }
 
 describe('training synchronization kernel', () => {
-  it('waits for every required source before publishing a current snapshot', () => {
+  it('publishes the ready plan before secondary history sources finish', () => {
     const events = sourceEvents()
-    const incomplete = applyEvents(
+    const planNotReady = applyEvents(
       createTrainingSynchronizationKernel({ ownerId, sessionGeneration }),
-      events.slice(0, -1),
+      events.slice(0, 3),
     )
 
-    expect(incomplete.state).toEqual({
+    expect(planNotReady.state).toEqual({
       status: 'loading',
       ownerId,
       sessionGeneration,
     })
 
-    const complete = reduceTrainingSynchronization(incomplete, events[5])
+    const planReady = reduceTrainingSynchronization(planNotReady, events[3])
+
+    expect(planReady.state.status).toBe('stale')
+    if (planReady.state.status !== 'stale') return
+    expect(planReady.state.snapshot).toMatchObject({
+      ownerId,
+      profile: null,
+      activePlanState: null,
+      plans: [],
+      workouts: [],
+      runs: [],
+      shoes: [],
+    })
+    expect(planReady.state.reasons).toContain('feature_incomplete')
+
+    const runsReady = reduceTrainingSynchronization(planReady, events[4])
+    expect(runsReady.state.status).toBe('stale')
+
+    const complete = reduceTrainingSynchronization(runsReady, events[5])
 
     expect(complete.state.status).toBe('current')
     if (complete.state.status !== 'current') return

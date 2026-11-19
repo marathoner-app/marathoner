@@ -247,6 +247,31 @@ test("keeps the signed-in home usable with 200% text", async ({ page }) => {
   );
 });
 
+test("keeps the signed-in shell usable while startup is delayed", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("tests/viewport/signedInHome.html?startup=delayed");
+
+  await expectDockedAccountHeader(page);
+  await expectMobileBottomNavigation(page);
+  await expect(
+    page.getByText(
+      "This is taking longer than usual. Check your connection, then try again.",
+    ),
+  ).toBeVisible();
+
+  const retry = page.getByRole("button", { name: "Try again" });
+  await expectMinimumTouchTarget(retry, "delayed startup retry");
+  await retry.click();
+  await expect(page.getByRole("alert")).toHaveText("Retry requested");
+  await expectNoHorizontalOverflow(
+    page,
+    "signed-in delayed startup",
+    "at phone width",
+  );
+});
+
 test("hides training destinations until runner setup is complete", async ({
   page,
 }) => {

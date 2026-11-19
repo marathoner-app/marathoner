@@ -18,6 +18,13 @@ export const trainingSnapshotSources = [
   'shoes',
 ] as const
 
+export const trainingInitialRenderSources = [
+  'profile',
+  'activePlanState',
+  'plans',
+  'workouts',
+] as const satisfies readonly TrainingSnapshotSource[]
+
 export type TrainingSnapshotSource = (typeof trainingSnapshotSources)[number]
 export type TrainingSnapshotOrigin = 'cache' | 'server'
 
@@ -303,11 +310,15 @@ function sourceSlots(sources: TrainingSourceSlots) {
   return trainingSnapshotSources.map((source) => sources[source])
 }
 
-function completeCandidate(
+function readableCandidate(
   ownerId: UserId,
   sources: TrainingSourceSlots,
 ): SynchronizedTrainingSnapshot | null {
-  if (sourceSlots(sources).some((source) => !source.received)) return null
+  if (
+    trainingInitialRenderSources.some((source) => !sources[source].received)
+  ) {
+    return null
+  }
 
   return {
     ownerId,
@@ -357,6 +368,9 @@ function staleReasons(
   const reasons = new Set<TrainingSynchronizationStaleReason>()
 
   if (!kernel.connected) reasons.add('disconnected')
+  if (sources.some((source) => !source.received)) {
+    reasons.add('feature_incomplete')
+  }
   if (sources.some((source) => source.hasPendingWrites)) {
     reasons.add('pending_writes')
   }
@@ -391,21 +405,25 @@ function staleReasons(
 function withDerivedState(
   kernel: TrainingSynchronizationKernel,
 ): TrainingSynchronizationKernel {
-  const candidate = completeCandidate(kernel.ownerId, kernel.sources)
+  const candidate = readableCandidate(kernel.ownerId, kernel.sources)
+  const allSourcesReceived = sourceSlots(kernel.sources).every(
+    (source) => source.received,
+  )
   const hasPendingWrites = sourceSlots(kernel.sources).some(
     (source) => source.hasPendingWrites,
   )
   const activeCommandId =
     kernel.activity.kind === 'saving' ? kernel.activity.commandId : null
-  const featureComplete =
+  const domainFeatureComplete =
     candidate !== null &&
     kernel.isFeatureComplete(candidate, {
       ownerId: kernel.ownerId,
       sessionGeneration: kernel.sessionGeneration,
       activeCommandId,
     })
+  const featureComplete = allSourcesReceived && domainFeatureComplete
   const safeCandidate =
-    candidate !== null && !hasPendingWrites && featureComplete
+    candidate !== null && !hasPendingWrites && domainFeatureComplete
       ? candidate
       : null
   const allSourcesServerConfirmed = sourceSlots(kernel.sources).every(

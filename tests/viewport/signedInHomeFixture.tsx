@@ -6,6 +6,7 @@ import Subtitle from "../../src/components/Subtitle";
 import Title from "../../src/components/Title";
 import TrainingSectionNavigation from "../../src/components/TrainingSectionNavigation";
 import SignedInAppHeader from "../../src/components/SignedInAppHeader";
+import TrainingStartupStatus from "../../src/components/TrainingStartupStatus";
 import {
   trainingSections,
   type TrainingSection,
@@ -18,9 +19,11 @@ if (root === null) {
 
 export function SignedInHomeFixture() {
   const [activeSection, setActiveSection] = useState<TrainingSection | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
   const activeDetails = trainingSections.find(({ id }) => id === activeSection);
-  const setupComplete =
-    new URLSearchParams(window.location.search).get("setup") !== "incomplete";
+  const search = new URLSearchParams(window.location.search);
+  const setupComplete = search.get("setup") !== "incomplete";
+  const startupMode = search.get("startup");
   const openSection = (section: TrainingSection) => {
     document.documentElement.scrollTop = 0;
     document.body.scrollTop = 0;
@@ -43,6 +46,15 @@ export function SignedInHomeFixture() {
         <>
           <Title />
           <Subtitle />
+          {startupMode !== null && (
+            <TrainingStartupStatus
+              pendingSources={["runs", "shoes"]}
+              delayed={startupMode === "delayed"}
+              hasReadableSnapshot={startupMode === "partial"}
+              onRetry={() => setRetryCount((count) => count + 1)}
+            />
+          )}
+          {retryCount > 0 && <p role="alert">Retry requested</p>}
           <div className="runner-profile-entry">
             <button type="button">
               {setupComplete ? "Edit runner profile" : "Resume runner setup"}

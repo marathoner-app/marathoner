@@ -313,6 +313,7 @@ function IntegrationProbe() {
         </div>
       )}
       <p>Status: {training.status}</p>
+      <p>Pending: {training.pendingSources.join(",") || "none"}</p>
       <p>Runs: {training.runs.length}</p>
       <p>Profile: {training.profile?.displayName ?? "none"}</p>
       <p>
@@ -541,6 +542,58 @@ describe("TrainingDataProvider", () => {
     expect(plansList).not.toHaveBeenCalled();
     expect(runsList).not.toHaveBeenCalled();
     expect(shoesList).not.toHaveBeenCalled();
+  });
+
+  it("publishes plan data before run history and shoes finish loading", async () => {
+    await repositories.profile.save({
+      displayName: "Early plan runner",
+      preferredDistanceUnit: "mile",
+      timeZone,
+    });
+    renderProvider();
+    const source = await waitForSource();
+    const snapshot = await snapshotFromRepositories(userId, repositories);
+    const session = {
+      ownerId: userId,
+      sessionGeneration: source.sessionGeneration,
+      origin: "server" as const,
+      hasPendingWrites: false,
+      observedAt: timestamp,
+    };
+
+    act(() =>
+      source.emit([
+        { ...session, type: "source_snapshot", source: "profile", value: snapshot.profile },
+        {
+          ...session,
+          type: "source_snapshot",
+          source: "activePlanState",
+          value: snapshot.activePlanState,
+        },
+        { ...session, type: "source_snapshot", source: "plans", value: snapshot.plans },
+        {
+          ...session,
+          type: "source_snapshot",
+          source: "workouts",
+          value: snapshot.workouts,
+        },
+      ]),
+    );
+
+    expect(await screen.findByText("Status: stale")).toBeInTheDocument();
+    expect(screen.getByText("Profile: Early plan runner")).toBeInTheDocument();
+    expect(screen.getByText("Pending: runs,shoes")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Save profile" })).toBeDisabled();
+
+    act(() =>
+      source.emit([
+        { ...session, type: "source_snapshot", source: "runs", value: snapshot.runs },
+        { ...session, type: "source_snapshot", source: "shoes", value: snapshot.shoes },
+      ]),
+    );
+
+    expect(await screen.findByText("Status: current")).toBeInTheDocument();
+    expect(screen.getByText("Pending: none")).toBeInTheDocument();
   });
 
   it("exposes the server-owned active-plan state without a repository read", async () => {
