@@ -6,6 +6,7 @@ import { useEffect, useRef, type HTMLAttributes, type ReactNode } from 'react'
 import App from './App'
 import AuthProvider, { authSessionTimeoutMs } from './auth/AuthProvider'
 import { staleNoticeDelayMs } from './training/useDelayedStaleNotice'
+import { trainingStartupNoticeDelayMs } from './training/useDelayedTrainingStartupNotice'
 import {
   createDateOnly,
   createDistanceMeters,
@@ -161,6 +162,14 @@ const trainingMock = vi.hoisted(() => ({
   activePlanState: null as object | null,
   plans: [] as object[],
   workouts: [] as object[],
+  pendingSources: [] as (
+    | 'profile'
+    | 'activePlanState'
+    | 'plans'
+    | 'workouts'
+    | 'runs'
+    | 'shoes'
+  )[],
   saveProfile: vi.fn(),
   reload: vi.fn()
 }))
@@ -176,6 +185,7 @@ vi.mock('./training/useTrainingData', () => ({
     runs: [],
     shoes: [],
     canWrite: trainingMock.status === 'current',
+    pendingSources: trainingMock.pendingSources,
     staleReasons:
       trainingMock.status === 'stale' ? trainingMock.staleReasons : [],
     lastServerConfirmedAt: null,
@@ -297,6 +307,7 @@ beforeEach(() => {
   trainingMock.profile = completeRunnerProfile
   trainingMock.plans = []
   trainingMock.workouts = []
+  trainingMock.pendingSources = []
   trainingMock.saveProfile.mockResolvedValue(completeRunnerProfile)
   unsubscribe = vi.fn()
   mockedLogOut.mockResolvedValue()
@@ -904,11 +915,17 @@ describe('App training sections', () => {
 
   it('mounts the signed-in navigation with the session while training data loads', () => {
     trainingMock.status = 'loading'
+    trainingMock.pendingSources = [
+      'profile',
+      'activePlanState',
+      'plans',
+      'workouts',
+      'runs',
+      'shoes'
+    ]
     renderSignedInApp()
 
-    expect(screen.getByRole('status')).toHaveTextContent(
-      'Loading your training data...'
-    )
+    expect(screen.getByRole('status')).toHaveTextContent('Loading your training data')
     expect(
       screen.getByRole('navigation', { name: 'Training sections' })
     ).toBeInTheDocument()
@@ -917,6 +934,61 @@ describe('App training sections', () => {
         screen.getByRole('button', { name: sectionName })
       ).toBeDisabled()
     }
+  })
+
+  it('offers a retry when the same startup sources remain delayed', () => {
+    vi.useFakeTimers()
+
+    try {
+      trainingMock.status = 'loading'
+      trainingMock.pendingSources = [
+        'profile',
+        'activePlanState',
+        'plans',
+        'workouts',
+        'runs',
+        'shoes'
+      ]
+      renderSignedInApp()
+
+      expect(screen.queryByRole('button', { name: 'Try again' })).not.toBeInTheDocument()
+
+      act(() => {
+        vi.advanceTimersByTime(trainingStartupNoticeDelayMs)
+      })
+
+      expect(screen.getByRole('status')).toHaveTextContent(
+        'This is taking longer than usual'
+      )
+      fireEvent.click(screen.getByRole('button', { name: 'Try again' }))
+      expect(trainingMock.reload).toHaveBeenCalledOnce()
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('renders the ready plan while run history and shoes continue loading', async () => {
+    const user = userEvent.setup()
+    trainingMock.status = 'stale'
+    trainingMock.staleReasons = ['feature_incomplete']
+    trainingMock.pendingSources = ['runs', 'shoes']
+    trainingMock.plans = [activePlan]
+    trainingMock.workouts = [upcomingWorkout]
+    renderSignedInApp()
+
+    expect(screen.getByRole('status')).toHaveTextContent(
+      'Your plan is ready. Marathoner is still loading your run history and shoes.'
+    )
+    expect(screen.getByRole('heading', { name: 'Easy run' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Plan' })).toBeEnabled()
+    expect(screen.queryByTestId('recommendation-decision-surface')).not.toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'Track' }))
+
+    expect(screen.getByRole('region', { name: 'Track Your Runs' })).toHaveTextContent(
+      'still loading your run history and shoes'
+    )
+    expect(screen.queryByRole('button', { name: 'Log Run' })).not.toBeInTheDocument()
   })
 
   it('keeps the same account header available across every training section', async () => {

@@ -18,6 +18,7 @@ import type {
   UpdateCompletedRunInput,
 } from "../persistence/trainingRepositories";
 import type { TrainingSynchronizationStaleReason } from "./trainingSynchronization";
+import type { TrainingSnapshotSource } from "./trainingSynchronization";
 import type { PendingRunSaveCheckResult } from "./pendingRunSave";
 
 export type TrainingDataStatus = "loading" | "current" | "stale" | "error";
@@ -32,6 +33,7 @@ export interface TrainingDataContextValue {
   readonly runs: readonly CompletedRun[];
   readonly shoes: readonly Shoe[];
   readonly canWrite: boolean;
+  readonly pendingSources: readonly TrainingSnapshotSource[];
   readonly staleReasons: readonly TrainingSynchronizationStaleReason[];
   readonly lastServerConfirmedAt: UtcDateTime | null;
   readonly hasPendingRunSave: boolean;

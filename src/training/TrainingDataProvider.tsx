@@ -59,12 +59,14 @@ import {
 import {
   createTrainingSynchronizationKernel,
   reduceTrainingSynchronization,
+  trainingSnapshotSources,
   type SynchronizedTrainingSnapshot,
   type TrainingLiveReadSource,
   type TrainingSourceSnapshotEvent,
   type TrainingSynchronizationKernel,
   type TrainingSynchronizationState,
 } from "./trainingSynchronization";
+import { createTrainingStartupRecorder } from "./trainingStartupDiagnostics";
 
 export type TrainingRepositoryFactory = (
   userId: UserId,
@@ -447,6 +449,7 @@ export default function TrainingDataProvider({
   }, [pendingRunSaveStore, userId]);
 
   const startSynchronization = useCallback(async () => {
+    const startup = createTrainingStartupRecorder();
     const generation = sessionGenerationRef.current + 1;
     sessionGenerationRef.current = generation;
     unsubscribeRef.current?.();
@@ -474,6 +477,7 @@ export default function TrainingDataProvider({
         liveReadSourceFactory(userId, generation),
         completedRunCommandClientFactory(),
       ]);
+      startup.infrastructureReady();
 
       if (generation !== sessionGenerationRef.current) return;
 
@@ -481,6 +485,7 @@ export default function TrainingDataProvider({
       completedRunCommandClientRef.current = completedRunCommandClient;
       const unsubscribe = source.subscribe((events) => {
         if (generation !== sessionGenerationRef.current) return;
+        startup.observe(events);
 
         const pending = pendingRunConvergenceRef.current;
         const runs = events.find(
@@ -1019,6 +1024,9 @@ export default function TrainingDataProvider({
     runs: synchronizedSnapshot?.runs ?? [],
     shoes: synchronizedSnapshot?.shoes ?? [],
     canWrite: status === "current",
+    pendingSources: trainingSnapshotSources.filter(
+      (source) => !synchronization.sources[source].received,
+    ),
     staleReasons:
       synchronization.state.status === "stale"
         ? synchronization.state.reasons

@@ -11,6 +11,7 @@ import { useAuth } from "./auth/useAuth";
 import TrainingDataProvider from "./training/TrainingDataProvider";
 import { useTrainingData } from "./training/useTrainingData";
 import useDelayedStaleNotice from "./training/useDelayedStaleNotice";
+import useDelayedTrainingStartupNotice from "./training/useDelayedTrainingStartupNotice";
 import { clearBrowserPendingRunSave } from "./training/pendingRunSave";
 import RecommendationEvidenceProvider from "./recommendations/RecommendationEvidenceProvider";
 import RunnerOnboarding from "./onboarding/RunnerOnboarding";
@@ -32,6 +33,7 @@ import RecommendationDecisionSurface from "./components/RecommendationDecisionSu
 import ClosedBetaAdaptationSurface from "./components/ClosedBetaAdaptationSurface";
 import TrainingSectionNavigation from "./components/TrainingSectionNavigation";
 import SignedInAppHeader from "./components/SignedInAppHeader";
+import TrainingStartupStatus from "./components/TrainingStartupStatus";
 import {
   trainingSections,
   type TrainingSection,
@@ -495,10 +497,22 @@ function AuthenticatedExperience({
   const hasReadableTraining =
     training.status === "current" || training.status === "stale";
   const hasSynchronizationError = training.error !== null;
+  const pendingSourceKey = training.pendingSources.join(",");
+  const startupDelayElapsed = useDelayedTrainingStartupNotice(
+    training.pendingSources.length > 0,
+    pendingSourceKey,
+  );
+  const runsReady = !training.pendingSources.includes("runs");
+  const shoesReady = !training.pendingSources.includes("shoes");
+  const secondaryTrainingReady = runsReady && shoesReady;
   const hasOtherStaleReason =
     training.status === "stale" &&
     !hasSynchronizationError &&
-    training.staleReasons.some((reason) => reason !== "pending_writes");
+    training.staleReasons.some(
+      (reason) =>
+        reason !== "pending_writes" &&
+        !(reason === "feature_incomplete" && training.pendingSources.length > 0),
+    );
   const showSynchronizationNotice = useDelayedStaleNotice(hasOtherStaleReason);
   const showOnboarding =
     hasReadableTraining &&
@@ -545,9 +559,23 @@ function AuthenticatedExperience({
       )}
 
       {!activeSection && training.status === "loading" && (
-        <div className="training-home-status" role="status">
-          <p>Loading your training data...</p>
-        </div>
+        <TrainingStartupStatus
+          pendingSources={training.pendingSources}
+          delayed={startupDelayElapsed}
+          hasReadableSnapshot={false}
+          onRetry={() => void training.reload()}
+        />
+      )}
+
+      {!activeSection &&
+        hasReadableTraining &&
+        training.pendingSources.length > 0 && (
+          <TrainingStartupStatus
+            pendingSources={training.pendingSources}
+            delayed={startupDelayElapsed}
+            hasReadableSnapshot
+            onRetry={() => void training.reload()}
+          />
       )}
 
       {!activeSection && hasSynchronizationError && (
@@ -599,7 +627,7 @@ function AuthenticatedExperience({
             distanceUnit={training.profile?.preferredDistanceUnit ?? "mile"}
             onOpenPlan={() => onOpenSection("plan")}
           />
-          {closedBetaMethodologyManifest !== null && (
+          {secondaryTrainingReady && closedBetaMethodologyManifest !== null && (
             <Suspense
               fallback={
                 <p className="training-status" role="status">
@@ -619,7 +647,8 @@ function AuthenticatedExperience({
               />
             </Suspense>
           )}
-          {InternalSessionTodayComparison &&
+          {runsReady &&
+            InternalSessionTodayComparison &&
             sessionPlanProjection &&
             training.profile && (
               <Suspense fallback={null}>
@@ -639,11 +668,13 @@ function AuthenticatedExperience({
                 />
               </Suspense>
             )}
-          {InternalAdaptationDogfood === null &&
+          {runsReady &&
+            InternalAdaptationDogfood === null &&
             closedBetaMethodologyManifest === null && (
             <RecommendationDecisionSurface />
           )}
-          {InternalAdaptationDogfood === null &&
+          {runsReady &&
+            InternalAdaptationDogfood === null &&
             closedBetaMethodologyManifest !== null && (
               <ClosedBetaAdaptationSurface
                 manifest={closedBetaMethodologyManifest}
@@ -652,7 +683,7 @@ function AuthenticatedExperience({
                 runs={training.runs}
               />
             )}
-          {InternalAdaptationDogfood && onboardingComplete && (
+          {runsReady && InternalAdaptationDogfood && onboardingComplete && (
             <Suspense
               fallback={
                 <div className="training-home-status" role="status">
@@ -683,7 +714,7 @@ function AuthenticatedExperience({
 
       {!activeSection && hasReadableTraining && !showOnboarding && (
         <>
-          {InternalPlanProposalRehearsal && (
+          {runsReady && InternalPlanProposalRehearsal && (
             <Suspense
               fallback={
                 <div className="training-home-status" role="status">
@@ -708,7 +739,7 @@ function AuthenticatedExperience({
               />
             </Suspense>
           )}
-          {BetaRunCommandRehearsal && (
+          {runsReady && BetaRunCommandRehearsal && (
             <Suspense
               fallback={
                 <div className="training-home-status" role="status">
@@ -740,6 +771,7 @@ function AuthenticatedExperience({
             sessionPlanProjection={sessionPlanProjection}
             isSessionAdaptationActive={isSessionAdaptationActive}
             trackInitialFocusTarget={trackInitialFocusTarget}
+            startupDelayElapsed={startupDelayElapsed}
             onEditRunnerProfile={editRunnerProfile}
           />
         </motion.section>
@@ -755,6 +787,7 @@ type SectionContentProps = {
   sessionPlanProjection: GeneratedPlanEntityProjection | null;
   isSessionAdaptationActive: boolean;
   trackInitialFocusTarget: ShoeTrackerInitialFocusTarget | null;
+  startupDelayElapsed: boolean;
   onEditRunnerProfile: () => void;
 };
 
@@ -765,12 +798,17 @@ function SectionContent({
   sessionPlanProjection,
   isSessionAdaptationActive,
   trackInitialFocusTarget,
+  startupDelayElapsed,
   onEditRunnerProfile,
 }: SectionContentProps) {
   const training = useTrainingData();
   const hasReadableTraining =
     training.status === "current" || training.status === "stale";
   const hasSynchronizationError = training.error !== null;
+  const runsReady = !training.pendingSources.includes("runs");
+  const shoesReady = !training.pendingSources.includes("shoes");
+  const sectionSourcesReady =
+    section === "plan" || (runsReady && shoesReady);
   const synchronizedActivePlan =
     training.plans.find((plan) => plan.status === "active") ??
     training.plans.find((plan) => plan.status === "draft") ??
@@ -798,9 +836,22 @@ function SectionContent({
       transition={{ duration: transitionDuration }}
     >
       {training.status === "loading" && (
-        <p className="training-status" role="status">
-          Loading your training data...
-        </p>
+        <TrainingStartupStatus
+          className="training-status"
+          pendingSources={training.pendingSources}
+          delayed={startupDelayElapsed}
+          hasReadableSnapshot={false}
+          onRetry={() => void training.reload()}
+        />
+      )}
+      {hasReadableTraining && !sectionSourcesReady && (
+        <TrainingStartupStatus
+          className="training-status"
+          pendingSources={training.pendingSources}
+          delayed={startupDelayElapsed}
+          hasReadableSnapshot
+          onRetry={() => void training.reload()}
+        />
       )}
       {hasSynchronizationError && (
         <div className="training-error" role="alert">
@@ -857,7 +908,7 @@ function SectionContent({
           )}
         </>
       )}
-      {hasReadableTraining && section === "track" && (
+      {hasReadableTraining && sectionSourcesReady && section === "track" && (
         <fieldset className="training-read-only" disabled={!training.canWrite}>
           <ShoeTracker
             distanceUnit={training.profile?.preferredDistanceUnit ?? "mile"}
@@ -877,7 +928,7 @@ function SectionContent({
           />
         </fieldset>
       )}
-      {hasReadableTraining && section === "analyze" && (
+      {hasReadableTraining && sectionSourcesReady && section === "analyze" && (
         <Analyze
           runs={training.runs}
           shoes={training.shoes}
