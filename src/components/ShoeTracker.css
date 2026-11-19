@@ -43,6 +43,15 @@
   inline-size: 100%;
   max-inline-size: 100%;
   min-inline-size: 0;
+  appearance: none;
+  -webkit-appearance: none;
+  overflow: hidden;
+}
+
+.tracker input[type="date"]::-webkit-date-and-time-value {
+  inline-size: 100%;
+  min-inline-size: 0;
+  text-align: left;
 }
 
 .tracker textarea {
