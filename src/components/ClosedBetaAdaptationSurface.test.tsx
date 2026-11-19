@@ -67,6 +67,31 @@ function renderSurface(client: ClosedBetaAdaptationRecommendationClient) {
 }
 
 describe("ClosedBetaAdaptationSurface", () => {
+  it("shows the real inputs and an active status while the check is pending", async () => {
+    const user = userEvent.setup();
+    const client: ClosedBetaAdaptationRecommendationClient = {
+      generate: vi.fn(() => new Promise<never>(() => undefined)),
+    };
+    renderSurface(client);
+
+    expect(
+      screen.getByRole("list", { name: "This check considers" }),
+    ).toHaveTextContent("Recent runsTraining patternCurrent plan");
+
+    await user.click(
+      screen.getByRole("button", { name: "Check recent training" }),
+    );
+
+    const status = screen.getByRole("status");
+    expect(status).toHaveTextContent("Checking recent training");
+    expect(status).toHaveTextContent(
+      "Your plan stays unchanged while this check finishes.",
+    );
+    expect(
+      screen.getByRole("list", { name: "This check considers" }),
+    ).toHaveTextContent("Recent runsTraining patternCurrent plan");
+  });
+
   it("sends the exact client manifest and artifact versions before showing no change", async () => {
     const user = userEvent.setup();
     const client: ClosedBetaAdaptationRecommendationClient = {
