@@ -3,6 +3,11 @@ import { requestPasswordReset, signIn } from "../services/authService";
 
 type LoginMode = "login" | "reset";
 
+type LoginFormProps = {
+  initialMode?: LoginMode;
+  onClose: () => void;
+};
+
 const validEmailAddress = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const passwordResetSuccessMessage =
   "If an account exists for that email address, a password reset link will arrive shortly. Check your spam folder if you do not see it.";
@@ -15,8 +20,8 @@ const getSubmitLabel = (mode: LoginMode, isSubmitting: boolean): string => {
   return mode === "login" ? "Log in" : "Send reset link";
 };
 
-const LoginForm = ({ onClose }: { onClose: () => void }) => {
-  const [mode, setMode] = useState<LoginMode>("login");
+const LoginForm = ({ initialMode = "login", onClose }: LoginFormProps) => {
+  const [mode, setMode] = useState<LoginMode>(initialMode);
   const [emailAddress, setEmailAddress] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
