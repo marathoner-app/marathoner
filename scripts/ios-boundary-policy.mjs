@@ -578,9 +578,20 @@ export function findCopiedBundleViolations({
       `iOS bundle does not contain the ${environmentName} project`,
     )
   }
-  if (!builtText.includes(liveRunCommandRehearsalMarker)) {
+  if (
+    environmentName === 'development' &&
+    !builtText.includes(liveRunCommandRehearsalMarker)
+  ) {
     violations.push(
       `${environmentName} iOS bundle is missing the live run-command rehearsal`,
+    )
+  }
+  if (
+    environmentName === 'beta' &&
+    builtText.includes(liveRunCommandRehearsalMarker)
+  ) {
+    violations.push(
+      'beta iOS bundle contains the owner-only live run-command rehearsal',
     )
   }
   for (const forbiddenValue of [

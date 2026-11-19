@@ -10,7 +10,7 @@ async function openGarminRecovery(page: Page) {
   await expect(
     page.getByRole('heading', { name: 'Garmin Connect runs' }),
   ).toBeVisible()
-  await page.getByText('A run is missing').click()
+  await page.getByText('Troubleshoot Garmin imports').click()
 }
 
 test('keeps Garmin connection recovery usable at phone width', async ({ page }) => {

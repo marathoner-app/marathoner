@@ -22,15 +22,10 @@ beforeEach(() => {
 })
 
 describe('SupportDiagnostics', () => {
-  it('explains when the device has no retained slow-run record', () => {
-    render(<SupportDiagnostics />)
+  it('stays out of normal account settings when there is no support evidence', () => {
+    const { container } = render(<SupportDiagnostics />)
 
-    expect(
-      screen.getByText(/has not recorded a run save that took longer than five seconds/i),
-    ).toBeInTheDocument()
-    expect(
-      screen.queryByRole('button', { name: 'Copy slow-run diagnostics' }),
-    ).not.toBeInTheDocument()
+    expect(container).toBeEmptyDOMElement()
   })
 
   it('copies retained privacy-safe diagnostics without developer tools', async () => {
@@ -43,8 +38,9 @@ describe('SupportDiagnostics', () => {
     })
     render(<SupportDiagnostics />)
 
+    await user.click(screen.getByText('Run-save troubleshooting'))
     await user.click(
-      screen.getByRole('button', { name: 'Copy slow-run diagnostics' }),
+      screen.getByRole('button', { name: 'Copy troubleshooting information' }),
     )
 
     expect(writeText).toHaveBeenCalledOnce()
@@ -63,15 +59,16 @@ describe('SupportDiagnostics', () => {
     })
     render(<SupportDiagnostics />)
 
+    await user.click(screen.getByText('Run-save troubleshooting'))
     await user.click(
-      screen.getByRole('button', { name: 'Copy slow-run diagnostics' }),
+      screen.getByRole('button', { name: 'Copy troubleshooting information' }),
     )
 
     expect(screen.getByRole('status')).toHaveTextContent(
       'Copy the selected diagnostics below.',
     )
     expect(
-      (screen.getByLabelText('Slow-run diagnostics') as HTMLTextAreaElement)
+      (screen.getByLabelText('Troubleshooting information') as HTMLTextAreaElement)
         .value,
     ).toContain('"submissionTotal": 30000')
   })

@@ -84,6 +84,11 @@
   margin: 0.75rem 0 0;
 }
 
+.account-support-diagnostics summary {
+  cursor: pointer;
+  font-weight: 700;
+}
+
 .account-support-diagnostics button {
   min-height: 2.75rem;
   margin-top: 0.9rem;

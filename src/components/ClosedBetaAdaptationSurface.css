@@ -24,5 +24,11 @@
 }
 
 .closed-beta-adaptation-surface button {
-  justify-self: start;
+  justify-self: center;
+}
+
+@media (max-width: 600px) {
+  .closed-beta-adaptation-surface button {
+    width: 100%;
+  }
 }
