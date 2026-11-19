@@ -25,11 +25,16 @@ vi.mock("./WeeklyDistanceTrend", () => ({
   default: ({
     buckets,
     distanceUnit,
+    isCarouselCardActive,
   }: {
     buckets: readonly WeeklyDistanceBucket[];
     distanceUnit: DistanceUnit;
+    isCarouselCardActive: boolean;
   }) => (
-    <div data-testid="weekly-distance-trend">
+    <div
+      data-active={String(isCarouselCardActive)}
+      data-testid="weekly-distance-trend"
+    >
       {distanceUnit}:{buckets.at(-1)?.distance ?? 0}
     </div>
   ),
@@ -38,11 +43,16 @@ vi.mock("./RecentRunPaceTrend", () => ({
   default: ({
     points,
     distanceUnit,
+    isCarouselCardActive,
   }: {
     points: readonly RecentRunPacePoint[];
     distanceUnit: DistanceUnit;
+    isCarouselCardActive: boolean;
   }) => (
-    <div data-testid="recent-pace-trend">
+    <div
+      data-active={String(isCarouselCardActive)}
+      data-testid="recent-pace-trend"
+    >
       {distanceUnit}:{points.map((point) => Math.round(point.pace.secondsPerUnit)).join(",")}
     </div>
   ),
@@ -129,7 +139,7 @@ it("shows sensible values for an empty history", async () => {
   );
 });
 
-it("moves between analysis cards with explicit carousel controls", () => {
+it("moves between analysis cards and activates chart layouts", async () => {
   render(
     <Analyze
       runs={[run]}
@@ -165,6 +175,17 @@ it("moves between analysis cards with explicit carousel controls", () => {
 
   expect(screen.getByText("Recent effort · 5 of 5")).toBeInTheDocument();
   expect(next).toBeDisabled();
+
+  fireEvent.click(screen.getByRole("button", { name: "Show Recent pace card" }));
+
+  expect(await screen.findByTestId("recent-pace-trend")).toHaveAttribute(
+    "data-active",
+    "true",
+  );
+  expect(await screen.findByTestId("weekly-distance-trend")).toHaveAttribute(
+    "data-active",
+    "false",
+  );
 });
 
 it("synchronizes carousel controls with the visually selected scrolled card", () => {

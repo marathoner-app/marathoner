@@ -53,7 +53,11 @@ beforeEach(() => {
 
 it("renders a line chart and an accessible exact-value table", () => {
   const { unmount } = render(
-    <RecentRunPaceTrend points={points} distanceUnit="mile" />,
+    <RecentRunPaceTrend
+      points={points}
+      distanceUnit="mile"
+      isCarouselCardActive={false}
+    />,
   );
 
   expect(screen.getByRole("heading", { name: "Recent Pace" })).toBeInTheDocument();
@@ -82,7 +86,13 @@ it("renders a line chart and an accessible exact-value table", () => {
 });
 
 it("shows one exact pace without claiming it is a trend", () => {
-  render(<RecentRunPaceTrend points={[points[0]]} distanceUnit="mile" />);
+  render(
+    <RecentRunPaceTrend
+      points={[points[0]]}
+      distanceUnit="mile"
+      isCarouselCardActive={false}
+    />,
+  );
 
   expect(screen.getByText(/log another run to see a pace trend/i)).toBeInTheDocument();
   expect(screen.getByRole("table", { name: "Recent recorded pace" })).toBeInTheDocument();
@@ -90,7 +100,13 @@ it("shows one exact pace without claiming it is a trend", () => {
 });
 
 it("uses an honest empty state without initializing a chart or table", () => {
-  render(<RecentRunPaceTrend points={[]} distanceUnit="mile" />);
+  render(
+    <RecentRunPaceTrend
+      points={[]}
+      distanceUnit="mile"
+      isCarouselCardActive={false}
+    />,
+  );
 
   expect(screen.getByText(/log a run with distance and time/i)).toBeInTheDocument();
   expect(screen.queryByRole("table")).not.toBeInTheDocument();
@@ -108,6 +124,7 @@ it("uses kilometers and disables animation for reduced motion", () => {
     <RecentRunPaceTrend
       points={kilometerPoints}
       distanceUnit="kilometer"
+      isCarouselCardActive={false}
     />,
   );
 
@@ -116,4 +133,26 @@ it("uses kilometers and disables animation for reduced motion", () => {
     expect.objectContaining({ animation: false }),
     { notMerge: true },
   );
+});
+
+it("resizes after its carousel card becomes active", () => {
+  const view = render(
+    <RecentRunPaceTrend
+      points={points}
+      distanceUnit="mile"
+      isCarouselCardActive={false}
+    />,
+  );
+
+  expect(chart.resize).not.toHaveBeenCalled();
+
+  view.rerender(
+    <RecentRunPaceTrend
+      points={points}
+      distanceUnit="mile"
+      isCarouselCardActive
+    />,
+  );
+
+  expect(chart.resize).toHaveBeenCalledOnce();
 });

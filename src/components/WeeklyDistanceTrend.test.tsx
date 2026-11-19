@@ -52,7 +52,11 @@ beforeEach(() => {
 
 it("renders an SVG chart and an accessible exact-value table", () => {
   const { unmount } = render(
-    <WeeklyDistanceTrend buckets={buckets} distanceUnit="mile" />,
+    <WeeklyDistanceTrend
+      buckets={buckets}
+      distanceUnit="mile"
+      isCarouselCardActive={false}
+    />,
   );
 
   expect(screen.getByRole("heading", { name: "Weekly Distance" })).toBeInTheDocument();
@@ -89,6 +93,7 @@ it("uses an honest empty state without initializing a chart", () => {
         runCount: 0,
       }))}
       distanceUnit="mile"
+      isCarouselCardActive={false}
     />,
   );
 
@@ -100,10 +105,38 @@ it("uses an honest empty state without initializing a chart", () => {
 it("disables chart animation when the runner prefers reduced motion", () => {
   motionPreference.reduce = true;
 
-  render(<WeeklyDistanceTrend buckets={buckets} distanceUnit="mile" />);
+  render(
+    <WeeklyDistanceTrend
+      buckets={buckets}
+      distanceUnit="mile"
+      isCarouselCardActive={false}
+    />,
+  );
 
   expect(chart.setOption).toHaveBeenCalledWith(
     expect.objectContaining({ animation: false }),
     { notMerge: true },
   );
+});
+
+it("resizes after its carousel card becomes active", () => {
+  const view = render(
+    <WeeklyDistanceTrend
+      buckets={buckets}
+      distanceUnit="mile"
+      isCarouselCardActive={false}
+    />,
+  );
+
+  expect(chart.resize).not.toHaveBeenCalled();
+
+  view.rerender(
+    <WeeklyDistanceTrend
+      buckets={buckets}
+      distanceUnit="mile"
+      isCarouselCardActive
+    />,
+  );
+
+  expect(chart.resize).toHaveBeenCalledOnce();
 });

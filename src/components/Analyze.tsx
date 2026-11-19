@@ -320,6 +320,7 @@ export default function Analyze({
               <WeeklyDistanceTrend
                 buckets={weeklyDistance}
                 distanceUnit={distanceUnit}
+                isCarouselCardActive={activeCardIndex === 2}
               />
             </Suspense>
           </div>
@@ -342,6 +343,7 @@ export default function Analyze({
               <RecentRunPaceTrend
                 points={recentPace}
                 distanceUnit={distanceUnit}
+                isCarouselCardActive={activeCardIndex === 3}
               />
             </Suspense>
           </div>

@@ -38,6 +38,7 @@ type WeeklyDistanceChartOption = ComposeOption<
 type WeeklyDistanceTrendProps = {
   readonly buckets: readonly WeeklyDistanceBucket[];
   readonly distanceUnit: DistanceUnit;
+  readonly isCarouselCardActive: boolean;
 };
 
 function formatWeekStart(value: DateOnly): string {
@@ -66,6 +67,7 @@ function distanceLabel(value: number, distanceUnit: DistanceUnit): string {
 export default function WeeklyDistanceTrend({
   buckets,
   distanceUnit,
+  isCarouselCardActive,
 }: WeeklyDistanceTrendProps) {
   const chartContainerRef = useRef<HTMLDivElement | null>(null);
   const chartRef = useRef<ECharts | null>(null);
@@ -169,6 +171,12 @@ export default function WeeklyDistanceTrend({
 
     chartRef.current.setOption(option, { notMerge: true });
   }, [distanceUnit, hasRecentRuns, points, reduceMotion]);
+
+  useEffect(() => {
+    if (!isCarouselCardActive || chartRef.current === null) return;
+
+    chartRef.current.resize();
+  }, [isCarouselCardActive]);
 
   return (
     <section className="weekly-trend" aria-labelledby="weekly-trend-heading">

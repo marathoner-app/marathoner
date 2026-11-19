@@ -6,7 +6,7 @@ import {
 
 const phoneViewport = { width: 390, height: 844 };
 
-test.use({ viewport: phoneViewport });
+test.use({ viewport: phoneViewport, hasTouch: true });
 
 async function expectPhoneAnalyzeFrame(page: Page, stage: string) {
   const layout = await page.evaluate(() => ({
@@ -34,6 +34,44 @@ async function showCard(page: Page, label: string, position: number) {
   });
   await expect(card).toBeInViewport();
   return card;
+}
+
+async function dragTouchHorizontally(
+  page: Page,
+  target: ReturnType<Page["locator"]>,
+) {
+  const bounds = await target.boundingBox();
+  expect(bounds).not.toBeNull();
+  if (bounds === null) return;
+
+  const session = await page.context().newCDPSession(page);
+  const y = Math.round(bounds.y + bounds.height / 2);
+  const startX = Math.round(bounds.x + bounds.width * 0.75);
+  const endX = Math.round(bounds.x + bounds.width * 0.25);
+
+  try {
+    await session.send("Input.dispatchTouchEvent", {
+      type: "touchStart",
+      touchPoints: [{ x: startX, y }],
+    });
+    for (let step = 1; step <= 6; step += 1) {
+      await session.send("Input.dispatchTouchEvent", {
+        type: "touchMove",
+        touchPoints: [
+          {
+            x: Math.round(startX + ((endX - startX) * step) / 6),
+            y,
+          },
+        ],
+      });
+    }
+    await session.send("Input.dispatchTouchEvent", {
+      type: "touchEnd",
+      touchPoints: [],
+    });
+  } finally {
+    await session.detach();
+  }
 }
 
 async function expectSummaryTextInsideCards(page: Page, textSizeLabel: string) {
@@ -97,6 +135,66 @@ test("presents Analyze as a contained, swipeable phone carousel", async ({
     "next analysis card",
   );
   await expectPhoneAnalyzeFrame(page, "on the first card");
+});
+
+test("renders the active pace line before interaction and separates chart drags from carousel swipes", async ({
+  page,
+}) => {
+  await page.goto("tests/viewport/analyze.html");
+
+  const viewport = page.locator(".analyze-carousel-viewport");
+  const weeklyCard = await showCard(page, "Weekly distance", 3);
+  const weeklyChart = weeklyCard.locator(".weekly-trend-chart");
+  await expect(weeklyChart).toHaveCSS("touch-action", "pan-y");
+  await weeklyChart.scrollIntoViewIfNeeded();
+  const weeklyScrollLeft = await viewport.evaluate((element) => element.scrollLeft);
+
+  await dragTouchHorizontally(page, weeklyChart);
+
+  await expect(page.getByText("Weekly distance · 3 of 5")).toBeVisible();
+  await expect
+    .poll(async () =>
+      Math.abs(
+        (await viewport.evaluate((element) => element.scrollLeft)) -
+          weeklyScrollLeft,
+      ),
+    )
+    .toBeLessThan(2);
+  await expect
+    .poll(() =>
+      weeklyChart.locator("div").evaluateAll((elements) =>
+        elements.some(
+          (element) =>
+            element.textContent?.includes("Weekly distance") === true &&
+            window.getComputedStyle(element).display !== "none",
+        ),
+      ),
+    )
+    .toBe(true);
+
+  const paceCard = await showCard(page, "Recent pace", 4);
+  const paceChart = paceCard.locator(".pace-trend-chart");
+  await expect(paceChart).toHaveCSS("touch-action", "pan-y");
+  await expect
+    .poll(() =>
+      paceChart.locator("svg path").evaluateAll((paths) =>
+        paths.some((path) => {
+          const bounds = path.getBoundingClientRect();
+          const styles = window.getComputedStyle(path);
+          return (
+            Number.parseFloat(styles.strokeWidth) >= 3 &&
+            bounds.width > 0 &&
+            bounds.height > 0
+          );
+        }),
+      ),
+    )
+    .toBe(true);
+
+  const latestCard = await showCard(page, "Latest run", 1);
+  await dragTouchHorizontally(page, latestCard.locator(".latest-run-summary"));
+
+  await expect(page.getByText("Training summary · 2 of 5")).toBeVisible();
 });
 
 async function exerciseAnalyzeFeedback(page: Page, textSizeLabel: string) {
