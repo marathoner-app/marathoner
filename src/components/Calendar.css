@@ -132,7 +132,7 @@
 
 .plan-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
   gap: 0.875rem;
   margin: 0;
   padding: 0;
@@ -144,17 +144,25 @@
 }
 
 .plan-day {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 0.35rem;
+  --plan-day-accent: var(--app-accent);
+
+  position: relative;
+  display: grid;
+  grid-template-areas:
+    "date content open"
+    "date status open";
+  grid-template-columns: 4.7rem minmax(0, 1fr) auto;
+  grid-template-rows: 1fr auto;
+  align-items: center;
+  gap: 0.8rem 1rem;
   width: 100%;
-  min-height: 10.5rem;
-  padding: 1rem;
+  min-height: 9rem;
+  padding: 0.85rem 0.9rem 0.85rem 0.75rem;
   border: 1px solid var(--app-border);
-  border-left-width: 0.4rem;
   border-radius: var(--app-radius-medium);
-  background: var(--app-surface);
+  background:
+    linear-gradient(135deg, rgb(255 255 255 / 76%), transparent 68%),
+    var(--app-surface);
   color: var(--app-ink);
   font: inherit;
   line-height: 1.35;
@@ -167,9 +175,9 @@
 }
 
 .plan-day:hover {
-  border-color: var(--app-border-strong);
+  border-color: color-mix(in srgb, var(--plan-day-accent) 48%, var(--app-border));
   background: var(--app-surface);
-  box-shadow: var(--app-shadow-small);
+  box-shadow: 0 0.75rem 1.8rem rgb(29 29 31 / 9%);
   transform: translateY(-1px);
 }
 
@@ -181,7 +189,7 @@
 
 .plan-day.completed {
   border-color: var(--app-success-border);
-  box-shadow: inset 0 0 0 1px var(--app-success);
+  box-shadow: inset 0 0 0 1px rgb(23 102 58 / 34%);
 }
 
 .plan-day.skipped {
@@ -190,58 +198,162 @@
 }
 
 .plan-day-date {
-  color: var(--app-muted);
-  font-size: 0.875rem;
-  font-weight: 700;
+  grid-area: date;
+  align-self: stretch;
+  min-width: 0;
+  border: 1px solid color-mix(in srgb, var(--plan-day-accent) 24%, var(--app-border));
+  border-radius: calc(var(--app-radius-medium) - 0.2rem);
+  background: color-mix(in srgb, var(--plan-day-accent) 9%, var(--app-surface));
+  color: var(--plan-day-accent);
+}
+
+.plan-day-date time {
+  display: flex;
+  height: 100%;
+  min-height: 5.7rem;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.1rem;
+  padding: 0.35rem;
+  box-sizing: border-box;
+  text-align: center;
+}
+
+.plan-day-weekday {
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.09em;
+  line-height: 1.1;
+  text-transform: uppercase;
+}
+
+.plan-day-month-day {
+  color: var(--app-ink);
+  font-size: 1rem;
+  font-weight: 780;
+  line-height: 1.15;
+}
+
+.plan-day-content {
+  display: grid;
+  grid-area: content;
+  align-self: end;
+  gap: 0.28rem;
+  min-width: 0;
+}
+
+.plan-day-route {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(3, 0.45rem);
+  align-items: center;
+  justify-content: space-between;
+  width: 3.5rem;
+  height: 0.55rem;
+  margin-bottom: 0.15rem;
+  color: var(--plan-day-accent);
+}
+
+.plan-day-route::before {
+  position: absolute;
+  right: 0.2rem;
+  left: 0.2rem;
+  height: 2px;
+  background: currentColor;
+  content: "";
+}
+
+.plan-day-route span {
+  z-index: 1;
+  box-sizing: border-box;
+  width: 0.45rem;
+  height: 0.45rem;
+  border: 2px solid currentColor;
+  border-radius: 50%;
+  background: var(--app-surface);
 }
 
 .plan-day-workout {
-  font-size: 1.25rem;
+  font-size: 1.18rem;
   font-weight: 800;
+  letter-spacing: -0.015em;
+  line-height: 1.15;
+  overflow-wrap: anywhere;
 }
 
 .plan-day-meta {
   color: var(--app-muted);
+  font-size: 0.93rem;
+  font-weight: 600;
   overflow-wrap: anywhere;
 }
 
 .plan-day-status {
-  margin-top: auto;
-  padding: 0.25rem 0.55rem;
-  border-radius: 999px;
-  background: var(--app-accent-surface);
-  color: var(--app-accent);
-  font-size: 0.8rem;
-  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  justify-self: start;
+  gap: 0.38rem;
+  grid-area: status;
+  align-self: start;
+  min-width: 0;
+  max-width: 100%;
+  color: var(--app-muted);
+  font-size: 0.78rem;
+  font-weight: 750;
+  letter-spacing: 0.02em;
+  overflow-wrap: anywhere;
+}
+
+.plan-day-status-mark {
+  display: inline-grid;
+  width: 1.15rem;
+  height: 1.15rem;
+  box-sizing: border-box;
+  border: 1px solid currentColor;
+  border-radius: 50%;
+  font-size: 0.75rem;
+  line-height: 1;
+  place-items: center;
 }
 
 .plan-day-status.completed {
-  background: var(--app-success-surface);
   color: var(--app-success);
 }
 
 .plan-day-status.skipped {
-  background: var(--app-surface);
   color: var(--app-muted);
+}
+
+.plan-day-open {
+  grid-area: open;
+  color: var(--plan-day-accent);
+  font-size: 1.6rem;
+  font-weight: 400;
+  line-height: 1;
 }
 
 .long-run,
 .race-run {
-  border-left-color: var(--app-workout-long);
+  --plan-day-accent: var(--app-workout-long);
 }
 
 .easy-run,
 .recovery-run {
-  border-left-color: var(--app-workout-easy);
+  --plan-day-accent: var(--app-workout-easy);
 }
 
 .tempo-run,
 .intervals-run {
-  border-left-color: var(--app-workout-quality);
+  --plan-day-accent: var(--app-workout-quality);
 }
 
 .rest-day {
-  border-left-color: var(--app-workout-rest);
+  --plan-day-accent: var(--app-workout-rest);
+}
+
+.rest-day .plan-day-route span:nth-child(2) {
+  background: var(--plan-day-accent);
 }
 
 .plan-modal-overlay {
@@ -343,7 +455,15 @@
   }
 
   .plan-day {
-    min-height: 9.5rem;
+    grid-template-areas:
+      "date content"
+      "status status";
+    grid-template-columns: 4.7rem minmax(0, 1fr);
+    min-height: 8.5rem;
+  }
+
+  .plan-day-open {
+    display: none;
   }
 }
 

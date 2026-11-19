@@ -112,7 +112,7 @@ describe("Calendar", () => {
     expect(
       screen.getByRole("heading", { name: "Week 1 of 2" }),
     ).toBeInTheDocument();
-    expect(screen.getByText("Aug 3")).toBeInTheDocument();
+    expect(screen.getAllByText("Aug 3")).toHaveLength(2);
     expect(screen.getByText("Aug 9")).toBeInTheDocument();
     expect(
       screen.getByRole("combobox", { name: "Training week" }),
@@ -122,12 +122,12 @@ describe("Calendar", () => {
     expect(screen.getByText("1 of 2 workouts complete")).toBeInTheDocument();
     expect(
       screen.getByRole("button", {
-        name: "Mon, Aug 3 Easy run 3 mi Completed",
+        name: "Mon Aug 3 Easy run 3 mi Completed",
       }),
     ).toBeInTheDocument();
     expect(
       screen.getByRole("button", {
-        name: "Wed, Aug 5 Tempo run 5 mi · 45 min Skipped",
+        name: "Wed Aug 5 Tempo run 5 mi · 45 min Skipped",
       }),
     ).toBeInTheDocument();
   });
@@ -138,7 +138,7 @@ describe("Calendar", () => {
     expect(screen.getByText("12.8 km")).toBeInTheDocument();
     expect(
       screen.getByRole("button", {
-        name: "Mon, Aug 3 Easy run 4.8 km Completed",
+        name: "Mon Aug 3 Easy run 4.8 km Completed",
       }),
     ).toBeInTheDocument();
   });
@@ -161,7 +161,7 @@ describe("Calendar", () => {
     expect(nextWeek).toBeDisabled();
     expect(
       screen.getByRole("button", {
-        name: "Mon, Aug 10 Rest No training target Scheduled",
+        name: "Mon Aug 10 Rest No training target Scheduled",
       }),
     ).toBeInTheDocument();
 
@@ -172,7 +172,7 @@ describe("Calendar", () => {
 
     expect(
       screen.getByRole("button", {
-        name: "Mon, Aug 3 Easy run 3 mi Completed",
+        name: "Mon Aug 3 Easy run 3 mi Completed",
       }),
     ).toBeInTheDocument();
   });
@@ -185,7 +185,7 @@ describe("Calendar", () => {
     ).toBeInTheDocument();
     expect(
       screen.getByRole("button", {
-        name: "Mon, Aug 10 Rest No training target Scheduled",
+        name: "Mon Aug 10 Rest No training target Scheduled",
       }),
     ).toBeInTheDocument();
   });
@@ -234,7 +234,7 @@ describe("Calendar", () => {
     ).toBeInTheDocument();
     expect(
       screen.getByRole("button", {
-        name: "Mon, Aug 17 Recovery run 1.9 mi Scheduled",
+        name: "Mon Aug 17 Recovery run 1.9 mi Scheduled",
       }),
     ).toBeInTheDocument();
     expect(nextWeek).toBeDisabled();
@@ -298,7 +298,7 @@ describe("Calendar", () => {
     renderCalendar();
 
     const trigger = screen.getByRole("button", {
-      name: "Wed, Aug 5 Tempo run 5 mi · 45 min Skipped",
+      name: "Wed Aug 5 Tempo run 5 mi · 45 min Skipped",
     });
     await user.click(trigger);
 
@@ -334,7 +334,7 @@ describe("Calendar", () => {
     renderCalendar();
 
     const trigger = screen.getByRole("button", {
-      name: "Mon, Aug 3 Easy run 3 mi Completed",
+      name: "Mon Aug 3 Easy run 3 mi Completed",
     });
     await user.click(trigger);
     expect(
@@ -355,7 +355,7 @@ describe("Calendar", () => {
 
     await user.click(
       screen.getByRole("button", {
-        name: "Wed, Aug 5 Tempo run 5 mi · 45 min Skipped",
+        name: "Wed Aug 5 Tempo run 5 mi · 45 min Skipped",
       }),
     );
 

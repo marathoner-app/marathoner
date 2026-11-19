@@ -104,17 +104,17 @@ test("uses the shared Plan surface and workout hierarchy", async ({ page }) => {
     "rgb(255, 255, 255)",
   );
   await expect(page.locator(".plan-day-status.completed")).toHaveCSS(
-    "background-color",
-    "rgb(238, 248, 241)",
+    "color",
+    "rgb(23, 102, 58)",
   );
-  await expect(page.locator(".plan-day.tempo-run")).toHaveCSS(
-    "border-left-color",
+  await expect(page.locator(".plan-day.tempo-run .plan-day-route")).toHaveCSS(
+    "color",
     "rgb(163, 107, 0)",
   );
 
   await page
     .getByRole("button", {
-      name: "Thu, Oct 29 Tempo run 5 mi · 45 min Scheduled",
+      name: "Thu Oct 29 Tempo run 5 mi · 45 min Scheduled",
     })
     .click();
   await expect(page.getByRole("dialog", { name: "Tempo run" })).toHaveCSS(
@@ -143,7 +143,7 @@ async function exercisePlan(page: Page, textSizeLabel: string) {
   await expectMinimumTouchTarget(weekSelector, `week selector at ${textSizeLabel}`);
 
   const tempoWorkout = page.getByRole("button", {
-    name: "Thu, Oct 29 Tempo run 5 mi · 45 min Scheduled",
+    name: "Thu Oct 29 Tempo run 5 mi · 45 min Scheduled",
   });
   await expect(tempoWorkout).toBeVisible();
   await expectMinimumTouchTarget(tempoWorkout, `tempo workout at ${textSizeLabel}`);
@@ -179,7 +179,7 @@ async function exercisePlan(page: Page, textSizeLabel: string) {
   await expect(page.getByText("Marathon training")).toBeVisible();
   await expect(
     page.getByRole("button", {
-      name: "Sun, Nov 8 Long run 10 mi Scheduled",
+      name: "Sun Nov 8 Long run 10 mi Scheduled",
     }),
   ).toBeVisible();
   await expectNoHorizontalOverflow(
@@ -213,6 +213,21 @@ test("keeps Plan browsing usable with 200% text", async ({ page }) => {
   );
 
   await exercisePlan(page, "200% text");
+});
+
+test("keeps training tickets static when reduced motion is requested", async ({
+  page,
+}) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.goto("tests/viewport/plan.html");
+
+  const transitionDuration = await page
+    .locator(".plan-day")
+    .first()
+    .evaluate((element) =>
+      Number.parseFloat(window.getComputedStyle(element).transitionDuration),
+    );
+  expect(transitionDuration).toBeLessThanOrEqual(0.00001);
 });
 
 test("contains dynamically enlarged week-navigation labels", async ({ page }) => {
