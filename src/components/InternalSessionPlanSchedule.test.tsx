@@ -43,7 +43,7 @@ describe("InternalSessionPlanSchedule", () => {
     ).toBeVisible();
     expect(
       screen.getByRole("button", {
-        name: "Tue, Jan 8 Easy run 3.1 mi Scheduled",
+        name: "Tue Jan 8 Easy run 3.1 mi Scheduled",
       }),
     ).toBeVisible();
     expect(

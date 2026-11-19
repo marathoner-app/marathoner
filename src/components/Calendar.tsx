@@ -30,6 +30,11 @@ const dateRangeFormatter = new Intl.DateTimeFormat("en-US", {
   timeZone: "UTC",
 });
 
+const weekdayFormatter = new Intl.DateTimeFormat("en-US", {
+  weekday: "short",
+  timeZone: "UTC",
+});
+
 function addDays(date: string, numberOfDays: number): string {
   const value = new Date(`${date}T00:00:00.000Z`);
   value.setUTCDate(value.getUTCDate() + numberOfDays);
@@ -61,6 +66,10 @@ function formatDate(value: string): string {
 
 function formatShortDate(value: string): string {
   return dateRangeFormatter.format(new Date(`${value}T00:00:00.000Z`));
+}
+
+function formatWeekday(value: string): string {
+  return weekdayFormatter.format(new Date(`${value}T00:00:00.000Z`));
 }
 
 function formatDuration(totalSeconds: number): string {
@@ -113,6 +122,12 @@ function workoutColorClass(workout: PlannedWorkout): string {
   if (workout.kind === "rest") return "rest-day";
   if (workout.kind === "walk_run") return "easy-run";
   return `${workout.purpose.replace("_", "-")}-run`;
+}
+
+function workoutStatusMark(workout: PlannedWorkout): string {
+  if (workout.status === "completed") return "✓";
+  if (workout.status === "skipped") return "–";
+  return "○";
 }
 
 export default function Calendar({
@@ -288,15 +303,33 @@ export default function Calendar({
               >
                 <span className="plan-day-date">
                   <time dateTime={workout.scheduledDate}>
-                    {formatDate(workout.scheduledDate)}
+                    <span className="plan-day-weekday">
+                      {formatWeekday(workout.scheduledDate)}
+                    </span>
+                    <span className="plan-day-month-day">
+                      {formatShortDate(workout.scheduledDate)}
+                    </span>
                   </time>
                 </span>
-                <span className="plan-day-workout">{workoutLabel(workout)}</span>
-                <span className="plan-day-meta">
-                  {workoutTarget(workout, distanceUnit) ?? "No training target"}
+                <span className="plan-day-content">
+                  <span className="plan-day-route" aria-hidden="true">
+                    <span />
+                    <span />
+                    <span />
+                  </span>
+                  <span className="plan-day-workout">{workoutLabel(workout)}</span>
+                  <span className="plan-day-meta">
+                    {workoutTarget(workout, distanceUnit) ?? "No training target"}
+                  </span>
                 </span>
                 <span className={`plan-day-status ${workout.status}`}>
-                  {workoutStatusLabel(workout)}
+                  <span className="plan-day-status-mark" aria-hidden="true">
+                    {workoutStatusMark(workout)}
+                  </span>
+                  <span>{workoutStatusLabel(workout)}</span>
+                </span>
+                <span className="plan-day-open" aria-hidden="true">
+                  ›
                 </span>
               </button>
             </li>

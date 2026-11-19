@@ -385,7 +385,7 @@ describe("InternalLiveAdaptationRehearsal", () => {
     });
     expect(
       within(calendarPreview).getByRole("button", {
-        name: /Tue, Oct 27 Easy run 2\.5 mi Scheduled/iu,
+        name: /Tue Oct 27 Easy run 2\.5 mi Scheduled/iu,
       }),
     ).toBeVisible();
     expect(within(calendarPreview).queryByText("Skipped")).not.toBeInTheDocument();
