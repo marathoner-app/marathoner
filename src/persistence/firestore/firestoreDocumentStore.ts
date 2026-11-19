@@ -10,7 +10,11 @@ import {
   type DocumentData,
   type Firestore,
 } from "firebase/firestore";
-import type { DocumentStore, StoredDocument } from "../documentStore";
+import type {
+  DocumentStore,
+  DocumentWrite,
+  StoredDocument,
+} from "../documentStore";
 
 export class FirestoreDocumentStore implements DocumentStore {
   constructor(private readonly database: Firestore) {}
@@ -54,6 +58,16 @@ export class FirestoreDocumentStore implements DocumentStore {
 
   async set(documentPath: string, data: Record<string, unknown>): Promise<void> {
     await setDoc(doc(this.database, documentPath), data);
+  }
+
+  async setMany(documents: readonly DocumentWrite[]): Promise<void> {
+    const batch = writeBatch(this.database);
+
+    documents.forEach(({ path, data }) => {
+      batch.set(doc(this.database, path), data);
+    });
+
+    await batch.commit();
   }
 
   async delete(documentPath: string): Promise<void> {

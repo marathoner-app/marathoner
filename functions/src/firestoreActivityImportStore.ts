@@ -33,9 +33,11 @@ import {
 import { createUtcDateTime } from '../../src/domain/training/dates.js'
 import {
   createCompletedRunId,
+  createShoeId,
   createUserId,
   isCompletedRunIdValue,
   type CompletedRunId,
+  type ShoeId,
   type UserId,
 } from '../../src/domain/training/identifiers.js'
 import type {
@@ -48,7 +50,9 @@ import {
   activityImportDocumentPath,
   activityImportsCollectionPath,
   plansCollectionPath,
+  profileDocumentPath,
   runDocumentPath,
+  shoeDocumentPath,
   workoutCompletionGuardDocumentPath,
   workoutDocumentPath,
   workoutsCollectionPath,
@@ -61,6 +65,7 @@ import {
   completionGuardFromAdminDocument,
   plannedWorkoutAdminDocument,
   plannedWorkoutFromAdminDocument,
+  shoeFromAdminDocument,
   trainingPlanFromAdminDocument,
 } from './firestoreCompletedRunDocuments.js'
 import {
@@ -281,6 +286,7 @@ function importedRun(
   event: CompletedActivityUpsertV1,
   runId: CompletedRunId,
   committedAt: string,
+  defaultShoeId?: ShoeId,
 ): CompletedRun {
   const run: CompletedRun = {
     id: runId,
@@ -295,6 +301,7 @@ function importedRun(
     ...(event.maximumHeartRateBpm === undefined
       ? {}
       : { maximumHeartRateBpm: event.maximumHeartRateBpm }),
+    ...(defaultShoeId === undefined ? {} : { shoeId: defaultShoeId }),
     importProvider: event.provider,
     reportedOrigin: event.reportedOrigin,
     createdAt: createUtcDateTime(committedAt),
@@ -304,6 +311,21 @@ function importedRun(
     throw new Error('A normalized provider event projected an invalid run.')
   }
   return run
+}
+
+function defaultShoeIdFromProfile(
+  data: DocumentData | undefined,
+  ownerId: UserId,
+): ShoeId | undefined {
+  if (data?.defaultShoeId === undefined) return undefined
+  if (
+    data.schemaVersion !== TRAINING_SCHEMA_VERSION ||
+    data.userId !== ownerId ||
+    typeof data.defaultShoeId !== 'string'
+  ) {
+    throw new Error('The runner default shoe selection is invalid.')
+  }
+  return createShoeId(data.defaultShoeId)
 }
 
 function updatedImportedRun(
@@ -522,13 +544,20 @@ export class FirestoreActivityImportStore implements ActivityImportStore {
     const membershipReference = this.database.doc(
       approvedBetaMembershipPath(options.ownerId),
     )
+    const profileReference = this.database.doc(profileDocumentPath(ownerId))
 
     return this.database.runTransaction(async (transaction) => {
-      const [membershipSnapshot, receiptSnapshot, importSnapshot] =
+      const [
+        membershipSnapshot,
+        receiptSnapshot,
+        importSnapshot,
+        profileSnapshot,
+      ] =
         await Promise.all([
           transaction.get(membershipReference),
           transaction.get(receiptReference),
           transaction.get(importReference),
+          transaction.get(profileReference),
         ])
 
       if (!isApprovedBetaMembership(membershipSnapshot.data(), options.ownerId)) {
@@ -554,6 +583,26 @@ export class FirestoreActivityImportStore implements ActivityImportStore {
           createProviderActivityIdentityKey(event)
       ) {
         throw new Error('An activity-import document identity is inconsistent.')
+      }
+      const defaultShoeId = defaultShoeIdFromProfile(
+        profileSnapshot.data(),
+        ownerId,
+      )
+      if (defaultShoeId !== undefined) {
+        const defaultShoeSnapshot = await transaction.get(
+          this.database.doc(shoeDocumentPath(ownerId, defaultShoeId)),
+        )
+        const defaultShoe = shoeFromAdminDocument(
+          defaultShoeSnapshot.id,
+          defaultShoeSnapshot.data(),
+        )
+        if (
+          defaultShoe === null ||
+          defaultShoe.userId !== ownerId ||
+          defaultShoe.status !== 'active'
+        ) {
+          throw new Error('The runner default shoe selection is unavailable.')
+        }
       }
       const canonicalCommandId =
         existing?.canonicalCommandId ?? options.envelope.commandId
@@ -671,6 +720,7 @@ export class FirestoreActivityImportStore implements ActivityImportStore {
           event,
           existing.completedRunId,
           processedAt,
+          defaultShoeId,
         )
         transaction.create(
           this.database.doc(runDocumentPath(ownerId, recoveredRun.id)),
@@ -992,6 +1042,7 @@ export class FirestoreActivityImportStore implements ActivityImportStore {
               event,
               createCompletedRunId(this.createRunId()),
               processedAt,
+              defaultShoeId,
             )
           : updatedImportedRun(existingRun, event, processedAt)
       let automaticWorkoutMatch: AutomaticWorkoutMatchProjection | null = null

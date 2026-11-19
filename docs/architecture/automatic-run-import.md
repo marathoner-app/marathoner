@@ -134,6 +134,15 @@ Perceived effort, Marathoner notes, shoe association, and plan-workout matching
 remain Marathoner-owned fields. They are never inferred from a provider merely
 because the provider supplies other activity details.
 
+The one exception is an explicit Marathoner gear preference: when a normalized
+Apple Health or Garmin event creates a completed run, the shared trusted import
+store copies the runner's current owned, active `defaultShoeId`. This is not a
+provider inference. Later provider updates and replays preserve the run's
+existing shoe, including a manual change. Duplicate reconciliation may carry a
+shoe onto the surviving run only when the survivor has none; two different
+shoe choices block automatic reconciliation. Existing runs are never
+backfilled when the default changes.
+
 Provider SDK types, OAuth tokens, FIT payloads, GPS routes, raw heart-rate
 samples, and raw all-day health data do not enter the portable training
 contract. Heart-rate summaries are optional: their absence means the provider
@@ -196,6 +205,23 @@ The runner can change or remove a match through the guarded run-update path.
 Pending, delayed, disconnected, denied, duplicate, and failed states use calm
 product language. They must not expose command IDs, provider IDs, token status,
 listener terminology, or synchronization internals.
+
+## Default-shoe rollout and rollback
+
+Deploy the profile/shoe Firestore rules and trusted import Functions before a
+client that exposes the default selector. The field is optional, so existing
+profiles and runners remain valid and historical runs require no migration.
+After deployment, smoke one new Apple Health or Garmin import with an active
+default, then change that run's shoe and replay the provider event to confirm
+the manual choice survives.
+
+For rollback, leave `defaultShoeId` accepted by the rules and readable by the
+client while restoring the prior import Functions; the prior server safely
+ignores the optional preference and existing completed-run shoe fields remain
+unchanged. Do not remove the rules field while profiles still contain it. A
+client rollback should avoid saving profiles with an older replacement writer
+until preservation has been verified, or runners may need to reselect their
+default after the client is restored.
 
 ## Invitation gate
 

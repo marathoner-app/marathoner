@@ -59,6 +59,9 @@ class DocumentUserProfileRepository implements UserProfileRepository {
       const profile: UserProfile = {
         id: this.userId,
         ...input,
+        ...(existing?.defaultShoeId === undefined
+          ? {}
+          : { defaultShoeId: existing.defaultShoeId }),
         createdAt: existing?.createdAt ?? now,
         updatedAt: now,
       };

@@ -9,7 +9,7 @@ belong here.
 
 | Entity | Purpose | Relationships |
 | --- | --- | --- |
-| `UserProfile` | Stores application preferences and the approved, in-progress first-marathon intake inputs. | Its `id` is the authenticated owner ID used by all other entities. |
+| `UserProfile` | Stores application preferences and the approved, in-progress first-marathon intake inputs. | Its `id` is the authenticated owner ID used by all other entities; it may select one owned, active shoe as the default for new imports. |
 | `TrainingPlan` | Represents one first-marathon journey over a defined date range. | Belongs to one user and owns many planned workouts. |
 | `PlannedWorkout` | Describes a rest, run, or walk-run assignment on a local calendar day. | Belongs to one user and one training plan. |
 | `CompletedRun` | Records what the runner actually completed. | Belongs to one user and may reference one planned workout, its parent plan, and one shoe. |
@@ -61,8 +61,8 @@ both distance-based and time-based training.
 
 ## Domain invariants
 
-The validation functions enforce rules that TypeScript cannot guarantee when
-data arrives from a form, network request, or database:
+The domain validation and persistence boundaries enforce rules that TypeScript
+cannot guarantee when data arrives from a form, network request, or database:
 
 1. A plan's target race date cannot precede its start date.
 2. A workout must belong to the same user as its plan.
@@ -71,8 +71,11 @@ data arrives from a form, network request, or database:
 5. A completed run needs positive distance and duration values.
 6. An entity's update timestamp cannot precede its creation timestamp.
 7. A retired shoe has a retirement date, while an active shoe does not.
-8. Text fields that are present cannot contain only whitespace.
-9. Profile race windows cannot end before they begin, running frequency is a
+8. A default shoe is optional, owned by the profile user, and active. Retiring
+   it clears the selection without changing historical runs or choosing a
+   replacement.
+9. Text fields that are present cannot contain only whitespace.
+10. Profile race windows cannot end before they begin, running frequency is a
    whole number from zero through seven, recent-performance values are
    positive, and the preferred long-run day must be available.
 

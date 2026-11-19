@@ -66,4 +66,32 @@ describe("FirestoreDocumentStore", () => {
     expect(firestoreMocks.getDocFromCache).toHaveBeenCalledOnce();
     expect(firestoreMocks.getDoc).toHaveBeenCalledOnce();
   });
+
+  it("commits related document replacements in one batch", async () => {
+    const set = vi.fn();
+    const commit = vi.fn().mockResolvedValue(undefined);
+    firestoreMocks.writeBatch.mockReturnValue({ commit, set });
+    firestoreMocks.doc.mockImplementation((_, path: string) => ({ path }));
+    const store = new FirestoreDocumentStore({} as Firestore);
+
+    await store.setMany([
+      { path: "users/runner-1", data: { defaultShoeId: "shoe-1" } },
+      {
+        path: "users/runner-1/shoes/shoe-1",
+        data: { status: "active" },
+      },
+    ]);
+
+    expect(set).toHaveBeenNthCalledWith(
+      1,
+      { path: "users/runner-1" },
+      { defaultShoeId: "shoe-1" },
+    );
+    expect(set).toHaveBeenNthCalledWith(
+      2,
+      { path: "users/runner-1/shoes/shoe-1" },
+      { status: "active" },
+    );
+    expect(commit).toHaveBeenCalledOnce();
+  });
 });

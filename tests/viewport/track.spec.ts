@@ -164,6 +164,14 @@ async function exerciseTrackWorkflow(page: Page, textSizeLabel: string) {
   await shoeName.fill("Daily Trainer");
   await addShoe.click();
   await expect(page.getByText("Total: 0 mi")).toBeVisible();
+  const defaultShoe = page.getByRole("combobox", {
+    name: "Default shoe for imported runs",
+  });
+  await expect(defaultShoe).toHaveValue("viewport-shoe-1");
+  await expectMinimumTouchTarget(
+    defaultShoe,
+    `default imported-run shoe at ${textSizeLabel}`,
+  );
   await expectNoHorizontalOverflow(
     page,
     "Track",

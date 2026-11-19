@@ -963,12 +963,14 @@ function SectionContent({
         <fieldset className="training-read-only" disabled={!training.canWrite}>
           <ShoeTracker
             distanceUnit={training.profile?.preferredDistanceUnit ?? "mile"}
+            defaultShoeId={training.profile?.defaultShoeId}
             runs={training.runs}
             shoes={training.shoes}
             plannedWorkouts={training.workouts.filter(
               (workout) => workout.planId === synchronizedActivePlan?.id,
             )}
             onCreateShoe={training.createShoe}
+            onSetDefaultShoe={training.setDefaultShoe}
             onRetireShoe={training.retireShoe}
             onCreateRun={training.createRun}
             hasPendingRunSave={training.hasPendingRunSave}

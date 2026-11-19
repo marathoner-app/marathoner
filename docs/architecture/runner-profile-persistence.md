@@ -24,11 +24,12 @@ Required fields:
 | `createdAt` | Firestore `Timestamp`, immutable after creation |
 | `updatedAt` | Firestore `Timestamp` |
 
-Optional onboarding fields:
+Optional profile fields:
 
 | Field | Representation |
 | --- | --- |
 | `displayName` | nonblank string, at most 120 characters |
+| `defaultShoeId` | ID of one owned, active shoe used for new automatic imports |
 | `experienceLevel` | `not_running`, `inconsistent`, `returning`, or `consistent` |
 | `consistentRunningWeeks` | non-negative whole weeks; collected only for the `consistent` path |
 | `targetRace` | `{ kind: "date", date }` or `{ kind: "window", startDate, endDate }` |
@@ -46,6 +47,11 @@ records its duration without interpreting it. Neither is an unreviewed
 beginner/intermediate/advanced score or an eligibility decision. Numeric
 eligibility and progression thresholds remain owned by #70 and the qualified
 review in #119.
+
+`defaultShoeId` is gear preference rather than onboarding input. The first
+active shoe becomes the initial default. The runner may choose another active
+shoe, and retiring the current default clears the preference without silently
+selecting a replacement. Profile edits preserve this field.
 
 ## Repository and application boundary
 

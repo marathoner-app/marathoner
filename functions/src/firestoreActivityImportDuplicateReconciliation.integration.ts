@@ -600,7 +600,9 @@ describe('Firestore activity-import duplicate reconciliation', () => {
 
   it('normalizes only the exact orphan import so the existing recovery can proceed', async () => {
     const { heartRateRun, noHeartRateRun, orphanEvent, orphanImportId } =
-      await seedOrphanNormalizationCluster()
+      await seedOrphanNormalizationCluster({
+        noHeartRateRunChanges: { shoeId: 'default-shoe' },
+      })
     const unrelatedOrphanEvent = appleEventWithoutHeartRate(
       'unrelated-singleton-orphan',
       { startedAt: createUtcDateTime('2026-11-15T15:00:00.000Z') },
@@ -813,7 +815,10 @@ describe('Firestore activity-import duplicate reconciliation', () => {
   })
 
   it('preserves the Garmin run, copies HR, removes the Apple copy, and holds replay', async () => {
-    const { enrichedEvent, garminRun, appleRun } = await seedPair()
+    const { enrichedEvent, garminRun, appleRun } = await seedPair({
+      appleRunChanges: { shoeId: 'default-shoe' },
+      garminRunChanges: { shoeId: 'default-shoe' },
+    })
     const inspection = await reconciliation().inspect(ownerId)
 
     expect(inspection).toEqual({
@@ -854,6 +859,7 @@ describe('Firestore activity-import duplicate reconciliation', () => {
       averageHeartRateBpm: 151,
       maximumHeartRateBpm: 176,
       importProvider: 'garmin_connect',
+      shoeId: 'default-shoe',
     })
     expect(duplicateSnapshot.exists).toBe(false)
     expect(appleImportSnapshot.data()).toMatchObject({
@@ -893,6 +899,38 @@ describe('Firestore activity-import duplicate reconciliation', () => {
     ).resolves.toEqual({
       status: 'already_reconciled',
       reconciledPairCount: 0,
+    })
+  })
+
+  it('keeps one compatible default shoe assignment while removing a duplicate', async () => {
+    const { garminRun } = await seedPair({
+      appleRunChanges: { shoeId: 'default-shoe' },
+    })
+    const inspection = await reconciliation().inspect(ownerId)
+    if (inspection.confirmation === null) {
+      throw new Error('Expected a reconciliation confirmation.')
+    }
+
+    await reconciliation().reconcile({
+      confirmation: inspection.confirmation,
+      ownerId,
+    })
+
+    expect(
+      (await database.doc(`users/${ownerId}/runs/${garminRun.id}`).get()).data(),
+    ).toMatchObject({ shoeId: 'default-shoe' })
+  })
+
+  it('refuses duplicate runs with conflicting shoe assignments', async () => {
+    await seedPair({
+      appleRunChanges: { shoeId: 'apple-shoe' },
+      garminRunChanges: { shoeId: 'garmin-shoe' },
+    })
+
+    await expect(reconciliation().inspect(ownerId)).resolves.toMatchObject({
+      blockedPairCount: 1,
+      blockedReasonCounts: { duplicate_has_runner_fields: 1 },
+      eligiblePairCount: 0,
     })
   })
 

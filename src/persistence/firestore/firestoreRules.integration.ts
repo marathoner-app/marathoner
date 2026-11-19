@@ -11,6 +11,7 @@ import {
   getDoc,
   setDoc,
   updateDoc,
+  writeBatch,
   type Firestore,
 } from "firebase/firestore";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
@@ -219,6 +220,99 @@ describe("Firestore training-data ownership rules", () => {
     await assertFails(setDoc(doc(otherDatabase, path), profileDocument()));
     await assertFails(getDoc(doc(anonymousDatabase, path)));
     await assertFails(deleteDoc(ownerReference));
+  });
+
+  it("requires the default shoe to be owned and active", async () => {
+    const database = testEnvironment
+      .authenticatedContext(firstUserId)
+      .firestore();
+    const profileReference = doc(database, `users/${firstUserId}`);
+
+    await assertFails(
+      setDoc(profileReference, profileDocument(firstUserId, {
+        defaultShoeId: "missing-shoe",
+      })),
+    );
+    await testEnvironment.withSecurityRulesDisabled(async (context) => {
+      await Promise.all([
+        setDoc(
+          doc(context.firestore(), `users/${firstUserId}/shoes/active-shoe`),
+          shoeDocument(),
+        ),
+        setDoc(
+          doc(context.firestore(), `users/${firstUserId}/shoes/retired-shoe`),
+          shoeDocument(firstUserId, {
+            status: "retired",
+            retiredOn: "2026-10-06",
+          }),
+        ),
+        setDoc(
+          doc(context.firestore(), `users/${firstUserId}/shoes/foreign-shoe`),
+          shoeDocument(secondUserId),
+        ),
+      ]);
+    });
+
+    await assertSucceeds(
+      setDoc(profileReference, profileDocument(firstUserId, {
+        defaultShoeId: "active-shoe",
+      })),
+    );
+    await assertFails(
+      setDoc(profileReference, profileDocument(firstUserId, {
+        defaultShoeId: "retired-shoe",
+      })),
+    );
+    await assertFails(
+      setDoc(profileReference, profileDocument(firstUserId, {
+        defaultShoeId: "foreign-shoe",
+      })),
+    );
+  });
+
+  it("allows atomic first-default creation and requires atomic default retirement", async () => {
+    const database = testEnvironment
+      .authenticatedContext(firstUserId)
+      .firestore();
+    const profileReference = doc(database, `users/${firstUserId}`);
+    const shoeReference = doc(
+      database,
+      `users/${firstUserId}/shoes/shoe-1`,
+    );
+    const createBatch = writeBatch(database);
+    createBatch.set(
+      profileReference,
+      profileDocument(firstUserId, { defaultShoeId: "shoe-1" }),
+    );
+    createBatch.set(shoeReference, shoeDocument());
+
+    await assertSucceeds(createBatch.commit());
+    await assertFails(
+      setDoc(
+        shoeReference,
+        shoeDocument(firstUserId, {
+          status: "retired",
+          retiredOn: "2026-10-06",
+          updatedAt: new Date("2026-10-06T12:00:00.000Z"),
+        }),
+      ),
+    );
+
+    const profileWithoutDefault = profileDocument(firstUserId, {
+      updatedAt: new Date("2026-10-06T12:00:00.000Z"),
+    });
+    const retireBatch = writeBatch(database);
+    retireBatch.set(profileReference, profileWithoutDefault);
+    retireBatch.set(
+      shoeReference,
+      shoeDocument(firstUserId, {
+        status: "retired",
+        retiredOn: "2026-10-06",
+        updatedAt: new Date("2026-10-06T12:00:00.000Z"),
+      }),
+    );
+
+    await assertSucceeds(retireBatch.commit());
   });
 
   it("rejects malformed profiles and immutable ownership changes", async () => {
@@ -994,7 +1088,10 @@ describe("Firestore repository integration", () => {
     const run = await repositories.runs.get(runId);
     if (run === null) throw new Error("Expected the server-seeded run.");
 
-    await expect(repositories.profile.load()).resolves.toEqual(profile);
+    await expect(repositories.profile.load()).resolves.toEqual({
+      ...profile,
+      defaultShoeId: shoe.id,
+    });
     await expect(repositories.plans.get(planId)).resolves.toEqual(plan);
     await expect(repositories.workouts.get(planId, workoutId)).resolves.toEqual(
       workout,

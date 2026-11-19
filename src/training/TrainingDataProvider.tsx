@@ -650,7 +650,9 @@ export default function TrainingDataProvider({
 
   const createShoe = useCallback(
     async (input: CreateShoeInput) => {
-      const shoe = await requireRepositories().shoes.create(input);
+      const repositories = requireRepositories();
+      const shoe = await repositories.shoes.create(input);
+      const profile = await repositories.profile.load();
       acknowledgeServerWrites((kernel) => [
         {
           source: "shoes",
@@ -658,15 +660,27 @@ export default function TrainingDataProvider({
             left.name.localeCompare(right.name),
           ),
         },
+        { source: "profile", value: profile },
       ]);
       return shoe;
     },
     [acknowledgeServerWrites, requireRepositories],
   );
 
+  const setDefaultShoe = useCallback(
+    async (id: ShoeId) => {
+      const profile = await requireRepositories().shoes.setDefault(id);
+      acknowledgeServerWrites(() => [{ source: "profile", value: profile }]);
+      return profile;
+    },
+    [acknowledgeServerWrites, requireRepositories],
+  );
+
   const retireShoe = useCallback(
     async (id: ShoeId, retiredOn: DateOnly) => {
-      const shoe = await requireRepositories().shoes.retire(id, retiredOn);
+      const repositories = requireRepositories();
+      const shoe = await repositories.shoes.retire(id, retiredOn);
+      const profile = await repositories.profile.load();
       acknowledgeServerWrites((kernel) => [
         {
           source: "shoes",
@@ -674,6 +688,7 @@ export default function TrainingDataProvider({
             left.name.localeCompare(right.name),
           ),
         },
+        { source: "profile", value: profile },
       ]);
       return shoe;
     },
@@ -1042,6 +1057,7 @@ export default function TrainingDataProvider({
     checkPendingRunSave,
     saveProfile,
     createShoe,
+    setDefaultShoe,
     retireShoe,
     createRun,
     updateRun,

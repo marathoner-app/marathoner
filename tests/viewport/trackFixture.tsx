@@ -94,6 +94,7 @@ function TrackViewportFixture() {
     historyFixture ? historyRuns : importedFixture ? [importedRun] : [],
   );
   const [shoes, setShoes] = useState<Shoe[]>([]);
+  const [defaultShoeId, setDefaultShoeId] = useState<ShoeId>();
 
   const createShoe = async (input: CreateShoeInput) => {
     const shoe: Shoe = {
@@ -106,6 +107,9 @@ function TrackViewportFixture() {
       updatedAt: timestamp,
     };
     setShoes((current) => [...current, shoe]);
+    if (defaultShoeId === undefined && shoes.length === 0) {
+      setDefaultShoeId(shoe.id);
+    }
     return shoe;
   };
 
@@ -163,17 +167,30 @@ function TrackViewportFixture() {
     setShoes((current) =>
       current.map((shoe) => (shoe.id === retired.id ? retired : shoe)),
     );
+    if (defaultShoeId === id) setDefaultShoeId(undefined);
     return retired;
   };
 
   return (
     <ShoeTracker
       distanceUnit="mile"
+      defaultShoeId={defaultShoeId}
       runs={runs}
       shoes={shoes}
       plannedWorkouts={matchedFixture ? [matchedWorkout] : []}
       onCreateShoe={createShoe}
       onRetireShoe={retireShoe}
+      onSetDefaultShoe={async (id) => {
+        setDefaultShoeId(id);
+        return {
+          id: userId,
+          defaultShoeId: id,
+          preferredDistanceUnit: "mile" as const,
+          timeZone: createIanaTimeZone("America/Los_Angeles"),
+          createdAt: timestamp,
+          updatedAt: timestamp,
+        };
+      }}
       onCreateRun={createRun}
       hasPendingRunSave={pendingRunSaveFixture}
       onCheckPendingRunSave={async () => ({

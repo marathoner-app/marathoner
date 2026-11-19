@@ -47,6 +47,7 @@ function Harness({
   initialShoes = [],
   initialRuns = [],
   initialPlannedWorkouts = [],
+  initialDefaultShoeId,
   distanceUnit = "mile",
   onCreateShoeCall = () => undefined,
   onCreateRunCall = () => undefined,
@@ -55,11 +56,13 @@ function Harness({
   onUpdateRunCall = () => undefined,
   onDeleteRunCall = () => undefined,
   onRetireShoeCall = () => undefined,
+  onSetDefaultShoeCall = () => undefined,
   initialFocusTarget = null,
 }: {
   initialShoes?: Shoe[];
   initialRuns?: CompletedRun[];
   initialPlannedWorkouts?: PlannedWorkout[];
+  initialDefaultShoeId?: ShoeId;
   distanceUnit?: DistanceUnit;
   onCreateShoeCall?: (input: CreateShoeInput) => void | Promise<void>;
   onCreateRunCall?: (input: CreateCompletedRunInput) => void | Promise<void>;
@@ -71,9 +74,11 @@ function Harness({
   ) => void | Promise<void>;
   onDeleteRunCall?: (id: CompletedRun["id"]) => void;
   onRetireShoeCall?: (id: ShoeId, retiredOn: DateOnly) => void;
+  onSetDefaultShoeCall?: (id: ShoeId) => void | Promise<void>;
   initialFocusTarget?: ShoeTrackerInitialFocusTarget | null;
 }) {
   const [shoes, setShoes] = useState(initialShoes);
+  const [defaultShoeId, setDefaultShoeId] = useState(initialDefaultShoeId);
   const [runs, setRuns] = useState<CompletedRun[]>(
     initialRuns.map((run) => ({ unusualPain: false, ...run })),
   );
@@ -91,6 +96,12 @@ function Harness({
       updatedAt: timestamp,
     };
     setShoes((current) => [...current, shoe]);
+    if (
+      defaultShoeId === undefined &&
+      shoes.every((existing) => existing.status !== "active")
+    ) {
+      setDefaultShoeId(shoe.id);
+    }
     return shoe;
   };
 
@@ -170,17 +181,25 @@ function Harness({
     setShoes((current) =>
       current.map((shoe) => (shoe.id === id ? retiredShoe : shoe)),
     );
+    if (defaultShoeId === id) setDefaultShoeId(undefined);
     return retiredShoe;
+  };
+
+  const setDefaultShoe = async (id: ShoeId) => {
+    await onSetDefaultShoeCall(id);
+    setDefaultShoeId(id);
   };
 
   return (
     <ShoeTracker
       distanceUnit={distanceUnit}
+      defaultShoeId={defaultShoeId}
       runs={runs}
       shoes={shoes}
       plannedWorkouts={initialPlannedWorkouts}
       onCreateShoe={createShoe}
       onRetireShoe={retireShoe}
+      onSetDefaultShoe={setDefaultShoe}
       onCreateRun={createRun}
       hasPendingRunSave={pendingRunSave}
       onCheckPendingRunSave={checkPendingRunSave}
@@ -575,6 +594,48 @@ describe("ShoeTracker", () => {
     ).toHaveValue(0);
   });
 
+  it("shows and changes the default shoe used for new imported runs", async () => {
+    const dailyTrainer: Shoe = {
+      id: createShoeId("shoe-1"),
+      userId,
+      name: "Daily Trainer",
+      startingDistance: createDistanceMeters(0),
+      status: "active",
+      createdAt: timestamp,
+      updatedAt: timestamp,
+    };
+    const tempoShoe: Shoe = {
+      ...dailyTrainer,
+      id: createShoeId("shoe-2"),
+      name: "Tempo Shoe",
+    };
+    const onSetDefaultShoeCall = vi.fn();
+    const user = userEvent.setup();
+    render(
+      <Harness
+        initialShoes={[dailyTrainer, tempoShoe]}
+        initialDefaultShoeId={dailyTrainer.id}
+        onSetDefaultShoeCall={onSetDefaultShoeCall}
+      />,
+    );
+
+    const selector = screen.getByRole("combobox", {
+      name: "Default shoe for imported runs",
+    });
+    expect(selector).toHaveValue(dailyTrainer.id);
+    expect(
+      screen.getByText(/New Apple Health and Garmin runs use this shoe/),
+    ).toBeInTheDocument();
+
+    await user.selectOptions(selector, tempoShoe.id);
+
+    expect(onSetDefaultShoeCall).toHaveBeenCalledWith(tempoShoe.id);
+    expect(await screen.findByRole("status")).toHaveTextContent(
+      "Tempo Shoe is now the default.",
+    );
+    expect(selector).toHaveValue(tempoShoe.id);
+  });
+
   it("adds nonzero starting distance in the runner's preferred unit", async () => {
     render(<Harness distanceUnit="kilometer" />);
     const user = userEvent.setup();
@@ -790,6 +851,7 @@ describe("ShoeTracker", () => {
     render(
       <Harness
         initialShoes={[shoe]}
+        initialDefaultShoeId={shoe.id}
         initialRuns={[run]}
         onRetireShoeCall={onRetireShoeCall}
       />,
@@ -808,6 +870,9 @@ describe("ShoeTracker", () => {
     ).toBeInTheDocument();
     expect(
       screen.getByText(/Existing run history and mileage will stay intact/),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/Imported runs will have no shoe until you choose another default/),
     ).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Cancel" })).toHaveFocus();
     await user.keyboard("{Escape}");
