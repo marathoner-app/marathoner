@@ -68,7 +68,7 @@ function StatusCard({
 }) {
   return (
     <section
-      className="closed-beta-adaptation-surface"
+      className="closed-beta-adaptation-surface closed-beta-adaptation-surface--outcome"
       aria-labelledby="closed-beta-adaptation-title"
       role={kind}
     >
@@ -76,11 +76,46 @@ function StatusCard({
       <h2 id="closed-beta-adaptation-title">{title}</h2>
       <p>{message}</p>
       {action && (
-        <button type="button" onClick={action.run}>
+        <button
+          className="closed-beta-adaptation-action"
+          type="button"
+          onClick={action.run}
+        >
           {action.label}
         </button>
       )}
     </section>
+  );
+}
+
+function TrainingCheckGraphic({ active = false }: { readonly active?: boolean }) {
+  return (
+    <div
+      className={`closed-beta-adaptation-graphic${active ? " is-active" : ""}`}
+      aria-hidden="true"
+    >
+      <span className="closed-beta-adaptation-graphic-pulse" />
+      <svg viewBox="0 0 56 56" focusable="false">
+        <path d="M8 39 20 27l10 6 17-19" />
+        <circle cx="8" cy="39" r="3" />
+        <circle cx="20" cy="27" r="3" />
+        <circle cx="30" cy="33" r="3" />
+        <circle cx="47" cy="14" r="3" />
+      </svg>
+    </div>
+  );
+}
+
+function TrainingCheckInputs() {
+  return (
+    <ul
+      className="closed-beta-adaptation-inputs"
+      aria-label="This check considers"
+    >
+      <li>Recent runs</li>
+      <li>Training pattern</li>
+      <li>Current plan</li>
+    </ul>
   );
 }
 
@@ -153,11 +188,28 @@ export default function ClosedBetaAdaptationSurface({
 
   if (visibleGenerationState.kind === "submitting") {
     return (
-      <StatusCard
-        kind="status"
-        title="Checking recent training"
-        message="Marathoner is comparing your latest completed workout with the recent pattern. Your plan remains unchanged while this check finishes."
-      />
+      <section
+        className="closed-beta-adaptation-surface closed-beta-adaptation-surface--working"
+        aria-labelledby="closed-beta-adaptation-title"
+        role="status"
+        aria-live="polite"
+      >
+        <div className="closed-beta-adaptation-heading-row">
+          <div>
+            <p className="closed-beta-adaptation-eyebrow">Training check</p>
+            <h2 id="closed-beta-adaptation-title">Checking recent training</h2>
+          </div>
+          <TrainingCheckGraphic active />
+        </div>
+        <p className="closed-beta-adaptation-copy">
+          Marathoner is comparing your latest completed workout with the
+          recent pattern and your current plan.
+        </p>
+        <TrainingCheckInputs />
+        <p className="closed-beta-adaptation-assurance">
+          Your plan stays unchanged while this check finishes.
+        </p>
+      </section>
     );
   }
   if (visibleGenerationState.kind === "error") {
@@ -227,18 +279,33 @@ export default function ClosedBetaAdaptationSurface({
 
   return (
     <section
-      className="closed-beta-adaptation-surface"
+      className="closed-beta-adaptation-surface closed-beta-adaptation-surface--idle"
       aria-labelledby="closed-beta-adaptation-title"
     >
-      <p className="closed-beta-adaptation-eyebrow">Training check</p>
-      <h2 id="closed-beta-adaptation-title">See whether your plan still fits</h2>
-      <p>
+      <div className="closed-beta-adaptation-heading-row">
+        <div>
+          <p className="closed-beta-adaptation-eyebrow">Training check</p>
+          <h2 id="closed-beta-adaptation-title">
+            See whether your plan still fits
+          </h2>
+        </div>
+        <TrainingCheckGraphic />
+      </div>
+      <p className="closed-beta-adaptation-copy">
         Marathoner can compare your recent completed training with the current
         beta rules. It will never change your plan without showing you the
         exact recommendation first.
       </p>
-      <button type="button" onClick={() => void submit()}>
-        Check recent training
+      <TrainingCheckInputs />
+      <button
+        className="closed-beta-adaptation-action"
+        type="button"
+        onClick={() => void submit()}
+      >
+        <span>Check recent training</span>
+        <span className="closed-beta-adaptation-action-arrow" aria-hidden="true">
+          →
+        </span>
       </button>
     </section>
   );
