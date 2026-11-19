@@ -7,13 +7,10 @@ import {
 type TrainingSectionNavigationProps = {
   activeSection: TrainingSection | null;
   transitionDuration: number;
+  disabled?: boolean;
   onSelectHome: () => void;
   onRegisterHomeTrigger?: (element: HTMLButtonElement | null) => void;
   onSelect: (section: TrainingSection) => void;
-  onRegisterTrigger?: (
-    section: TrainingSection,
-    element: HTMLButtonElement | null,
-  ) => void;
 };
 
 type TrainingDestination = "home" | TrainingSection;
@@ -57,10 +54,10 @@ function TrainingSectionIcon({ section }: { section: TrainingDestination }) {
 export default function TrainingSectionNavigation({
   activeSection,
   transitionDuration,
+  disabled = false,
   onSelectHome,
   onRegisterHomeTrigger,
   onSelect,
-  onRegisterTrigger,
 }: TrainingSectionNavigationProps) {
   return (
     <nav className="section-navigation" aria-label="Training sections">
@@ -68,6 +65,7 @@ export default function TrainingSectionNavigation({
         ref={onRegisterHomeTrigger}
         type="button"
         className="section-trigger"
+        disabled={disabled}
         aria-current={activeSection === null ? "page" : undefined}
         onClick={onSelectHome}
         initial={{ opacity: 0, y: 8 }}
@@ -80,9 +78,9 @@ export default function TrainingSectionNavigation({
       {trainingSections.map(({ id, label }) => (
         <motion.button
           key={id}
-          ref={(element) => onRegisterTrigger?.(id, element)}
           type="button"
           className="section-trigger"
+          disabled={disabled}
           aria-current={activeSection === id ? "page" : undefined}
           onClick={() => onSelect(id)}
           initial={{ opacity: 0, y: 8 }}

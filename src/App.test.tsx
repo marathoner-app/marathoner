@@ -149,7 +149,7 @@ vi.mock('./components/RecommendationDecisionSurface', () => ({
 }))
 
 const trainingMock = vi.hoisted(() => ({
-  status: 'current' as 'current' | 'stale',
+  status: 'current' as 'loading' | 'current' | 'stale' | 'error',
   error: null as string | null,
   staleReasons: [] as (
     | 'cache_only'
@@ -774,11 +774,7 @@ describe('App training sections', () => {
       ).toBeInTheDocument()
       expect(await findBetaBlockingAccessibilityViolations()).toEqual([])
 
-      await user.click(
-        screen.getByRole('button', {
-          name: `Close ${sectionHeading} panel`
-        })
-      )
+      await user.click(screen.getByRole('button', { name: 'Home' }))
     }
   })
 
@@ -903,6 +899,23 @@ describe('App training sections', () => {
       const sectionTrigger = screen.getByRole('button', { name: sectionName })
       expect(sectionTrigger).not.toHaveAttribute('aria-expanded')
       expect(sectionTrigger).not.toHaveAttribute('aria-controls')
+    }
+  })
+
+  it('mounts the signed-in navigation with the session while training data loads', () => {
+    trainingMock.status = 'loading'
+    renderSignedInApp()
+
+    expect(screen.getByRole('status')).toHaveTextContent(
+      'Loading your training data...'
+    )
+    expect(
+      screen.getByRole('navigation', { name: 'Training sections' })
+    ).toBeInTheDocument()
+    for (const sectionName of ['Home', 'Plan', 'Track', 'Analyze']) {
+      expect(
+        screen.getByRole('button', { name: sectionName })
+      ).toBeDisabled()
     }
   })
 
@@ -1102,7 +1115,7 @@ describe('App training sections', () => {
   })
 
   it.each(sectionTransitions)(
-    'opens and closes the %s section',
+    'navigates to and from the %s section',
     async (sectionName, sectionHeading) => {
       const user = userEvent.setup()
       renderSignedInApp()
@@ -1127,11 +1140,13 @@ describe('App training sections', () => {
         screen.queryByRole('heading', { level: 1, name: 'Marathoner.' })
       ).not.toBeInTheDocument()
 
-      const closeButton = screen.getByRole('button', {
-        name: `Close ${sectionHeading} panel`
-      })
-      expect(closeButton).toHaveFocus()
-      await user.click(closeButton)
+      expect(
+        screen.queryByRole('button', {
+          name: `Close ${sectionHeading} panel`
+        })
+      ).not.toBeInTheDocument()
+      expect(screen.getByRole('button', { name: sectionName })).toHaveFocus()
+      await user.click(screen.getByRole('button', { name: 'Home' }))
 
       expect(
         screen.getByRole('heading', { level: 1, name: 'Marathoner.' })
@@ -1139,7 +1154,7 @@ describe('App training sections', () => {
       expect(
         screen.queryByRole('heading', { level: 1, name: sectionHeading })
       ).not.toBeInTheDocument()
-      expect(screen.getByRole('button', { name: sectionName })).toHaveFocus()
+      expect(screen.getByRole('button', { name: 'Home' })).toHaveFocus()
     }
   )
 
@@ -1204,7 +1219,7 @@ describe('App training sections', () => {
     ).toBe(navigation)
   })
 
-  it('opens and closes a section with the keyboard', async () => {
+  it('keeps a section open on Escape and returns through primary navigation', async () => {
     const user = userEvent.setup()
     renderSignedInApp()
 
@@ -1220,9 +1235,14 @@ describe('App training sections', () => {
     await user.keyboard('{Escape}')
 
     expect(
+      screen.getByRole('region', { name: 'Plan Your Workouts' })
+    ).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Plan' })).toHaveFocus()
+
+    await user.click(screen.getByRole('button', { name: 'Home' }))
+    expect(
       screen.queryByRole('region', { name: 'Plan Your Workouts' })
     ).not.toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Plan' })).toHaveFocus()
   })
 
   it('keeps panel controls outside the section trigger buttons', async () => {

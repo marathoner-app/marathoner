@@ -22,7 +22,11 @@
   display: grid;
   place-items: center;
   box-sizing: border-box;
-  padding: 1rem;
+  padding:
+    calc(var(--app-safe-area-top) + 1rem)
+    calc(var(--app-safe-area-right) + 1rem)
+    calc(var(--app-safe-area-bottom) + 1rem)
+    calc(var(--app-safe-area-left) + 1rem);
   overflow-y: auto;
   background: var(--app-overlay);
   color: var(--app-ink);
@@ -34,7 +38,9 @@
 .account-settings-dialog {
   box-sizing: border-box;
   width: min(100%, 40rem);
-  max-height: calc(100dvh - 2rem);
+  max-height: calc(
+    100dvh - var(--app-safe-area-top) - var(--app-safe-area-bottom) - 2rem
+  );
   padding: clamp(1.25rem, 4vw, 2rem);
   overflow-y: auto;
   border: 1px solid var(--app-border);
@@ -374,12 +380,16 @@
 
 @media (max-width: 768px) {
   .account-settings-backdrop {
-    padding: 0.5rem;
+    padding:
+      calc(var(--app-safe-area-top) + 0.5rem)
+      calc(var(--app-safe-area-right) + 0.5rem)
+      calc(var(--app-safe-area-bottom) + 0.5rem)
+      calc(var(--app-safe-area-left) + 0.5rem);
   }
 
   .account-settings-dialog {
-    width: calc(100vw - 1rem);
-    max-width: calc(100vw - 1rem);
+    width: 100%;
+    max-width: 100%;
     padding: 1rem;
   }
 
@@ -416,6 +426,8 @@
   }
 
   .account-settings-dialog {
-    max-height: calc(100dvh - 1rem);
+    max-height: calc(
+      100dvh - var(--app-safe-area-top) - var(--app-safe-area-bottom) - 1rem
+    );
   }
 }
