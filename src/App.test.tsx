@@ -340,7 +340,7 @@ describe('App authentication state', () => {
     expect(unsubscribe).toHaveBeenCalledOnce()
   })
 
-  it('closes registration and explains the public prototype before login', () => {
+  it('closes registration and explains the private beta before login', () => {
     renderApp()
 
     act(() => {
@@ -372,7 +372,9 @@ describe('App authentication state', () => {
       'mailto:kevin@marathonerapp.com?subject=Marathoner%20account%20support%20request'
     )
     expect(
-      screen.getByText(/training methodology and safety guidance have not yet/i)
+      screen.getByText(
+        /training methodology and safety guidance are provisional and have not received qualified professional approval/i
+      )
     ).toBeInTheDocument()
     expect(
       screen.getByText(/completed running workouts from Apple Health/i)

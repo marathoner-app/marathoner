@@ -27,9 +27,28 @@ type SubmitInterestListSignupOptions = {
 
 const loopsFormEndpointPattern =
   /^https:\/\/app\.loops\.so\/api\/newsletter-form\/[a-zA-Z0-9_-]+$/;
+const loopsPublicIdentifierPattern = /^[a-zA-Z0-9_-]+$/;
 
 export function isLoopsFormEndpoint(endpoint: string | undefined): boolean {
   return endpoint !== undefined && loopsFormEndpointPattern.test(endpoint);
+}
+
+export function assertBetaInterestListConfigurationForMode(options: {
+  mode: string;
+  endpoint?: string;
+  mailingListId?: string;
+}): void {
+  if (options.mode !== "closed-beta" && options.mode !== "ios-beta") return;
+
+  if (
+    !isLoopsFormEndpoint(options.endpoint) ||
+    options.mailingListId === undefined ||
+    !loopsPublicIdentifierPattern.test(options.mailingListId)
+  ) {
+    throw new Error(
+      `The ${options.mode} build requires the reviewed public Loops form endpoint and mailing-list identifier.`,
+    );
+  }
 }
 
 const duplicateMessagePattern =

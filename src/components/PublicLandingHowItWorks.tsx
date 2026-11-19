@@ -11,7 +11,7 @@ export default function PublicLandingHowItWorks() {
         </h2>
         <p>
           Tell Marathoner when you can run, which day works for your long run,
-          and what race you are preparing for. The private prototype turns
+          and what race you are preparing for. The private beta turns
           those details into a plan, brings in completed runs from supported
           connected sources, and tests bounded adjustments when training does
           not go as planned.
@@ -22,7 +22,7 @@ export default function PublicLandingHowItWorks() {
         <article className="landing-how-it-works__card">
           <div className="landing-how-it-works__card-heading">
             <span aria-hidden="true">01</span>
-            <p className="landing-how-it-works__status">Current prototype</p>
+            <p className="landing-how-it-works__status">Founding beta</p>
           </div>
           <h3>Plan around your life</h3>
           <p>
@@ -31,19 +31,20 @@ export default function PublicLandingHowItWorks() {
             train.
           </p>
           <p className="landing-how-it-works__boundary">
-            <strong>Current boundary:</strong> The training methodology still
-            requires qualified review before beta coaching use.
+            <strong>Current boundary:</strong> The beta uses provisional
+            training rules that have not received qualified professional
+            approval.
           </p>
         </article>
 
         <article className="landing-how-it-works__card">
           <div className="landing-how-it-works__card-heading">
             <span aria-hidden="true">02</span>
-            <p className="landing-how-it-works__status">Current prototype</p>
+            <p className="landing-how-it-works__status">Founding beta</p>
           </div>
           <h3>Track what matters</h3>
           <p>
-            <strong>Current prototype:</strong> Import completed runs from Apple
+            <strong>Founding beta:</strong> Import completed runs from Apple
             Health or Garmin, then add perceived effort, notes, and shoes
             without a social feed. Manual entry remains available when a run is
             missing.
@@ -57,7 +58,7 @@ export default function PublicLandingHowItWorks() {
         <article className="landing-how-it-works__card">
           <div className="landing-how-it-works__card-heading">
             <span aria-hidden="true">03</span>
-            <p className="landing-how-it-works__status">Internal testing</p>
+            <p className="landing-how-it-works__status">Founding beta</p>
           </div>
           <h3>Adjust with confidence</h3>
           <p>
@@ -67,8 +68,8 @@ export default function PublicLandingHowItWorks() {
           </p>
           <p className="landing-how-it-works__boundary">
             <strong>Current boundary:</strong> These provisional rules are being
-            tested internally and still require qualified review before beta
-            coaching use.
+            tested in the private beta and are not professional coaching
+            guidance.
           </p>
         </article>
       </div>

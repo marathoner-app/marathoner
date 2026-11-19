@@ -14,6 +14,7 @@ import {
 } from './src/firebaseEnvironment'
 import { firebaseProjectConfigurations } from './src/firebaseConfig'
 import { parseClosedBetaProvisionalMethodologyManifest } from './src/domain/methodology/closedBetaProvisionalMethodology'
+import { assertBetaInterestListConfigurationForMode } from './src/services/loopsInterestList'
 
 const repositoryRoot = path.dirname(fileURLToPath(import.meta.url))
 const internalPlanRulesModuleId = 'virtual:internal-plan-rehearsal-rules'
@@ -198,6 +199,11 @@ function internalRehearsalArtifactsPlugin(
 export default defineConfig(({ command, mode }) => {
   const isIosBuild = mode === 'ios-development' || mode === 'ios-beta'
   const environment = loadEnv(mode, repositoryRoot, 'VITE_')
+  assertBetaInterestListConfigurationForMode({
+    mode,
+    endpoint: environment.VITE_LOOPS_FORM_ENDPOINT,
+    mailingListId: environment.VITE_LOOPS_INTEREST_LIST_ID,
+  })
   assertFunctionsEmulatorForMode(
     mode,
     environment.VITE_FIREBASE_FUNCTIONS_EMULATOR === 'true',

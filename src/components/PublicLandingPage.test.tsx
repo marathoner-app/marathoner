@@ -108,7 +108,7 @@ describe("PublicLandingPage", () => {
     ).toHaveAttribute("href", "#access-status");
     expect(document.querySelector("#access-status")).toBeInTheDocument();
     expect(
-      screen.getByText("Invitations are not open yet."),
+      screen.getByText("Private founding beta testing is underway."),
     ).toBeInTheDocument();
     expect(
       screen.getByText(/Join the interest list to hear when Marathoner is ready/),
@@ -354,7 +354,7 @@ describe("PublicLandingPage", () => {
     expect(cards).toHaveLength(3);
     expect(cards[0]).toHaveTextContent("Plan around your life");
     expect(cards[0]).toHaveTextContent(
-      "The training methodology still requires qualified review before beta coaching use.",
+      "The beta uses provisional training rules that have not received qualified professional approval.",
     );
     expect(cards[1]).toHaveTextContent("Track what matters");
     expect(cards[1]).toHaveTextContent(
@@ -365,7 +365,7 @@ describe("PublicLandingPage", () => {
     );
     expect(cards[2]).toHaveTextContent("Adjust with confidence");
     expect(cards[2]).toHaveTextContent(
-      "These provisional rules are being tested internally and still require qualified review before beta coaching use.",
+      "These provisional rules are being tested in the private beta and are not professional coaching guidance.",
     );
     expect(within(explanation).queryByRole("button")).not.toBeInTheDocument();
     expect(within(explanation).queryByRole("link")).not.toBeInTheDocument();
@@ -385,11 +385,11 @@ describe("PublicLandingPage", () => {
       "importing completed runs from Apple Health",
     );
     expect(platformCards[0]).toHaveTextContent(
-      "Public TestFlight invitations are not open.",
+      "Private founding beta testing is underway.",
     );
     expect(
       within(platformCards[0]).getByRole("link", {
-        name: "View current iOS status",
+        name: "View beta access details",
       }),
     ).toHaveAttribute("href", "#access-status");
     expect(platformCards[1]).toHaveTextContent("Web");

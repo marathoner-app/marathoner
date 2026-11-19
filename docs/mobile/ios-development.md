@@ -82,8 +82,10 @@ cp .env.ios-beta.example .env.ios-beta.local
 chmod 600 .env.ios-beta.local
 ```
 
-The `ios-beta` file must retain `VITE_FIREBASE_ENVIRONMENT=beta` and contain
-only the reviewed beta iOS API key. The key belongs to `marathonerapp-beta`,
+The `ios-beta` local file must retain `VITE_FIREBASE_ENVIRONMENT=beta` and
+contain the reviewed beta iOS API key. Public landing-page interest-list
+identifiers are loaded separately from tracked `.env.ios-beta`. The key belongs
+to `marathonerapp-beta`,
 allows only Cloud Firestore API, Identity Toolkit API, and Token Service API,
 and has no application restriction because Firebase runs through the
 JavaScript SDK inside a Capacitor WebView. The key value must never appear in

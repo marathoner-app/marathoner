@@ -17,13 +17,14 @@ export default function PublicAccessNotice({
 
   return (
     <section className="public-access" aria-labelledby="public-access-title">
-      <p className="public-access-status">Private prototype</p>
+      <p className="public-access-status">Private founding beta</p>
       <h2 id="public-access-title">New account registration is closed.</h2>
       <p className="public-access-summary">
-        Marathoner is still being built and is not a production coaching
-        service. Its training methodology and safety guidance have not yet
-        received qualified approval. Do not use this prototype for medical,
-        injury, nutrition, or training decisions.
+        Marathoner is being tested in a limited founding beta, not as a
+        production coaching service. Its training methodology and safety
+        guidance are provisional and have not received qualified professional
+        approval. Use your own judgment and do not treat Marathoner as medical,
+        injury, nutrition, or professional coaching advice.
       </p>
 
       <PublicInterestForm
@@ -31,7 +32,7 @@ export default function PublicAccessNotice({
         mailingListId={interestMailingListId}
       />
 
-      <nav className="trust-navigation" aria-label="Prototype trust information">
+      <nav className="trust-navigation" aria-label="Beta trust information">
         <a href="#access-status">Access</a>
         <a href="#privacy-data-use">Privacy and data</a>
         <a href="#support-requests">Support and deletion</a>
@@ -41,12 +42,13 @@ export default function PublicAccessNotice({
         <section id="access-status" aria-labelledby="access-status-title">
           <h3 id="access-status-title">Current access</h3>
           <p>
-            There is no public product signup, access request, or open beta.
-            Existing account holders may sign in. The email interest list is
-            only for occasional updates and does not create a Marathoner
-            account or guarantee an invitation. Future invitations will be
-            limited to a small allowlisted group of adults who already run
-            consistently and are preparing for a first marathon.
+            Marathoner is in a private, invitation-only founding beta. There is
+            no public product signup, public TestFlight link, or open beta.
+            Existing invited testers may sign in. Invitations are sent directly
+            to a small allowlisted group of adults who already run consistently
+            and are preparing for a first marathon. The email interest list is
+            only for occasional updates and does not create a Marathoner account
+            or guarantee an invitation.
           </p>
         </section>
 
@@ -54,7 +56,7 @@ export default function PublicAccessNotice({
           <h3 id="privacy-data-use-title">Privacy and data use</h3>
           <p>
             Existing accounts use Firebase Authentication. Email addresses and
-            training records entered or imported in the prototype are stored
+            training records entered or imported during the beta are stored
             and processed through Google Firebase and Google Cloud. Apple Health
             and Garmin Connect are optional sources for completed workouts;
             each connection requires the account holder&apos;s permission.

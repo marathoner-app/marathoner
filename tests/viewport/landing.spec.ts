@@ -168,7 +168,13 @@ for (const viewport of viewports) {
     await accessLink.click();
     await expect(page).toHaveURL(/#access-status$/);
     await expect(page.locator("#access-status")).toBeVisible();
-    await expect(page.getByText("Invitations are not open yet.")).toBeVisible();
+    await expect(
+      page
+        .locator(".landing-hero")
+        .getByText("Private founding beta testing is underway.", {
+          exact: true,
+        }),
+    ).toBeVisible();
     const explanation = page.getByRole("region", {
       name: "Start with the week you can actually train.",
     });
@@ -198,10 +204,10 @@ for (const viewport of viewports) {
     });
     await expect(platforms).toBeVisible();
     await expect(
-      platforms.getByText("Public TestFlight invitations are not open."),
+      platforms.getByText("Private founding beta testing is underway."),
     ).toBeVisible();
     await expect(
-      platforms.getByRole("link", { name: "View current iOS status" }),
+      platforms.getByRole("link", { name: "View beta access details" }),
     ).toHaveAttribute("href", "#access-status");
     await expect(
       platforms.getByRole("button", { name: "Log in on web" }),
@@ -270,7 +276,7 @@ for (const viewport of viewports) {
       })),
       {
         locator: platforms.getByRole("link", {
-          name: "View current iOS status",
+          name: "View beta access details",
         }),
         label: "iOS status link",
       },
@@ -286,7 +292,7 @@ for (const viewport of viewports) {
       ...["Access", "Privacy and data", "Support and deletion"].map(
         (name) => ({
           locator: page
-            .getByRole("navigation", { name: "Prototype trust information" })
+            .getByRole("navigation", { name: "Beta trust information" })
             .getByRole("link", { name, exact: true }),
           label: `${name} trust link`,
         }),
@@ -348,6 +354,33 @@ for (const viewport of viewports) {
     await expect(webLogin).toBeFocused();
   });
 }
+
+test("keeps signed-out content below iPhone safe areas", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("tests/viewport/landing.html");
+  await page.addStyleTag({
+    content: `
+      .landing-page {
+        --landing-safe-area-top: 47px;
+        --landing-safe-area-bottom: 34px;
+      }
+    `,
+  });
+
+  const landingFrame = page.locator(".landing-page__frame");
+  await expect(landingFrame).toHaveCSS("padding-top", "63px");
+  await expect(landingFrame).toHaveCSS("padding-bottom", "66px");
+
+  const headerBounds = await page.locator(".landing-header").boundingBox();
+  expect(headerBounds, "landing header should have visible bounds").not.toBeNull();
+  if (headerBounds) expect(headerBounds.y).toBeGreaterThanOrEqual(63);
+
+  await expectNoHorizontalOverflow(
+    page,
+    "Public landing page",
+    "with simulated iPhone safe areas",
+  );
+});
 
 test("uses semantic authentication feedback and keeps password reset in the same dialog", async ({
   page,

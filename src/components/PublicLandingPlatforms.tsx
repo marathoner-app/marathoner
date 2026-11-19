@@ -22,8 +22,8 @@ export default function PublicLandingPlatforms({
         <p>
           The iPhone companion is built for the daily loop and Apple Health
           imports. The responsive web experience leaves more room for setup,
-          Garmin connection, history, and analysis. Public iOS access is not
-          open yet.
+          Garmin connection, history, and analysis. Private iOS beta access is
+          invitation-only.
         </p>
       </div>
 
@@ -40,21 +40,22 @@ export default function PublicLandingPlatforms({
             id="landing-platforms-ios-status"
             className="landing-platforms__status"
           >
-            <strong>Current status:</strong> Public TestFlight invitations are not
-            open. There is no public download or access-request path.
+            <strong>Current status:</strong> Private founding beta testing is
+            underway. Invitations are limited and sent directly; there is no
+            public download link.
           </p>
           <a href="#access-status" aria-describedby="landing-platforms-ios-status">
-            View current iOS status
+            View beta access details
           </a>
         </article>
 
         <article className="landing-platforms__card">
-          <p className="landing-platforms__label">Current prototype access</p>
+          <p className="landing-platforms__label">Existing tester access</p>
           <h3>Web</h3>
           <p>
             The responsive web experience is the larger space for intake, plan
-            review, history, and detailed analysis. Existing account holders can
-            sign in to the current prototype.
+            review, history, and detailed analysis. Existing invited testers can
+            sign in to the current beta.
           </p>
           <p
             id="landing-platforms-web-status"
