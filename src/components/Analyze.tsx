@@ -1,5 +1,5 @@
 import { lazy, Suspense, useRef, useState, type UIEvent } from "react";
-import { motion, useReducedMotion } from "framer-motion";
+import { useReducedMotion } from "framer-motion";
 import {
   calculatePace,
   calculateRecentRunEffortPattern,
@@ -170,12 +170,7 @@ export default function Analyze({
   };
 
   return (
-    <motion.div
-      className="analyze-container"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: reduceMotion ? 0 : 0.8 }}
-    >
+    <div className="analyze-container">
       <section className="analyze-carousel" aria-label="Training analysis">
         <div
           className="analyze-carousel-viewport"
@@ -399,6 +394,6 @@ export default function Analyze({
           </button>
         </div>
       </section>
-    </motion.div>
+    </div>
   );
 }

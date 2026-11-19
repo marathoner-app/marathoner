@@ -247,6 +247,60 @@ test("keeps the signed-in home usable with 200% text", async ({ page }) => {
   );
 });
 
+test("keeps the signed-in shell visible and inert behind runner setup", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("tests/viewport/signedInHome.html");
+
+  const navigation = page.getByRole("navigation", {
+    name: "Training sections",
+  });
+  await page.getByRole("button", { name: "Edit runner profile" }).click();
+
+  const dialog = page.getByRole("dialog", {
+    name: "Review your starting point",
+  });
+  const sheet = page.locator(".onboarding-card");
+  const close = page.getByRole("button", { name: "Close runner setup" });
+  await expect(dialog).toBeVisible();
+  await expect(navigation).toBeVisible();
+  await expect(navigation).toHaveAttribute("inert", "");
+  await expect(
+    page.getByRole("button", { name: "Home", exact: true }),
+  ).toHaveAttribute("aria-current", "page");
+  await expectMinimumTouchTarget(close, "runner setup close action");
+
+  const sheetBounds = await sheet.boundingBox();
+  const navigationBounds = await navigation.boundingBox();
+  expect(sheetBounds, "runner setup sheet should have bounds").not.toBeNull();
+  expect(navigationBounds, "navigation should have bounds").not.toBeNull();
+  if (sheetBounds && navigationBounds) {
+    expect(
+      sheetBounds.y + sheetBounds.height,
+      "runner setup should leave the stable bottom navigation visible behind it",
+    ).toBeLessThanOrEqual(navigationBounds.y + 0.5);
+  }
+
+  await close.click();
+  await expect(dialog).toHaveCount(0);
+  await expect(navigation).not.toHaveAttribute("inert", "");
+
+  await page.getByRole("button", { name: "Plan", exact: true }).click();
+  await page.getByRole("button", { name: "Review runner setup" }).click();
+  await expect(dialog).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Plan", exact: true }),
+  ).toHaveAttribute("aria-current", "page");
+  await expect(navigation).toHaveAttribute("inert", "");
+
+  await close.click();
+  await expect(dialog).toHaveCount(0);
+  await expect(
+    page.getByRole("button", { name: "Plan", exact: true }),
+  ).toHaveAttribute("aria-current", "page");
+});
+
 test("uses one complete branded surface while startup is delayed", async ({
   page,
 }) => {

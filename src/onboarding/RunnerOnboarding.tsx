@@ -201,7 +201,9 @@ export default function RunnerOnboarding({
   return (
     <section
       ref={dialogRef}
-      className="onboarding-panel"
+      className={`onboarding-panel${
+        wasComplete ? " onboarding-panel--editing" : ""
+      }`}
       role="dialog"
       aria-modal="true"
       aria-labelledby="onboarding-title"
@@ -223,10 +225,15 @@ export default function RunnerOnboarding({
           <button
             type="button"
             className="onboarding-close"
+            aria-label={
+              wasComplete
+                ? "Close runner setup"
+                : "Continue runner setup later"
+            }
             onClick={onClose}
             disabled={isSaving}
           >
-            {wasComplete ? "Cancel" : "Continue later"}
+            <span aria-hidden="true">×</span>
           </button>
         </header>
 

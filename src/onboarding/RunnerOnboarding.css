@@ -1,22 +1,45 @@
 .onboarding-panel {
-  position: absolute;
-  inset: var(--signed-in-header-height) 0 0;
-  z-index: 4;
+  position: fixed;
+  inset: 0;
+  z-index: 1100;
+  display: grid;
+  align-items: center;
   box-sizing: border-box;
-  overflow-y: auto;
-  background: var(--app-canvas);
+  padding:
+    calc(
+      var(
+          --signed-in-header-height,
+          calc(60px + env(safe-area-inset-top))
+        ) + 1rem
+    )
+    calc(var(--app-safe-area-right) + 1rem)
+    calc(var(--app-safe-area-bottom) + 1rem)
+    calc(var(--app-safe-area-left) + 1rem);
+  overflow: hidden;
+  background: var(--app-overlay);
   color: var(--app-ink);
+  backdrop-filter: blur(8px);
   line-height: 1.5;
   text-align: left;
+}
+
+.onboarding-panel--editing {
+  padding-bottom: calc(var(--app-safe-area-bottom) + 5.75rem);
 }
 
 .onboarding-card {
   box-sizing: border-box;
   width: min(100%, 70rem);
-  min-height: 100%;
+  max-height: 100%;
   margin: 0 auto;
   padding: clamp(1rem, 4vw, 3rem) clamp(1rem, 4vw, 3rem)
     max(1rem, env(safe-area-inset-bottom));
+  overflow-y: auto;
+  border: 1px solid var(--app-border);
+  border-radius: var(--app-radius-large);
+  background: var(--app-canvas);
+  box-shadow: var(--app-shadow-dialog);
+  overscroll-behavior: contain;
 }
 
 .onboarding-header {
@@ -64,12 +87,20 @@
 
 .onboarding-close {
   flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: 2.75rem;
   min-height: 2.75rem;
-  padding: 0.65rem 1rem;
+  padding: 0;
   border: 1px solid var(--app-border-strong);
   border-radius: var(--app-radius-small);
   background: var(--app-surface);
   color: var(--app-ink);
+}
+
+.onboarding-close span {
+  font-size: 1.75rem;
+  line-height: 1;
 }
 
 .onboarding-error-summary {
@@ -378,6 +409,23 @@
 }
 
 @media (max-width: 768px) {
+  .onboarding-panel {
+    padding:
+      calc(
+        var(
+            --signed-in-header-height,
+            calc(60px + env(safe-area-inset-top))
+          ) + 0.5rem
+      )
+      calc(var(--app-safe-area-right) + 0.5rem)
+      calc(var(--app-safe-area-bottom) + 0.5rem)
+      calc(var(--app-safe-area-left) + 0.5rem);
+  }
+
+  .onboarding-panel--editing {
+    padding-bottom: calc(var(--app-safe-area-bottom) + 5.25rem);
+  }
+
   .onboarding-card {
     padding: clamp(16px, 1rem, 20px);
   }
@@ -386,14 +434,13 @@
     overflow-wrap: anywhere;
   }
 
-  .onboarding-header,
+  .onboarding-header > div {
+    min-width: 0;
+  }
+
   .onboarding-actions {
     align-items: stretch;
     flex-direction: column;
-  }
-
-  .onboarding-close {
-    align-self: flex-start;
   }
 
   .onboarding-grid,

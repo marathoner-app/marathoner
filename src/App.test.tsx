@@ -804,7 +804,9 @@ describe('App training sections', () => {
       screen.queryByRole('navigation', { name: 'Training sections' })
     ).not.toBeInTheDocument()
 
-    await user.click(screen.getByRole('button', { name: 'Continue later' }))
+    await user.click(
+      screen.getByRole('button', { name: 'Continue runner setup later' })
+    )
 
     const resumeSetup = screen.getByRole('button', {
       name: 'Resume runner setup'
@@ -1049,14 +1051,26 @@ describe('App training sections', () => {
     expect(
       screen.getByRole('dialog', { name: 'Review your starting point' })
     ).toBeInTheDocument()
+    expect(
+      screen.getByRole('navigation', { name: 'Training sections' })
+    ).toHaveAttribute('inert')
+    expect(screen.getByRole('button', { name: 'Home' })).toHaveAttribute(
+      'aria-current',
+      'page'
+    )
 
-    await user.click(screen.getByRole('button', { name: 'Cancel' }))
+    await user.click(
+      screen.getByRole('button', { name: 'Close runner setup' })
+    )
 
     await waitFor(() =>
       expect(
         screen.getByRole('button', { name: 'Edit runner profile' })
       ).toHaveFocus()
     )
+    expect(
+      screen.getByRole('navigation', { name: 'Training sections' })
+    ).not.toHaveAttribute('inert')
   })
 
   it('keeps a reconnecting snapshot readable without flashing technical recovery UI', () => {
@@ -1210,13 +1224,13 @@ describe('App training sections', () => {
       expect(
         screen.getByRole('region', { name: sectionHeading })
       ).toBeInTheDocument()
-      const animatedElements = document.querySelectorAll(
-        '[data-motion-duration]'
+      const sectionPanel = screen.getByRole('region', {
+        name: sectionHeading
+      })
+      expect(sectionPanel).not.toHaveAttribute('data-motion-duration')
+      expect(sectionPanel.firstElementChild).not.toHaveAttribute(
+        'data-motion-duration'
       )
-      expect(animatedElements.length).toBeGreaterThan(0)
-      for (const animatedElement of animatedElements) {
-        expect(animatedElement).toHaveAttribute('data-motion-duration', '0')
-      }
       expect(
         screen.queryByRole('heading', { level: 1, name: 'Marathoner.' })
       ).not.toBeInTheDocument()

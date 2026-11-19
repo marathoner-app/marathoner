@@ -74,7 +74,7 @@ describe("RunnerOnboarding", () => {
 
     await user.tab();
     expect(
-      screen.getByRole("button", { name: "Continue later" }),
+      screen.getByRole("button", { name: "Continue runner setup later" }),
     ).toHaveFocus();
     await user.tab({ shift: true });
     expect(

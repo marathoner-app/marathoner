@@ -7,7 +7,6 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { motion, useReducedMotion } from "framer-motion";
 import Title from "./components/Title";
 import Subtitle from "./components/Subtitle";
 import Calendar from "./components/Calendar";
@@ -122,7 +121,6 @@ function App() {
           ),
     [signedInUserId],
   );
-  const reduceMotion = useReducedMotion();
   const [activeSection, setActiveSection] = useState<Section | null>(null);
   const [trackInitialFocusTarget, setTrackInitialFocusTarget] =
     useState<ShoeTrackerInitialFocusTarget | null>(null);
@@ -297,15 +295,12 @@ function App() {
     ) : null;
 
   return (
-    <motion.main
+    <main
       className={`main${auth.status === "signedOut" ? " public-entry" : ""}${
         auth.status === "signedIn" && activeSection === null
           ? " signed-in-home"
           : ""
       }`}
-      initial={false}
-      animate={{ opacity: 1 }}
-      transition={{ duration: reduceMotion ? 0 : 1, ease: "easeOut" }}
     >
       {deletionReceipt && (
         <AccountDeletionReceipt
@@ -369,7 +364,6 @@ function App() {
                 activeSection={activeSection}
                 activeSectionDetails={activeSectionDetails}
                 trackInitialFocusTarget={trackInitialFocusTarget}
-                reduceMotion={Boolean(reduceMotion)}
                 chrome={signedInChrome}
                 onOpenSection={openSection}
                 onSelectHome={selectHome}
@@ -398,7 +392,7 @@ function App() {
             onUnresolvedCommandChange={setUnresolvedDeletionCommandId}
           />
         )}
-    </motion.main>
+    </main>
   );
 }
 
@@ -407,7 +401,6 @@ type AuthenticatedExperienceProps = {
   activeSection: Section | null;
   activeSectionDetails: (typeof sections)[number] | undefined;
   trackInitialFocusTarget: ShoeTrackerInitialFocusTarget | null;
-  reduceMotion: boolean;
   chrome: ReactNode;
   onOpenSection: (
     section: Section,
@@ -422,7 +415,6 @@ function AuthenticatedExperience({
   activeSection,
   activeSectionDetails,
   trackInitialFocusTarget,
-  reduceMotion,
   chrome,
   onOpenSection,
   onSelectHome,
@@ -439,6 +431,7 @@ function AuthenticatedExperience({
     useState<GeneratedPlanEntityProjection | null>(null);
   const [isSessionAdaptationActive, setIsSessionAdaptationActive] =
     useState(false);
+  const runnerProfileOpeningTriggerRef = useRef<HTMLElement | null>(null);
   const runnerProfileTriggerRef = useRef<HTMLButtonElement>(null);
   const restoreRunnerProfileFocus = useRef(false);
   const onboardingComplete = isRunnerProfileOnboardingComplete(training.profile);
@@ -542,10 +535,10 @@ function AuthenticatedExperience({
   const showOnboarding =
     hasReadableTraining &&
     (isOnboardingOpen || (!onboardingComplete && !onboardingDeferred));
+  const showExistingHomeBehindOnboarding =
+    !showOnboarding || onboardingComplete;
   const navigationPending = !hasReadableTraining;
-  const showNavigation =
-    navigationPending || (onboardingComplete && !showOnboarding);
-  const sectionTransitionDuration = reduceMotion ? 0 : 0.25;
+  const showNavigation = navigationPending || onboardingComplete;
 
   const closeOnboarding = () => {
     restoreRunnerProfileFocus.current = true;
@@ -553,7 +546,12 @@ function AuthenticatedExperience({
     setOnboardingDeferred(true);
   };
 
-  const editRunnerProfile = () => {
+  const editRunnerProfile = (trigger?: HTMLElement) => {
+    runnerProfileOpeningTriggerRef.current =
+      trigger ??
+      (document.activeElement instanceof HTMLElement
+        ? document.activeElement
+        : null);
     setOnboardingDeferred(false);
     setIsOnboardingOpen(true);
   };
@@ -561,7 +559,10 @@ function AuthenticatedExperience({
   useEffect(() => {
     if (showOnboarding || !restoreRunnerProfileFocus.current) return;
 
-    runnerProfileTriggerRef.current?.focus();
+    (
+      runnerProfileOpeningTriggerRef.current ?? runnerProfileTriggerRef.current
+    )?.focus();
+    runnerProfileOpeningTriggerRef.current = null;
     restoreRunnerProfileFocus.current = false;
   }, [showOnboarding]);
 
@@ -638,14 +639,14 @@ function AuthenticatedExperience({
         </div>
       )}
 
-        {!activeSection && hasReadableTraining && !showOnboarding && (
+        {!activeSection && hasReadableTraining && showExistingHomeBehindOnboarding && (
           <>
           <div className="runner-profile-entry">
             <button
               ref={runnerProfileTriggerRef}
               type="button"
               disabled={!training.canWrite}
-              onClick={editRunnerProfile}
+              onClick={(event) => editRunnerProfile(event.currentTarget)}
             >
               {onboardingComplete ? "Edit runner profile" : "Resume runner setup"}
             </button>
@@ -675,7 +676,12 @@ function AuthenticatedExperience({
         {secondaryTrainingReady &&
           onboardingComplete &&
           closedBetaMethodologyManifest !== null && (
-            <div hidden={activeSection !== null || showOnboarding}>
+            <div
+              hidden={
+                activeSection !== null ||
+                (showOnboarding && !onboardingComplete)
+              }
+            >
               <Suspense fallback={null}>
                 <ClosedBetaGuidanceSurface
                   key={`${ownerId}:${guidanceRetryToken}`}
@@ -695,7 +701,7 @@ function AuthenticatedExperience({
             </div>
           )}
 
-        {!activeSection && hasReadableTraining && !showOnboarding && (
+        {!activeSection && hasReadableTraining && showExistingHomeBehindOnboarding && (
           <>
           {runsReady &&
             InternalSessionTodayComparison &&
@@ -754,15 +760,15 @@ function AuthenticatedExperience({
         {showNavigation && (
           <TrainingSectionNavigation
             activeSection={activeSection}
-            transitionDuration={sectionTransitionDuration}
             disabled={navigationPending}
+            interactionLocked={showOnboarding}
             onSelectHome={onSelectHome}
             onRegisterHomeTrigger={onRegisterHomeTrigger}
             onSelect={onOpenSection}
           />
         )}
 
-      {!activeSection && hasReadableTraining && !showOnboarding && (
+      {!activeSection && hasReadableTraining && showExistingHomeBehindOnboarding && (
         <>
           {runsReady && InternalPlanProposalRehearsal && (
             <Suspense
@@ -806,17 +812,13 @@ function AuthenticatedExperience({
       )}
 
         {activeSection && activeSectionDetails && (
-          <motion.section
+          <section
             id={`${activeSection}-panel`}
             className={`section-panel section-panel--${activeSection}`}
             aria-label={activeSectionDetails.title}
-            initial={{ opacity: 0, scale: 0.98 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: sectionTransitionDuration }}
           >
             <SectionContent
               section={activeSection}
-              transitionDuration={sectionTransitionDuration}
               showSynchronizationNotice={showSynchronizationNotice}
               sessionPlanProjection={sessionPlanProjection}
               isSessionAdaptationActive={isSessionAdaptationActive}
@@ -824,7 +826,7 @@ function AuthenticatedExperience({
               startupDelayElapsed={startupDelayElapsed}
               onEditRunnerProfile={editRunnerProfile}
             />
-          </motion.section>
+          </section>
         )}
       </div>
     </>
@@ -833,7 +835,6 @@ function AuthenticatedExperience({
 
 type SectionContentProps = {
   section: Section;
-  transitionDuration: number;
   showSynchronizationNotice: boolean;
   sessionPlanProjection: GeneratedPlanEntityProjection | null;
   isSessionAdaptationActive: boolean;
@@ -844,7 +845,6 @@ type SectionContentProps = {
 
 function SectionContent({
   section,
-  transitionDuration,
   showSynchronizationNotice,
   sessionPlanProjection,
   isSessionAdaptationActive,
@@ -879,12 +879,8 @@ function SectionContent({
           training.profile.timeZone,
         );
   return (
-    <motion.div
+    <div
       className={`section-panel-content section-panel-content--${section}`}
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      transition={{ duration: transitionDuration }}
     >
       {training.status === "loading" && (
         <TrainingStartupStatus
@@ -989,7 +985,7 @@ function SectionContent({
           timeZone={training.profile?.timeZone}
         />
       )}
-    </motion.div>
+    </div>
   );
 }
 
