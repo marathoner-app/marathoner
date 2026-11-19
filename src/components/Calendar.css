@@ -48,15 +48,17 @@
 }
 
 .plan-week-controls button {
+  box-sizing: border-box;
   min-block-size: max(2.75rem, 2.75em);
   padding: max(0.65rem, 0.65em) 1rem;
+  border: 1px solid transparent;
   line-height: 1.2;
   overflow-wrap: anywhere;
   white-space: normal;
 }
 
 .plan-week-controls button:disabled {
-  border: 1px solid var(--app-border);
+  border-color: var(--app-border);
   background: var(--app-subtle-surface);
   color: var(--app-muted);
   cursor: not-allowed;
@@ -314,6 +316,7 @@
 
 @media (max-width: 600px) {
   .plan-week-controls {
+    align-items: stretch;
     flex-wrap: wrap;
   }
 
