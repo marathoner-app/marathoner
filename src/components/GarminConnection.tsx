@@ -226,11 +226,11 @@ export default function GarminConnection({
             activities will appear in Track automatically.
           </p>
           <details className="garmin-recovery">
-            <summary>A run is missing</summary>
+            <summary>Troubleshoot Garmin imports</summary>
             <p>
-              Garmin may take a little time to finish a workout. Wait a few
-              minutes and check Track again before logging it yourself, which
-              could create a duplicate.
+              If you expected a recent run, Garmin may still be finishing the
+              activity. Wait a few minutes and check Track again before logging
+              it yourself, which could create a duplicate.
             </p>
             <p>
               If runs continue to be missing, reconnect Garmin. Existing runs

@@ -132,8 +132,9 @@ describe('GarminConnection', () => {
       />,
     )
 
-    await user.click(await screen.findByText('A run is missing'))
+    await user.click(await screen.findByText('Troubleshoot Garmin imports'))
 
+    expect(screen.getByText(/if you expected a recent run/i)).toBeInTheDocument()
     expect(screen.getByText(/wait a few minutes and check Track again/i)).toBeInTheDocument()
     expect(screen.getByText(/could create a duplicate/i)).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Reconnect Garmin' })).toBeEnabled()
