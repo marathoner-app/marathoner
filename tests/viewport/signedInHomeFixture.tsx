@@ -7,6 +7,15 @@ import Title from "../../src/components/Title";
 import TrainingSectionNavigation from "../../src/components/TrainingSectionNavigation";
 import SignedInAppHeader from "../../src/components/SignedInAppHeader";
 import SignedInStartupScreen from "../../src/components/SignedInStartupScreen";
+import RunnerOnboarding from "../../src/onboarding/RunnerOnboarding";
+import {
+  createDateOnly,
+  createDistanceMeters,
+  createIanaTimeZone,
+  createUserId,
+  createUtcDateTime,
+  type UserProfile,
+} from "../../src/domain/training";
 import {
   trainingSections,
   type TrainingSection,
@@ -17,8 +26,28 @@ if (root === null) {
   throw new Error("Signed-in home viewport fixture root was not found.");
 }
 
+const fixtureTimestamp = createUtcDateTime("2026-11-19T12:00:00Z");
+const completeProfile: UserProfile = {
+  id: createUserId("viewport-runner"),
+  displayName: "Runner",
+  preferredDistanceUnit: "mile",
+  timeZone: createIanaTimeZone("America/Los_Angeles"),
+  experienceLevel: "consistent",
+  consistentRunningWeeks: 12,
+  targetRace: { kind: "date", date: createDateOnly("2027-05-02") },
+  currentWeeklyDistance: createDistanceMeters(32_187),
+  currentRunningFrequencyDaysPerWeek: 4,
+  longestRecentRunDistance: createDistanceMeters(16_093),
+  availableTrainingDays: ["tuesday", "thursday", "saturday", "sunday"],
+  preferredLongRunDay: "sunday",
+  completionGoal: "complete_first_marathon",
+  createdAt: fixtureTimestamp,
+  updatedAt: fixtureTimestamp,
+};
+
 export function SignedInHomeFixture() {
   const [activeSection, setActiveSection] = useState<TrainingSection | null>(null);
+  const [onboardingOpen, setOnboardingOpen] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
   const activeDetails = trainingSections.find(({ id }) => id === activeSection);
   const search = new URLSearchParams(window.location.search);
@@ -59,7 +88,7 @@ export function SignedInHomeFixture() {
           <Title />
           <Subtitle />
           <div className="runner-profile-entry">
-            <button type="button">
+            <button type="button" onClick={() => setOnboardingOpen(true)}>
               {setupComplete ? "Edit runner profile" : "Resume runner setup"}
             </button>
             <p>
@@ -80,7 +109,7 @@ export function SignedInHomeFixture() {
       {setupComplete && (
         <TrainingSectionNavigation
           activeSection={activeSection}
-          transitionDuration={0}
+          interactionLocked={onboardingOpen}
           onSelectHome={() => setActiveSection(null)}
           onSelect={openSection}
         />
@@ -116,10 +145,21 @@ export function SignedInHomeFixture() {
                 placeItems: "end center",
               }}
             >
+              <button type="button" onClick={() => setOnboardingOpen(true)}>
+                Review runner setup
+              </button>
               <button type="button">Final section action</button>
             </section>
           </div>
         </section>
+      )}
+
+      {onboardingOpen && (
+        <RunnerOnboarding
+          profile={completeProfile}
+          onSave={async () => completeProfile}
+          onClose={() => setOnboardingOpen(false)}
+        />
       )}
     </main>
   );

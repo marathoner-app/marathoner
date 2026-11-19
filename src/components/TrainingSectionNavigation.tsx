@@ -1,4 +1,4 @@
-import { motion } from "framer-motion";
+import { useLayoutEffect, useRef } from "react";
 import {
   trainingSections,
   type TrainingSection,
@@ -6,8 +6,8 @@ import {
 
 type TrainingSectionNavigationProps = {
   activeSection: TrainingSection | null;
-  transitionDuration: number;
   disabled?: boolean;
+  interactionLocked?: boolean;
   onSelectHome: () => void;
   onRegisterHomeTrigger?: (element: HTMLButtonElement | null) => void;
   onSelect: (section: TrainingSection) => void;
@@ -53,43 +53,47 @@ function TrainingSectionIcon({ section }: { section: TrainingDestination }) {
 
 export default function TrainingSectionNavigation({
   activeSection,
-  transitionDuration,
   disabled = false,
+  interactionLocked = false,
   onSelectHome,
   onRegisterHomeTrigger,
   onSelect,
 }: TrainingSectionNavigationProps) {
+  const navigationRef = useRef<HTMLElement>(null);
+
+  useLayoutEffect(() => {
+    navigationRef.current?.toggleAttribute("inert", interactionLocked);
+  }, [interactionLocked]);
+
   return (
-    <nav className="section-navigation" aria-label="Training sections">
-      <motion.button
+    <nav
+      ref={navigationRef}
+      className="section-navigation"
+      aria-label="Training sections"
+    >
+      <button
         ref={onRegisterHomeTrigger}
         type="button"
         className="section-trigger"
         disabled={disabled}
         aria-current={activeSection === null ? "page" : undefined}
         onClick={onSelectHome}
-        initial={{ opacity: 0, y: 8 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: transitionDuration }}
       >
         <TrainingSectionIcon section="home" />
         <span className="section-trigger-label">Home</span>
-      </motion.button>
+      </button>
       {trainingSections.map(({ id, label }) => (
-        <motion.button
+        <button
           key={id}
           type="button"
           className="section-trigger"
           disabled={disabled}
           aria-current={activeSection === id ? "page" : undefined}
           onClick={() => onSelect(id)}
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: transitionDuration }}
         >
           <TrainingSectionIcon section={id} />
           <span className="section-trigger-label">{label}</span>
-        </motion.button>
+        </button>
       ))}
     </nav>
   );
