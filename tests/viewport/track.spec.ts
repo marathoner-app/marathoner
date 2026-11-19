@@ -46,6 +46,42 @@ async function expectComfortableLargeTextControl(
   ).toBeGreaterThanOrEqual(dimensions.fontSize * 0.3);
 }
 
+async function expectContainedIosDateControl(locator: Locator, label: string) {
+  const layout = await locator.evaluate((element) => {
+    const input = element as HTMLInputElement;
+    const card = input.closest<HTMLElement>(".entry, .run-history");
+    if (card === null) throw new Error("Track date input card was not found.");
+
+    const style = window.getComputedStyle(input);
+    const inputBounds = input.getBoundingClientRect();
+    const cardBounds = card.getBoundingClientRect();
+    return {
+      appearance: style.appearance,
+      overflowX: style.overflowX,
+      inputLeft: inputBounds.left,
+      inputRight: inputBounds.right,
+      cardLeft: cardBounds.left,
+      cardRight: cardBounds.right,
+    };
+  });
+
+  expect(layout.appearance, `${label} should suppress WebKit's intrinsic width`).toBe(
+    "none",
+  );
+  expect(
+    ["hidden", "clip"],
+    `${label} should clip its native date value`,
+  ).toContain(layout.overflowX);
+  expect(
+    layout.inputLeft,
+    `${label} should stay inside its Track card`,
+  ).toBeGreaterThanOrEqual(layout.cardLeft - 0.5);
+  expect(
+    layout.inputRight,
+    `${label} should stay inside its Track card`,
+  ).toBeLessThanOrEqual(layout.cardRight + 0.5);
+}
+
 async function expectEvenDurationSegments(
   segments: readonly [Locator, Locator, Locator],
   textSizeLabel: string,
@@ -354,6 +390,23 @@ test("keeps shoes accessible while run history stays compact and searchable", as
   await expectTrackerCardsToContainControls(
     page,
     "compact searchable run history",
+  );
+});
+
+test("contains both native iOS date controls within their Track cards", async ({
+  page,
+}) => {
+  await page.goto("tests/viewport/track.html?history=1");
+
+  const runDate = page.getByLabel("Run date");
+  const historyDate = page.getByLabel("Find by date");
+
+  await expectContainedIosDateControl(runDate, "run-entry date");
+  await expectContainedIosDateControl(historyDate, "run-history date filter");
+  await expectNoHorizontalOverflow(
+    page,
+    "Track",
+    "with both iOS date controls rendered",
   );
 });
 
