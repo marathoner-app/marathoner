@@ -594,14 +594,14 @@ export default function ShoeTracker({
   };
 
   return (
-    <div className="tracker">
+    <div className="tracker training-page">
       {error && <p role="alert" className="training-error">{error}</p>}
       {actionStatus && (
         <p role="status" className="training-status tracker-status">
           {actionStatus}
         </p>
       )}
-      <div className="entry">
+      <div className="entry training-primary-surface">
         {runSaveConfirmation && (
           <p className="run-save-confirmation" role="status">
             {runSaveConfirmation}
@@ -731,14 +731,14 @@ export default function ShoeTracker({
       </div>
 
       <section
-        className="run-history"
+        className="run-history training-primary-surface"
         aria-labelledby="logged-runs-heading"
       >
         <div className="run-history-heading">
             <h3
               id="logged-runs-heading"
               ref={loggedRunsHeadingRef}
-              className="text-lg font-medium"
+              className="text-lg font-medium training-card-heading"
               tabIndex={-1}
             >
               Logged Runs
@@ -1176,8 +1176,8 @@ export default function ShoeTracker({
         </ConfirmationDialog>
       )}
 
-      <div className="shoe-tracking">
-        <h3 className="text-lg font-medium">Add New Shoes</h3>
+      <div className="shoe-tracking training-primary-surface">
+        <h3 className="text-lg font-medium training-card-heading">Add New Shoes</h3>
         <form
           className="shoe-entry-form"
           aria-busy={pendingAction === "add-shoe"}
@@ -1216,7 +1216,7 @@ export default function ShoeTracker({
         <div className="mt-4">
           <h3
             ref={shoeMileageHeadingRef}
-            className="text-lg font-medium"
+            className="text-lg font-medium training-card-heading"
             tabIndex={-1}
           >
             Shoe Mileage

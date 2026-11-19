@@ -5,26 +5,7 @@
     "history history";
   grid-template-columns: repeat(2, minmax(0, 1fr));
   align-items: flex-start;
-  box-sizing: border-box;
-  gap: 1.25rem;
-  width: min(100%, 56rem);
-  max-width: 56rem;
-  margin: auto;
-  padding: clamp(0.75rem, 3vw, 1.25rem);
-  color: var(--app-ink);
-}
-
-.entry,
-.shoe-tracking,
-.run-history {
-  box-sizing: border-box;
-  min-width: 0;
-  padding: clamp(1.25rem, 3vw, 1.75rem);
-  border-radius: var(--app-radius-large);
-  border: 1px solid var(--app-border);
-  background: var(--app-surface);
-  box-shadow: var(--app-shadow-small);
-  color: var(--app-ink);
+  gap: var(--app-training-page-gap);
 }
 
 .entry {
@@ -328,6 +309,10 @@
   font-weight: 700;
 }
 
+.shoe-tracking .mt-4 {
+  margin-top: 1.5rem;
+}
+
 .shoe-mileage-breakdown {
   color: var(--app-muted);
   font-size: 0.92rem;
@@ -540,9 +525,7 @@
       "shoes"
       "history";
     grid-template-columns: minmax(0, 1fr);
-    gap: 1rem;
-    width: 100%;
-    padding: 0;
+    gap: var(--app-training-page-gap);
   }
 
   .entry,

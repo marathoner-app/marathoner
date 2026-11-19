@@ -1,22 +1,12 @@
 .plan-container {
-  width: 100%;
-  max-width: 60rem;
-  margin: 0 auto;
-  color: var(--app-ink);
   font-family: inherit;
-  line-height: 1.5;
-  text-align: left;
 }
 
 .plan-header {
   margin-bottom: 1.5rem;
-  padding: clamp(1rem, 3vw, 1.75rem);
-  border: 1px solid var(--app-border);
-  border-radius: var(--app-radius-large);
   background:
     linear-gradient(135deg, rgb(255 255 255 / 52%), transparent 62%),
     var(--app-banner);
-  box-shadow: var(--app-shadow-small);
 }
 
 .plan-heading {
@@ -33,9 +23,10 @@
 }
 
 .plan-heading .section-heading {
-  margin-bottom: 0.35rem;
+  margin: 0 0 0.35rem;
   font-size: clamp(1.6rem, 5vw, 2.25rem);
   line-height: 1.15;
+  text-align: center;
 }
 
 .plan-week-dates {
@@ -83,7 +74,8 @@
 
 .week-selector {
   min-width: 6rem;
-  padding: 0.5rem 0.75rem;
+  min-block-size: max(2.75rem, 2.75em);
+  padding: max(0.65rem, 0.65em) 0.75rem;
   border: 1px solid var(--app-border-strong);
   border-radius: var(--app-radius-small);
   background: var(--app-surface);
