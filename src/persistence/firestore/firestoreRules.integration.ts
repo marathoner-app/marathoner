@@ -1088,7 +1088,10 @@ describe("Firestore repository integration", () => {
     const run = await repositories.runs.get(runId);
     if (run === null) throw new Error("Expected the server-seeded run.");
 
-    await expect(repositories.profile.load()).resolves.toEqual(profile);
+    await expect(repositories.profile.load()).resolves.toEqual({
+      ...profile,
+      defaultShoeId: shoe.id,
+    });
     await expect(repositories.plans.get(planId)).resolves.toEqual(plan);
     await expect(repositories.workouts.get(planId, workoutId)).resolves.toEqual(
       workout,
