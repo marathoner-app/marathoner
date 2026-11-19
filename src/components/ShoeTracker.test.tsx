@@ -259,11 +259,16 @@ describe("ShoeTracker", () => {
       createdAt: timestamp,
       updatedAt: timestamp,
     };
+    const newerRun: CompletedRun = {
+      ...run,
+      id: createCompletedRunId("run-2"),
+      startedAt: createUtcDateTime("2026-08-06T14:00:00Z"),
+    };
 
     render(
       <Harness
         initialShoes={[shoe]}
-        initialRuns={[run]}
+        initialRuns={[newerRun, run]}
         initialFocusTarget={{ kind: "review-run", runId: run.id }}
       />,
     );
@@ -278,6 +283,7 @@ describe("ShoeTracker", () => {
   it("gives every run-entry control a persistent visible label", () => {
     render(<Harness />);
 
+    expect(screen.queryByRole("heading", { name: "Run" })).not.toBeInTheDocument();
     expect(screen.getByRole("form", { name: "Log a completed run" })).toBeInTheDocument();
     expect(screen.getByLabelText("Run date")).toBeInTheDocument();
     expect(screen.getByRole("spinbutton", { name: "Distance (miles)" })).toBeInTheDocument();
@@ -311,6 +317,56 @@ describe("ShoeTracker", () => {
     expect(
       screen.getByRole("textbox", { name: "Run notes (optional)" }),
     ).toBeInTheDocument();
+  });
+
+  it("shows the newest run first and supports expanding or filtering history", async () => {
+    const olderRun: CompletedRun = {
+      id: createCompletedRunId("older-run"),
+      userId,
+      startedAt: createUtcDateTime("2026-08-03T14:00:00Z"),
+      timeZone: createIanaTimeZone("America/Los_Angeles"),
+      distance: createDistanceMeters(10_000),
+      duration: createDurationSeconds(3_600),
+      createdAt: timestamp,
+      updatedAt: timestamp,
+    };
+    const newestRun: CompletedRun = {
+      id: createCompletedRunId("newest-run"),
+      userId,
+      startedAt: timestamp,
+      timeZone: createIanaTimeZone("America/Los_Angeles"),
+      distance: createDistanceMeters(5_000),
+      duration: createDurationSeconds(1_800),
+      createdAt: timestamp,
+      updatedAt: timestamp,
+    };
+    const user = userEvent.setup();
+
+    render(<Harness initialRuns={[olderRun, newestRun]} />);
+
+    expect(screen.getByText(/^2026-08-05:/)).toBeVisible();
+    expect(screen.queryByText(/^2026-08-03:/)).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Show all 2 runs" }));
+    expect(screen.getByText(/^2026-08-03:/)).toBeVisible();
+
+    await user.click(screen.getByRole("button", { name: "Show fewer" }));
+    expect(screen.queryByText(/^2026-08-03:/)).not.toBeInTheDocument();
+
+    fireEvent.change(screen.getByLabelText("Find by date"), {
+      target: { value: "2026-08-03" },
+    });
+    expect(screen.getByText(/^2026-08-03:/)).toBeVisible();
+    expect(screen.queryByText(/^2026-08-05:/)).not.toBeInTheDocument();
+
+    fireEvent.change(screen.getByLabelText("Find by date"), {
+      target: { value: "2026-08-04" },
+    });
+    expect(screen.getByText("No runs logged on 2026-08-04.")).toBeVisible();
+
+    await user.click(screen.getByRole("button", { name: "Clear date" }));
+    expect(screen.getByText(/^2026-08-05:/)).toBeVisible();
+    expect(screen.queryByText(/^2026-08-03:/)).not.toBeInTheDocument();
   });
 
   it("keeps an uncertain run protected behind a plain-language status check", async () => {

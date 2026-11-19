@@ -80,7 +80,7 @@ async function expectTrackerCardsToContainControls(
   page: Page,
   textSizeLabel: string,
 ) {
-  const cards = page.locator(".entry, .shoe-tracking");
+  const cards = page.locator(".entry, .shoe-tracking, .run-history");
 
   for (let index = 0; index < (await cards.count()); index += 1) {
     const card = cards.nth(index);
@@ -307,6 +307,54 @@ test("keeps the complete Track workflow usable at phone width", async ({ page })
   await page.goto("tests/viewport/track.html");
 
   await exerciseTrackWorkflow(page, "default text size");
+});
+
+test("keeps shoes accessible while run history stays compact and searchable", async ({
+  page,
+}) => {
+  await page.goto("tests/viewport/track.html?history=1");
+
+  const shoeCard = page.locator(".shoe-tracking");
+  const historyCard = page.locator(".run-history");
+  const positions = await Promise.all([
+    shoeCard.boundingBox(),
+    historyCard.boundingBox(),
+  ]);
+  expect(positions).not.toContain(null);
+  expect(positions[0]!.y).toBeLessThan(positions[1]!.y);
+
+  await expect(page.getByText(/^2026-10-21:/)).toBeVisible();
+  await expect(page.getByText(/^2026-10-20:/)).toHaveCount(0);
+  const showAll = page.getByRole("button", { name: "Show all 3 runs" });
+  await expectMinimumTouchTarget(showAll, "show all run history");
+  await showAll.click();
+  await expect(page.getByText(/^2026-10-20:/)).toBeVisible();
+  await expect(page.getByText(/^2026-10-19:/)).toBeVisible();
+
+  await page.getByRole("button", { name: "Show fewer" }).click();
+  await expect(page.getByText(/^2026-10-20:/)).toHaveCount(0);
+
+  const dateFilter = page.getByLabel("Find by date");
+  await expectMinimumTouchTarget(dateFilter, "run-history date filter");
+  await dateFilter.fill("2026-10-19");
+  await expect(page.getByText(/^2026-10-19:/)).toBeVisible();
+  await expect(page.getByText(/^2026-10-21:/)).toHaveCount(0);
+
+  await dateFilter.fill("2026-10-18");
+  await expect(page.getByText("No runs logged on 2026-10-18.")).toBeVisible();
+  await page.getByRole("button", { name: "Clear date" }).click();
+  await expect(page.getByText(/^2026-10-21:/)).toBeVisible();
+  await expect(page.getByText(/^2026-10-19:/)).toHaveCount(0);
+
+  await expectNoHorizontalOverflow(
+    page,
+    "Track",
+    "with compact searchable run history",
+  );
+  await expectTrackerCardsToContainControls(
+    page,
+    "compact searchable run history",
+  );
 });
 
 test("keeps the complete Track workflow usable with 200% text", async ({

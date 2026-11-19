@@ -31,6 +31,7 @@ const userId = createUserId("viewport-runner");
 const timestamp = createUtcDateTime("2026-10-21T16:00:00Z");
 const importedFixture = new URLSearchParams(window.location.search).has("imported");
 const matchedFixture = new URLSearchParams(window.location.search).has("matched");
+const historyFixture = new URLSearchParams(window.location.search).has("history");
 const pendingRunSaveFixture = new URLSearchParams(window.location.search).has(
   "pending-run-save",
 );
@@ -72,9 +73,25 @@ const importedRun: CompletedRun = {
   updatedAt: timestamp,
 };
 
+const historyRuns: CompletedRun[] = [
+  importedRun,
+  {
+    ...importedRun,
+    id: createCompletedRunId("viewport-history-run-2"),
+    startedAt: createUtcDateTime("2026-10-20T16:00:00Z"),
+    distance: createDistanceMeters(6_437),
+  },
+  {
+    ...importedRun,
+    id: createCompletedRunId("viewport-history-run-3"),
+    startedAt: createUtcDateTime("2026-10-19T16:00:00Z"),
+    distance: createDistanceMeters(4_828),
+  },
+];
+
 function TrackViewportFixture() {
   const [runs, setRuns] = useState<CompletedRun[]>(
-    importedFixture ? [importedRun] : [],
+    historyFixture ? historyRuns : importedFixture ? [importedRun] : [],
   );
   const [shoes, setShoes] = useState<Shoe[]>([]);
 
