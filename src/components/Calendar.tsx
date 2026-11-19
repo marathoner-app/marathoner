@@ -208,8 +208,8 @@ export default function Calendar({
       : `${completedWorkoutCount} of ${trainingWorkouts.length} workouts complete`;
 
   return (
-    <div className="plan-container">
-      <div className="plan-header">
+    <div className="plan-container training-page">
+      <div className="plan-header training-primary-surface">
         <div className="plan-heading">
           <p className="plan-name">{plan.name}</p>
           <h2 className="section-heading">

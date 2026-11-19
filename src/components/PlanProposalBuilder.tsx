@@ -172,7 +172,7 @@ export default function PlanProposalBuilder({
 
   if (outcome.kind === "result") {
     return (
-      <div className="plan-proposal-builder plan-proposal-result">
+      <div className="plan-proposal-builder plan-proposal-result training-page">
         <p className="plan-proposal-boundary" role="note">
           {provisionalContext === "closed_beta"
             ? "This closed-beta plan uses provisional training rules and has not received external methodology review."
@@ -194,7 +194,7 @@ export default function PlanProposalBuilder({
   if (!profileComplete) {
     return (
       <section
-        className="plan-proposal-builder plan-proposal-unavailable"
+        className="plan-proposal-builder plan-proposal-unavailable training-page training-primary-surface"
         aria-labelledby={`${idPrefix}-title`}
       >
         <p className="plan-proposal-eyebrow">Build your plan</p>
@@ -213,7 +213,7 @@ export default function PlanProposalBuilder({
   if (candidates.kind === "unavailable") {
     return (
       <section
-        className="plan-proposal-builder plan-proposal-unavailable"
+        className="plan-proposal-builder plan-proposal-unavailable training-page training-primary-surface"
         aria-labelledby={`${idPrefix}-title`}
       >
         <p className="plan-proposal-eyebrow">Build your plan</p>
@@ -228,7 +228,7 @@ export default function PlanProposalBuilder({
 
   return (
     <section
-      className="plan-proposal-builder"
+      className="plan-proposal-builder training-page"
       aria-labelledby={`${idPrefix}-title`}
     >
       <header className="plan-proposal-header">
@@ -248,7 +248,7 @@ export default function PlanProposalBuilder({
 
       <form className="plan-proposal-form" onSubmit={handleSubmit}>
         <fieldset
-          className="plan-proposal-start-dates"
+          className="plan-proposal-start-dates training-primary-surface"
           aria-describedby={
             validationErrors.planStartDate
               ? `${idPrefix}-plan-start-help ${idPrefix}-plan-start-error`
@@ -298,7 +298,7 @@ export default function PlanProposalBuilder({
         </fieldset>
 
         <fieldset
-          className="plan-proposal-safety"
+          className="plan-proposal-safety training-primary-surface"
           aria-describedby={
             validationErrors.safetyAnswer
               ? `${idPrefix}-safety-help ${idPrefix}-safety-error`

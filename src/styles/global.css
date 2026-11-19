@@ -38,6 +38,10 @@
   --app-safe-area-right: env(safe-area-inset-right);
   --app-safe-area-bottom: env(safe-area-inset-bottom);
   --app-safe-area-left: env(safe-area-inset-left);
+  --app-training-page-max-width: 60rem;
+  --app-training-page-gutter: clamp(0.75rem, 3vw, 1.25rem);
+  --app-training-page-gap: clamp(1rem, 2vw, 1.25rem);
+  --app-training-surface-padding: clamp(1.25rem, 3vw, 1.75rem);
 
   font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif;
   font-weight: 400;
@@ -95,6 +99,41 @@ button:focus-visible {
   outline: 3px solid var(--app-accent);
   outline-offset: 3px;
   box-shadow: 0 0 0 5px var(--app-focus-ring);
+}
+
+/*
+ * Plan and Track share this page rhythm even though their contents differ.
+ * Analyze intentionally keeps its carousel/dashboard-specific layout.
+ */
+.training-page {
+  box-sizing: border-box;
+  width: min(100%, var(--app-training-page-max-width));
+  max-width: var(--app-training-page-max-width);
+  margin-inline: auto;
+  padding-inline: var(--app-training-page-gutter);
+  color: var(--app-ink);
+  line-height: 1.5;
+  text-align: left;
+}
+
+.training-primary-surface {
+  box-sizing: border-box;
+  min-width: 0;
+  padding: var(--app-training-surface-padding);
+  border: 1px solid var(--app-border);
+  border-radius: var(--app-radius-large);
+  background: var(--app-surface);
+  box-shadow: var(--app-shadow-small);
+  color: var(--app-ink);
+}
+
+.training-card-heading {
+  margin: 0 0 0.9rem;
+  color: var(--app-ink);
+  font-size: clamp(1.1rem, 2vw, 1.3rem);
+  font-weight: 720;
+  letter-spacing: -0.015em;
+  line-height: 1.2;
 }
 
 @media (prefers-reduced-motion: reduce) {
