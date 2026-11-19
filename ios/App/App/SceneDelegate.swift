@@ -10,7 +10,12 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
             return
         }
 
-        sceneWindow.backgroundColor = .white
+        sceneWindow.backgroundColor = UIColor(
+            red: 20.0 / 255.0,
+            green: 104.0 / 255.0,
+            blue: 204.0 / 255.0,
+            alpha: 1.0
+        )
         sceneWindow.makeKeyAndVisible()
 
         SceneDelegateProxy.shared.scene(scene, willConnectTo: session, options: connectionOptions)

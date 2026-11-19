@@ -13,9 +13,7 @@
     max(1.5rem, env(safe-area-inset-left));
   place-items: center;
   overflow: auto;
-  background:
-    radial-gradient(circle at 50% 30%, rgb(255 255 255 / 14%), transparent 18rem),
-    var(--app-accent);
+  background: var(--app-accent);
   color: #fff;
   text-align: center;
 }
@@ -32,9 +30,6 @@
   max-width: 100%;
   color: inherit;
   font-size: clamp(2rem, 12vw, 5.25rem);
-  font-weight: 740;
-  letter-spacing: -0.06em;
-  line-height: 0.95;
   overflow-wrap: anywhere;
 }
 

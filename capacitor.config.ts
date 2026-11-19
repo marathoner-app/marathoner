@@ -5,7 +5,7 @@ const config: CapacitorConfig = {
   appName: 'Marathoner',
   webDir: 'dist-ios',
   ios: {
-    backgroundColor: '#ffffff',
+    backgroundColor: '#1468cc',
     contentInset: 'never',
     preferredContentMode: 'mobile',
   },
@@ -14,7 +14,7 @@ const config: CapacitorConfig = {
   },
   plugins: {
     SplashScreen: {
-      backgroundColor: '#ffffffff',
+      backgroundColor: '#1468ccff',
       launchAutoHide: true,
       launchShowDuration: 10_000,
       showSpinner: false,

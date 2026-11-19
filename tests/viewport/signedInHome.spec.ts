@@ -253,7 +253,7 @@ test("uses one complete branded surface while startup is delayed", async ({
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("tests/viewport/signedInHome.html?startup=delayed");
 
-  await expect(page.getByRole("heading", { name: "Marathoner" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Marathoner." })).toBeVisible();
   await expect(page.getByRole("banner")).toHaveCount(0);
   await expect(
     page.getByRole("navigation", { name: "Training sections" }),
@@ -285,7 +285,7 @@ test("keeps the startup surface contained with enlarged text and reduced motion"
     content: ":root { font-size: 200% !important; }",
   });
 
-  await expect(page.getByRole("heading", { name: "Marathoner" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Marathoner." })).toBeVisible();
   await expect(
     page.getByText("This is taking longer than usual. Check your connection."),
   ).toBeVisible();

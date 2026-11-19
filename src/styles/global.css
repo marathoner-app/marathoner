@@ -101,6 +101,14 @@ button:focus-visible {
   box-shadow: 0 0 0 5px var(--app-focus-ring);
 }
 
+.marathoner-wordmark {
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text",
+    "Segoe UI", sans-serif;
+  font-weight: 720;
+  letter-spacing: -0.055em;
+  line-height: 0.98;
+}
+
 /*
  * Plan and Track share this page rhythm even though their contents differ.
  * Analyze intentionally keeps its carousel/dashboard-specific layout.

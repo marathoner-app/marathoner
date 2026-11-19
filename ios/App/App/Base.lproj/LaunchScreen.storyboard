@@ -18,17 +18,17 @@
                             <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Marathoner." textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" translatesAutoresizingMaskIntoConstraints="NO" id="9H6-Df-3wM">
                                 <rect key="frame" x="42" y="273" width="291" height="62"/>
                                 <fontDescription key="fontDescription" type="system" weight="bold" pointSize="52"/>
-                                <color key="textColor" white="0.0" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                <color key="textColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                                 <nil key="highlightedColor"/>
                             </label>
                             <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Loading your session..." textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" translatesAutoresizingMaskIntoConstraints="NO" id="S7c-7S-2qv">
                                 <rect key="frame" x="91" y="359" width="193" height="21"/>
                                 <fontDescription key="fontDescription" type="system" pointSize="17"/>
-                                <color key="textColor" red="0.2705882353" green="0.2705882353" blue="0.2705882353" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                                <color key="textColor" white="1" alpha="0.9" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                                 <nil key="highlightedColor"/>
                             </label>
                         </subviews>
-                        <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                        <color key="backgroundColor" red="0.07843137255" green="0.4078431373" blue="0.8" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                         <constraints>
                             <constraint firstItem="9H6-Df-3wM" firstAttribute="centerX" secondItem="snD-IY-ifK" secondAttribute="centerX" id="AHM-Gf-YKp"/>
                             <constraint firstItem="9H6-Df-3wM" firstAttribute="centerY" secondItem="snD-IY-ifK" secondAttribute="centerY" constant="-30" id="HjL-Lr-WiP"/>

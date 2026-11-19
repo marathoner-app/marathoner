@@ -10,7 +10,8 @@ export const expectedIosBoundary = {
   splashScreenVersion: '8.0.2',
   developmentProjectId: 'marathoner-d9bf9',
   betaProjectId: 'marathonerapp-beta',
-  launchBackgroundColor: '#ffffff',
+  launchBackgroundColor: '#1468cc',
+  launchBackgroundColorWithAlpha: '#1468ccff',
   startupErrorPath: 'startup-error.html',
   webDir: 'dist-ios',
 }
@@ -166,7 +167,7 @@ export function findIosProjectViolations({
   for (const requiredSplashConfig of [
     'launchAutoHide: true',
     'launchShowDuration: 10_000',
-    "backgroundColor: '#ffffffff'",
+    `backgroundColor: '${expectedIosBoundary.launchBackgroundColorWithAlpha}'`,
   ]) {
     requireText(
       violations,
@@ -308,7 +309,7 @@ export function findIosProjectViolations({
   requireText(
     violations,
     launchStoryboard,
-    '<color key="backgroundColor" white="1"',
+    '<color key="backgroundColor" red="0.07843137255" green="0.4078431373" blue="0.8"',
     'LaunchScreen.storyboard',
   )
 
@@ -387,6 +388,18 @@ export function findIosProjectViolations({
     'guard let sceneWindow = window',
     'SceneDelegate.swift',
   )
+  for (const launchColorComponent of [
+    'red: 20.0 / 255.0',
+    'green: 104.0 / 255.0',
+    'blue: 204.0 / 255.0',
+  ]) {
+    requireText(
+      violations,
+      sceneDelegate,
+      launchColorComponent,
+      'SceneDelegate.swift',
+    )
+  }
   if (
     sceneDelegate.includes('UIWindow(windowScene:') ||
     sceneDelegate.includes('CAPBridgeViewController()')
@@ -553,7 +566,9 @@ export function findCopiedBundleViolations({
   for (const expectedStartupValue of [
     'viewport-fit=cover',
     'data-marathoner-startup',
+    'Marathoner.',
     'Loading your session...',
+    expectedIosBoundary.launchBackgroundColor,
     'data-startup-recovery',
     '10000',
   ]) {
@@ -650,7 +665,8 @@ export function findCopiedBundleViolations({
   if (
     runtimeConfig.plugins?.SplashScreen?.launchAutoHide !== true ||
     runtimeConfig.plugins?.SplashScreen?.launchShowDuration !== 10_000 ||
-    runtimeConfig.plugins?.SplashScreen?.backgroundColor !== '#ffffffff'
+    runtimeConfig.plugins?.SplashScreen?.backgroundColor !==
+      expectedIosBoundary.launchBackgroundColorWithAlpha
   ) {
     violations.push(
       'generated capacitor.config.json has unexpected SplashScreen startup policy',
