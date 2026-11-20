@@ -11,6 +11,7 @@ import Title from "./components/Title";
 import Subtitle from "./components/Subtitle";
 import Calendar from "./components/Calendar";
 import PublicLandingPage from "./components/PublicLandingPage";
+import NativeSignedOutEntry from "./components/NativeSignedOutEntry";
 import ShoeTracker from "./components/ShoeTracker";
 import type { ShoeTrackerInitialFocusTarget } from "./components/ShoeTracker";
 import Analyze from "./components/Analyze";
@@ -58,6 +59,7 @@ import {
 import { selectedFirebaseEnvironment } from "./selectedFirebaseEnvironment";
 import ClosedBetaMethodologyConsentGate from "./components/ClosedBetaMethodologyConsentGate";
 import { getClosedBetaProvisionalMethodologyManifest } from "./domain/methodology/closedBetaProvisionalMethodologyRegistry";
+import { getSignedOutSurface } from "./services/appRuntime";
 
 const publicSupportEmail = "kevin@marathonerapp.com";
 const BetaRunCommandRehearsal = isBetaRunCommandRehearsalMode(
@@ -109,6 +111,7 @@ type Section = TrainingSection;
 
 function App() {
   const auth = useAuth();
+  const signedOutSurface = getSignedOutSurface();
   const logout = auth.logout;
   const signedInUserId = auth.status === "signedIn" ? auth.user.uid : null;
   const healthKitAccountScope = useMemo(
@@ -344,10 +347,17 @@ function App() {
         !logoutPending &&
         auth.status === "signedOut" &&
         !activeSection && (
-          <PublicLandingPage
-            supportEmail={publicSupportEmail}
-            statusNotice={auth.notice}
-          />
+          signedOutSurface === "native-ios" ? (
+            <NativeSignedOutEntry
+              supportEmail={publicSupportEmail}
+              statusNotice={auth.notice}
+            />
+          ) : (
+            <PublicLandingPage
+              supportEmail={publicSupportEmail}
+              statusNotice={auth.notice}
+            />
+          )
         )}
 
       {!deletionReceipt && !logoutPending && auth.status === "signedIn" && (

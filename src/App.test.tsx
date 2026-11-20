@@ -32,6 +32,10 @@ import {
 } from './services/accountDeletionService'
 import type { AccountDeletionRequestAcceptedResult } from './domain/materialCommands/contract'
 
+const { mockedGetSignedOutSurface } = vi.hoisted(() => ({
+  mockedGetSignedOutSurface: vi.fn<() => 'native-ios' | 'public-web'>()
+}))
+
 type MockMotionProps = {
   animate?: unknown
   children?: ReactNode
@@ -87,6 +91,10 @@ vi.mock('./services/accountDeletionService', () => ({
   reauthenticateForAccountDeletion: vi.fn(),
   resolveAccountDeletionRequest: vi.fn(),
   submitAccountDeletionRequest: vi.fn()
+}))
+
+vi.mock('./services/appRuntime', () => ({
+  getSignedOutSurface: mockedGetSignedOutSurface
 }))
 
 vi.mock('./services/firebaseGarminConnectionClient', () => ({
@@ -299,6 +307,7 @@ function renderSignedInApp() {
 
 beforeEach(() => {
   vi.clearAllMocks()
+  mockedGetSignedOutSurface.mockReturnValue('public-web')
   authSubscriptions = []
   sessionLifecycleEvents = []
   recommendationProviderInstanceSequence = 0
@@ -398,6 +407,22 @@ describe('App authentication state', () => {
     expect(
       screen.queryByRole('navigation', { name: 'Training sections' })
     ).not.toBeInTheDocument()
+  })
+
+  it('uses the compact entry in an installed iOS runtime without rendering public marketing', () => {
+    mockedGetSignedOutSurface.mockReturnValue('native-ios')
+    renderApp()
+
+    act(() => {
+      emitAuthState(null)
+    })
+
+    expect(screen.getByTestId('native-signed-out-entry')).toBeInTheDocument()
+    expect(screen.queryByTestId('public-landing-page')).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Log in' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Reset password' })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Contact support' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Get updates' })).not.toBeInTheDocument()
   })
 
   it('updates the UI when Firebase reports a signed-in session', () => {
