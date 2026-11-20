@@ -14,13 +14,15 @@ development Debug workflow uses a private fixed debug token. Paid-team Debug
 and Release signing, the production App Attest entitlement, physical-device
 installation, and launch passed on November 12, 2026. The historical first
 App Store Connect upload was version 1.0 build 2. Internal TestFlight build 18
-has since been processed and assigned to the internal group. Build 19 is the
-selected successor from merged `main`; it adds the cohesive startup gate, the
-polished Training check experience, and the Marathoner training-ticket Plan
-cards to the fixes already present in build 18, and remains pending verification
-and upload.
+has since been processed and assigned to the internal group. Build 19 was
+superseded before upload by three additional iPhone changes. Build 20 is the
+selected successor from merged `main`; it adds continuous native startup, a
+stable-shell runner-profile editor, and a compact native signed-out gateway to
+the cohesive startup gate, polished Training check experience, and Marathoner
+training-ticket Plan cards already prepared in build 19. It remains pending
+verification and upload.
 Valid beta App Check traffic is observable while enforcement remains off.
-External TestFlight App Review, the build-19 proof matrix, staged App Check
+External TestFlight App Review, the build-20 proof matrix, staged App Check
 enforcement, accessibility, and Android remain open under #122, #140, #161,
 #624, and #691.
 
@@ -354,10 +356,12 @@ compliance answer was recorded, the build advanced to **Ready to Submit**.
 See the
 [dated archive and upload evidence](evidence/2026-11-12-app-store-connect-archive-upload.md).
 That record remains the historical first-upload proof. Later internal builds
-advanced through build 18; build 19 is the selected successor from merged
+advanced through build 18; build 20 is the selected successor from merged
 `main` for cohesive startup, Training check polish, Marathoner Plan tickets,
-consolidated owner/J rehearsal, and external TestFlight review. External
-TestFlight App Review and the build-19 release matrix remain open;
+continuous native startup, stable runner-profile editing, a compact native
+signed-out gateway, consolidated owner/J rehearsal, and external TestFlight
+review. External TestFlight App Review and the build-20 release matrix remain
+open;
 internal availability is not external invitation approval.
 
 After `npm run check:ios` and local signing configuration:
