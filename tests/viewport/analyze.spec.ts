@@ -396,6 +396,25 @@ test("keeps Analyze as an all-at-once desktop dashboard", async ({ page }) => {
   if (widgetBounds && cardBounds) {
     expect(Math.abs(cardBounds.height - widgetBounds.height)).toBeLessThanOrEqual(2);
   }
+
+  await page.getByRole("button", { name: "Edit dashboard" }).click();
+  await expect(page.locator(".analyze-widget-edit-bar").first()).toHaveCSS(
+    "position",
+    "absolute",
+  );
+  const editingCardBounds = await effortCard.boundingBox();
+  expect(editingCardBounds).not.toBeNull();
+  if (cardBounds && editingCardBounds) {
+    expect(Math.abs(editingCardBounds.width - cardBounds.width)).toBeLessThanOrEqual(
+      2,
+    );
+    expect(
+      Math.abs(editingCardBounds.height - cardBounds.height),
+    ).toBeLessThanOrEqual(2);
+  }
+  await expect(
+    effortCard.getByRole("heading", { name: "Recent Effort" }),
+  ).toBeVisible();
 });
 
 test("edits, restores, saves, and reloads the desktop dashboard", async ({
