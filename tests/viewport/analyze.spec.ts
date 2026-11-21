@@ -370,6 +370,20 @@ test("keeps Analyze as an all-at-once desktop dashboard", async ({ page }) => {
     "Analyze should fit the desktop viewport without page scrolling",
   ).toBeLessThanOrEqual(frame.viewportHeight);
   await expectNoHorizontalOverflow(page, "Analyze", "on the desktop dashboard");
+
+  const effortWidget = page.getByRole("group", {
+    name: "Recent effort widget",
+  });
+  const effortCard = effortWidget.locator(".effort-pattern");
+  const [widgetBounds, cardBounds] = await Promise.all([
+    effortWidget.boundingBox(),
+    effortCard.boundingBox(),
+  ]);
+  expect(widgetBounds).not.toBeNull();
+  expect(cardBounds).not.toBeNull();
+  if (widgetBounds && cardBounds) {
+    expect(Math.abs(cardBounds.height - widgetBounds.height)).toBeLessThanOrEqual(2);
+  }
 });
 
 test("edits, restores, saves, and reloads the desktop dashboard", async ({
@@ -383,6 +397,16 @@ test("edits, restores, saves, and reloads the desktop dashboard", async ({
   await page.getByRole("button", { name: "Edit dashboard" }).click();
   await expect(page.getByRole("button", { name: "Add widgets" })).toBeVisible();
   await expect(page.getByRole("button", { name: /^Move or resize/ })).toHaveCount(5);
+
+  const paceHandle = page.getByRole("button", {
+    name: "Move or resize Recent pace",
+  });
+  await paceHandle.focus();
+  await paceHandle.press("Space");
+  await paceHandle.press("Shift+ArrowUp");
+  await paceHandle.press("Shift+ArrowUp");
+  await paceHandle.press("ArrowDown");
+  await paceHandle.press("Space");
 
   const weeklyHandle = page.getByRole("button", {
     name: "Move or resize Weekly distance",
@@ -409,6 +433,11 @@ test("edits, restores, saves, and reloads the desktop dashboard", async ({
     ),
   );
   expect(saved).not.toBeNull();
+  expect(JSON.parse(saved ?? "{}").widgets).toEqual(
+    expect.arrayContaining([
+      expect.objectContaining({ i: "recent-pace", y: 7, h: 4 }),
+    ]),
+  );
 
   await page.reload();
   await expect(page.getByRole("group", { name: "Weekly distance widget" })).toBeVisible();
