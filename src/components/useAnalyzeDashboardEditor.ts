@@ -152,13 +152,22 @@ export function useAnalyzeDashboardEditor(
   }, [savedLayout]);
 
   const saveEditing = useCallback(() => {
-    if (!persistLayout(accountScope, draftLayout)) {
+    const validLayout = normalizeAnalyzeDashboardLayout(
+      serializeAnalyzeDashboardLayout(draftLayout),
+    );
+    if (validLayout === null) {
+      setMessage(
+        "This dashboard has overlapping or out-of-bounds widgets. Move them apart before saving.",
+      );
+      return false;
+    }
+    if (!persistLayout(accountScope, validLayout)) {
       setMessage(
         "Marathoner could not save this dashboard on this device. Your draft is still open.",
       );
       return false;
     }
-    setSavedLayout(draftLayout);
+    setSavedLayout(validLayout);
     setIsEditing(false);
     setIsDrawerOpen(false);
     setMessage("Dashboard saved on this device.");
