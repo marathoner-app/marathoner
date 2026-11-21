@@ -359,6 +359,7 @@
   }
 
   .analyze-widget.analyze-widget-shell {
+    position: relative;
     display: flex;
     height: 100%;
     min-width: 0;
@@ -376,15 +377,17 @@
   }
 
   .analyze-widget-edit-bar {
+    position: absolute;
+    top: 0.4rem;
+    right: 0.4rem;
+    left: 0.4rem;
+    z-index: 2;
     display: flex;
-    flex: 0 0 2.5rem;
     align-items: center;
     justify-content: space-between;
     gap: 0.5rem;
     min-width: 0;
-    padding: 0.25rem 0.35rem 0.25rem 0.5rem;
-    border-bottom: 1px solid var(--app-border);
-    background: rgb(245 248 253 / 96%);
+    pointer-events: none;
   }
 
   .analyze-widget-drag-handle,
@@ -396,14 +399,15 @@
     min-height: 2rem;
     margin: 0;
     padding: 0.25rem 0.5rem;
-    border: 0;
+    border: 1px solid color-mix(in srgb, var(--app-accent) 20%, white);
     border-radius: 0.45rem;
-    background: transparent;
-    box-shadow: none;
+    background: rgb(255 255 255 / 94%);
+    box-shadow: 0 0.15rem 0.45rem rgb(8 16 31 / 12%);
     color: var(--app-muted);
     font-size: 0.75rem;
     font-weight: 700;
     line-height: 1;
+    pointer-events: auto;
   }
 
   .analyze-widget-drag-handle {
@@ -456,25 +460,6 @@
     border-radius: 1rem;
     box-shadow: 0 1px 2px rgb(0 0 0 / 4%);
     scrollbar-gutter: stable;
-  }
-
-  .analyze-desktop-grid-frame--editing
-    .analyze-widget-content
-    > .latest-run-summary,
-  .analyze-desktop-grid-frame--editing
-    .analyze-widget-content
-    > .analyze-summary,
-  .analyze-desktop-grid-frame--editing
-    .analyze-widget-content
-    > .weekly-trend,
-  .analyze-desktop-grid-frame--editing
-    .analyze-widget-content
-    > .pace-trend,
-  .analyze-desktop-grid-frame--editing
-    .analyze-widget-content
-    > .effort-pattern {
-    border-top-left-radius: 0;
-    border-top-right-radius: 0;
   }
 
   .react-grid-item > .react-resizable-handle::after {
