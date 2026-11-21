@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   ANALYZE_DASHBOARD_COLUMNS,
   ANALYZE_DASHBOARD_ROWS,
+  applyVisibleGridLayout,
   analyzeDashboardLayoutsEqual,
   createDefaultAnalyzeDashboardLayout,
   hideAnalyzeDashboardWidget,
@@ -134,6 +135,20 @@ describe("analyzeDashboardLayout", () => {
       ),
     ).toBeNull();
     expect(analyzeDashboardLayoutsEqual(original, original.map((item) => ({ ...item })))).toBe(true);
+  });
+
+  it("rejects an overlapping layout emitted by the grid", () => {
+    const original = createDefaultAnalyzeDashboardLayout();
+    const weeklyDistance = original.find(
+      (item) => item.i === "weekly-distance",
+    );
+    const overlapping = visibleGridLayout(original).map((item) =>
+      item.i === "recent-pace" && weeklyDistance !== undefined
+        ? { ...item, x: weeklyDistance.x, y: weeklyDistance.y }
+        : item,
+    );
+
+    expect(applyVisibleGridLayout(original, overlapping)).toBe(original);
   });
 });
 
