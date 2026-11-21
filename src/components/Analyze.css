@@ -290,6 +290,235 @@
   overflow-wrap: anywhere;
 }
 
+/*
+ * Desktop workspace foundation. The named widget areas intentionally mirror
+ * the future draggable/resizable units without introducing a dashboard
+ * dependency or changing the phone carousel interaction.
+ */
+@media (min-width: 1024px) and (min-height: 640px) {
+  .section-panel--analyze {
+    overflow: hidden;
+  }
+
+  .section-panel-content--analyze {
+    display: flex;
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    max-width: none;
+    padding: clamp(0.625rem, 1vw, 0.875rem) clamp(0.75rem, 1.25vw, 1.25rem)
+      5.75rem;
+    flex-direction: column;
+  }
+
+  .analyze-container {
+    width: 100%;
+    height: 100dvh;
+    min-height: 0;
+    padding: clamp(0.625rem, 1vw, 0.875rem);
+    overflow: hidden;
+  }
+
+  .section-panel-content--analyze > .analyze-container {
+    height: auto;
+    flex: 1 1 auto;
+    padding: 0;
+  }
+
+  .analyze-carousel {
+    display: block;
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+  }
+
+  .analyze-carousel-viewport {
+    display: grid;
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    grid-template-areas:
+      "weekly latest effort"
+      "pace summary effort";
+    grid-template-columns:
+      minmax(24rem, 2fr)
+      minmax(17rem, 1.3fr)
+      minmax(14rem, 1fr);
+    grid-template-rows: repeat(2, minmax(0, 1fr));
+    gap: clamp(0.625rem, 0.9vw, 0.875rem);
+  }
+
+  .analyze-widget {
+    display: block;
+    min-width: 0;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .analyze-widget--latest-run {
+    grid-area: latest;
+  }
+
+  .analyze-widget--training-summary {
+    grid-area: summary;
+  }
+
+  .analyze-widget--weekly-distance {
+    grid-area: weekly;
+  }
+
+  .analyze-widget--recent-pace {
+    grid-area: pace;
+  }
+
+  .analyze-widget--recent-effort {
+    grid-area: effort;
+  }
+
+  .analyze-widget > .latest-run-summary,
+  .analyze-widget > .analyze-summary,
+  .analyze-widget > .weekly-trend,
+  .analyze-widget > .pace-trend,
+  .analyze-widget > .effort-pattern {
+    width: 100%;
+    height: 100%;
+    max-width: none;
+    margin: 0;
+    padding: clamp(0.875rem, 1.15vw, 1.125rem);
+    overflow: auto;
+    border-radius: 1rem;
+    box-shadow: 0 1px 2px rgb(0 0 0 / 4%);
+    scrollbar-gutter: stable;
+  }
+
+  .latest-run-summary,
+  .analyze-summary,
+  .weekly-trend,
+  .pace-trend,
+  .effort-pattern {
+    display: flex;
+    min-height: 0;
+    flex-direction: column;
+  }
+
+  .latest-run-summary {
+    justify-content: center;
+  }
+
+  .latest-run-details {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: clamp(0.625rem, 1vh, 0.875rem) 0.875rem;
+    margin-top: clamp(0.875rem, 1.5vh, 1.25rem);
+  }
+
+  .latest-run-details dt {
+    font-size: 0.75rem;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+  }
+
+  .latest-run-details dd {
+    margin-top: 0.125rem;
+    font-size: clamp(0.875rem, 1.15vw, 1rem);
+  }
+
+  .analyze-summary > h2 {
+    margin-bottom: clamp(0.625rem, 1.1vh, 0.875rem);
+    font-size: clamp(1.15rem, 1.6vw, 1.45rem);
+  }
+
+  .analyze-cards {
+    width: 100%;
+    min-height: 0;
+    flex: 1 1 auto;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-rows: repeat(3, minmax(0, 1fr));
+    gap: 0.5rem;
+  }
+
+  .analyze-card {
+    display: flex;
+    min-height: 0;
+    padding: clamp(0.5rem, 0.8vw, 0.75rem);
+    flex-direction: column;
+    justify-content: center;
+    border-radius: 0.75rem;
+    box-shadow: none;
+  }
+
+  .analyze-card:last-child {
+    grid-column: 1 / -1;
+  }
+
+  .analyze-card h3 {
+    font-size: clamp(0.7rem, 0.85vw, 0.8rem);
+    line-height: 1.15;
+  }
+
+  .analyze-card p {
+    margin-top: 0.2rem;
+    font-size: clamp(1rem, 1.35vw, 1.25rem);
+    line-height: 1.1;
+  }
+
+  .weekly-trend h2,
+  .pace-trend h2,
+  .effort-pattern h2 {
+    font-size: clamp(1.05rem, 1.35vw, 1.25rem);
+  }
+
+  .weekly-trend-context,
+  .pace-trend-context,
+  .effort-pattern-context {
+    font-size: clamp(0.75rem, 0.9vw, 0.875rem);
+    line-height: 1.35;
+  }
+
+  .weekly-trend-chart,
+  .pace-trend-chart {
+    height: auto;
+    min-height: 7.5rem;
+    flex: 1 1 auto;
+    margin-top: 0.35rem;
+  }
+
+  .weekly-trend-data,
+  .pace-trend-data,
+  .effort-pattern-data {
+    flex: 0 0 auto;
+    margin-top: 0.25rem;
+  }
+
+  .weekly-trend-data summary,
+  .pace-trend-data summary,
+  .effort-pattern-data summary {
+    min-height: 2rem;
+    padding: 0.25rem 0;
+    font-size: 0.8125rem;
+  }
+
+  .effort-pattern-list {
+    min-height: 0;
+    margin-top: clamp(0.625rem, 1vh, 0.875rem);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.5rem;
+  }
+
+  .effort-pattern-item {
+    justify-content: center;
+    padding: clamp(0.5rem, 0.75vw, 0.7rem);
+  }
+
+  .effort-pattern-item time {
+    font-size: 0.75rem;
+  }
+
+  .effort-pattern-item span {
+    font-size: clamp(0.75rem, 0.85vw, 0.875rem);
+    line-height: 1.25;
+  }
+}
+
 @media (max-width: 768px) {
   .section-panel--analyze {
     overflow-y: hidden;

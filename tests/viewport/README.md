@@ -6,7 +6,9 @@ development account. It runs that workflow at the default text size and at a
 200% root text scale as an early large-text regression barrier. The Analyze
 fixture renders deterministic completed-run feedback and verifies both the
 summary cards and the weekly-distance chart's accessible data table at those
-same phone settings. The Plan fixture renders a persisted plan without Firebase
+same phone settings. Its signed-in desktop mode renders a richer eight-week
+history and verifies that all five Analyze widgets share one viewport without
+page scrolling while the phone carousel remains unchanged. The Plan fixture renders a persisted plan without Firebase
 and verifies week navigation, readable workout cards, complete workout details,
 touch targets, and overflow at phone width and 200% text. The landing
 fixture renders the signed-out production shell directly and covers both phone
