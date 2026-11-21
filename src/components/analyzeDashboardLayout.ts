@@ -247,7 +247,7 @@ export function applyVisibleGridLayout(
   gridLayout: Layout,
 ): AnalyzeDashboardLayout {
   const positions = new Map(gridLayout.map((item) => [item.i, item]));
-  return current.map((item) => {
+  const next = current.map((item) => {
     const position = positions.get(item.i);
     if (position === undefined || !item.visible) return item;
     return withDefinitionConstraints(
@@ -261,6 +261,7 @@ export function applyVisibleGridLayout(
       true,
     );
   });
+  return isValidVisibleLayout(next) ? next : current;
 }
 
 export function analyzeDashboardLayoutsEqual(

@@ -100,6 +100,18 @@ async function expectSummaryTextInsideCards(page: Page, textSizeLabel: string) {
   ).toEqual([]);
 }
 
+function boxesOverlap(
+  first: { x: number; y: number; width: number; height: number },
+  second: { x: number; y: number; width: number; height: number },
+) {
+  return !(
+    first.x + first.width <= second.x + 1 ||
+    second.x + second.width <= first.x + 1 ||
+    first.y + first.height <= second.y + 1 ||
+    second.y + second.height <= first.y + 1
+  );
+}
+
 test("presents Analyze as a contained, swipeable phone carousel", async ({
   page,
 }) => {
@@ -407,6 +419,41 @@ test("edits, restores, saves, and reloads the desktop dashboard", async ({
   await paceHandle.press("Shift+ArrowUp");
   await paceHandle.press("ArrowDown");
   await paceHandle.press("Space");
+
+  const weeklyWidget = page.getByRole("group", {
+    name: "Weekly distance widget",
+  });
+  const latestWidget = page.getByRole("group", { name: "Latest run widget" });
+  const resizeHandle = weeklyWidget.locator(".react-resizable-handle-se");
+  const [handleBounds, latestBounds] = await Promise.all([
+    resizeHandle.boundingBox(),
+    latestWidget.boundingBox(),
+  ]);
+  expect(handleBounds).not.toBeNull();
+  expect(latestBounds).not.toBeNull();
+  if (handleBounds && latestBounds) {
+    await page.mouse.move(
+      handleBounds.x + handleBounds.width / 2,
+      handleBounds.y + handleBounds.height / 2,
+    );
+    await page.mouse.down();
+    await page.mouse.move(
+      latestBounds.x + latestBounds.width / 2,
+      latestBounds.y + latestBounds.height / 2,
+      { steps: 8 },
+    );
+    await page.mouse.up();
+  }
+
+  const [weeklyAfterResize, latestAfterResize] = await Promise.all([
+    weeklyWidget.boundingBox(),
+    latestWidget.boundingBox(),
+  ]);
+  expect(weeklyAfterResize).not.toBeNull();
+  expect(latestAfterResize).not.toBeNull();
+  if (weeklyAfterResize && latestAfterResize) {
+    expect(boxesOverlap(weeklyAfterResize, latestAfterResize)).toBe(false);
+  }
 
   const weeklyHandle = page.getByRole("button", {
     name: "Move or resize Weekly distance",

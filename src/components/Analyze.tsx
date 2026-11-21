@@ -8,7 +8,7 @@ import {
   type UIEvent,
 } from "react";
 import { useReducedMotion } from "framer-motion";
-import { GridLayout, noCompactor } from "react-grid-layout";
+import { getCompactor, GridLayout } from "react-grid-layout";
 import {
   calculatePace,
   calculateRecentRunEffortPattern,
@@ -39,6 +39,7 @@ import type { AnalyzeDashboardEditorController } from "./useAnalyzeDashboardEdit
 
 const WeeklyDistanceTrend = lazy(() => import("./WeeklyDistanceTrend"));
 const RecentRunPaceTrend = lazy(() => import("./RecentRunPaceTrend"));
+const analyzeDashboardCompactor = getCompactor(null, false, true);
 
 const ANALYZE_CARD_LABELS = [
   "Latest run",
@@ -390,7 +391,7 @@ export default function Analyze({
                 enabled: dashboardEditor.isEditing,
                 handles: ["se"],
               }}
-              compactor={noCompactor}
+              compactor={analyzeDashboardCompactor}
               onLayoutChange={
                 dashboardEditor.isEditing
                   ? dashboardEditor.updateGridLayout
