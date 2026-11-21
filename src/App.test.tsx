@@ -1,6 +1,6 @@
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { findBetaBlockingAccessibilityViolations } from './test/accessibility'
 import { useEffect, useRef, type HTMLAttributes, type ReactNode } from 'react'
 import App from './App'
@@ -305,6 +305,22 @@ function renderSignedInApp() {
   return view
 }
 
+function enableDesktopDashboardEditing() {
+  vi.stubGlobal(
+    'matchMedia',
+    vi.fn().mockImplementation(() => ({
+      matches: true,
+      media: '(min-width: 1024px) and (min-height: 640px)',
+      onchange: null,
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+      dispatchEvent: vi.fn()
+    }))
+  )
+}
+
 beforeEach(() => {
   vi.clearAllMocks()
   mockedGetSignedOutSurface.mockReturnValue('public-web')
@@ -333,6 +349,11 @@ beforeEach(() => {
     })
     return unsubscribe
   })
+})
+
+afterEach(() => {
+  vi.unstubAllGlobals()
+  window.localStorage.clear()
 })
 
 describe('App authentication state', () => {
@@ -1063,6 +1084,45 @@ describe('App training sections', () => {
     expect(panel.firstElementChild).toHaveClass(
       'section-panel-content--analyze'
     )
+  })
+
+  it('protects unsaved dashboard changes when leaving Analyze', async () => {
+    enableDesktopDashboardEditing()
+    const user = userEvent.setup()
+    renderSignedInApp()
+
+    await user.click(screen.getByRole('button', { name: 'Analyze' }))
+    await user.click(screen.getByRole('button', { name: 'Edit dashboard' }))
+    await user.click(screen.getByRole('button', { name: 'Hide Latest run' }))
+
+    await user.click(screen.getByRole('button', { name: 'Plan' }))
+    expect(
+      screen.getByRole('alertdialog', { name: 'Discard dashboard changes?' })
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole('region', { name: 'Analyze Your Progress' })
+    ).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'Keep editing' }))
+    expect(screen.getByRole('button', { name: 'Save' })).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'Plan' }))
+    await user.click(screen.getByRole('button', { name: 'Discard changes' }))
+    expect(
+      screen.getByRole('region', { name: 'Plan Your Workouts' })
+    ).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'Analyze' }))
+    await user.click(screen.getByRole('button', { name: 'Edit dashboard' }))
+    await user.click(screen.getByRole('button', { name: 'Hide Latest run' }))
+    await user.click(screen.getByRole('button', { name: 'Log out' }))
+    expect(
+      screen.getByRole('alertdialog', { name: 'Discard dashboard changes?' })
+    ).toBeInTheDocument()
+    expect(mockedLogOut).not.toHaveBeenCalled()
+
+    await user.click(screen.getByRole('button', { name: 'Discard changes' }))
+    await waitFor(() => expect(mockedLogOut).toHaveBeenCalledOnce())
   })
 
   it('returns focus to the runner profile trigger after canceling setup', async () => {

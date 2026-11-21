@@ -1,5 +1,14 @@
-import { lazy, Suspense, useRef, useState, type UIEvent } from "react";
+import {
+  lazy,
+  Suspense,
+  useEffect,
+  useRef,
+  useState,
+  type ReactNode,
+  type UIEvent,
+} from "react";
 import { useReducedMotion } from "framer-motion";
+import { GridLayout, verticalCompactor } from "react-grid-layout";
 import {
   calculatePace,
   calculateRecentRunEffortPattern,
@@ -18,6 +27,15 @@ import {
 } from "../domain/training";
 import { formatPerceivedEffort } from "./perceivedEffort";
 import RecentRunEffortPattern from "./RecentRunEffortPattern";
+import { AnalyzeDashboardDrawer } from "./AnalyzeDashboardEditorChrome";
+import {
+  ANALYZE_DASHBOARD_COLUMNS,
+  ANALYZE_DASHBOARD_ROWS,
+  analyzeDashboardWidgetDefinitions,
+  visibleGridLayout,
+  type AnalyzeDashboardWidgetId,
+} from "./analyzeDashboardLayout";
+import type { AnalyzeDashboardEditorController } from "./useAnalyzeDashboardEditor";
 
 const WeeklyDistanceTrend = lazy(() => import("./WeeklyDistanceTrend"));
 const RecentRunPaceTrend = lazy(() => import("./RecentRunPaceTrend"));
@@ -36,7 +54,41 @@ type AnalyzeProps = {
   readonly distanceUnit: DistanceUnit;
   readonly timeZone?: IanaTimeZone;
   readonly now?: Date;
+  readonly dashboardEditor?: AnalyzeDashboardEditorController;
 };
+
+const widgetOrder: readonly AnalyzeDashboardWidgetId[] = [
+  "latest-run",
+  "training-summary",
+  "weekly-distance",
+  "recent-pace",
+  "recent-effort",
+];
+
+function useDashboardBounds() {
+  const frameRef = useRef<HTMLDivElement | null>(null);
+  const [bounds, setBounds] = useState(() => ({
+    width: typeof window === "undefined" ? 1024 : window.innerWidth,
+    height:
+      typeof window === "undefined" ? 600 : Math.max(400, window.innerHeight - 76),
+  }));
+
+  useEffect(() => {
+    const frame = frameRef.current;
+    if (frame === null || typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver(([entry]) => {
+      if (entry === undefined) return;
+      setBounds({
+        width: Math.max(1, entry.contentRect.width),
+        height: Math.max(1, entry.contentRect.height),
+      });
+    });
+    observer.observe(frame);
+    return () => observer.disconnect();
+  }, []);
+
+  return { frameRef, ...bounds };
+}
 
 function findLatestRun(runs: readonly CompletedRun[]): CompletedRun | undefined {
   return runs.reduce<CompletedRun | undefined>((latest, run) => {
@@ -113,11 +165,16 @@ export default function Analyze({
   distanceUnit,
   timeZone = currentTimeZone(),
   now = new Date(),
+  dashboardEditor,
 }: AnalyzeProps) {
   const reduceMotion = useReducedMotion();
   const carouselRef = useRef<HTMLDivElement | null>(null);
   const cardRefs = useRef<Array<HTMLDivElement | null>>([]);
   const [activeCardIndex, setActiveCardIndex] = useState(0);
+  const [keyboardGrabbedWidget, setKeyboardGrabbedWidget] =
+    useState<AnalyzeDashboardWidgetId | null>(null);
+  const [editorAnnouncement, setEditorAnnouncement] = useState("");
+  const dashboardBounds = useDashboardBounds();
   const currentWeekStart = mondayFor(now, timeZone);
   const analytics = calculateTrainingAnalytics(runs, currentWeekStart, distanceUnit);
   const weeklyDistance = calculateWeeklyDistanceTrend(runs, currentWeekStart, 8);
@@ -169,6 +226,236 @@ export default function Analyze({
     }
   };
 
+  const renderWidgetContent = (
+    id: AnalyzeDashboardWidgetId,
+    isCarouselCardActive: boolean,
+  ): ReactNode => {
+    if (id === "latest-run") {
+      return (
+        <section className="latest-run-summary" aria-labelledby="latest-run-heading">
+          <div>
+            <p className="latest-run-eyebrow">Latest run</p>
+            <h2 id="latest-run-heading">
+              {latestRun === undefined ? (
+                "No runs yet"
+              ) : (
+                <time dateTime={latestRun.startedAt}>{formatRunDate(latestRun)}</time>
+              )}
+            </h2>
+          </div>
+          {latestRun === undefined ? (
+            <p className="training-empty-state">
+              Log your first run to begin building your training picture.
+            </p>
+          ) : (
+            <dl className="latest-run-details">
+              <div><dt>Distance</dt><dd>{formatDistance(latestRun.distance, distanceUnit)}</dd></div>
+              <div><dt>Elapsed time</dt><dd>{formatDuration(latestRun.duration)}</dd></div>
+              <div>
+                <dt>Pace</dt>
+                <dd>{formatPace(calculatePace(latestRun.distance, latestRun.duration, distanceUnit)?.secondsPerUnit, distanceUnit)}</dd>
+              </div>
+              <div><dt>Shoe</dt><dd>{latestRunShoe?.name ?? "Not recorded"}</dd></div>
+              <div><dt>Perceived effort</dt><dd>{formatPerceivedEffort(latestRun.perceivedEffort)}</dd></div>
+              {latestRun.averageHeartRateBpm !== undefined && (
+                <div><dt>Average heart rate</dt><dd>{latestRun.averageHeartRateBpm} bpm</dd></div>
+              )}
+              {latestRun.maximumHeartRateBpm !== undefined && (
+                <div><dt>Maximum heart rate</dt><dd>{latestRun.maximumHeartRateBpm} bpm</dd></div>
+              )}
+            </dl>
+          )}
+        </section>
+      );
+    }
+
+    if (id === "training-summary") {
+      return (
+        <section className="analyze-summary" aria-labelledby="analyze-summary-heading">
+          <p className="analyze-summary-eyebrow">At a glance</p>
+          <h2 id="analyze-summary-heading">Training summary</h2>
+          <div className="analyze-cards">
+            <div className="analyze-card"><h3>Total Distance</h3><p>{formatDistance(analytics.totalDistance, distanceUnit)}</p></div>
+            <div className="analyze-card"><h3>This Week</h3><p>{formatDistance(analytics.weeklyDistance, distanceUnit)}</p></div>
+            <div className="analyze-card"><h3>Average Pace</h3><p>{formatPace(analytics.averagePace?.secondsPerUnit, distanceUnit)}</p></div>
+            <div className="analyze-card"><h3>Total Runs</h3><p>{analytics.totalRuns}</p></div>
+            <div className="analyze-card"><h3>Runs This Week</h3><p>{analytics.runsThisWeek}</p></div>
+          </div>
+        </section>
+      );
+    }
+
+    if (id === "weekly-distance") {
+      return (
+        <Suspense fallback={<p className="training-status" role="status">Loading weekly distance chart...</p>}>
+          <WeeklyDistanceTrend
+            buckets={weeklyDistance}
+            distanceUnit={distanceUnit}
+            isCarouselCardActive={isCarouselCardActive}
+          />
+        </Suspense>
+      );
+    }
+
+    if (id === "recent-pace") {
+      return (
+        <Suspense fallback={<p className="training-status" role="status">Loading recent pace chart...</p>}>
+          <RecentRunPaceTrend
+            points={recentPace}
+            distanceUnit={distanceUnit}
+            isCarouselCardActive={isCarouselCardActive}
+          />
+        </Suspense>
+      );
+    }
+
+    return <RecentRunEffortPattern points={recentEffort} />;
+  };
+
+  const handleWidgetKeyboard = (
+    event: React.KeyboardEvent<HTMLButtonElement>,
+    id: AnalyzeDashboardWidgetId,
+  ) => {
+    if (dashboardEditor === undefined) return;
+    if (event.key === " " || event.key === "Enter") {
+      event.preventDefault();
+      const nextGrabbed = keyboardGrabbedWidget === id ? null : id;
+      setKeyboardGrabbedWidget(nextGrabbed);
+      setEditorAnnouncement(
+        nextGrabbed === id
+          ? `${analyzeDashboardWidgetDefinitions[id].label} picked up. Use arrow keys to move it or Shift plus arrow keys to resize it.`
+          : `${analyzeDashboardWidgetDefinitions[id].label} placed.`,
+      );
+      return;
+    }
+    if (event.key === "Escape" && keyboardGrabbedWidget === id) {
+      event.preventDefault();
+      setKeyboardGrabbedWidget(null);
+      setEditorAnnouncement(`${analyzeDashboardWidgetDefinitions[id].label} placed.`);
+      return;
+    }
+    if (keyboardGrabbedWidget !== id || !event.key.startsWith("Arrow")) return;
+
+    event.preventDefault();
+    const direction = event.key.slice(5).toLowerCase() as
+      | "left"
+      | "right"
+      | "up"
+      | "down";
+    const mode = event.shiftKey ? "resize" : "move";
+    const updated = dashboardEditor.updateWidgetFromKeyboard(id, direction, mode);
+    setEditorAnnouncement(
+      updated
+        ? `${analyzeDashboardWidgetDefinitions[id].label} ${mode === "move" ? "moved" : "resized"} ${direction}.`
+        : `${analyzeDashboardWidgetDefinitions[id].label} cannot ${mode} ${direction} from here.`,
+    );
+  };
+
+  if (dashboardEditor?.isAvailable) {
+    const gap = Math.max(8, Math.min(14, dashboardBounds.width * 0.009));
+    const rowHeight = Math.max(
+      18,
+      (dashboardBounds.height - gap * (ANALYZE_DASHBOARD_ROWS - 1)) /
+        ANALYZE_DASHBOARD_ROWS,
+    );
+    const layout = visibleGridLayout(dashboardEditor.displayedLayout);
+
+    return (
+      <div className="analyze-container analyze-container--desktop">
+        <section className="analyze-carousel" aria-label="Training analysis">
+          <div
+            ref={dashboardBounds.frameRef}
+            className={`analyze-desktop-grid-frame${dashboardEditor.isEditing ? " analyze-desktop-grid-frame--editing" : ""}`}
+          >
+            <GridLayout
+              width={dashboardBounds.width}
+              layout={layout}
+              autoSize={false}
+              className="analyze-desktop-grid"
+              style={{ height: dashboardBounds.height }}
+              gridConfig={{
+                cols: ANALYZE_DASHBOARD_COLUMNS,
+                rowHeight,
+                margin: [gap, gap],
+                containerPadding: [0, 0],
+                maxRows: ANALYZE_DASHBOARD_ROWS,
+              }}
+              dragConfig={{
+                enabled: dashboardEditor.isEditing,
+                bounded: true,
+                handle: ".analyze-widget-drag-handle",
+                cancel: ".analyze-widget-hide",
+              }}
+              resizeConfig={{
+                enabled: dashboardEditor.isEditing,
+                handles: ["se"],
+              }}
+              compactor={verticalCompactor}
+              onLayoutChange={
+                dashboardEditor.isEditing
+                  ? dashboardEditor.updateGridLayout
+                  : undefined
+              }
+            >
+              {dashboardEditor.displayedLayout
+                .filter((item) => item.visible)
+                .map((item) => {
+                  const definition = analyzeDashboardWidgetDefinitions[item.i];
+                  return (
+                    <div
+                      key={item.i}
+                      className={`analyze-widget analyze-widget-shell analyze-widget--${item.i}`}
+                      role="group"
+                      aria-label={`${definition.label} widget`}
+                    >
+                      {dashboardEditor.isEditing && (
+                        <div className="analyze-widget-edit-bar">
+                          <button
+                            type="button"
+                            className="analyze-widget-drag-handle"
+                            aria-pressed={keyboardGrabbedWidget === item.i}
+                            aria-label={`Move or resize ${definition.label}`}
+                            onKeyDown={(event) => handleWidgetKeyboard(event, item.i)}
+                          >
+                            <span aria-hidden="true">⠿</span>
+                            <span>{definition.label}</span>
+                          </button>
+                          <button
+                            type="button"
+                            className="analyze-widget-hide"
+                            aria-label={`Hide ${definition.label}`}
+                            onClick={() => {
+                              dashboardEditor.hideWidget(item.i);
+                              window.requestAnimationFrame(() => {
+                                document
+                                  .querySelector<HTMLButtonElement>(
+                                    "#analyze-add-widgets-button",
+                                  )
+                                  ?.focus();
+                              });
+                            }}
+                          >
+                            Hide
+                          </button>
+                        </div>
+                      )}
+                      <div className="analyze-widget-content">
+                        {renderWidgetContent(item.i, true)}
+                      </div>
+                    </div>
+                  );
+                })}
+            </GridLayout>
+          </div>
+        </section>
+        <AnalyzeDashboardDrawer editor={dashboardEditor} />
+        <p className="visually-hidden" role="status" aria-live="polite">
+          {editorAnnouncement || dashboardEditor.message}
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div className="analyze-container">
       <section className="analyze-carousel" aria-label="Training analysis">
@@ -177,182 +464,19 @@ export default function Analyze({
           ref={carouselRef}
           onScroll={updateActiveCard}
         >
-          <div
-            className="analyze-slide analyze-widget analyze-widget--latest-run"
-            role="group"
-            aria-label="1 of 5: Latest run"
-            ref={(element) => {
-              cardRefs.current[0] = element;
-            }}
-          >
-            <section
-              className="latest-run-summary"
-              aria-labelledby="latest-run-heading"
+          {widgetOrder.map((id, index) => (
+            <div
+              className={`analyze-slide analyze-widget analyze-widget--${id}`}
+              role="group"
+              aria-label={`${index + 1} of 5: ${ANALYZE_CARD_LABELS[index]}`}
+              ref={(element) => {
+                cardRefs.current[index] = element;
+              }}
+              key={id}
             >
-              <div>
-                <p className="latest-run-eyebrow">Latest run</p>
-                <h2 id="latest-run-heading">
-                  {latestRun === undefined ? (
-                    "No runs yet"
-                  ) : (
-                    <time dateTime={latestRun.startedAt}>
-                      {formatRunDate(latestRun)}
-                    </time>
-                  )}
-                </h2>
-              </div>
-              {latestRun === undefined ? (
-                <p className="training-empty-state">
-                  Log your first run to begin building your training picture.
-                </p>
-              ) : (
-                <dl className="latest-run-details">
-                  <div>
-                    <dt>Distance</dt>
-                    <dd>{formatDistance(latestRun.distance, distanceUnit)}</dd>
-                  </div>
-                  <div>
-                    <dt>Elapsed time</dt>
-                    <dd>{formatDuration(latestRun.duration)}</dd>
-                  </div>
-                  <div>
-                    <dt>Pace</dt>
-                    <dd>
-                      {formatPace(
-                        calculatePace(
-                          latestRun.distance,
-                          latestRun.duration,
-                          distanceUnit,
-                        )?.secondsPerUnit,
-                        distanceUnit,
-                      )}
-                    </dd>
-                  </div>
-                  <div>
-                    <dt>Shoe</dt>
-                    <dd>{latestRunShoe?.name ?? "Not recorded"}</dd>
-                  </div>
-                  <div>
-                    <dt>Perceived effort</dt>
-                    <dd>{formatPerceivedEffort(latestRun.perceivedEffort)}</dd>
-                  </div>
-                  {latestRun.averageHeartRateBpm !== undefined && (
-                    <div>
-                      <dt>Average heart rate</dt>
-                      <dd>{latestRun.averageHeartRateBpm} bpm</dd>
-                    </div>
-                  )}
-                  {latestRun.maximumHeartRateBpm !== undefined && (
-                    <div>
-                      <dt>Maximum heart rate</dt>
-                      <dd>{latestRun.maximumHeartRateBpm} bpm</dd>
-                    </div>
-                  )}
-                </dl>
-              )}
-            </section>
-          </div>
-
-          <div
-            className="analyze-slide analyze-widget analyze-widget--training-summary"
-            role="group"
-            aria-label="2 of 5: Training summary"
-            ref={(element) => {
-              cardRefs.current[1] = element;
-            }}
-          >
-            <section
-              className="analyze-summary"
-              aria-labelledby="analyze-summary-heading"
-            >
-              <p className="analyze-summary-eyebrow">At a glance</p>
-              <h2 id="analyze-summary-heading">Training summary</h2>
-              <div className="analyze-cards">
-                <div className="analyze-card">
-                  <h3>Total Distance</h3>
-                  <p>{formatDistance(analytics.totalDistance, distanceUnit)}</p>
-                </div>
-                <div className="analyze-card">
-                  <h3>This Week</h3>
-                  <p>{formatDistance(analytics.weeklyDistance, distanceUnit)}</p>
-                </div>
-                <div className="analyze-card">
-                  <h3>Average Pace</h3>
-                  <p>
-                    {formatPace(
-                      analytics.averagePace?.secondsPerUnit,
-                      distanceUnit,
-                    )}
-                  </p>
-                </div>
-                <div className="analyze-card">
-                  <h3>Total Runs</h3>
-                  <p>{analytics.totalRuns}</p>
-                </div>
-                <div className="analyze-card">
-                  <h3>Runs This Week</h3>
-                  <p>{analytics.runsThisWeek}</p>
-                </div>
-              </div>
-            </section>
-          </div>
-
-          <div
-            className="analyze-slide analyze-widget analyze-widget--weekly-distance"
-            role="group"
-            aria-label="3 of 5: Weekly distance"
-            ref={(element) => {
-              cardRefs.current[2] = element;
-            }}
-          >
-            <Suspense
-              fallback={
-                <p className="training-status" role="status">
-                  Loading weekly distance chart...
-                </p>
-              }
-            >
-              <WeeklyDistanceTrend
-                buckets={weeklyDistance}
-                distanceUnit={distanceUnit}
-                isCarouselCardActive={activeCardIndex === 2}
-              />
-            </Suspense>
-          </div>
-
-          <div
-            className="analyze-slide analyze-widget analyze-widget--recent-pace"
-            role="group"
-            aria-label="4 of 5: Recent pace"
-            ref={(element) => {
-              cardRefs.current[3] = element;
-            }}
-          >
-            <Suspense
-              fallback={
-                <p className="training-status" role="status">
-                  Loading recent pace chart...
-                </p>
-              }
-            >
-              <RecentRunPaceTrend
-                points={recentPace}
-                distanceUnit={distanceUnit}
-                isCarouselCardActive={activeCardIndex === 3}
-              />
-            </Suspense>
-          </div>
-
-          <div
-            className="analyze-slide analyze-widget analyze-widget--recent-effort"
-            role="group"
-            aria-label="5 of 5: Recent effort"
-            ref={(element) => {
-              cardRefs.current[4] = element;
-            }}
-          >
-            <RecentRunEffortPattern points={recentEffort} />
-          </div>
+              {renderWidgetContent(id, activeCardIndex === index)}
+            </div>
+          ))}
         </div>
 
         <div className="analyze-carousel-controls">

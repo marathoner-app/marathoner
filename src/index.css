@@ -6,6 +6,7 @@
  * visible without hiding the cascade order.
  */
 @import "./styles/global.css";
+@import "react-grid-layout/css/styles.css";
 @import "./styles/app-shell.css";
 @import "./components/Authentication.css";
 @import "./components/PublicLandingPage.css";

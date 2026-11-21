@@ -1,8 +1,9 @@
-import type { Ref } from "react";
+import type { ReactNode, Ref } from "react";
 
 type SignedInAppHeaderProps = {
   email: string | null;
   accountSettingsTriggerRef?: Ref<HTMLButtonElement>;
+  contextualActions?: ReactNode;
   onOpenAccountSettings: () => void;
   onLogout: () => void;
 };
@@ -37,6 +38,7 @@ function LogoutIcon() {
 export default function SignedInAppHeader({
   email,
   accountSettingsTriggerRef,
+  contextualActions,
   onOpenAccountSettings,
   onLogout,
 }: SignedInAppHeaderProps) {
@@ -54,6 +56,7 @@ export default function SignedInAppHeader({
           Signed in as {email ?? "Marathoner user"}
         </span>
       </p>
+      {contextualActions}
       <nav className="session-actions" aria-label="Account actions">
         <button
           ref={accountSettingsTriggerRef}

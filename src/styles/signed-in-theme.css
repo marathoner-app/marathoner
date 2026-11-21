@@ -59,6 +59,49 @@
   gap: 0.5rem;
 }
 
+.analyze-editor-header-actions {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.2rem;
+  border: 1px solid var(--app-border);
+  border-radius: var(--app-radius-medium);
+  background: rgb(255 255 255 / 72%);
+}
+
+.analyze-editor-header-actions button {
+  width: auto;
+  min-height: 2.35rem;
+  padding: 0.45rem 0.7rem;
+  border: 0;
+  border-radius: var(--app-radius-small);
+  background: transparent;
+  box-shadow: none;
+  color: var(--app-ink);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.analyze-editor-header-actions button:hover {
+  background: var(--app-subtle-surface);
+}
+
+.analyze-editor-header-actions .analyze-editor-save {
+  background: var(--app-accent);
+  color: white;
+}
+
+.analyze-editor-header-actions .analyze-editor-save:hover {
+  background: var(--app-accent-strong, var(--app-accent));
+}
+
+.analyze-editor-header-actions button:disabled {
+  cursor: default;
+  opacity: 0.45;
+}
+
 .account-settings-btn,
 .logout-btn,
 .runner-profile-entry button,

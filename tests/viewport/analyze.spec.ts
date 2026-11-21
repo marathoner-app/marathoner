@@ -351,11 +351,8 @@ test("keeps Analyze as an all-at-once desktop dashboard", async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 720 });
   await page.goto("tests/viewport/analyze.html?mode=dashboard&shell=1");
 
-  await expect(page.locator(".analyze-carousel-viewport")).toHaveCSS(
-    "display",
-    "grid",
-  );
-  await expect(page.locator(".analyze-carousel-controls")).toBeHidden();
+  await expect(page.locator(".analyze-desktop-grid")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Edit dashboard" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Oct 22, 2026" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Training summary" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Weekly Distance" })).toBeVisible();
@@ -373,4 +370,47 @@ test("keeps Analyze as an all-at-once desktop dashboard", async ({ page }) => {
     "Analyze should fit the desktop viewport without page scrolling",
   ).toBeLessThanOrEqual(frame.viewportHeight);
   await expectNoHorizontalOverflow(page, "Analyze", "on the desktop dashboard");
+});
+
+test("edits, restores, saves, and reloads the desktop dashboard", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await page.goto("tests/viewport/analyze.html?mode=dashboard&shell=1");
+  await page.evaluate(() => window.localStorage.clear());
+  await page.reload();
+
+  await page.getByRole("button", { name: "Edit dashboard" }).click();
+  await expect(page.getByRole("button", { name: "Add widgets" })).toBeVisible();
+  await expect(page.getByRole("button", { name: /^Move or resize/ })).toHaveCount(5);
+
+  const weeklyHandle = page.getByRole("button", {
+    name: "Move or resize Weekly distance",
+  });
+  await weeklyHandle.focus();
+  await weeklyHandle.press("Space");
+  await weeklyHandle.press("ArrowRight");
+  await weeklyHandle.press("Shift+ArrowUp");
+  await weeklyHandle.press("Space");
+
+  await page.getByRole("button", { name: "Hide Latest run" }).click();
+  await expect(page.getByRole("group", { name: "Latest run widget" })).toHaveCount(0);
+  await page.getByRole("button", { name: "Add widgets" }).click();
+  const drawer = page.getByRole("complementary", { name: "Add widgets" });
+  await expect(drawer).toBeVisible();
+  await drawer.getByRole("button", { name: "Add", exact: true }).click();
+  await expect(page.getByRole("group", { name: "Latest run widget" })).toBeVisible();
+
+  await page.getByRole("button", { name: "Save" }).click();
+  await expect(page.getByRole("button", { name: "Edit dashboard" })).toBeVisible();
+  const saved = await page.evaluate(() =>
+    window.localStorage.getItem(
+      "marathoner.analyze-dashboard-layout.v1:viewport-runner",
+    ),
+  );
+  expect(saved).not.toBeNull();
+
+  await page.reload();
+  await expect(page.getByRole("group", { name: "Weekly distance widget" })).toBeVisible();
+  await expect(page.locator(".analyze-widget")).toHaveCount(5);
 });
