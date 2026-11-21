@@ -178,7 +178,7 @@ export default function Analyze({
           onScroll={updateActiveCard}
         >
           <div
-            className="analyze-slide"
+            className="analyze-slide analyze-widget analyze-widget--latest-run"
             role="group"
             aria-label="1 of 5: Latest run"
             ref={(element) => {
@@ -254,7 +254,7 @@ export default function Analyze({
           </div>
 
           <div
-            className="analyze-slide"
+            className="analyze-slide analyze-widget analyze-widget--training-summary"
             role="group"
             aria-label="2 of 5: Training summary"
             ref={(element) => {
@@ -298,7 +298,7 @@ export default function Analyze({
           </div>
 
           <div
-            className="analyze-slide"
+            className="analyze-slide analyze-widget analyze-widget--weekly-distance"
             role="group"
             aria-label="3 of 5: Weekly distance"
             ref={(element) => {
@@ -321,7 +321,7 @@ export default function Analyze({
           </div>
 
           <div
-            className="analyze-slide"
+            className="analyze-slide analyze-widget analyze-widget--recent-pace"
             role="group"
             aria-label="4 of 5: Recent pace"
             ref={(element) => {
@@ -344,7 +344,7 @@ export default function Analyze({
           </div>
 
           <div
-            className="analyze-slide"
+            className="analyze-slide analyze-widget analyze-widget--recent-effort"
             role="group"
             aria-label="5 of 5: Recent effort"
             ref={(element) => {

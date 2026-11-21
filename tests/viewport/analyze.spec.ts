@@ -348,12 +348,12 @@ test("synchronizes large-text carousel state after a horizontal scroll", async (
 });
 
 test("keeps Analyze as an all-at-once desktop dashboard", async ({ page }) => {
-  await page.setViewportSize({ width: 1280, height: 900 });
-  await page.goto("tests/viewport/analyze.html");
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await page.goto("tests/viewport/analyze.html?mode=dashboard&shell=1");
 
   await expect(page.locator(".analyze-carousel-viewport")).toHaveCSS(
     "display",
-    "contents",
+    "grid",
   );
   await expect(page.locator(".analyze-carousel-controls")).toBeHidden();
   await expect(page.getByRole("heading", { name: "Oct 22, 2026" })).toBeVisible();
@@ -361,5 +361,16 @@ test("keeps Analyze as an all-at-once desktop dashboard", async ({ page }) => {
   await expect(page.getByRole("heading", { name: "Weekly Distance" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Recent Pace" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Recent Effort" })).toBeVisible();
+  await expect(page.locator(".analyze-widget")).toHaveCount(5);
+  await expect(page.getByRole("navigation", { name: "Training sections" })).toBeVisible();
+
+  const frame = await page.evaluate(() => ({
+    documentHeight: document.documentElement.scrollHeight,
+    viewportHeight: window.innerHeight,
+  }));
+  expect(
+    frame.documentHeight,
+    "Analyze should fit the desktop viewport without page scrolling",
+  ).toBeLessThanOrEqual(frame.viewportHeight);
   await expectNoHorizontalOverflow(page, "Analyze", "on the desktop dashboard");
 });
