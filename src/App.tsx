@@ -41,6 +41,14 @@ import RecommendationDecisionSurface from "./components/RecommendationDecisionSu
 import ClosedBetaAdaptationSurface from "./components/ClosedBetaAdaptationSurface";
 import TrainingSectionNavigation from "./components/TrainingSectionNavigation";
 import SignedInAppHeader from "./components/SignedInAppHeader";
+import {
+  AnalyzeDashboardDiscardDialog,
+  AnalyzeDashboardHeaderControls,
+} from "./components/AnalyzeDashboardEditorChrome";
+import {
+  useAnalyzeDashboardEditor,
+  type AnalyzeDashboardEditorController,
+} from "./components/useAnalyzeDashboardEditor";
 import TrainingStartupStatus from "./components/TrainingStartupStatus";
 import SignedInStartupScreen from "./components/SignedInStartupScreen";
 import {
@@ -109,6 +117,15 @@ const sections = trainingSections;
 
 type Section = TrainingSection;
 
+type PendingAnalyzeExit =
+  | { readonly destination: "home" }
+  | {
+      readonly destination: "section";
+      readonly section: Section;
+      readonly initialFocusTarget: ShoeTrackerInitialFocusTarget | null;
+    }
+  | { readonly destination: "logout" };
+
 function App() {
   const auth = useAuth();
   const signedOutSurface = getSignedOutSurface();
@@ -125,6 +142,9 @@ function App() {
     [signedInUserId],
   );
   const [activeSection, setActiveSection] = useState<Section | null>(null);
+  const analyzeDashboardEditor = useAnalyzeDashboardEditor(signedInUserId);
+  const [pendingAnalyzeExit, setPendingAnalyzeExit] =
+    useState<PendingAnalyzeExit | null>(null);
   const [trackInitialFocusTarget, setTrackInitialFocusTarget] =
     useState<ShoeTrackerInitialFocusTarget | null>(null);
   const [logoutPending, setLogoutPending] = useState(false);
@@ -157,6 +177,7 @@ function App() {
       setLogoutPending(false);
       setLogoutError(null);
       setAccountSettingsOpen(false);
+      setPendingAnalyzeExit(null);
       if (deletionReceipt === null) setUnresolvedDeletionCommandId(null);
     }
   }, [auth.status, deletionReceipt]);
@@ -230,7 +251,7 @@ function App() {
     };
   }, [auth, deletionReceipt, deletionSignOutAttempt]);
 
-  const openSection = (
+  const performOpenSection = (
     section: Section,
     initialFocusTarget: ShoeTrackerInitialFocusTarget | null = null,
   ) => {
@@ -247,18 +268,71 @@ function App() {
     setTrackInitialFocusTarget(null);
   };
 
-  const selectHome = () => {
+  const performSelectHome = () => {
     if (activeSection !== null) {
       restoreHomeFocus.current = true;
     }
     closeSection();
   };
 
-  const handleLogout = () => {
+  const performLogout = () => {
     setLogoutError(null);
     void clearInternalPlanRehearsalSession();
     clearBrowserPendingRunSave();
     setLogoutPending(true);
+  };
+
+  const requestAnalyzeExit = (exit: PendingAnalyzeExit): boolean => {
+    if (activeSection !== "analyze" || !analyzeDashboardEditor.isEditing) {
+      return false;
+    }
+    if (analyzeDashboardEditor.isDirty) {
+      setPendingAnalyzeExit(exit);
+      return true;
+    }
+    analyzeDashboardEditor.cancelEditing();
+    return false;
+  };
+
+  const openSection = (
+    section: Section,
+    initialFocusTarget: ShoeTrackerInitialFocusTarget | null = null,
+  ) => {
+    if (
+      section !== "analyze" &&
+      requestAnalyzeExit({
+        destination: "section",
+        section,
+        initialFocusTarget,
+      })
+    ) {
+      return;
+    }
+    performOpenSection(section, initialFocusTarget);
+  };
+
+  const selectHome = () => {
+    if (requestAnalyzeExit({ destination: "home" })) return;
+    performSelectHome();
+  };
+
+  const handleLogout = () => {
+    if (requestAnalyzeExit({ destination: "logout" })) return;
+    performLogout();
+  };
+
+  const discardAnalyzeChangesAndExit = () => {
+    const exit = pendingAnalyzeExit;
+    setPendingAnalyzeExit(null);
+    analyzeDashboardEditor.cancelEditing();
+    if (exit === null) return;
+    if (exit.destination === "home") {
+      performSelectHome();
+    } else if (exit.destination === "section") {
+      performOpenSection(exit.section, exit.initialFocusTarget);
+    } else {
+      performLogout();
+    }
   };
 
   const activeSectionDetails = sections.find(({ id }) => id === activeSection);
@@ -280,6 +354,11 @@ function App() {
         <SignedInAppHeader
           email={auth.user.email}
           accountSettingsTriggerRef={accountSettingsTriggerRef}
+          contextualActions={
+            activeSection === "analyze" ? (
+              <AnalyzeDashboardHeaderControls editor={analyzeDashboardEditor} />
+            ) : null
+          }
           onOpenAccountSettings={() => setAccountSettingsOpen(true)}
           onLogout={handleLogout}
         />
@@ -374,6 +453,7 @@ function App() {
                 activeSection={activeSection}
                 activeSectionDetails={activeSectionDetails}
                 trackInitialFocusTarget={trackInitialFocusTarget}
+                analyzeDashboardEditor={analyzeDashboardEditor}
                 chrome={signedInChrome}
                 onOpenSection={openSection}
                 onSelectHome={selectHome}
@@ -402,6 +482,13 @@ function App() {
             onUnresolvedCommandChange={setUnresolvedDeletionCommandId}
           />
         )}
+
+      {pendingAnalyzeExit && (
+        <AnalyzeDashboardDiscardDialog
+          onKeepEditing={() => setPendingAnalyzeExit(null)}
+          onDiscard={discardAnalyzeChangesAndExit}
+        />
+      )}
     </main>
   );
 }
@@ -411,6 +498,7 @@ type AuthenticatedExperienceProps = {
   activeSection: Section | null;
   activeSectionDetails: (typeof sections)[number] | undefined;
   trackInitialFocusTarget: ShoeTrackerInitialFocusTarget | null;
+  analyzeDashboardEditor: AnalyzeDashboardEditorController;
   chrome: ReactNode;
   onOpenSection: (
     section: Section,
@@ -425,6 +513,7 @@ function AuthenticatedExperience({
   activeSection,
   activeSectionDetails,
   trackInitialFocusTarget,
+  analyzeDashboardEditor,
   chrome,
   onOpenSection,
   onSelectHome,
@@ -833,6 +922,7 @@ function AuthenticatedExperience({
               sessionPlanProjection={sessionPlanProjection}
               isSessionAdaptationActive={isSessionAdaptationActive}
               trackInitialFocusTarget={trackInitialFocusTarget}
+              analyzeDashboardEditor={analyzeDashboardEditor}
               startupDelayElapsed={startupDelayElapsed}
               onEditRunnerProfile={editRunnerProfile}
             />
@@ -849,6 +939,7 @@ type SectionContentProps = {
   sessionPlanProjection: GeneratedPlanEntityProjection | null;
   isSessionAdaptationActive: boolean;
   trackInitialFocusTarget: ShoeTrackerInitialFocusTarget | null;
+  analyzeDashboardEditor: AnalyzeDashboardEditorController;
   startupDelayElapsed: boolean;
   onEditRunnerProfile: () => void;
 };
@@ -859,6 +950,7 @@ function SectionContent({
   sessionPlanProjection,
   isSessionAdaptationActive,
   trackInitialFocusTarget,
+  analyzeDashboardEditor,
   startupDelayElapsed,
   onEditRunnerProfile,
 }: SectionContentProps) {
@@ -993,6 +1085,7 @@ function SectionContent({
           shoes={training.shoes}
           distanceUnit={training.profile?.preferredDistanceUnit ?? "mile"}
           timeZone={training.profile?.timeZone}
+          dashboardEditor={analyzeDashboardEditor}
         />
       )}
     </div>

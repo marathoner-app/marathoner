@@ -2,7 +2,9 @@ import { createRoot } from "react-dom/client";
 import "../../src/index.css";
 import Analyze from "../../src/components/Analyze";
 import SignedInAppHeader from "../../src/components/SignedInAppHeader";
+import { AnalyzeDashboardHeaderControls } from "../../src/components/AnalyzeDashboardEditorChrome";
 import TrainingSectionNavigation from "../../src/components/TrainingSectionNavigation";
+import { useAnalyzeDashboardEditor } from "../../src/components/useAnalyzeDashboardEditor";
 import {
   createCompletedRunId,
   createDistanceMeters,
@@ -146,23 +148,25 @@ const dashboardShoe: Shoe = {
 const search = new URLSearchParams(window.location.search);
 const useDashboardData = search.get("mode") === "dashboard";
 const useSignedInShell = search.get("shell") === "1";
-const analyze = (
-  <Analyze
-    runs={useDashboardData ? dashboardRuns : [laterRun, run]}
-    shoes={useDashboardData ? [dashboardShoe] : []}
-    distanceUnit="kilometer"
-    timeZone={timeZone}
-    now={new Date("2026-10-23T18:00:00Z")}
-  />
-);
 
-const root = document.querySelector("#root");
-if (root === null) throw new Error("Analyze viewport fixture root was not found.");
-createRoot(root).render(
-  useSignedInShell ? (
+export function AnalyzeFixture() {
+  const editor = useAnalyzeDashboardEditor("viewport-runner");
+  const analyze = (
+    <Analyze
+      runs={useDashboardData ? dashboardRuns : [laterRun, run]}
+      shoes={useDashboardData ? [dashboardShoe] : []}
+      distanceUnit="kilometer"
+      timeZone={timeZone}
+      now={new Date("2026-10-23T18:00:00Z")}
+      dashboardEditor={editor}
+    />
+  );
+
+  return useSignedInShell ? (
     <main className="main">
       <SignedInAppHeader
         email="runner@example.com"
+        contextualActions={<AnalyzeDashboardHeaderControls editor={editor} />}
         onOpenAccountSettings={() => undefined}
         onLogout={() => undefined}
       />
@@ -182,5 +186,11 @@ createRoot(root).render(
     </main>
   ) : (
     analyze
-  ),
+  );
+}
+
+const root = document.querySelector("#root");
+if (root === null) throw new Error("Analyze viewport fixture root was not found.");
+createRoot(root).render(
+  <AnalyzeFixture />,
 );
