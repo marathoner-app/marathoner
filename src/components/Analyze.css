@@ -358,8 +358,9 @@
     height: 100%;
   }
 
-  .analyze-widget-shell {
+  .analyze-widget.analyze-widget-shell {
     display: flex;
+    height: 100%;
     min-width: 0;
     min-height: 0;
     flex-direction: column;
@@ -431,9 +432,11 @@
   }
 
   .analyze-widget-content {
+    display: flex;
     min-width: 0;
     min-height: 0;
     flex: 1 1 auto;
+    flex-direction: column;
     overflow: hidden;
   }
 
@@ -447,6 +450,8 @@
     max-width: none;
     margin: 0;
     padding: clamp(0.75rem, 1vw, 1.125rem);
+    flex: 1 1 auto;
+    min-height: 0;
     overflow: auto;
     border-radius: 1rem;
     box-shadow: 0 1px 2px rgb(0 0 0 / 4%);

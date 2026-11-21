@@ -8,7 +8,7 @@ import {
   type UIEvent,
 } from "react";
 import { useReducedMotion } from "framer-motion";
-import { GridLayout, verticalCompactor } from "react-grid-layout";
+import { GridLayout, noCompactor } from "react-grid-layout";
 import {
   calculatePace,
   calculateRecentRunEffortPattern,
@@ -390,7 +390,7 @@ export default function Analyze({
                 enabled: dashboardEditor.isEditing,
                 handles: ["se"],
               }}
-              compactor={verticalCompactor}
+              compactor={noCompactor}
               onLayoutChange={
                 dashboardEditor.isEditing
                   ? dashboardEditor.updateGridLayout
