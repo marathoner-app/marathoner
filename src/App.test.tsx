@@ -945,10 +945,7 @@ describe('App training sections', () => {
     renderSignedInApp()
 
     expect(
-      screen.getByRole('heading', { level: 1, name: 'Marathoner.' })
-    ).toBeInTheDocument()
-    expect(
-      screen.getByText('Welcome to your training companion')
+      screen.getByRole('heading', { level: 1, name: 'Home' })
     ).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Home' })).toHaveAttribute(
       'aria-current',
@@ -1285,7 +1282,7 @@ describe('App training sections', () => {
     expect(
       screen.getByRole('heading', { name: 'Easy run' })
     ).toBeInTheDocument()
-    expect(screen.getByText('3.1 mi')).toBeInTheDocument()
+    expect(screen.getByRole('region', { name: 'Easy run' })).toHaveTextContent('3.1 mi')
 
     await user.click(screen.getByRole('button', { name: 'Open Plan' }))
 
@@ -1317,7 +1314,7 @@ describe('App training sections', () => {
         'data-motion-duration'
       )
       expect(
-        screen.queryByRole('heading', { level: 1, name: 'Marathoner.' })
+        screen.queryByRole('heading', { level: 1, name: 'Home' })
       ).not.toBeInTheDocument()
 
       expect(
@@ -1329,7 +1326,7 @@ describe('App training sections', () => {
       await user.click(screen.getByRole('button', { name: 'Home' }))
 
       expect(
-        screen.getByRole('heading', { level: 1, name: 'Marathoner.' })
+        screen.getByRole('heading', { level: 1, name: 'Home' })
       ).toBeInTheDocument()
       expect(
         screen.queryByRole('heading', { level: 1, name: sectionHeading })
@@ -1389,7 +1386,7 @@ describe('App training sections', () => {
     expect(currentHomeTrigger).toHaveAttribute('aria-current', 'page')
     expect(currentHomeTrigger).toHaveFocus()
     expect(
-      screen.getByRole('heading', { name: 'Marathoner.' })
+      screen.getByRole('heading', { name: 'Home' })
     ).toBeInTheDocument()
     expect(
       screen.queryByRole('region', { name: 'Track Your Runs' })

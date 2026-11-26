@@ -52,6 +52,7 @@ export default function SignedInAppHeader({
           width="32"
           height="32"
         />
+        <span className="session-wordmark marathoner-wordmark">Marathoner.</span>
         <span className="session-email">
           Signed in as {email ?? "Marathoner user"}
         </span>

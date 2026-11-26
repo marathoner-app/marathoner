@@ -33,7 +33,7 @@
   width: 100%;
   padding: clamp(0.85rem, 2vw, 1.25rem) clamp(1rem, 3vw, 2rem);
   border-bottom: 1px solid var(--app-border);
-  background: var(--app-banner);
+  background: var(--app-surface);
   line-height: 1.2;
 }
 
@@ -46,14 +46,20 @@
 .logout-btn {
   box-sizing: border-box;
   width: auto;
-  padding: 10px 20px;
-  border: solid;
-  border-radius: 5px;
+  min-height: 2.75rem;
+  padding: 0.65rem 1rem;
+  border: 1px solid var(--app-border);
+  border-radius: var(--app-radius-small);
   background-color: var(--app-surface);
-  box-shadow: 0 0.4rem 1rem rgb(15 23 42 / 8%);
   color: var(--app-ink);
-  font-size: 1rem;
-  font-weight: 600;
+  font-size: 0.875rem;
+  font-weight: 650;
+}
+
+.logout-btn:hover {
+  border-color: var(--app-border-strong);
+  background: var(--app-subtle-surface);
+  color: var(--app-ink);
 }
 
 .auth-message {
@@ -63,7 +69,6 @@
   border: 1px solid var(--app-border);
   border-radius: var(--app-radius-medium);
   background: var(--app-subtle-surface);
-  box-shadow: var(--app-shadow-small);
   color: var(--app-muted);
   line-height: 1.5;
 }
@@ -84,7 +89,6 @@
   border: 1px solid var(--app-danger-border);
   border-radius: var(--app-radius-medium);
   background: var(--app-danger-surface);
-  box-shadow: var(--app-shadow-small);
   color: var(--app-danger);
   line-height: 1.5;
 }
@@ -154,9 +158,9 @@
   width: 2.75rem;
   height: 2.75rem;
   padding: 0;
-  border: 1px solid var(--app-border);
-  border-radius: 50%;
-  background: var(--app-subtle-surface);
+  border: 1px solid transparent;
+  border-radius: var(--app-radius-small);
+  background: transparent;
   color: var(--app-ink);
   font-size: 1.5rem;
   line-height: 1;
@@ -164,7 +168,7 @@
 
 .login-close:hover {
   border-color: var(--app-border-strong);
-  background: var(--app-banner);
+  background: var(--app-subtle-surface);
   color: var(--app-ink);
 }
 
@@ -197,16 +201,16 @@
 .login-submit {
   min-height: 3rem;
   margin-top: 0.35rem;
-  border: 1px solid var(--app-accent);
+  border: 1px solid var(--app-ink);
   border-radius: var(--app-radius-small);
-  background: var(--app-accent);
+  background: var(--app-ink);
   color: var(--app-surface);
   font-weight: 650;
 }
 
 .login-submit:hover {
-  border-color: var(--app-accent-hover);
-  background: var(--app-accent-hover);
+  border-color: var(--app-accent);
+  background: var(--app-accent);
 }
 
 .login-submit:disabled,
@@ -260,23 +264,19 @@
   padding: clamp(1.25rem, 3vw, 2rem);
   border: 1px solid var(--app-border);
   border-radius: var(--app-radius-large);
-  background: var(--app-subtle-surface);
+  background: var(--app-surface);
   color: var(--app-ink);
   line-height: 1.55;
   text-align: left;
 }
 
 .public-access-status {
-  display: inline-block;
+  display: block;
   margin: 0 0 0.6rem;
-  padding: 0.2rem 0.65rem;
-  border-radius: 999px;
-  border: 1px solid var(--app-warning-border);
-  background: var(--app-warning-surface);
   color: var(--app-warning);
-  font-size: 0.85rem;
-  font-weight: 750;
-  letter-spacing: 0.04em;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
@@ -288,6 +288,8 @@
 .public-access h2 {
   margin: 0;
   font-size: clamp(1.5rem, 4vw, 2.25rem);
+  font-weight: 720;
+  letter-spacing: -0.035em;
   line-height: 1.15;
 }
 
@@ -329,15 +331,18 @@
 .trust-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 1rem;
+  gap: 1.5rem;
 }
 
 .trust-grid > section {
   min-width: 0;
-  padding: 1rem;
-  border: 1px solid var(--app-border);
-  border-radius: var(--app-radius-medium);
-  background: var(--app-surface);
+  padding: 0.25rem 1.5rem 0.25rem 0;
+  border-right: 1px solid var(--app-border);
+}
+
+.trust-grid > section:last-child {
+  padding-right: 0;
+  border-right: 0;
 }
 
 .trust-grid p {
@@ -371,6 +376,18 @@
 
   .trust-grid {
     grid-template-columns: 1fr;
+    gap: 1.25rem;
+  }
+
+  .trust-grid > section {
+    padding: 0 0 1.25rem;
+    border-right: 0;
+    border-bottom: 1px solid var(--app-border);
+  }
+
+  .trust-grid > section:last-child {
+    padding-bottom: 0;
+    border-bottom: 0;
   }
 
   .login-btn {

@@ -102,8 +102,7 @@ async function expectAboveNavigation(
 
 async function expectHomeVisible(page: Page) {
   await expectDockedAccountHeader(page);
-  await expect(page.getByRole("heading", { level: 1, name: "Marathoner." })).toBeVisible();
-  await expect(page.getByText("Welcome to your training companion")).toBeVisible();
+  await expect(page.getByRole("heading", { level: 1, name: "Home" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Edit runner profile" })).toBeVisible();
   await expect(page.getByRole("heading", { level: 2, name: "No active plan yet" })).toBeVisible();
   await expect(page.getByRole("navigation", { name: "Training sections" })).toBeVisible();
@@ -122,20 +121,20 @@ test("uses the shared canvas, docked header, and card surface hierarchy", async 
 
   await expect(page.locator("main")).toHaveCSS(
     "background-color",
-    "rgb(245, 245, 247)",
+    "rgb(16, 17, 20)",
   );
   await expect(page.locator(".session-controls")).toHaveCSS(
     "background-color",
-    "rgb(233, 238, 248)",
+    "rgb(25, 27, 32)",
   );
   await expect(page.locator(".next-workout-summary")).toHaveCSS(
     "background-color",
-    "rgb(255, 255, 255)",
+    "rgb(25, 27, 32)",
   );
 
   await page.getByRole("button", { name: "Plan", exact: true }).click();
   const panel = page.locator(".section-panel");
-  await expect(panel).toHaveCSS("background-color", "rgb(245, 245, 247)");
+  await expect(panel).toHaveCSS("background-color", "rgb(16, 17, 20)");
   await expect
     .poll(() =>
       panel.evaluate((element) =>
@@ -153,16 +152,14 @@ test("keeps the signed-in home below the docked header at phone width", async ({
   await expectHomeVisible(page);
 
   const controls = page.locator(".session-controls");
-  const title = page.getByRole("heading", { level: 1, name: "Marathoner." });
-  const subtitle = page.getByText("Welcome to your training companion");
+  const title = page.getByRole("heading", { level: 1, name: "Home" });
   const profile = page.locator(".runner-profile-entry");
   const nextWorkout = page.locator(".next-workout-summary");
   const navigation = page.getByRole("navigation", { name: "Training sections" });
 
   await expectBefore(controls, title, "account controls and brand");
-  await expectBefore(title, subtitle, "brand and welcome copy");
-  await expectBefore(subtitle, profile, "welcome copy and runner setup");
-  await expectBefore(profile, nextWorkout, "runner setup and next workout");
+  await expectBefore(title, nextWorkout, "page heading and next workout");
+  await expectBefore(nextWorkout, profile, "next workout and runner setup");
   await expectDockedAccountHeader(page);
   await expectMobileBottomNavigation(page);
 
@@ -204,16 +201,14 @@ test("keeps the signed-in home usable with 200% text", async ({ page }) => {
   await expectHomeVisible(page);
 
   const controls = page.locator(".session-controls");
-  const title = page.getByRole("heading", { level: 1, name: "Marathoner." });
-  const subtitle = page.getByText("Welcome to your training companion");
+  const title = page.getByRole("heading", { level: 1, name: "Home" });
   const profile = page.locator(".runner-profile-entry");
   const nextWorkout = page.locator(".next-workout-summary");
   const navigation = page.getByRole("navigation", { name: "Training sections" });
 
   await expectBefore(controls, title, "large-text account controls and brand");
-  await expectBefore(title, subtitle, "large-text brand and welcome copy");
-  await expectBefore(subtitle, profile, "large-text welcome copy and runner setup");
-  await expectBefore(profile, nextWorkout, "large-text runner setup and next workout");
+  await expectBefore(title, nextWorkout, "large-text page heading and next workout");
+  await expectBefore(nextWorkout, profile, "large-text next workout and runner setup");
   await expectDockedAccountHeader(page);
   await expectMobileBottomNavigation(page);
   const finalAction = page.getByRole("button", { name: "Final signed-in action" });
@@ -386,15 +381,26 @@ test("keeps the desktop signed-in header docked above the page", async ({ page }
   await expectHomeVisible(page);
 
   const controls = page.locator(".session-controls");
-  const title = page.getByRole("heading", { level: 1, name: "Marathoner." });
+  const title = page.getByRole("heading", { level: 1, name: "Home" });
 
   await expect(controls).toHaveCSS("position", "fixed");
   await expect(controls).toHaveCSS(
     "background-color",
-    "rgb(233, 238, 248)",
+    "rgb(25, 27, 32)",
   );
   await expectBefore(controls, title, "desktop account header and brand");
-  await expect(page.getByText("Signed in as runner@example.com")).toBeVisible();
+  await expect(page.locator(".session-wordmark")).toHaveText("Marathoner.");
+  const navigation = page.getByRole("navigation", { name: "Training sections" });
+  const headerBounds = await controls.boundingBox();
+  const navigationBounds = await navigation.boundingBox();
+  expect(headerBounds).not.toBeNull();
+  expect(navigationBounds).not.toBeNull();
+  if (headerBounds && navigationBounds) {
+    expect(navigationBounds.y).toBeGreaterThanOrEqual(headerBounds.y);
+    expect(navigationBounds.y + navigationBounds.height).toBeLessThanOrEqual(
+      headerBounds.y + headerBounds.height,
+    );
+  }
   await expect(
     page.getByRole("navigation", { name: "Training sections" }),
   ).toHaveCSS("position", "fixed");
@@ -554,4 +560,19 @@ test("keeps overflowing signed-in content reachable at desktop width", async ({
     "overflowing signed-in home",
     "after scrolling at desktop width",
   );
+});
+
+
+test("emphasizes the existing next-workout targets without hiding its Plan action", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("tests/viewport/signedInHome.html?workout=run");
+  const workout = page.getByRole("region", { name: "Tempo run" });
+  await expect(workout).toContainText("5 mi · 45 min");
+  await expect(workout).toContainText("Thursday, November 26, 2026");
+  await expect(workout).toHaveCSS("background-color", "rgb(32, 76, 186)");
+  await expectMinimumTouchTarget(workout.getByRole("button", { name: "Open Plan" }), "next workout Plan action");
+  await page.addStyleTag({ content: ":root { font-size: 200% !important; }" });
+  await expectNoHorizontalOverflow(page, "populated next workout", "at 200% text");
+  await workout.getByRole("button", { name: "Open Plan" }).click();
+  await expect(page.getByRole("button", { name: "Plan", exact: true })).toHaveAttribute("aria-current", "page");
 });

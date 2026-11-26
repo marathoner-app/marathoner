@@ -4,10 +4,10 @@
   margin: 1.25rem auto;
   padding: clamp(1.25rem, 4vw, 2rem);
   overflow-wrap: anywhere;
-  border: 1px solid #b9c8c7;
+  border: 1px solid var(--app-border);
   border-radius: 0.9rem;
-  background: #f2f6f3;
-  color: #17202a;
+  background: var(--app-surface);
+  color: var(--app-ink);
   line-height: 1.5;
   text-align: left;
 }
@@ -28,7 +28,7 @@
 }
 
 .internal-adaptation-dogfood-eyebrow {
-  color: #315866;
+  color: var(--app-muted);
   font-size: 0.78rem;
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -56,9 +56,15 @@
   display: block;
   margin-right: auto;
   margin-left: auto;
-  border: 1px solid #17202a;
-  background: #ffffff;
-  color: #17202a;
+  border: 1px solid var(--app-border-strong);
+  background: var(--app-surface);
+  color: var(--app-ink);
+}
+
+.internal-adaptation-review-again:hover {
+  border-color: var(--app-accent);
+  background: var(--app-accent-surface);
+  color: var(--app-ink);
 }
 
 @media (max-width: 600px) {

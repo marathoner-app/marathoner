@@ -1,35 +1,37 @@
 :root {
-  --app-canvas: #f5f5f7;
-  --app-surface: #ffffff;
-  --app-banner: #e9eef8;
-  --app-subtle-surface: #f9f9fb;
-  --app-ink: #1d1d1f;
-  --app-muted: #626267;
-  --app-accent: #1468cc;
-  --app-accent-hover: #0b55a8;
-  --app-accent-surface: #eef5fd;
-  --app-overlay: rgb(29 29 31 / 64%);
-  --app-border: #d2d2d7;
-  --app-border-strong: #a9a9af;
-  --app-danger: #a12620;
-  --app-danger-hover: #7f1d19;
-  --app-danger-surface: #fff2f1;
-  --app-danger-border: #e4aaa6;
-  --app-warning: #7c4a03;
-  --app-warning-surface: #fff8e8;
-  --app-warning-border: #d8ad58;
-  --app-success: #17663a;
-  --app-success-surface: #eef8f1;
-  --app-success-border: #8ab69b;
-  --app-workout-easy: #278b57;
-  --app-workout-quality: #a36b00;
-  --app-workout-long: #b54747;
-  --app-workout-rest: #718096;
-  --app-focus-ring: rgb(20 104 204 / 28%);
-  --app-radius-small: 0.625rem;
-  --app-radius-medium: 0.875rem;
-  --app-radius-large: 1.25rem;
-  --app-shadow-small: 0 1px 2px rgb(0 0 0 / 4%), 0 6px 18px rgb(0 0 0 / 5%);
+  color-scheme: dark;
+  --app-canvas: #101114;
+  --app-surface: #191b20;
+  --app-banner: #191b20;
+  --app-subtle-surface: #22252c;
+  --app-ink: #f3f4f7;
+  --app-muted: #a6adba;
+  --app-accent: #8facff;
+  --app-accent-hover: #b0c4ff;
+  --app-workout-surface: #204cba;
+  --app-accent-surface: #202d4b;
+  --app-overlay: rgb(0 0 0 / 72%);
+  --app-border: #323640;
+  --app-border-strong: #6e7685;
+  --app-danger: #ffa6a0;
+  --app-danger-hover: #ffbeb9;
+  --app-danger-surface: #352023;
+  --app-danger-border: #855351;
+  --app-warning: #e4be73;
+  --app-warning-surface: #30291b;
+  --app-warning-border: #8b7346;
+  --app-success: #94d8ae;
+  --app-success-surface: #1a3025;
+  --app-success-border: #4f8062;
+  --app-workout-easy: #94d8ae;
+  --app-workout-quality: #e4be73;
+  --app-workout-long: #ffa6a0;
+  --app-workout-rest: #a6adba;
+  --app-focus-ring: rgb(143 172 255 / 30%);
+  --app-radius-small: 0.5rem;
+  --app-radius-medium: 0.625rem;
+  --app-radius-large: 0.75rem;
+  --app-shadow-small: none;
   --app-shadow-medium: 0 18px 50px rgb(0 0 0 / 9%);
   --app-shadow-dialog: 0 1.5rem 4rem rgb(0 0 0 / 24%);
   --app-motion-fast: 140ms;
@@ -38,10 +40,10 @@
   --app-safe-area-right: env(safe-area-inset-right);
   --app-safe-area-bottom: env(safe-area-inset-bottom);
   --app-safe-area-left: env(safe-area-inset-left);
-  --app-training-page-max-width: 60rem;
+  --app-training-page-max-width: 70rem;
   --app-training-page-gutter: clamp(0.75rem, 3vw, 1.25rem);
   --app-training-page-gap: clamp(1rem, 2vw, 1.25rem);
-  --app-training-surface-padding: clamp(1.25rem, 3vw, 1.75rem);
+  --app-training-surface-padding: clamp(20px, 3vw, 24px);
 
   font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif;
   font-weight: 400;
@@ -78,7 +80,7 @@ button {
   border: none;
   border-radius: var(--app-radius-small);
   background-color: var(--app-ink);
-  color: white;
+  color: var(--app-canvas);
   font-family: inherit;
   font-size: 1em;
   font-weight: 500;
@@ -92,7 +94,7 @@ button {
 }
 
 button:hover {
-  background-color: #38383b;
+  background-color: var(--app-accent-hover);
 }
 
 button:focus-visible {
@@ -133,6 +135,27 @@ button:focus-visible {
   background: var(--app-surface);
   box-shadow: var(--app-shadow-small);
   color: var(--app-ink);
+}
+
+.training-page-header {
+  margin: 0 0 1.75rem;
+  text-align: left;
+}
+
+.training-page-header h1 {
+  margin: 0;
+  color: var(--app-ink);
+  font-size: clamp(1.875rem, 3.5vw, 2.25rem);
+  font-weight: 720;
+  letter-spacing: -0.045em;
+  line-height: 1.15;
+}
+
+.training-page-header p {
+  margin: 0.5rem 0 0;
+  color: var(--app-muted);
+  font-size: 0.9375rem;
+  line-height: 1.5;
 }
 
 .training-card-heading {

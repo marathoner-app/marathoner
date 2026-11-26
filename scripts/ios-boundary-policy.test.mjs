@@ -23,12 +23,12 @@ const validProject = {
     'installStartupOverlay() webView?.scrollView.bounces = false registerPluginInstance(StartupOverlayPlugin()) registerPluginInstance(HealthKitPlugin()) DispatchQueue.main.asyncAfter(deadline: .now() + 10',
   healthKitPlugin:
     'import HealthKit read: [workoutType, heartRateType] HKAnchoredObjectQuery( HKStatisticsQuery( HKQuery.predicateForObjects(from: workout) withStart: workout.startDate end: workout.endDate options: [.strictStartDate, .strictEndDate] from: Set([workout.sourceRevision.source]) NSCompoundPredicate( HKObserverQuery( enableBackgroundDelivery( workout.workoutActivityType == .running legacyAccountScope migrateLegacyStorage(from: legacyScope, to: scope)',
-  capacitorConfig: `appId: 'com.marathonerapp.marathoner'\nappName: 'Marathoner'\nwebDir: 'dist-ios'\nbackgroundColor: '#1468cc'\ncontentInset: 'never'\nerrorPath: 'startup-error.html'\nlaunchAutoHide: true\nlaunchShowDuration: 10_000\nbackgroundColor: '#1468ccff'\n'@capacitor-firebase/app-check'\nsymlink: true`,
+  capacitorConfig: `appId: 'com.marathonerapp.marathoner'\nappName: 'Marathoner'\nwebDir: 'dist-ios'\nbackgroundColor: '#101114'\ncontentInset: 'never'\nerrorPath: 'startup-error.html'\nlaunchAutoHide: true\nlaunchShowDuration: 10_000\nbackgroundColor: '#101114ff'\n'@capacitor-firebase/app-check'\nsymlink: true`,
   debugConfig: '#include? "local.xcconfig"',
   infoPlist:
-    '<string>Marathoner</string><key>UIUserInterfaceStyle</key><string>Light</string><key>NSHealthShareUsageDescription</key><key>NSHealthUpdateUsageDescription</key><key>ITSAppUsesNonExemptEncryption</key><false/>',
+    '<string>Marathoner</string><key>UIUserInterfaceStyle</key><string>Dark</string><key>NSHealthShareUsageDescription</key><key>NSHealthUpdateUsageDescription</key><key>ITSAppUsesNonExemptEncryption</key><false/>',
   launchStoryboard:
-    '<view><label text="Marathoner."/><label text="Loading your session..."/><color key="backgroundColor" red="0.07843137255" green="0.4078431373" blue="0.8"/></view>',
+    '<view><label text="Marathoner."/><label text="Loading your session..."/><color key="backgroundColor" red="0.06274509804" green="0.06666666667" blue="0.07843137255"/></view>',
   mainStoryboard:
     '<viewController customClass="MarathonerBridgeViewController"/>',
   packageJson: {
@@ -49,7 +49,7 @@ const validProject = {
   packageResolution:
     '"identity" : "firebase-ios-sdk"\n"version" : "12.19.2"',
   sceneDelegate:
-    'guard let sceneWindow = window red: 20.0 / 255.0 green: 104.0 / 255.0 blue: 204.0 / 255.0',
+    'guard let sceneWindow = window red: 16.0 / 255.0 green: 17.0 / 255.0 blue: 20.0 / 255.0',
   trackedPaths: ['ios/App/App/AppDelegate.swift'],
   xcodeProject: `
     PRODUCT_BUNDLE_IDENTIFIER = com.marathonerapp.marathoner;
@@ -301,7 +301,7 @@ describe('iOS boundary policy', () => {
       [
         'index.html',
         Buffer.from(
-          '<meta name="viewport" content="viewport-fit=cover"><style>body{background:#1468cc}</style><main data-marathoner-startup><h1>Marathoner.</h1>Loading your session...<a data-startup-recovery>Reload</a></main><script>10000</script><script src="./assets/app.js"></script>',
+          '<meta name="viewport" content="viewport-fit=cover"><style>body{background:#101114}</style><main data-marathoner-startup><h1>Marathoner.</h1>Loading your session...<a data-startup-recovery>Reload</a></main><script>10000</script><script src="./assets/app.js"></script>',
         ),
       ],
       [
@@ -325,13 +325,13 @@ describe('iOS boundary policy', () => {
           appName: 'Marathoner',
           webDir: 'dist-ios',
           ios: {
-            backgroundColor: '#1468cc',
+            backgroundColor: '#101114',
             contentInset: 'never',
           },
           server: { errorPath: 'startup-error.html' },
           plugins: {
             SplashScreen: {
-              backgroundColor: '#1468ccff',
+              backgroundColor: '#101114ff',
               launchAutoHide: true,
               launchShowDuration: 10_000,
             },
@@ -346,7 +346,7 @@ describe('iOS boundary policy', () => {
       [
         'index.html',
         Buffer.from(
-          '<meta name="viewport" content="viewport-fit=cover"><style>body{background:#1468cc}</style><main data-marathoner-startup><h1>Marathoner.</h1>Loading your session...<a data-startup-recovery>Reload</a></main><script>10000</script><script src="./assets/app.js"></script>',
+          '<meta name="viewport" content="viewport-fit=cover"><style>body{background:#101114}</style><main data-marathoner-startup><h1>Marathoner.</h1>Loading your session...<a data-startup-recovery>Reload</a></main><script>10000</script><script src="./assets/app.js"></script>',
         ),
       ],
       [
@@ -369,13 +369,13 @@ describe('iOS boundary policy', () => {
           appName: 'Marathoner',
           webDir: 'dist-ios',
           ios: {
-            backgroundColor: '#1468cc',
+            backgroundColor: '#101114',
             contentInset: 'never',
           },
           server: { errorPath: 'startup-error.html' },
           plugins: {
             SplashScreen: {
-              backgroundColor: '#1468ccff',
+              backgroundColor: '#101114ff',
               launchAutoHide: true,
               launchShowDuration: 10_000,
             },
@@ -405,7 +405,7 @@ describe('iOS boundary policy', () => {
       [
         'index.html',
         Buffer.from(
-          '<meta name="viewport" content="viewport-fit=cover"><style>body{background:#1468cc}</style><main data-marathoner-startup><h1>Marathoner.</h1>Loading your session...<a data-startup-recovery>Reload</a></main><script>10000</script><script src="./assets/app.js"></script>',
+          '<meta name="viewport" content="viewport-fit=cover"><style>body{background:#101114}</style><main data-marathoner-startup><h1>Marathoner.</h1>Loading your session...<a data-startup-recovery>Reload</a></main><script>10000</script><script src="./assets/app.js"></script>',
         ),
       ],
       [
@@ -418,11 +418,11 @@ describe('iOS boundary policy', () => {
       appId: 'com.marathonerapp.marathoner',
       appName: 'Marathoner',
       webDir: 'dist-ios',
-      ios: { backgroundColor: '#1468cc', contentInset: 'never' },
+      ios: { backgroundColor: '#101114', contentInset: 'never' },
       server: { errorPath: 'startup-error.html' },
       plugins: {
         SplashScreen: {
-          backgroundColor: '#1468ccff',
+          backgroundColor: '#101114ff',
           launchAutoHide: true,
           launchShowDuration: 10_000,
         },
@@ -507,7 +507,7 @@ describe('iOS boundary policy', () => {
       [
         'index.html',
         Buffer.from(
-          '<meta name="viewport" content="viewport-fit=cover"><style>body{background:#1468cc}</style><main data-marathoner-startup><h1>Marathoner.</h1>Loading your session...<a data-startup-recovery>Reload</a></main><script>10000</script><script src="./assets/app.js"></script>',
+          '<meta name="viewport" content="viewport-fit=cover"><style>body{background:#101114}</style><main data-marathoner-startup><h1>Marathoner.</h1>Loading your session...<a data-startup-recovery>Reload</a></main><script>10000</script><script src="./assets/app.js"></script>',
         ),
       ],
       [
@@ -526,13 +526,13 @@ describe('iOS boundary policy', () => {
           appName: 'Marathoner',
           webDir: 'dist-ios',
           ios: {
-            backgroundColor: '#1468cc',
+            backgroundColor: '#101114',
             contentInset: 'always',
           },
           server: { errorPath: 'startup-error.html' },
           plugins: {
             SplashScreen: {
-              backgroundColor: '#1468ccff',
+              backgroundColor: '#101114ff',
               launchAutoHide: true,
               launchShowDuration: 10_000,
             },

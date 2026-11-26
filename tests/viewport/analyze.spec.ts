@@ -33,6 +33,45 @@ async function showCard(page: Page, label: string, position: number) {
     name: `${position} of 5: ${label}`,
   });
   await expect(card).toBeInViewport();
+  // A near-snap position can still be moving. Observe stable geometry across
+  // render frames before starting a new native gesture.
+  await expect
+    .poll(() =>
+      card.evaluate(async (element) => {
+        const viewport = element.parentElement;
+        if (viewport === null) return { aligned: false, stable: false };
+        const scrollPadding = Number.parseFloat(
+          window.getComputedStyle(viewport).scrollPaddingLeft,
+        );
+        const samples = [];
+        for (let frame = 0; frame < 4; frame += 1) {
+          await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+          const bounds = element.getBoundingClientRect();
+          const targetLeft =
+            bounds.left - viewport.getBoundingClientRect().left +
+            viewport.scrollLeft - scrollPadding;
+          const boundedTarget = Math.max(
+            0,
+            Math.min(targetLeft, viewport.scrollWidth - viewport.clientWidth),
+          );
+          samples.push({
+            scrollLeft: viewport.scrollLeft,
+            cardLeft: bounds.left,
+            cardTop: bounds.top,
+            distanceToSnap: Math.abs(viewport.scrollLeft - boundedTarget),
+          });
+        }
+        return {
+          aligned: samples.every((sample) => sample.distanceToSnap < 1),
+          stable: samples.every((sample) =>
+            sample.scrollLeft === samples[0].scrollLeft &&
+            sample.cardLeft === samples[0].cardLeft &&
+            sample.cardTop === samples[0].cardTop),
+          samples,
+        };
+      }),
+    )
+    .toMatchObject({ aligned: true, stable: true });
   return card;
 }
 
@@ -40,36 +79,94 @@ async function dragTouchHorizontally(
   page: Page,
   target: ReturnType<Page["locator"]>,
 ) {
-  const bounds = await target.boundingBox();
-  expect(bounds).not.toBeNull();
-  if (bounds === null) return;
+  const bounds = await target.evaluate((element) => {
+    const rect = element.getBoundingClientRect();
+    let left = Math.max(0, rect.left);
+    let right = Math.min(window.innerWidth, rect.right);
+    let top = Math.max(0, rect.top);
+    let bottom = Math.min(window.innerHeight, rect.bottom);
+    for (let parent = element.parentElement; parent; parent = parent.parentElement) {
+      const style = window.getComputedStyle(parent);
+      const clip = parent.getBoundingClientRect();
+      if (style.overflowX !== "visible") {
+        left = Math.max(left, clip.left + parent.clientLeft);
+        right = Math.min(right, clip.left + parent.clientLeft + parent.clientWidth);
+      }
+      if (style.overflowY !== "visible") {
+        top = Math.max(top, clip.top + parent.clientTop);
+        bottom = Math.min(bottom, clip.top + parent.clientTop + parent.clientHeight);
+      }
+    }
+    return { x: left, y: top, width: right - left, height: bottom - top };
+  });
+  expect(bounds.width, "The gesture needs a visible target width").toBeGreaterThan(44);
+  expect(bounds.height, "The gesture needs a visible target height").toBeGreaterThan(44);
 
   const session = await page.context().newCDPSession(page);
   const y = Math.round(bounds.y + bounds.height / 2);
-  const startX = Math.round(bounds.x + bounds.width * 0.75);
-  const endX = Math.round(bounds.x + bounds.width * 0.25);
+  // Cross the next card's snap threshold without depending on fling momentum.
+  const startX = Math.round(bounds.x + bounds.width * 0.9);
+  const endX = Math.round(bounds.x + bounds.width * 0.2);
+  const hit = await target.evaluate((element, point) => {
+    const hitElement = document.elementFromPoint(point.x, point.y);
+    return {
+      insideTarget: hitElement !== null && element.contains(hitElement),
+      tag: hitElement?.tagName,
+      card: hitElement?.closest(".analyze-slide")?.getAttribute("aria-label"),
+    };
+  }, { x: startX, y });
+  expect(hit, "The native touch must start inside the visible target").toMatchObject({ insideTarget: true });
+  const input = await target.evaluateHandle((element) => {
+    const controller = new AbortController();
+    const events = {
+      starts: 0, moves: 0, ends: 0, cancels: 0, trusted: true,
+      firstPoint: null as { x: number; y: number } | null,
+      lastPoint: null as { x: number; y: number } | null,
+    };
+    for (const type of ["touchstart", "touchmove", "touchend", "touchcancel"] as const) {
+      element.addEventListener(type, (event) => {
+        events.trusted &&= event.isTrusted;
+        const touch = (event as TouchEvent).changedTouches[0];
+        if (touch) {
+          events.lastPoint = { x: touch.clientX, y: touch.clientY };
+          events.firstPoint ??= events.lastPoint;
+        }
+        if (type === "touchstart") events.starts += 1;
+        if (type === "touchmove") events.moves += 1;
+        if (type === "touchend") events.ends += 1;
+        if (type === "touchcancel") events.cancels += 1;
+      }, { capture: true, passive: true, signal: controller.signal });
+    }
+    return { events, stop: () => controller.abort() };
+  });
 
   try {
     await session.send("Input.dispatchTouchEvent", {
       type: "touchStart",
-      touchPoints: [{ x: startX, y }],
+      touchPoints: [{ x: startX, y, id: 0 }],
     });
-    for (let step = 1; step <= 6; step += 1) {
+    // Deliver each native move on a separate render frame instead of relying
+    // on synthesized scroll timing across platforms.
+    const steps = 16;
+    for (let step = 1; step <= steps; step += 1) {
+      await page.evaluate(() => new Promise<void>((resolve) =>
+        requestAnimationFrame(() => resolve())));
       await session.send("Input.dispatchTouchEvent", {
         type: "touchMove",
-        touchPoints: [
-          {
-            x: Math.round(startX + ((endX - startX) * step) / 6),
-            y,
-          },
-        ],
+        touchPoints: [{ x: startX + (endX - startX) * step / steps, y, id: 0 }],
       });
     }
+    await page.evaluate(() => new Promise<void>((resolve) =>
+      requestAnimationFrame(() => resolve())));
     await session.send("Input.dispatchTouchEvent", {
       type: "touchEnd",
       touchPoints: [],
     });
+    const events = await input.evaluate((state) => state.events);
+    return { bounds, startX, endX, y, hit, events };
   } finally {
+    await input.evaluate((state) => state.stop());
+    await input.dispose();
     await session.detach();
   }
 }
@@ -204,9 +301,21 @@ test("renders the active pace line before interaction and separates chart drags 
     .toBe(true);
 
   const latestCard = await showCard(page, "Latest run", 1);
-  await dragTouchHorizontally(page, latestCard.locator(".latest-run-summary"));
+  const gesture = await dragTouchHorizontally(page, latestCard.locator(".latest-run-summary"));
 
-  await expect(page.getByText("Training summary · 2 of 5")).toBeVisible();
+  try {
+    await expect.poll(async () => ({
+      label: await page.locator(".analyze-carousel-status").textContent(),
+      visible: await page.locator(".analyze-carousel-status").isVisible(),
+    }), { message: "The native swipe should advance from Latest run to Training summary" })
+      .toEqual({ label: "Training summary · 2 of 5", visible: true });
+  } catch (error) {
+    console.error("Native swipe diagnostics:", JSON.stringify({
+      scrollLeft: await viewport.evaluate((element) => element.scrollLeft),
+      gesture,
+    }));
+    throw error;
+  }
 });
 
 async function exerciseAnalyzeFeedback(page: Page, textSizeLabel: string) {
@@ -396,6 +505,18 @@ test("keeps Analyze as an all-at-once desktop dashboard", async ({ page }) => {
   if (widgetBounds && cardBounds) {
     expect(Math.abs(cardBounds.height - widgetBounds.height)).toBeLessThanOrEqual(2);
   }
+  const [lastEffortBounds, effortDataBounds] = await Promise.all([
+    effortCard.locator(".effort-pattern-item").last().boundingBox(),
+    effortCard.locator(".effort-pattern-data").boundingBox(),
+  ]);
+  expect(lastEffortBounds).not.toBeNull();
+  expect(effortDataBounds).not.toBeNull();
+  if (lastEffortBounds && effortDataBounds) {
+    expect(
+      effortDataBounds.y,
+      "The effort table disclosure should follow the full sequence without overlapping it",
+    ).toBeGreaterThanOrEqual(lastEffortBounds.y + lastEffortBounds.height);
+  }
 
   await page.getByRole("button", { name: "Edit dashboard" }).click();
   await expect(page.locator(".analyze-widget-edit-bar").first()).toHaveCSS(
@@ -508,4 +629,44 @@ test("edits, restores, saves, and reloads the desktop dashboard", async ({
   await page.reload();
   await expect(page.getByRole("group", { name: "Weekly distance widget" })).toBeVisible();
   await expect(page.locator(".analyze-widget")).toHaveCount(5);
+});
+
+test("keeps the desktop dashboard scrollable with 200% text", async ({ page }) => {
+  // The title-only header lets the grid fit at 900px. A shorter desktop
+  // still exercises scrolling when the grid reaches its minimum row height.
+  await page.setViewportSize({ width: 1024, height: 800 });
+  await page.goto("tests/viewport/analyze.html?mode=dashboard&shell=1");
+  await page.addStyleTag({ content: ":root { font-size: 200%; }" });
+
+  const frame = page.locator(".analyze-desktop-grid-frame");
+  const weeklyWidget = page.getByRole("group", { name: "Weekly distance widget" });
+  const latestWidget = page.getByRole("group", { name: "Latest run widget" });
+  await expect(frame).toBeVisible();
+  await expect
+    .poll(() => frame.evaluate((element) => element.scrollHeight - element.clientHeight))
+    .toBeGreaterThan(0);
+
+  const [frameBounds, weeklyBounds, latestBounds] = await Promise.all([
+    frame.boundingBox(),
+    weeklyWidget.boundingBox(),
+    latestWidget.boundingBox(),
+  ]);
+  if (frameBounds === null || weeklyBounds === null || latestBounds === null) {
+    throw new Error("The desktop dashboard should have visible widget bounds.");
+  }
+
+  // Wheel over the gap so the dashboard itself receives the gesture.
+  await page.mouse.move(
+    (weeklyBounds.x + weeklyBounds.width + latestBounds.x) / 2,
+    frameBounds.y + frameBounds.height / 2,
+  );
+  await page.mouse.wheel(0, 500);
+  await expect.poll(() => frame.evaluate((element) => element.scrollTop)).toBeGreaterThan(0);
+
+  for (const name of ["Training summary", "Recent Pace", "Recent Effort"]) {
+    const heading = page.getByRole("heading", { name, exact: true });
+    await heading.scrollIntoViewIfNeeded();
+    await expect(heading).toBeInViewport();
+  }
+  await expectNoHorizontalOverflow(page, "Analyze", "with 200% desktop text");
 });

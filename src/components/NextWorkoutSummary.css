@@ -1,15 +1,20 @@
 .next-workout-summary {
-  width: min(calc(100% - 2rem), 46rem);
+  width: min(calc(100% - 2.5rem), 70rem);
   box-sizing: border-box;
-  margin: 0 auto 1.5rem;
-  padding: clamp(1.25rem, 3vw, 1.75rem);
-  border: 1px solid var(--app-border);
+  margin: 0 auto 1.75rem;
+  padding: clamp(1.5rem, 3vw, 2rem);
+  border: 1px solid var(--app-workout-surface);
   border-radius: var(--app-radius-large);
-  background: var(--app-surface);
-  box-shadow: var(--app-shadow-small);
-  color: var(--app-ink);
+  background: var(--app-workout-surface);
+  box-shadow: none;
+  color: white;
   line-height: 1.5;
   text-align: left;
+}
+
+.home-training-overview .next-workout-summary {
+  width: 100%;
+  margin: 0;
 }
 
 .next-workout-summary h2,
@@ -18,36 +23,136 @@
 }
 
 .next-workout-summary h2 {
-  margin-top: 0.2rem;
-  font-size: clamp(1.25rem, 3vw, 1.65rem);
+  margin-top: 1.375rem;
+  font-size: 1.8125rem;
+  font-weight: 680;
+  letter-spacing: -0.035em;
+  line-height: 1.2;
 }
 
 .next-workout-summary h2 + p,
-.next-workout-target,
 .next-workout-summary.empty p:not(.next-workout-label) {
   margin-top: 0.55rem;
 }
 
 .next-workout-label {
-  color: var(--app-accent);
-  font-size: 0.78rem;
+  color: #dbe5ff;
+  font-size: 0.75rem;
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.09em;
   text-transform: uppercase;
 }
 
-.next-workout-target {
-  font-weight: 700;
+.next-workout-summary .next-workout-target {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: 0.65rem;
+  row-gap: 0.5rem;
+  margin: 1.75rem 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.next-workout-target-part {
+  font-size: 1.5rem;
+  line-height: 1.2;
+}
+
+.next-workout-target-part:first-child .next-workout-target-value {
+  font-size: clamp(4.25rem, 20vw, 5rem);
+  font-weight: 650;
+  letter-spacing: -0.065em;
+  line-height: 1;
+}
+
+.next-workout-target-unit {
+  font-size: 1.5625rem;
+  font-weight: 450;
+}
+
+.next-workout-target-separator {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
 }
 
 .next-workout-summary button {
+  width: 100%;
   min-height: 2.75rem;
-  margin-top: 1rem;
-  padding: 0.6rem 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-top: 1.5rem;
+  padding: 0.75rem 1rem;
+  background: white;
+  color: #17243f;
+  font-weight: 650;
+  text-align: left;
 }
 
-@media (max-width: 768px) {
-  .next-workout-summary {
-    width: calc(100% - 2rem);
-  }
+.next-workout-summary button:hover {
+  background: #edf2ff;
+}
+
+.next-workout-summary button:focus-visible {
+  outline-color: white;
+  box-shadow: 0 0 0 5px rgb(255 255 255 / 35%);
+}
+
+.next-workout-summary.empty {
+  border-color: var(--app-border);
+  background: var(--app-surface);
+  color: var(--app-ink);
+}
+
+.next-workout-summary.empty .next-workout-label {
+  color: var(--app-muted);
+}
+
+.next-workout-summary.empty button {
+  width: auto;
+  background: var(--app-ink);
+  color: var(--app-surface);
+}
+
+.next-workout-summary.empty button:hover {
+  background: var(--app-accent);
+}
+
+.next-workout-summary.empty button:focus-visible {
+  outline-color: var(--app-accent);
+  box-shadow: 0 0 0 5px var(--app-focus-ring);
+}
+
+.next-workout-summary:not(.empty) h2 + p {
+  color: #d3dfff;
+}
+
+.next-workout-target-part + .next-workout-target-separator + .next-workout-target-part {
+  margin-left: auto;
+}
+
+.next-workout-target-caption {
+  display: block;
+  margin-top: 0.25rem;
+  color: #d3dfff;
+  font-size: 0.6875rem;
+}
+
+.next-workout-summary button svg {
+  width: 1rem;
+  height: 1rem;
+  flex: 0 0 auto;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.next-workout-summary .next-workout-target + button {
+  margin-top: 0;
 }

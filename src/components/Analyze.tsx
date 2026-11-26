@@ -234,7 +234,7 @@ export default function Analyze({
     if (id === "latest-run") {
       return (
         <section className="latest-run-summary" aria-labelledby="latest-run-heading">
-          <div>
+          <div className="latest-run-heading">
             <p className="latest-run-eyebrow">Latest run</p>
             <h2 id="latest-run-heading">
               {latestRun === undefined ? (
@@ -250,7 +250,7 @@ export default function Analyze({
             </p>
           ) : (
             <dl className="latest-run-details">
-              <div><dt>Distance</dt><dd>{formatDistance(latestRun.distance, distanceUnit)}</dd></div>
+              <div className="latest-run-distance"><dt>Distance</dt><dd>{formatDistance(latestRun.distance, distanceUnit)}</dd></div>
               <div><dt>Elapsed time</dt><dd>{formatDuration(latestRun.duration)}</dd></div>
               <div>
                 <dt>Pace</dt>
@@ -273,7 +273,6 @@ export default function Analyze({
     if (id === "training-summary") {
       return (
         <section className="analyze-summary" aria-labelledby="analyze-summary-heading">
-          <p className="analyze-summary-eyebrow">At a glance</p>
           <h2 id="analyze-summary-heading">Training summary</h2>
           <div className="analyze-cards">
             <div className="analyze-card"><h3>Total Distance</h3><p>{formatDistance(analytics.totalDistance, distanceUnit)}</p></div>
@@ -363,6 +362,9 @@ export default function Analyze({
 
     return (
       <div className="analyze-container analyze-container--desktop">
+        <div className="training-page-header analyze-page-header">
+          <h1>Analyze</h1>
+        </div>
         <section className="analyze-carousel" aria-label="Training analysis">
           <div
             ref={dashboardBounds.frameRef}
@@ -459,6 +461,9 @@ export default function Analyze({
 
   return (
     <div className="analyze-container">
+      <div className="training-page-header analyze-page-header">
+        <h1>Analyze</h1>
+      </div>
       <section className="analyze-carousel" aria-label="Training analysis">
         <div
           className="analyze-carousel-viewport"

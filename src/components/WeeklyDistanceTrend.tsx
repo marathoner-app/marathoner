@@ -119,6 +119,8 @@ export default function WeeklyDistanceTrend({
     const accentColor = styles.getPropertyValue("--app-accent").trim();
     const borderColor = styles.getPropertyValue("--app-border").trim();
     const mutedColor = styles.getPropertyValue("--app-muted").trim();
+    const surfaceColor = styles.getPropertyValue("--app-surface").trim();
+    const inkColor = styles.getPropertyValue("--app-ink").trim();
     const unitLabel = distanceUnit === "mile" ? "Miles" : "Kilometers";
     const option: WeeklyDistanceChartOption = {
       animation: !reduceMotion,
@@ -131,11 +133,15 @@ export default function WeeklyDistanceTrend({
       grid: {
         left: 48,
         right: 16,
-        top: 24,
-        bottom: 48,
+        top: 22,
+        bottom: 36,
       },
       tooltip: {
         trigger: "axis",
+        backgroundColor: surfaceColor,
+        borderColor,
+        textStyle: { color: inkColor },
+        axisPointer: { lineStyle: { color: mutedColor } },
         valueFormatter: (value) =>
           distanceLabel(Number(value), distanceUnit),
       },
@@ -148,6 +154,7 @@ export default function WeeklyDistanceTrend({
           rotate: points.length > 6 ? 35 : 0,
         },
         axisLine: { lineStyle: { color: borderColor } },
+        axisTick: { lineStyle: { color: borderColor } },
       },
       yAxis: {
         type: "value",
@@ -155,7 +162,8 @@ export default function WeeklyDistanceTrend({
         name: unitLabel,
         nameTextStyle: { color: mutedColor },
         minInterval: 1,
-        axisLabel: { color: mutedColor },
+        splitNumber: 3,
+        axisLabel: { color: mutedColor, hideOverlap: true },
         axisLine: { lineStyle: { color: borderColor } },
         splitLine: { lineStyle: { color: borderColor } },
       },

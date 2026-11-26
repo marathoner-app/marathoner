@@ -5,7 +5,12 @@
   min-width: 0;
   padding: clamp(0.75rem, 3vw, 1.25rem);
   color: var(--app-ink);
-  text-align: center;
+  text-align: left;
+  font-variant-numeric: tabular-nums;
+}
+
+.analyze-page-header {
+  flex: 0 0 auto;
 }
 
 .analyze-carousel,
@@ -18,76 +23,56 @@
   display: none;
 }
 
-.analyze-cards {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 9.5rem), 1fr));
-  align-items: stretch;
-  width: min(100%, 56rem);
-  margin: 0 auto;
-  gap: 1rem;
-}
-
-.latest-run-summary {
+.latest-run-summary,
+.analyze-summary,
+.weekly-trend,
+.pace-trend,
+.effort-pattern {
   box-sizing: border-box;
   width: 100%;
   max-width: 56rem;
-  margin: 0 auto 2rem;
-  padding: 1.25rem;
-  border: 1px solid var(--app-border);
-  border-radius: var(--app-radius-large);
-  background: var(--app-banner);
-  box-shadow: var(--app-shadow-small);
-  text-align: left;
-}
-
-.analyze-summary {
-  box-sizing: border-box;
-  width: 100%;
-  max-width: 56rem;
-  margin: 0 auto;
-  padding: 1.25rem;
+  margin: 0 auto 1.25rem;
+  padding: clamp(1.25rem, 2vw, 1.5rem);
   border: 1px solid var(--app-border);
   border-radius: var(--app-radius-large);
   background: var(--app-surface);
-  box-shadow: var(--app-shadow-small);
   text-align: left;
 }
 
-.analyze-summary-eyebrow {
-  margin: 0;
-  color: var(--app-accent);
-  font-size: 0.875rem;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+.latest-run-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.35rem 1rem;
 }
 
-.analyze-summary > h2 {
-  margin: 0.25rem 0 1.25rem;
+.latest-run-eyebrow,
+.analyze-summary > h2,
+.weekly-trend h2,
+.pace-trend h2,
+.effort-pattern h2 {
+  margin: 0;
   color: var(--app-ink);
-  font-size: clamp(1.35rem, 4vw, 1.75rem);
-}
-
-.latest-run-eyebrow {
-  margin: 0;
-  color: var(--app-accent);
-  font-size: 0.875rem;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+  font-size: 1rem;
+  font-weight: 650;
+  letter-spacing: -0.015em;
+  line-height: 1.35;
 }
 
 .latest-run-summary h2 {
-  margin: 0.25rem 0 0;
-  color: var(--app-ink);
-  font-size: clamp(1.35rem, 4vw, 1.75rem);
+  margin: 0;
+  color: var(--app-muted);
+  font-size: 0.75rem;
+  font-weight: 450;
+  line-height: 1.5;
 }
 
 .latest-run-details {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 1rem;
-  margin: 1.25rem 0 0;
+  margin: 1rem 0 0;
 }
 
 .latest-run-details div {
@@ -96,82 +81,83 @@
 
 .latest-run-details dt {
   color: var(--app-muted);
-  font-size: 0.875rem;
-  font-weight: 600;
+  font-size: 0.6875rem;
+  font-weight: 450;
+  line-height: 1.5;
 }
 
 .latest-run-details dd {
   margin: 0.25rem 0 0;
   color: var(--app-ink);
-  font-size: 1rem;
-  font-weight: 700;
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1.35;
   overflow-wrap: anywhere;
 }
 
+.latest-run-distance {
+  grid-column: 1 / -1;
+  margin-bottom: 0.125rem;
+}
+
+.latest-run-distance dd {
+  margin: 0;
+  font-size: clamp(2.5rem, 4vw, 3.125rem);
+  font-weight: 600;
+  letter-spacing: -0.055em;
+  line-height: 1.1;
+}
+
+.latest-run-distance dt {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.analyze-cards {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: start;
+  width: 100%;
+  margin: 1.25rem 0 0;
+  gap: 1.5rem 1rem;
+}
+
 .analyze-card {
-  box-sizing: border-box;
   min-width: 0;
-  padding: 1rem;
-  border: 1px solid var(--app-border);
-  border-radius: var(--app-radius-medium);
-  background: var(--app-surface);
-  box-shadow: var(--app-shadow-small);
+  text-align: left;
 }
 
 .analyze-card h3 {
   margin: 0;
   color: var(--app-muted);
-  font-size: 0.9rem;
-  font-weight: 700;
-  line-height: 1.25;
+  font-size: 0.6875rem;
+  font-weight: 450;
+  line-height: 1.4;
   overflow-wrap: anywhere;
 }
 
 .analyze-card p {
-  margin: 0.35rem 0 0;
+  margin: 0.45rem 0 0;
   color: var(--app-ink);
-  font-size: 1.35rem;
-  font-weight: 700;
-  line-height: 1.25;
+  font-size: clamp(1.25rem, 2vw, 1.5rem);
+  font-weight: 600;
+  letter-spacing: -0.035em;
+  line-height: 1.2;
   overflow-wrap: anywhere;
 }
 
-.weekly-trend,
-.pace-trend,
-.effort-pattern {
-  box-sizing: border-box;
-  width: 100%;
-  max-width: 56rem;
-  margin: 2rem auto 0;
-  padding: clamp(1rem, 3vw, 1.5rem);
-  border: 1px solid var(--app-border);
-  border-radius: var(--app-radius-large);
-  background: var(--app-surface);
-  box-shadow: var(--app-shadow-small);
-  text-align: left;
-}
-
-.weekly-trend h2,
-.weekly-trend-context,
-.pace-trend h2,
-.pace-trend-context,
-.effort-pattern h2,
-.effort-pattern-context {
-  margin: 0;
-}
-
-.weekly-trend h2,
-.pace-trend h2,
-.effort-pattern h2 {
-  color: var(--app-ink);
-  font-size: 1.25rem;
-}
-
 .weekly-trend-context,
 .pace-trend-context,
 .effort-pattern-context {
-  margin-top: 0.35rem;
+  margin: 0.4rem 0 0;
   color: var(--app-muted);
+  font-size: 0.75rem;
+  line-height: 1.5;
 }
 
 .weekly-trend-chart,
@@ -186,17 +172,18 @@
 .weekly-trend-data,
 .pace-trend-data,
 .effort-pattern-data {
-  margin-top: 0.75rem;
+  margin-top: 0.5rem;
+  font-size: 0.75rem;
 }
 
 .weekly-trend-data summary,
 .pace-trend-data summary,
 .effort-pattern-data summary {
   min-height: 2.75rem;
-  padding: 0.5rem 0;
+  padding: 0.75rem 0;
   color: var(--app-accent);
   cursor: pointer;
-  font-weight: 700;
+  font-weight: 550;
 }
 
 .weekly-trend-data summary:focus-visible,
@@ -211,7 +198,7 @@
 .pace-trend-data table,
 .effort-pattern-data table {
   width: 100%;
-  margin-top: 0.75rem;
+  margin-top: 0.5rem;
   border-collapse: collapse;
   table-layout: fixed;
 }
@@ -238,8 +225,7 @@
 
 .effort-pattern-list {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr));
-  gap: 0.75rem;
+  grid-template-columns: 1fr;
   margin: 1rem 0 0;
   padding: 0;
   list-style: none;
@@ -248,53 +234,29 @@
 .effort-pattern-item {
   display: flex;
   min-width: 0;
-  flex-direction: column;
-  gap: 0.25rem;
-  padding: 0.75rem;
-  border: 1px solid var(--app-border);
-  border-left: 0.35rem solid var(--app-border-strong);
-  border-radius: var(--app-radius-medium);
-  background: var(--app-subtle-surface);
-}
-
-.effort-pattern-item--much_easier_than_expected,
-.effort-pattern-item--easier_than_expected {
-  border-left-color: var(--app-success);
-  background: var(--app-success-surface);
-}
-
-.effort-pattern-item--about_right {
-  border-left-color: var(--app-accent);
-  background: var(--app-accent-surface);
-}
-
-.effort-pattern-item--harder_than_expected,
-.effort-pattern-item--much_harder_than_expected {
-  border-left-color: var(--app-warning);
-  background: var(--app-warning-surface);
-}
-
-.effort-pattern-item--missing {
-  border-left-color: var(--app-border-strong);
+  align-items: baseline;
+  gap: 0.75rem;
+  padding: 0.75rem 0;
+  border-top: 1px solid var(--app-border);
 }
 
 .effort-pattern-item time {
+  flex: 0 0 3rem;
   color: var(--app-muted);
-  font-size: 0.875rem;
-  font-weight: 600;
+  font-size: 0.75rem;
+  font-weight: 450;
+  line-height: 1.5;
 }
 
 .effort-pattern-item span {
   color: var(--app-ink);
-  font-weight: 700;
+  font-size: 0.75rem;
+  font-weight: 500;
+  line-height: 1.5;
   overflow-wrap: anywhere;
 }
 
-/*
- * Desktop workspace foundation. The named widget areas intentionally mirror
- * the future draggable/resizable units without introducing a dashboard
- * dependency or changing the phone carousel interaction.
- */
+/* The desktop frame keeps the existing resizable dashboard and saved layout. */
 @media (min-width: 1024px) and (min-height: 640px) {
   .section-panel--analyze {
     overflow: hidden;
@@ -307,11 +269,13 @@
     min-height: 0;
     max-width: none;
     padding: clamp(0.625rem, 1vw, 0.875rem) clamp(0.75rem, 1.25vw, 1.25rem)
-      5.75rem;
+      1rem;
     flex-direction: column;
   }
 
   .analyze-container {
+    display: flex;
+    flex-direction: column;
     width: 100%;
     height: 100dvh;
     min-height: 0;
@@ -328,8 +292,8 @@
   .analyze-carousel {
     display: block;
     width: 100%;
-    height: 100%;
     min-height: 0;
+    flex: 1 1 auto;
   }
 
   .analyze-container--desktop .analyze-carousel {
@@ -342,13 +306,13 @@
     height: 100%;
     min-height: 0;
     overflow: hidden;
-    border-radius: 1rem;
+    border-radius: var(--app-radius-large);
   }
 
   .analyze-desktop-grid-frame--editing {
     background-image:
-      linear-gradient(rgb(36 88 177 / 7%) 1px, transparent 1px),
-      linear-gradient(90deg, rgb(36 88 177 / 7%) 1px, transparent 1px);
+      linear-gradient(var(--app-border) 1px, transparent 1px),
+      linear-gradient(90deg, var(--app-border) 1px, transparent 1px);
     background-size: calc(100% / 12) calc(100% / 12);
   }
 
@@ -367,13 +331,13 @@
     flex-direction: column;
     overflow: hidden;
     border: 1px solid transparent;
-    border-radius: 1rem;
+    border-radius: var(--app-radius-large);
     background: transparent;
   }
 
   .analyze-desktop-grid-frame--editing .analyze-widget-shell {
-    border-color: color-mix(in srgb, var(--app-accent) 55%, white);
-    box-shadow: 0 0 0 2px rgb(36 88 177 / 10%);
+    border-color: var(--app-accent);
+    box-shadow: 0 0 0 1px var(--app-accent);
   }
 
   .analyze-widget-edit-bar {
@@ -399,10 +363,10 @@
     min-height: 2rem;
     margin: 0;
     padding: 0.25rem 0.5rem;
-    border: 1px solid color-mix(in srgb, var(--app-accent) 20%, white);
-    border-radius: 0.45rem;
-    background: rgb(255 255 255 / 94%);
-    box-shadow: 0 0.15rem 0.45rem rgb(8 16 31 / 12%);
+    border: 1px solid var(--app-border);
+    border-radius: var(--app-radius-small);
+    background: var(--app-surface);
+    box-shadow: var(--app-shadow-small);
     color: var(--app-muted);
     font-size: 0.75rem;
     font-weight: 700;
@@ -453,13 +417,17 @@
     height: 100%;
     max-width: none;
     margin: 0;
-    padding: clamp(0.75rem, 1vw, 1.125rem);
+    padding: clamp(1rem, 1.5vw, 1.375rem);
     flex: 1 1 auto;
     min-height: 0;
     overflow: auto;
-    border-radius: 1rem;
-    box-shadow: 0 1px 2px rgb(0 0 0 / 4%);
+    border-radius: var(--app-radius-large);
+    box-shadow: none;
     scrollbar-gutter: stable;
+  }
+
+  .analyze-desktop-grid-frame--editing .analyze-widget-content > section {
+    padding-top: 3rem;
   }
 
   .react-grid-item > .react-resizable-handle::after {
@@ -472,7 +440,7 @@
 
   .react-grid-item.react-grid-placeholder {
     border: 2px solid var(--app-accent);
-    border-radius: 1rem;
+    border-radius: var(--app-radius-large);
     background: var(--app-accent-surface);
     opacity: 0.72;
   }
@@ -529,10 +497,10 @@
     height: 100%;
     max-width: none;
     margin: 0;
-    padding: clamp(0.875rem, 1.15vw, 1.125rem);
+    padding: clamp(1rem, 1.5vw, 1.375rem);
     overflow: auto;
-    border-radius: 1rem;
-    box-shadow: 0 1px 2px rgb(0 0 0 / 4%);
+    border-radius: var(--app-radius-large);
+    box-shadow: none;
     scrollbar-gutter: stable;
   }
 
@@ -546,83 +514,21 @@
     flex-direction: column;
   }
 
-  .latest-run-summary {
-    justify-content: center;
-  }
-
   .latest-run-details {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: clamp(0.625rem, 1vh, 0.875rem) 0.875rem;
-    margin-top: clamp(0.875rem, 1.5vh, 1.25rem);
-  }
-
-  .latest-run-details dt {
-    font-size: 0.75rem;
-    letter-spacing: 0.02em;
-    text-transform: uppercase;
-  }
-
-  .latest-run-details dd {
-    margin-top: 0.125rem;
-    font-size: clamp(0.875rem, 1.15vw, 1rem);
-  }
-
-  .analyze-summary > h2 {
-    margin-bottom: clamp(0.625rem, 1.1vh, 0.875rem);
-    font-size: clamp(1.15rem, 1.6vw, 1.45rem);
+    gap: 0.75rem 1rem;
+    margin-top: 1rem;
   }
 
   .analyze-cards {
-    width: 100%;
-    min-height: 0;
-    flex: 1 1 auto;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    grid-template-rows: repeat(3, minmax(0, 1fr));
-    gap: 0.5rem;
-  }
-
-  .analyze-card {
-    display: flex;
-    min-height: 0;
-    padding: clamp(0.5rem, 0.8vw, 0.75rem);
-    flex-direction: column;
-    justify-content: center;
-    border-radius: 0.75rem;
-    box-shadow: none;
-  }
-
-  .analyze-card:last-child {
-    grid-column: 1 / -1;
-  }
-
-  .analyze-card h3 {
-    font-size: clamp(0.7rem, 0.85vw, 0.8rem);
-    line-height: 1.15;
-  }
-
-  .analyze-card p {
-    margin-top: 0.2rem;
-    font-size: clamp(1rem, 1.35vw, 1.25rem);
-    line-height: 1.1;
-  }
-
-  .weekly-trend h2,
-  .pace-trend h2,
-  .effort-pattern h2 {
-    font-size: clamp(1.05rem, 1.35vw, 1.25rem);
-  }
-
-  .weekly-trend-context,
-  .pace-trend-context,
-  .effort-pattern-context {
-    font-size: clamp(0.75rem, 0.9vw, 0.875rem);
-    line-height: 1.35;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    align-content: start;
+    gap: 1.25rem 0.75rem;
   }
 
   .weekly-trend-chart,
   .pace-trend-chart {
     height: auto;
-    min-height: 7.5rem;
+    min-height: 8rem;
     flex: 1 1 auto;
     margin-top: 0.35rem;
   }
@@ -634,33 +540,15 @@
     margin-top: 0.25rem;
   }
 
-  .weekly-trend-data summary,
-  .pace-trend-data summary,
-  .effort-pattern-data summary {
-    min-height: 2rem;
-    padding: 0.25rem 0;
-    font-size: 0.8125rem;
-  }
-
   .effort-pattern-list {
-    min-height: 0;
-    margin-top: clamp(0.625rem, 1vh, 0.875rem);
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 0.5rem;
+    flex: 0 0 auto;
+    margin-top: 1rem;
   }
+}
 
-  .effort-pattern-item {
-    justify-content: center;
-    padding: clamp(0.5rem, 0.75vw, 0.7rem);
-  }
-
-  .effort-pattern-item time {
-    font-size: 0.75rem;
-  }
-
-  .effort-pattern-item span {
-    font-size: clamp(0.75rem, 0.85vw, 0.875rem);
-    line-height: 1.25;
+@container app-viewport (width < 64rem) {
+  .analyze-desktop-grid-frame {
+    overflow-y: auto;
   }
 }
 
@@ -675,11 +563,10 @@
   overflow-y: auto;
   padding: 1.25rem;
   border-left: 1px solid var(--app-border);
-  background: rgb(255 255 255 / 97%);
+  background: var(--app-surface);
   box-shadow: -1rem 0 3rem rgb(0 0 0 / 12%);
   color: var(--app-ink);
   text-align: left;
-  backdrop-filter: blur(18px);
 }
 
 .analyze-widget-drawer-header {
@@ -718,11 +605,15 @@
   min-height: 2.75rem;
   padding: 0;
   border: 1px solid var(--app-border);
-  border-radius: 50%;
+  border-radius: var(--app-radius-small);
   background: var(--app-surface);
   box-shadow: none;
   color: var(--app-ink);
   font-size: 1.5rem;
+}
+
+.analyze-widget-drawer-header button:hover {
+  background: var(--app-subtle-surface);
 }
 
 .analyze-widget-drawer-list {
@@ -737,10 +628,8 @@
   display: flex;
   align-items: center;
   gap: 1rem;
-  padding: 1rem;
-  border: 1px solid var(--app-border);
-  border-radius: var(--app-radius-medium);
-  background: var(--app-subtle-surface);
+  padding: 1rem 0;
+  border-bottom: 1px solid var(--app-border);
 }
 
 .analyze-widget-drawer-list li > div {
@@ -788,7 +677,7 @@
   display: grid;
   place-items: center;
   padding: 1rem;
-  background: rgb(8 16 31 / 42%);
+  background: var(--app-overlay);
   backdrop-filter: blur(4px);
 }
 
@@ -798,7 +687,7 @@
   border: 1px solid var(--app-border);
   border-radius: var(--app-radius-large);
   background: var(--app-surface);
-  box-shadow: 0 1.5rem 4rem rgb(0 0 0 / 22%);
+  box-shadow: var(--app-shadow-dialog);
   color: var(--app-ink);
   text-align: left;
 }
@@ -844,7 +733,12 @@
 .analyze-editor-dialog-confirm {
   border-color: var(--app-danger);
   background: var(--app-danger);
-  color: white;
+  color: var(--app-canvas);
+}
+
+.analyze-editor-dialog-confirm:hover {
+  border-color: var(--app-danger-hover);
+  background: var(--app-danger-hover);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -938,8 +832,8 @@
   .analyze-summary {
     display: flex;
     flex-direction: column;
-    justify-content: center;
-    padding: 1rem;
+    justify-content: flex-start;
+    padding: 1.25rem;
   }
 
   .latest-run-details {
@@ -953,12 +847,8 @@
     gap: 0.75rem;
   }
 
-  .analyze-card {
-    padding: 0.75rem;
-  }
-
-  .analyze-card:last-child {
-    grid-column: 1 / -1;
+  .analyze-cards {
+    gap: 1.5rem 1rem;
   }
 
   .analyze-carousel-controls {
@@ -976,17 +866,18 @@
     width: 44px;
     height: 44px;
     padding: 0;
-    border: 1px solid var(--app-border-strong);
-    border-radius: 50%;
-    background: var(--app-surface);
-    box-shadow: var(--app-shadow-small);
-    color: var(--app-accent);
+    border: 0;
+    border-radius: var(--app-radius-small);
+    background: transparent;
+    box-shadow: none;
+    color: var(--app-ink);
     font-size: 1.75rem;
     line-height: 1;
   }
 
   .analyze-carousel-arrow:disabled {
     border-color: var(--app-border);
+    background: transparent;
     box-shadow: none;
     color: var(--app-muted);
     cursor: default;
@@ -1001,8 +892,9 @@
     margin: 0;
     color: var(--app-muted);
     font-size: 0.8rem;
-    font-weight: 700;
+    font-weight: 500;
     line-height: 1.2;
+    text-align: center;
     overflow-wrap: anywhere;
   }
 
@@ -1022,6 +914,11 @@
     border: 0;
     background: transparent;
     box-shadow: none;
+  }
+
+  .analyze-carousel-arrow:hover:not(:disabled),
+  .analyze-carousel-dot:hover {
+    background: var(--app-subtle-surface);
   }
 
   .analyze-carousel-dot::after {
@@ -1054,7 +951,7 @@
   .weekly-trend,
   .pace-trend,
   .effort-pattern {
-    padding: 0.75rem;
+    padding: 1.25rem;
   }
 
   .weekly-trend-chart,

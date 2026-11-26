@@ -622,7 +622,11 @@ export default function ShoeTracker({
   };
 
   return (
-    <div className="tracker training-page">
+    <div className="track-page training-page">
+      <div className="training-page-header">
+        <h1>Track</h1>
+      </div>
+      <div className="tracker">
       {error && <p role="alert" className="training-error">{error}</p>}
       {actionStatus && (
         <p role="status" className="training-status tracker-status">
@@ -630,6 +634,7 @@ export default function ShoeTracker({
         </p>
       )}
       <div className="entry training-primary-surface">
+        <h2 className="training-card-heading">Log a completed run</h2>
         {runSaveConfirmation && (
           <p className="run-save-confirmation" role="status">
             {runSaveConfirmation}
@@ -665,7 +670,7 @@ export default function ShoeTracker({
           aria-label="Log a completed run"
           aria-busy={pendingAction === "create-run"}
           onSubmit={handleRunSubmit}
-          className="space-y-3 run-entry-form"
+          className="run-entry-form"
           noValidate
         >
           <label>
@@ -712,7 +717,7 @@ export default function ShoeTracker({
               ))}
             </select>
           </label>
-          <label>
+          <label className="run-field-wide">
             Perceived effort (optional)
             <select name="perceivedEffort">
               <option value="">How did it feel? (optional)</option>
@@ -723,7 +728,7 @@ export default function ShoeTracker({
               ))}
             </select>
           </label>
-          <label>
+          <label className="run-field-wide">
             Did pain or unusual symptoms affect this run?
             <select name="unusualPain" required defaultValue="">
               <option value="" disabled>
@@ -733,7 +738,7 @@ export default function ShoeTracker({
               <option value="yes">Yes</option>
             </select>
           </label>
-          <label>
+          <label className="run-field-wide">
             Run notes (optional)
             <textarea
               aria-describedby="run-notes-help"
@@ -748,6 +753,7 @@ export default function ShoeTracker({
             {COMPLETED_RUN_NOTES_MAX_LENGTH} characters.
           </p>
           <button
+            className="run-submit"
             type="submit"
             disabled={
               pending || hasPendingRunSave || activeShoes.length === 0
@@ -759,7 +765,7 @@ export default function ShoeTracker({
       </div>
 
       <section
-        className="run-history training-primary-surface"
+        className="run-history"
         aria-labelledby="logged-runs-heading"
       >
         <div className="run-history-heading">
@@ -1088,7 +1094,7 @@ export default function ShoeTracker({
                             )}
                           </p>
                         )}
-                        <span>
+                        <span className="run-history-summary">
                           {getRunLocalDate(run)}: {formatDistance(
                             run.distance,
                             distanceUnit,
@@ -1109,6 +1115,7 @@ export default function ShoeTracker({
                           <p className="run-notes"><strong>Notes:</strong> {run.notes}</p>
                         )}
                         <button
+                          className="run-history-edit"
                           ref={(button) => {
                             if (button === null) {
                               editRunButtonRefs.current.delete(run.id);
@@ -1131,6 +1138,7 @@ export default function ShoeTracker({
                           {isImported ? "Add run details" : "Edit"}
                         </button>
                         <button
+                          className="run-history-delete"
                           type="button"
                           disabled={pending}
                           aria-label={`Delete run from ${getRunLocalDate(run)}`}
@@ -1204,71 +1212,8 @@ export default function ShoeTracker({
         </ConfirmationDialog>
       )}
 
-      <div className="shoe-tracking training-primary-surface">
-        <h3 className="text-lg font-medium training-card-heading">Add New Shoes</h3>
-        <form
-          className="shoe-entry-form"
-          aria-busy={pendingAction === "add-shoe"}
-          onSubmit={(event) => void handleAddShoe(event)}
-          noValidate
-        >
-          <label>
-            Shoe name
-            <input
-              type="text"
-              value={newShoe}
-              onChange={(event) => setNewShoe(event.target.value)}
-              placeholder="Shoe Name"
-            />
-          </label>
-          <label>
-            Distance already on this shoe ({distanceUnitName(distanceUnit)})
-            <input
-              aria-describedby="shoe-starting-distance-help"
-              type="number"
-              min="0"
-              step="0.01"
-              inputMode="decimal"
-              value={startingDistance}
-              onChange={(event) => setStartingDistance(event.target.value)}
-            />
-          </label>
-          <p id="shoe-starting-distance-help" className="training-field-hint">
-            Use 0 for new shoes. This stays separate from distance Marathoner records.
-          </p>
-          <button type="submit" disabled={pending}>
-            {pendingAction === "add-shoe" ? "Adding shoe…" : "Add shoe"}
-          </button>
-        </form>
-
-        {activeShoes.length > 0 && (
-          <div className="shoe-default-control">
-            <label>
-              Default shoe for imported runs
-              <select
-                aria-describedby="default-shoe-help"
-                disabled={pending}
-                value={defaultShoeId ?? ""}
-                onChange={(event) => void handleDefaultShoeChange(event)}
-              >
-                <option value="" disabled>
-                  Choose a default shoe
-                </option>
-                {activeShoes.map((shoe) => (
-                  <option key={shoe.id} value={shoe.id}>
-                    {shoe.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <p id="default-shoe-help" className="training-field-hint">
-              New Apple Health and Garmin runs use this shoe. Changing it does
-              not alter runs already in your history.
-            </p>
-          </div>
-        )}
-
-        <div className="mt-4">
+      <div className="shoe-tracking">
+        <div className="shoe-mileage-list">
           <h3
             ref={shoeMileageHeadingRef}
             className="text-lg font-medium training-card-heading"
@@ -1334,6 +1279,69 @@ export default function ShoeTracker({
             </ul>
           )}
         </div>
+
+        <h3 className="text-lg font-medium training-card-heading">Add New Shoes</h3>
+        <form
+          className="shoe-entry-form"
+          aria-busy={pendingAction === "add-shoe"}
+          onSubmit={(event) => void handleAddShoe(event)}
+          noValidate
+        >
+          <label>
+            Shoe name
+            <input
+              type="text"
+              value={newShoe}
+              onChange={(event) => setNewShoe(event.target.value)}
+              placeholder="Shoe Name"
+            />
+          </label>
+          <label>
+            Distance already on this shoe ({distanceUnitName(distanceUnit)})
+            <input
+              aria-describedby="shoe-starting-distance-help"
+              type="number"
+              min="0"
+              step="0.01"
+              inputMode="decimal"
+              value={startingDistance}
+              onChange={(event) => setStartingDistance(event.target.value)}
+            />
+          </label>
+          <p id="shoe-starting-distance-help" className="training-field-hint">
+            Use 0 for new shoes. This stays separate from distance Marathoner records.
+          </p>
+          <button type="submit" disabled={pending}>
+            {pendingAction === "add-shoe" ? "Adding shoe…" : "Add shoe"}
+          </button>
+        </form>
+
+        {activeShoes.length > 0 && (
+          <div className="shoe-default-control">
+            <label>
+              Default shoe for imported runs
+              <select
+                aria-describedby="default-shoe-help"
+                disabled={pending}
+                value={defaultShoeId ?? ""}
+                onChange={(event) => void handleDefaultShoeChange(event)}
+              >
+                <option value="" disabled>
+                  Choose a default shoe
+                </option>
+                {activeShoes.map((shoe) => (
+                  <option key={shoe.id} value={shoe.id}>
+                    {shoe.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <p id="default-shoe-help" className="training-field-hint">
+              New Apple Health and Garmin runs use this shoe. Changing it does
+              not alter runs already in your history.
+            </p>
+          </div>
+        )}
       </div>
 
       {shoeToRetire !== null && (
@@ -1365,6 +1373,7 @@ export default function ShoeTracker({
           </p>
         </ConfirmationDialog>
       )}
+      </div>
     </div>
   );
 }

@@ -8,7 +8,6 @@ import {
   type ReactNode,
 } from "react";
 import Title from "./components/Title";
-import Subtitle from "./components/Subtitle";
 import Calendar from "./components/Calendar";
 import PublicLandingPage from "./components/PublicLandingPage";
 import NativeSignedOutEntry from "./components/NativeSignedOutEntry";
@@ -368,10 +367,9 @@ function App() {
           </p>
         )}
         {!activeSection && (
-          <>
-            <Title />
-            <Subtitle />
-          </>
+          <div className="training-page-header signed-in-home-heading">
+            <h1 className="title">Home</h1>
+          </div>
         )}
       </>
     ) : null;
@@ -739,22 +737,7 @@ function AuthenticatedExperience({
       )}
 
         {!activeSection && hasReadableTraining && showExistingHomeBehindOnboarding && (
-          <>
-          <div className="runner-profile-entry">
-            <button
-              ref={runnerProfileTriggerRef}
-              type="button"
-              disabled={!training.canWrite}
-              onClick={(event) => editRunnerProfile(event.currentTarget)}
-            >
-              {onboardingComplete ? "Edit runner profile" : "Resume runner setup"}
-            </button>
-            <p>
-              {onboardingComplete
-                ? "Your first-marathon starting point is saved."
-                : "Your saved progress is safe; finish setup before a plan can be evaluated."}
-            </p>
-          </div>
+          <div className="home-training-overview">
           {InternalSessionPlanNotice && sessionPlanProjection && (
             <Suspense fallback={null}>
               <InternalSessionPlanNotice
@@ -769,7 +752,23 @@ function AuthenticatedExperience({
             distanceUnit={training.profile?.preferredDistanceUnit ?? "mile"}
             onOpenPlan={() => onOpenSection("plan")}
           />
-          </>
+          <div className="runner-profile-entry">
+            <h2>Runner profile</h2>
+            <p>
+              {onboardingComplete
+                ? "Your first-marathon starting point is saved."
+                : "Your saved progress is safe; finish setup before a plan can be evaluated."}
+            </p>
+            <button
+              ref={runnerProfileTriggerRef}
+              type="button"
+              disabled={!training.canWrite}
+              onClick={(event) => editRunnerProfile(event.currentTarget)}
+            >
+              {onboardingComplete ? "Edit runner profile" : "Resume runner setup"}
+            </button>
+          </div>
+          </div>
         )}
 
         {secondaryTrainingReady &&

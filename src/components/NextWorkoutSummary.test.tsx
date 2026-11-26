@@ -66,7 +66,7 @@ describe("NextWorkoutSummary", () => {
 
     expect(screen.getByRole("heading", { name: "Easy run" })).toBeInTheDocument();
     expect(screen.getByText("Wednesday, January 2, 2030")).toBeInTheDocument();
-    expect(screen.getByText("5 km · 30 min")).toBeInTheDocument();
+    expect(screen.getByRole("region", { name: "Easy run" })).toHaveTextContent("5 km · 30 min");
   });
 
   it("opens the Plan surface only through the supplied action", async () => {

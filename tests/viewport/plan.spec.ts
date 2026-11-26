@@ -8,6 +8,17 @@ const phoneViewport = { width: 390, height: 844 };
 
 test.use({ viewport: phoneViewport });
 
+async function tokenColor(page: Page, token: string) {
+  return page.evaluate((name) => {
+    const sample = document.createElement("span");
+    sample.style.color = `var(${name})`;
+    document.body.append(sample);
+    const color = getComputedStyle(sample).color;
+    sample.remove();
+    return color;
+  }, token);
+}
+
 async function expectContentContained(locator: Locator, label: string) {
   const overflow = await locator.evaluate((element) => ({
     clientHeight: element.clientHeight,
@@ -95,21 +106,17 @@ async function exerciseEqualWeekButtonDimensions(
 test("uses the shared Plan surface and workout hierarchy", async ({ page }) => {
   await page.goto("tests/viewport/plan.html");
 
-  await expect(page.locator(".plan-header")).toHaveCSS(
+  await expect(page.locator(".plan-sheet")).toHaveCSS(
     "background-color",
-    "rgb(233, 238, 248)",
-  );
-  await expect(page.locator(".plan-week-summary > div").first()).toHaveCSS(
-    "background-color",
-    "rgb(255, 255, 255)",
+    await tokenColor(page, "--app-surface"),
   );
   await expect(page.locator(".plan-day-status.completed")).toHaveCSS(
     "color",
-    "rgb(23, 102, 58)",
+    await tokenColor(page, "--app-success"),
   );
-  await expect(page.locator(".plan-day.tempo-run .plan-day-route")).toHaveCSS(
-    "color",
-    "rgb(163, 107, 0)",
+  await expect(page.locator(".plan-day.tempo-run .plan-day-date")).toHaveCSS(
+    "border-left-color",
+    await tokenColor(page, "--app-workout-quality"),
   );
 
   await page
@@ -119,11 +126,11 @@ test("uses the shared Plan surface and workout hierarchy", async ({ page }) => {
     .click();
   await expect(page.getByRole("dialog", { name: "Tempo run" })).toHaveCSS(
     "background-color",
-    "rgb(255, 255, 255)",
+    await tokenColor(page, "--app-surface"),
   );
   await expect(page.locator(".plan-modal-overlay")).toHaveCSS(
     "background-color",
-    "rgba(29, 29, 31, 0.64)",
+    await tokenColor(page, "--app-overlay"),
   );
 });
 
@@ -214,6 +221,27 @@ test("keeps Plan browsing usable with 200% text", async ({ page }) => {
 
   await exercisePlan(page, "200% text");
 });
+
+for (const textScale of [100, 200]) {
+  test(`keeps the complete phone Plan usable at ${textScale}% text`, async ({ page }) => {
+    await page.goto("tests/viewport/plan.html?shell=1");
+    await page.addStyleTag({ content: `:root { font-size: ${textScale}%; }` });
+    await expect(page.getByRole("button", { name: "Account settings" })).toBeVisible();
+    const navigation = page.getByRole("navigation", { name: "Training sections" });
+    await expect(navigation).toBeVisible();
+    await exercisePlan(page, `${textScale}% text inside the app shell`);
+
+    const lastWorkout = page.locator(".plan-day").last();
+    await lastWorkout.scrollIntoViewIfNeeded();
+    const workoutBounds = await lastWorkout.boundingBox();
+    const navigationBounds = await navigation.boundingBox();
+    expect(workoutBounds).not.toBeNull();
+    expect(navigationBounds).not.toBeNull();
+    if (workoutBounds && navigationBounds) {
+      expect(workoutBounds.y + workoutBounds.height).toBeLessThanOrEqual(navigationBounds.y);
+    }
+  });
+}
 
 test("keeps training tickets static when reduced motion is requested", async ({
   page,

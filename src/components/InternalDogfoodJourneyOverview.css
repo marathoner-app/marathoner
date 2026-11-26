@@ -2,10 +2,10 @@
   width: min(100%, 72rem);
   margin: 2rem auto 0;
   padding: clamp(1.25rem, 3vw, 2rem);
-  border: 2px solid #244f46;
+  border: 2px solid var(--app-border);
   border-radius: 1rem;
-  background: #eef8f4;
-  color: #18312c;
+  background: var(--app-surface);
+  color: var(--app-ink);
 }
 
 .internal-dogfood-journey > header {
@@ -14,7 +14,7 @@
 
 .internal-dogfood-journey-eyebrow {
   margin: 0 0 0.35rem;
-  color: #286658;
+  color: var(--app-accent);
   font-size: 0.78rem;
   font-weight: 800;
   letter-spacing: 0.08em;
@@ -30,15 +30,15 @@
   padding: 1rem;
   border: 1px solid currentColor;
   border-radius: 0.75rem;
-  background: #ffffffcc;
+  background: var(--app-subtle-surface);
 }
 
 .internal-dogfood-session-draft.is-ready {
-  color: #1d604d;
+  color: var(--app-success);
 }
 
 .internal-dogfood-session-draft.is-not-ready {
-  color: #86511d;
+  color: var(--app-warning);
 }
 
 .internal-dogfood-session-draft h3,
@@ -65,15 +65,15 @@
   padding: 0.85rem;
   border: 1px solid currentColor;
   border-radius: 0.75rem;
-  background: #ffffffcc;
+  background: var(--app-subtle-surface);
 }
 
 .internal-dogfood-evidence > .is-ready {
-  color: #1d604d;
+  color: var(--app-success);
 }
 
 .internal-dogfood-evidence > .is-not-ready {
-  color: #86511d;
+  color: var(--app-warning);
 }
 
 .internal-dogfood-evidence-label {
@@ -86,8 +86,8 @@
 
 .internal-dogfood-boundary {
   padding: 1rem;
-  border-left: 0.3rem solid #286658;
-  background: #dcefe8;
+  border-left: 0.3rem solid var(--app-accent);
+  background: var(--app-accent-surface);
   line-height: 1.55;
 }
 
@@ -109,13 +109,13 @@
 }
 
 .internal-dogfood-journey nav a {
-  color: #174f43;
+  color: var(--app-accent);
   font-weight: 800;
 }
 
 .internal-dogfood-journey nav p {
   margin: 0.35rem 0 0;
-  color: #38554f;
+  color: var(--app-muted);
   font-size: 0.92rem;
   line-height: 1.5;
 }
