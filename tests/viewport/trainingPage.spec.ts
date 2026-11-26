@@ -40,7 +40,7 @@ async function capturePlan(page: Page) {
   await page.goto("tests/viewport/plan.html");
   const layout = await readLayout(page.locator(".plan-container.training-page"));
   const surface = await readSurface(
-    page.locator(".plan-header.training-primary-surface"),
+    page.locator(".plan-sheet.training-primary-surface"),
   );
   await expectNoHorizontalOverflow(page, "Plan", "with the shared training layout");
   return { layout, surface };
@@ -48,7 +48,7 @@ async function capturePlan(page: Page) {
 
 async function captureTrack(page: Page) {
   await page.goto("tests/viewport/track.html");
-  const layout = await readLayout(page.locator(".tracker.training-page"));
+  const layout = await readLayout(page.locator(".track-page.training-page"));
   const surface = await readSurface(
     page.locator(".entry.training-primary-surface"),
   );

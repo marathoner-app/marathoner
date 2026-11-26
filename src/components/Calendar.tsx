@@ -178,9 +178,15 @@ export default function Calendar({
 
   if (plan === null) {
     return (
-      <p className="training-empty-state">
-        No training plan yet. Your plan will appear here once it has been created.
-      </p>
+      <div className="plan-container training-page">
+        <div className="training-page-header">
+          <h1>Plan</h1>
+          <p>Your training, one week at a time.</p>
+        </div>
+        <p className="training-empty-state">
+          No training plan yet. Your plan will appear here once it has been created.
+        </p>
+      </div>
     );
   }
 
@@ -224,9 +230,13 @@ export default function Calendar({
 
   return (
     <div className="plan-container training-page">
-      <div className="plan-header training-primary-surface">
+      <div className="training-page-header">
+        <h1>Plan</h1>
+        <p>{plan.name}</p>
+      </div>
+      <div className="plan-sheet training-primary-surface">
+      <div className="plan-header">
         <div className="plan-heading">
-          <p className="plan-name">{plan.name}</p>
           <h2 className="section-heading">
             Week {selectedWeek} of {weekCount}
           </h2>
@@ -312,11 +322,6 @@ export default function Calendar({
                   </time>
                 </span>
                 <span className="plan-day-content">
-                  <span className="plan-day-route" aria-hidden="true">
-                    <span />
-                    <span />
-                    <span />
-                  </span>
                   <span className="plan-day-workout">{workoutLabel(workout)}</span>
                   <span className="plan-day-meta">
                     {workoutTarget(workout, distanceUnit) ?? "No training target"}
@@ -336,6 +341,7 @@ export default function Calendar({
           ))}
         </ol>
       )}
+      </div>
 
       {selectedWorkout && (
         <div

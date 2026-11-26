@@ -119,8 +119,8 @@ export default function RecentRunPaceTrend({
       grid: {
         left: 64,
         right: 16,
-        top: 32,
-        bottom: 48,
+        top: 24,
+        bottom: 36,
       },
       tooltip: {
         trigger: "axis",
@@ -142,8 +142,10 @@ export default function RecentRunPaceTrend({
         name: unitLabel,
         nameTextStyle: { color: mutedColor },
         min: "dataMin",
+        splitNumber: 3,
         axisLabel: {
           color: mutedColor,
+          hideOverlap: true,
           formatter: (value: number) => formatPace(value, distanceUnit),
         },
         axisLine: { lineStyle: { color: borderColor } },

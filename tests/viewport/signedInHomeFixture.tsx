@@ -3,7 +3,6 @@ import { createRoot } from "react-dom/client";
 import "../../src/index.css";
 import NextWorkoutSummary from "../../src/components/NextWorkoutSummary";
 import Subtitle from "../../src/components/Subtitle";
-import Title from "../../src/components/Title";
 import TrainingSectionNavigation from "../../src/components/TrainingSectionNavigation";
 import SignedInAppHeader from "../../src/components/SignedInAppHeader";
 import SignedInStartupScreen from "../../src/components/SignedInStartupScreen";
@@ -11,6 +10,11 @@ import RunnerOnboarding from "../../src/onboarding/RunnerOnboarding";
 import {
   createDateOnly,
   createDistanceMeters,
+  createDurationSeconds,
+  createPlannedWorkoutId,
+  createTrainingPlanId,
+  type TrainingPlan,
+  type PlannedWorkout,
   createIanaTimeZone,
   createUserId,
   createUtcDateTime,
@@ -41,6 +45,31 @@ const completeProfile: UserProfile = {
   availableTrainingDays: ["tuesday", "thursday", "saturday", "sunday"],
   preferredLongRunDay: "sunday",
   completionGoal: "complete_first_marathon",
+  createdAt: fixtureTimestamp,
+  updatedAt: fixtureTimestamp,
+};
+
+const samplePlan: TrainingPlan = {
+  id: createTrainingPlanId("viewport-home-plan"),
+  userId: completeProfile.id,
+  name: "First Marathon Journey",
+  startDate: createDateOnly("2026-11-23"),
+  targetRaceDate: createDateOnly("2027-05-02"),
+  status: "active",
+  createdAt: fixtureTimestamp,
+  updatedAt: fixtureTimestamp,
+};
+const sampleWorkout: PlannedWorkout = {
+  id: createPlannedWorkoutId("viewport-home-workout"),
+  userId: completeProfile.id,
+  planId: samplePlan.id,
+  scheduledDate: createDateOnly("2026-11-26"),
+  kind: "run",
+  purpose: "tempo",
+  phase: "base_building",
+  status: "planned",
+  targetDistance: createDistanceMeters(8_000),
+  targetDuration: createDurationSeconds(2_700),
   createdAt: fixtureTimestamp,
   updatedAt: fixtureTimestamp,
 };
@@ -85,24 +114,31 @@ export function SignedInHomeFixture() {
 
       {activeSection === null && (
         <>
-          <Title />
-          <Subtitle />
+          <div className="training-page-header signed-in-home-heading">
+            <h1 className="title">Ready for your next run.</h1>
+            <Subtitle />
+          </div>
+          <div className="home-training-overview">
+          <NextWorkoutSummary
+            plan={search.has("workout") ? samplePlan : null}
+            workout={search.has("workout") ? sampleWorkout : null}
+            distanceUnit="mile"
+            onOpenPlan={() => openSection("plan")}
+          />
           <div className="runner-profile-entry">
-            <button type="button" onClick={() => setOnboardingOpen(true)}>
-              {setupComplete ? "Edit runner profile" : "Resume runner setup"}
-            </button>
+            <h2>Runner profile</h2>
+
             <p>
               {setupComplete
                 ? "Your first-marathon starting point is saved."
                 : "Your saved progress is safe; finish setup before a plan can be evaluated."}
             </p>
+
+            <button type="button" onClick={() => setOnboardingOpen(true)}>
+              {setupComplete ? "Edit runner profile" : "Resume runner setup"}
+            </button>
           </div>
-          <NextWorkoutSummary
-            plan={null}
-            workout={null}
-            distanceUnit="mile"
-            onOpenPlan={() => openSection("plan")}
-          />
+          </div>
         </>
       )}
 

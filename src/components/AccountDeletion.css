@@ -30,7 +30,6 @@
   overflow-y: auto;
   background: var(--app-overlay);
   color: var(--app-ink);
-  backdrop-filter: blur(8px);
   line-height: 1.5;
   text-align: left;
 }
@@ -58,9 +57,9 @@
 
 .account-settings-eyebrow {
   margin: 0 0 0.25rem;
-  color: var(--app-accent);
-  font-size: 0.82rem;
-  font-weight: 750;
+  color: var(--app-muted);
+  font-size: 0.7rem;
+  font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
@@ -72,12 +71,23 @@
   line-height: 1.2;
 }
 
+.account-settings-dialog h2,
+.account-deletion-receipt h1 {
+  font-size: clamp(1.5rem, 4vw, 1.75rem);
+  font-weight: 720;
+  letter-spacing: -0.035em;
+}
+
+.account-settings-dialog h3 {
+  font-size: 1.05rem;
+  font-weight: 650;
+  letter-spacing: -0.015em;
+}
+
 .account-support-diagnostics {
   margin-top: 1.5rem;
-  padding: 1rem;
-  border: 1px solid var(--app-border);
-  border-radius: var(--app-radius-medium);
-  background: var(--app-subtle-surface);
+  padding: 1.5rem 0 0;
+  border-top: 1px solid var(--app-border);
 }
 
 .account-support-diagnostics p {
@@ -85,8 +95,10 @@
 }
 
 .account-support-diagnostics summary {
+  min-height: 2.75rem;
+  align-content: center;
   cursor: pointer;
-  font-weight: 700;
+  font-weight: 650;
 }
 
 .account-support-diagnostics button {
@@ -105,6 +117,11 @@
   box-sizing: border-box;
   width: 100%;
   min-height: 9rem;
+  padding: 0.75rem;
+  border: 1px solid var(--app-border-strong);
+  border-radius: var(--app-radius-small);
+  background: var(--app-surface);
+  color: var(--app-ink);
   resize: vertical;
   font: 0.8rem/1.4 ui-monospace, SFMono-Regular, Menlo, monospace;
 }
@@ -128,18 +145,14 @@
 
 .apple-health-section {
   margin-top: 1.5rem;
-  padding: 1.25rem;
-  border: 1px solid var(--app-border);
-  border-radius: var(--app-radius-medium);
-  background: var(--app-subtle-surface);
+  padding: 1.5rem 0 0;
+  border-top: 1px solid var(--app-border);
 }
 
 .garmin-connection-section {
-  margin-top: 1rem;
-  padding: 1.25rem;
-  border: 1px solid var(--app-border);
-  border-radius: var(--app-radius-medium);
-  background: var(--app-subtle-surface);
+  margin-top: 1.5rem;
+  padding: 1.5rem 0 0;
+  border-top: 1px solid var(--app-border);
 }
 
 .garmin-connection-section p {
@@ -170,15 +183,15 @@
 
 .garmin-recovery {
   margin-top: 1rem;
-  padding: 0.9rem;
-  border: 1px solid var(--app-border);
-  border-radius: var(--app-radius-small);
-  background: var(--app-surface);
+  padding: 0.75rem 0 0;
+  border-top: 1px solid var(--app-border);
 }
 
 .garmin-recovery summary {
+  min-height: 2.75rem;
+  align-content: center;
   cursor: pointer;
-  font-weight: 700;
+  font-weight: 650;
 }
 
 .garmin-recovery button,
@@ -247,7 +260,7 @@
   height: 2.75rem;
   padding: 0;
   border: 1px solid transparent;
-  border-radius: 50%;
+  border-radius: var(--app-radius-small);
   background: transparent;
   color: var(--app-ink);
   font-size: 1.75rem;
@@ -271,7 +284,8 @@
 }
 
 .account-settings-dialog label {
-  font-weight: 700;
+  font-size: 0.875rem;
+  font-weight: 650;
 }
 
 .account-settings-dialog input {
@@ -288,6 +302,7 @@
 
 .account-settings-dialog input:focus-visible,
 .account-settings-dialog textarea:focus-visible,
+.account-support-diagnostics summary:focus-visible,
 .garmin-recovery summary:focus-visible {
   border-color: var(--app-accent);
   outline: 3px solid var(--app-accent);
@@ -300,7 +315,7 @@
 .account-deletion-done {
   min-height: 3rem;
   padding: 0.7rem 1rem;
-  font-weight: 750;
+  font-weight: 650;
 }
 
 .account-deletion-submit {
@@ -347,10 +362,9 @@
 .account-deletion-request-id {
   display: grid;
   gap: 0.6rem;
-  padding: 1rem;
-  border: 1px solid var(--app-border);
-  border-radius: var(--app-radius-small);
-  background: var(--app-surface);
+  padding: 1rem 0;
+  border-top: 1px solid var(--app-success-border);
+  border-bottom: 1px solid var(--app-success-border);
 }
 
 .account-deletion-request-id span {

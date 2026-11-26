@@ -1,5 +1,5 @@
 function Subtitle() {
-    return <p className="subtitle">Welcome to your training companion</p>
+    return <p className="subtitle">Your training, one day at a time.</p>
 }
 
 

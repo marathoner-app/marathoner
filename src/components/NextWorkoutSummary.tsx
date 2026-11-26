@@ -1,4 +1,4 @@
-import { useId } from "react";
+import { Fragment, useId } from "react";
 import {
   metersToKilometers,
   metersToMiles,
@@ -115,7 +115,19 @@ export default function NextWorkoutSummary({
           {formatDate(workout.scheduledDate)}
         </time>
       </p>
-      {target !== null && <p className="next-workout-target">{target}</p>}
+      {target !== null && (
+        <p className="next-workout-target">
+          {target.split(" · ").map((part, index) => (
+            <Fragment key={part}>
+              {index > 0 && <span className="next-workout-target-separator"> · </span>}
+              <span className="next-workout-target-part">
+                <span className="next-workout-target-value">{part.split(" ")[0]}</span>{" "}
+                <span className="next-workout-target-unit">{part.split(" ").slice(1).join(" ")}</span>
+              </span>
+            </Fragment>
+          ))}
+        </p>
+      )}
       <button type="button" onClick={onOpenPlan}>
         Open Plan
       </button>

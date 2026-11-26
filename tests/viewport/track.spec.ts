@@ -4,6 +4,17 @@ import {
   expectNoHorizontalOverflow,
 } from "./layoutAssertions";
 
+async function tokenColor(page: Page, token: string) {
+  return page.evaluate((name) => {
+    const sample = document.createElement("span");
+    sample.style.color = `var(${name})`;
+    document.body.append(sample);
+    const color = getComputedStyle(sample).color;
+    sample.remove();
+    return color;
+  }, token);
+}
+
 const phoneViewport = { width: 390, height: 844 };
 
 test.use({ viewport: phoneViewport });
@@ -576,29 +587,25 @@ test("uses the shared visual hierarchy for Track states", async ({ page }) => {
 
   await expect(page.locator(".entry")).toHaveCSS(
     "background-color",
-    "rgb(255, 255, 255)",
-  );
-  await expect(page.locator(".shoe-tracking")).toHaveCSS(
-    "border-radius",
-    "20px",
+    await tokenColor(page, "--app-surface"),
   );
   await expect(page.locator(".run-save-recovery")).toHaveCSS(
     "background-color",
-    "rgb(255, 248, 232)",
+    await tokenColor(page, "--app-warning-surface"),
   );
   await expect(page.locator(".run-save-recovery")).toHaveCSS(
     "color",
-    "rgb(124, 74, 3)",
+    await tokenColor(page, "--app-warning"),
   );
 
   await page.goto("tests/viewport/track.html?imported=1");
   await page.getByRole("button", { name: /Add details to run from/ }).click();
   await expect(page.locator(".imported-run-facts")).toHaveCSS(
     "background-color",
-    "rgb(238, 245, 253)",
+    await tokenColor(page, "--app-accent-surface"),
   );
   await expect(page.locator(".imported-run-source")).toHaveCSS(
     "color",
-    "rgb(20, 104, 204)",
+    await tokenColor(page, "--app-accent"),
   );
 });

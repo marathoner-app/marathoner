@@ -8,6 +8,17 @@ const phoneViewport = { width: 390, height: 844 };
 
 test.use({ viewport: phoneViewport });
 
+async function tokenColor(page: Page, token: string) {
+  return page.evaluate((name) => {
+    const sample = document.createElement("span");
+    sample.style.color = `var(${name})`;
+    document.body.append(sample);
+    const color = getComputedStyle(sample).color;
+    sample.remove();
+    return color;
+  }, token);
+}
+
 async function expectContentContained(locator: Locator, label: string) {
   const overflow = await locator.evaluate((element) => ({
     clientHeight: element.clientHeight,
@@ -95,21 +106,17 @@ async function exerciseEqualWeekButtonDimensions(
 test("uses the shared Plan surface and workout hierarchy", async ({ page }) => {
   await page.goto("tests/viewport/plan.html");
 
-  await expect(page.locator(".plan-header")).toHaveCSS(
+  await expect(page.locator(".plan-sheet")).toHaveCSS(
     "background-color",
-    "rgb(233, 238, 248)",
-  );
-  await expect(page.locator(".plan-week-summary > div").first()).toHaveCSS(
-    "background-color",
-    "rgb(255, 255, 255)",
+    await tokenColor(page, "--app-surface"),
   );
   await expect(page.locator(".plan-day-status.completed")).toHaveCSS(
     "color",
-    "rgb(23, 102, 58)",
+    await tokenColor(page, "--app-success"),
   );
-  await expect(page.locator(".plan-day.tempo-run .plan-day-route")).toHaveCSS(
-    "color",
-    "rgb(163, 107, 0)",
+  await expect(page.locator(".plan-day.tempo-run .plan-day-date")).toHaveCSS(
+    "border-left-color",
+    await tokenColor(page, "--app-workout-quality"),
   );
 
   await page
@@ -119,11 +126,11 @@ test("uses the shared Plan surface and workout hierarchy", async ({ page }) => {
     .click();
   await expect(page.getByRole("dialog", { name: "Tempo run" })).toHaveCSS(
     "background-color",
-    "rgb(255, 255, 255)",
+    await tokenColor(page, "--app-surface"),
   );
   await expect(page.locator(".plan-modal-overlay")).toHaveCSS(
     "background-color",
-    "rgba(29, 29, 31, 0.64)",
+    await tokenColor(page, "--app-overlay"),
   );
 });
 

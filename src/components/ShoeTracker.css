@@ -3,27 +3,34 @@
   grid-template-areas:
     "entry shoes"
     "history history";
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: minmax(0, 1.65fr) minmax(0, 1fr);
   align-items: flex-start;
-  gap: var(--app-training-page-gap);
+  gap: 2rem;
+}
+
+.tracker > .training-error {
+  grid-column: 1 / -1;
+  margin: 0;
 }
 
 .entry {
   grid-area: entry;
+  min-width: 0;
+}
+
+.entry > .training-card-heading {
+  margin-bottom: 1.5rem;
 }
 
 .shoe-tracking {
   grid-area: shoes;
+  min-width: 0;
 }
 
 .run-history {
   grid-area: history;
-}
-
-.space-y-3 {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+  min-width: 0;
+  padding-top: 0.5rem;
 }
 
 .tracker input,
@@ -36,6 +43,12 @@
   min-width: 0;
   min-height: 2.75rem;
   font: inherit;
+}
+
+.tracker button {
+  padding: 0.65rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 600;
 }
 
 .tracker input[type="date"] {
@@ -69,6 +82,7 @@
   border-radius: var(--app-radius-small);
   background: var(--app-surface);
   color: var(--app-ink);
+  font-size: 1rem;
   line-height: 1.35;
 }
 
@@ -85,8 +99,32 @@
 .tracker li {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.875rem;
   min-width: 0;
+}
+
+.tracker .run-entry-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+  gap: 1.25rem 1rem;
+}
+
+.run-entry-form > .run-field-wide,
+.run-entry-form > .elapsed-duration-input,
+.run-entry-form > .training-field-hint {
+  grid-column: 1 / -1;
+}
+
+.run-entry-form > .run-submit {
+  grid-column: 1 / -1;
+  justify-self: end;
+  width: auto;
+  min-width: min(100%, 9rem);
+}
+
+.run-entry-form > .training-field-hint {
+  margin-top: -0.65rem;
 }
 
 .entry h2,
@@ -163,16 +201,23 @@
   margin: 0;
 }
 
+.tracker .training-field-hint {
+  font-size: 0.8125rem;
+  line-height: 1.55;
+}
+
 .imported-run-source {
   margin: 0;
   color: var(--app-accent);
-  font-weight: 750;
+  font-size: 0.8125rem;
+  font-weight: 600;
 }
 
 .imported-run-match {
   margin: 0;
   color: var(--app-success);
-  font-weight: 700;
+  font-size: 0.8125rem;
+  font-weight: 600;
 }
 
 .imported-run-facts {
@@ -219,15 +264,59 @@
 
 .run-history ul > li,
 .shoe-tracking ul > li {
-  padding: 0.875rem;
+  padding: 1.25rem 0;
+  border-top: 1px solid var(--app-border);
+  border-radius: 0;
+  background: transparent;
+}
+
+.run-history ul > li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.run-history ul > li > :not(button) {
+  grid-column: 1 / -1;
+}
+
+.run-history-summary {
+  font-size: 0.9375rem;
+  font-weight: 500;
+  line-height: 1.65;
+}
+
+.run-history-edit {
+  grid-column: 2;
+}
+
+.run-history-delete {
+  grid-column: 3;
+}
+
+.run-history ul > li > button {
+  width: auto;
+}
+
+.run-heart-rate,
+.run-notes {
+  margin: 0;
+  color: var(--app-muted);
+  font-size: 0.8125rem;
+  overflow-wrap: anywhere;
+}
+
+.tracker .run-edit-form {
+  padding: 1.25rem;
   border: 1px solid var(--app-border);
   border-radius: var(--app-radius-medium);
-  background: var(--app-subtle-surface);
+  background: var(--app-surface);
 }
 
 .run-history ul > li > button,
 .run-edit-form button[type="button"] {
-  border: 1px solid var(--app-border-strong);
+  border: 1px solid var(--app-border);
   background: var(--app-surface);
   color: var(--app-ink);
 }
@@ -258,7 +347,8 @@
   gap: 0.35rem;
   width: 100%;
   min-width: 0;
-  font-weight: 700;
+  font-size: 0.8125rem;
+  font-weight: 600;
   text-align: left;
 }
 
@@ -277,7 +367,8 @@
 .elapsed-duration-input legend {
   margin-bottom: 0.35rem;
   padding: 0;
-  font-weight: 700;
+  font-size: 0.8125rem;
+  font-weight: 600;
 }
 
 .elapsed-duration-segments {
@@ -315,11 +406,20 @@
 }
 
 .shoe-mileage-total {
-  font-weight: 700;
+  font-size: clamp(1.5rem, 2.5vw, 2rem);
+  font-weight: 600;
+  letter-spacing: -0.04em;
+  line-height: 1.2;
+  font-variant-numeric: tabular-nums;
 }
 
-.shoe-tracking .mt-4 {
-  margin-top: 1.5rem;
+.shoe-mileage-list {
+  margin-bottom: 2rem;
+}
+
+.shoe-tracking > .training-card-heading {
+  margin-top: 0;
+  font-size: 1rem;
 }
 
 .shoe-default-control {
@@ -332,13 +432,15 @@
   display: grid;
   gap: 0.35rem;
   min-width: 0;
-  font-weight: 700;
+  font-size: 0.8125rem;
+  font-weight: 600;
   text-align: left;
 }
 
 .shoe-mileage-breakdown {
   color: var(--app-muted);
-  font-size: 0.92rem;
+  font-size: 0.8125rem;
+  line-height: 1.55;
 }
 
 .shoe-mileage-heading {
@@ -359,31 +461,28 @@
 }
 
 .shoe-status {
-  padding: 0.15rem 0.45rem;
-  border-radius: 999px;
-  font-size: 0.78rem;
-  font-weight: 700;
+  font-size: 0.6875rem;
+  font-weight: 600;
 }
 
 .shoe-status--active {
-  background: var(--app-success-surface);
   color: var(--app-success);
 }
 
 .shoe-status--retired {
-  background: var(--app-surface);
   color: var(--app-muted);
 }
 
 .shoe-status--default {
-  background: var(--app-accent-surface);
   color: var(--app-accent);
 }
 
-.shoe-retire-button {
+.tracker .shoe-retire-button {
+  align-self: flex-start;
+  width: auto;
   margin-top: 0.25rem;
-  border: 1px solid var(--app-warning-border);
-  background: var(--app-warning-surface);
+  border: 1px solid transparent;
+  background: transparent;
   color: var(--app-warning);
 }
 
@@ -425,8 +524,6 @@
 }
 
 .run-history ul {
-  display: grid;
-  gap: 0.75rem;
   margin-top: 1rem;
 }
 
@@ -563,7 +660,7 @@
       "shoes"
       "history";
     grid-template-columns: minmax(0, 1fr);
-    gap: var(--app-training-page-gap);
+    gap: 2rem;
   }
 
   .entry,
@@ -574,6 +671,10 @@
 }
 
 @media (max-width: 520px) {
+  .tracker .run-entry-form {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
   .run-history-heading {
     align-items: stretch;
     flex-direction: column;

@@ -315,22 +315,22 @@ for (const viewport of viewports) {
     });
     await expect(loginDialog).toBeVisible();
     await expect(loginDialog).toHaveCSS("background-color", "rgb(255, 255, 255)");
-    await expect(loginDialog).toHaveCSS("border-color", "rgb(210, 210, 215)");
-    await expect(loginDialog).toHaveCSS("border-radius", "20px");
+    await expect(loginDialog).toHaveCSS("border-color", "rgb(225, 228, 233)");
+    await expect(loginDialog).toHaveCSS("border-radius", "12px");
     await expect(loginDialog.getByRole("heading")).toHaveCSS(
       "color",
-      "rgb(29, 29, 31)",
+      "rgb(22, 25, 31)",
     );
     await expect(loginDialog.getByLabel("Email")).toHaveCSS(
       "border-color",
-      "rgb(169, 169, 175)",
+      "rgb(163, 170, 182)",
     );
     await expect(
       loginDialog.getByRole("button", { name: "Log in", exact: true }),
-    ).toHaveCSS("background-color", "rgb(20, 104, 204)");
+    ).toHaveCSS("background-color", "rgb(22, 25, 31)");
     await expect(
       loginDialog.getByRole("button", { name: "Forgot password?" }),
-    ).toHaveCSS("color", "rgb(20, 104, 204)");
+    ).toHaveCSS("color", "rgb(33, 85, 216)");
     const dialogBounds = await loginDialog.boundingBox();
     expect(dialogBounds, "login dialog should have visible bounds").not.toBeNull();
     if (dialogBounds) {

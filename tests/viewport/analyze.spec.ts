@@ -33,6 +33,28 @@ async function showCard(page: Page, label: string, position: number) {
     name: `${position} of 5: ${label}`,
   });
   await expect(card).toBeInViewport();
+  // The selected label updates before the smooth scroll reaches its snap point.
+  await expect
+    .poll(() =>
+      card.evaluate((element) => {
+        const viewport = element.parentElement;
+        if (viewport === null) return Number.POSITIVE_INFINITY;
+        const scrollPadding = Number.parseFloat(
+          window.getComputedStyle(viewport).scrollPaddingLeft,
+        );
+        const targetLeft =
+          element.getBoundingClientRect().left -
+          viewport.getBoundingClientRect().left +
+          viewport.scrollLeft -
+          scrollPadding;
+        const boundedTarget = Math.max(
+          0,
+          Math.min(targetLeft, viewport.scrollWidth - viewport.clientWidth),
+        );
+        return Math.abs(viewport.scrollLeft - boundedTarget);
+      }),
+    )
+    .toBeLessThan(2);
   return card;
 }
 
@@ -46,28 +68,17 @@ async function dragTouchHorizontally(
 
   const session = await page.context().newCDPSession(page);
   const y = Math.round(bounds.y + bounds.height / 2);
-  const startX = Math.round(bounds.x + bounds.width * 0.75);
-  const endX = Math.round(bounds.x + bounds.width * 0.25);
+  // Cross the next card's snap threshold without depending on fling momentum.
+  const startX = Math.round(bounds.x + bounds.width * 0.9);
+  const endX = Math.round(bounds.x + bounds.width * 0.2);
 
   try {
-    await session.send("Input.dispatchTouchEvent", {
-      type: "touchStart",
-      touchPoints: [{ x: startX, y }],
-    });
-    for (let step = 1; step <= 6; step += 1) {
-      await session.send("Input.dispatchTouchEvent", {
-        type: "touchMove",
-        touchPoints: [
-          {
-            x: Math.round(startX + ((endX - startX) * step) / 6),
-            y,
-          },
-        ],
-      });
-    }
-    await session.send("Input.dispatchTouchEvent", {
-      type: "touchEnd",
-      touchPoints: [],
+    await session.send("Input.synthesizeScrollGesture", {
+      x: startX,
+      y,
+      xDistance: endX - startX,
+      gestureSourceType: "touch",
+      preventFling: true,
     });
   } finally {
     await session.detach();
@@ -396,6 +407,18 @@ test("keeps Analyze as an all-at-once desktop dashboard", async ({ page }) => {
   if (widgetBounds && cardBounds) {
     expect(Math.abs(cardBounds.height - widgetBounds.height)).toBeLessThanOrEqual(2);
   }
+  const [lastEffortBounds, effortDataBounds] = await Promise.all([
+    effortCard.locator(".effort-pattern-item").last().boundingBox(),
+    effortCard.locator(".effort-pattern-data").boundingBox(),
+  ]);
+  expect(lastEffortBounds).not.toBeNull();
+  expect(effortDataBounds).not.toBeNull();
+  if (lastEffortBounds && effortDataBounds) {
+    expect(
+      effortDataBounds.y,
+      "The effort table disclosure should follow the full sequence without overlapping it",
+    ).toBeGreaterThanOrEqual(lastEffortBounds.y + lastEffortBounds.height);
+  }
 
   await page.getByRole("button", { name: "Edit dashboard" }).click();
   await expect(page.locator(".analyze-widget-edit-bar").first()).toHaveCSS(
@@ -508,4 +531,42 @@ test("edits, restores, saves, and reloads the desktop dashboard", async ({
   await page.reload();
   await expect(page.getByRole("group", { name: "Weekly distance widget" })).toBeVisible();
   await expect(page.locator(".analyze-widget")).toHaveCount(5);
+});
+
+test("keeps the desktop dashboard scrollable with 200% text", async ({ page }) => {
+  await page.setViewportSize({ width: 1024, height: 900 });
+  await page.goto("tests/viewport/analyze.html?mode=dashboard&shell=1");
+  await page.addStyleTag({ content: ":root { font-size: 200%; }" });
+
+  const frame = page.locator(".analyze-desktop-grid-frame");
+  const weeklyWidget = page.getByRole("group", { name: "Weekly distance widget" });
+  const latestWidget = page.getByRole("group", { name: "Latest run widget" });
+  await expect(frame).toBeVisible();
+  await expect
+    .poll(() => frame.evaluate((element) => element.scrollHeight - element.clientHeight))
+    .toBeGreaterThan(0);
+
+  const [frameBounds, weeklyBounds, latestBounds] = await Promise.all([
+    frame.boundingBox(),
+    weeklyWidget.boundingBox(),
+    latestWidget.boundingBox(),
+  ]);
+  if (frameBounds === null || weeklyBounds === null || latestBounds === null) {
+    throw new Error("The desktop dashboard should have visible widget bounds.");
+  }
+
+  // Wheel over the gap so the dashboard itself receives the gesture.
+  await page.mouse.move(
+    (weeklyBounds.x + weeklyBounds.width + latestBounds.x) / 2,
+    frameBounds.y + frameBounds.height / 2,
+  );
+  await page.mouse.wheel(0, 500);
+  await expect.poll(() => frame.evaluate((element) => element.scrollTop)).toBeGreaterThan(0);
+
+  for (const name of ["Training summary", "Recent Pace", "Recent Effort"]) {
+    const heading = page.getByRole("heading", { name, exact: true });
+    await heading.scrollIntoViewIfNeeded();
+    await expect(heading).toBeInViewport();
+  }
+  await expectNoHorizontalOverflow(page, "Analyze", "with 200% desktop text");
 });

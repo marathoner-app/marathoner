@@ -131,8 +131,8 @@ export default function WeeklyDistanceTrend({
       grid: {
         left: 48,
         right: 16,
-        top: 24,
-        bottom: 48,
+        top: 22,
+        bottom: 36,
       },
       tooltip: {
         trigger: "axis",
@@ -155,7 +155,8 @@ export default function WeeklyDistanceTrend({
         name: unitLabel,
         nameTextStyle: { color: mutedColor },
         minInterval: 1,
-        axisLabel: { color: mutedColor },
+        splitNumber: 3,
+        axisLabel: { color: mutedColor, hideOverlap: true },
         axisLine: { lineStyle: { color: borderColor } },
         splitLine: { lineStyle: { color: borderColor } },
       },

@@ -1,16 +1,16 @@
 :root {
-  --app-canvas: #f5f5f7;
+  --app-canvas: #f4f5f6;
   --app-surface: #ffffff;
-  --app-banner: #e9eef8;
-  --app-subtle-surface: #f9f9fb;
-  --app-ink: #1d1d1f;
-  --app-muted: #626267;
-  --app-accent: #1468cc;
-  --app-accent-hover: #0b55a8;
-  --app-accent-surface: #eef5fd;
+  --app-banner: #ffffff;
+  --app-subtle-surface: #f7f8fa;
+  --app-ink: #16191f;
+  --app-muted: #636975;
+  --app-accent: #2155d8;
+  --app-accent-hover: #1643b6;
+  --app-accent-surface: #edf2ff;
   --app-overlay: rgb(29 29 31 / 64%);
-  --app-border: #d2d2d7;
-  --app-border-strong: #a9a9af;
+  --app-border: #e1e4e9;
+  --app-border-strong: #a3aab6;
   --app-danger: #a12620;
   --app-danger-hover: #7f1d19;
   --app-danger-surface: #fff2f1;
@@ -25,11 +25,11 @@
   --app-workout-quality: #a36b00;
   --app-workout-long: #b54747;
   --app-workout-rest: #718096;
-  --app-focus-ring: rgb(20 104 204 / 28%);
-  --app-radius-small: 0.625rem;
-  --app-radius-medium: 0.875rem;
-  --app-radius-large: 1.25rem;
-  --app-shadow-small: 0 1px 2px rgb(0 0 0 / 4%), 0 6px 18px rgb(0 0 0 / 5%);
+  --app-focus-ring: rgb(33 85 216 / 24%);
+  --app-radius-small: 0.5rem;
+  --app-radius-medium: 0.625rem;
+  --app-radius-large: 0.75rem;
+  --app-shadow-small: none;
   --app-shadow-medium: 0 18px 50px rgb(0 0 0 / 9%);
   --app-shadow-dialog: 0 1.5rem 4rem rgb(0 0 0 / 24%);
   --app-motion-fast: 140ms;
@@ -38,7 +38,7 @@
   --app-safe-area-right: env(safe-area-inset-right);
   --app-safe-area-bottom: env(safe-area-inset-bottom);
   --app-safe-area-left: env(safe-area-inset-left);
-  --app-training-page-max-width: 60rem;
+  --app-training-page-max-width: 70rem;
   --app-training-page-gutter: clamp(0.75rem, 3vw, 1.25rem);
   --app-training-page-gap: clamp(1rem, 2vw, 1.25rem);
   --app-training-surface-padding: clamp(1.25rem, 3vw, 1.75rem);
@@ -133,6 +133,27 @@ button:focus-visible {
   background: var(--app-surface);
   box-shadow: var(--app-shadow-small);
   color: var(--app-ink);
+}
+
+.training-page-header {
+  margin: 0 0 1.75rem;
+  text-align: left;
+}
+
+.training-page-header h1 {
+  margin: 0;
+  color: var(--app-ink);
+  font-size: clamp(1.875rem, 3.5vw, 2.25rem);
+  font-weight: 720;
+  letter-spacing: -0.045em;
+  line-height: 1.15;
+}
+
+.training-page-header p {
+  margin: 0.5rem 0 0;
+  color: var(--app-muted);
+  font-size: 0.9375rem;
+  line-height: 1.5;
 }
 
 .training-card-heading {

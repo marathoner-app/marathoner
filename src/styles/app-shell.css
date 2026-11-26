@@ -1,5 +1,10 @@
+#root {
+  container-name: app-viewport;
+  container-type: inline-size;
+}
+
 .main {
-  --signed-in-header-height: calc(60px + env(safe-area-inset-top));
+  --signed-in-header-height: calc(4.75rem + env(safe-area-inset-top));
 
   position: relative;
   display: flex;
@@ -11,9 +16,7 @@
   height: 100vh;
   height: 100dvh;
   overflow: hidden;
-  background:
-    radial-gradient(circle at 50% 0, rgb(255 255 255 / 92%) 0, transparent 28rem),
-    var(--app-canvas);
+  background: var(--app-canvas);
   color: var(--app-ink);
   text-align: center;
 }
@@ -33,12 +36,27 @@
   min-height: 100vh;
   min-height: 100dvh;
   padding-top: var(--signed-in-header-height);
-  padding-bottom: 7rem;
+  padding-bottom: 2.5rem;
   overflow: visible;
 }
 
-.main.signed-in-home .title {
-  margin-top: clamp(3rem, 7vw, 5.5rem);
+.signed-in-home-heading {
+  box-sizing: border-box;
+  width: min(calc(100% - 2.5rem), 70rem);
+  margin: 2rem auto 1.75rem;
+}
+
+.home-training-overview {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+  align-items: start;
+  gap: 2rem;
+  width: min(calc(100% - 2.5rem), 70rem);
+  margin: 0 auto 1.75rem;
+}
+
+.home-training-overview > .internal-session-plan-notice {
+  grid-column: 1 / -1;
 }
 
 .signed-in-experience {
@@ -65,22 +83,21 @@
 
 .section-navigation {
   position: fixed;
-  right: 0;
-  bottom: 1rem;
-  left: 0;
-  z-index: 4;
+  top: env(safe-area-inset-top);
+  left: max(14rem, calc((100vw - 75rem) / 2 + 14rem));
+  z-index: 11;
   display: flex;
-  justify-content: center;
-  gap: 0.25rem;
+  align-items: stretch;
+  gap: 0.75rem;
   box-sizing: border-box;
-  width: min(calc(100% - 2rem), 33rem);
-  margin: 0 auto;
-  padding: 0.35rem;
-  border: 1px solid var(--app-border);
-  border-radius: var(--app-radius-large);
-  background: rgb(255 255 255 / 90%);
-  box-shadow: var(--app-shadow-small);
-  backdrop-filter: blur(16px);
+  width: 20rem;
+  height: 4.75rem;
+  margin: 0;
+  padding: 0.75rem 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
 }
 
 .section-trigger {
@@ -92,9 +109,10 @@
   min-width: 0;
   min-height: 3rem;
   overflow: hidden;
-  padding: 0.6rem 1rem;
+  padding: 0.6rem 0.5rem;
   border: 0;
-  border-radius: var(--app-radius-medium);
+  border-radius: 0;
+  border-bottom: 2px solid transparent;
   background: transparent;
   box-shadow: none;
   color: var(--app-muted);
@@ -108,9 +126,10 @@
 }
 
 .section-trigger[aria-current="page"] {
-  background: var(--app-surface);
-  box-shadow: 0 1px 5px rgb(0 0 0 / 10%);
-  color: var(--app-accent);
+  border-bottom-color: var(--app-accent);
+  background: transparent;
+  box-shadow: none;
+  color: var(--app-ink);
 }
 
 .section-trigger:disabled {
@@ -149,7 +168,7 @@
   width: min(100%, 1200px);
   min-height: 100%;
   margin: 0 auto;
-  padding: 2rem clamp(1rem, 4vw, 3rem) 7rem;
+  padding: 2rem clamp(1rem, 3vw, 2.5rem) 2.5rem;
 }
 
 .training-stale {
@@ -180,13 +199,31 @@
 }
 
 @media (max-width: 768px) {
+  .signed-in-home-heading {
+    margin-top: 1.5rem;
+  }
+
+  .home-training-overview {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1.5rem;
+  }
+
+}
+
+/* Use the actual text size when deciding whether the top navigation fits. */
+@container app-viewport (width < 64rem) {
+  .main {
+    --signed-in-header-height: calc(max(76px, 2.5rem) + env(safe-area-inset-top));
+    --signed-in-editor-toolbar-height: max(56px, 2.5rem);
+  }
+
   .main.signed-in-home {
-    justify-content: flex-start;
     padding-bottom: calc(5.5rem + env(safe-area-inset-bottom));
   }
 
   .section-navigation {
     position: fixed;
+    top: auto;
     right: 0;
     bottom: 0;
     left: 0;
@@ -195,16 +232,16 @@
     grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 0.2rem;
     width: 100%;
+    height: auto;
     margin: 0;
     padding: 0.375rem max(0.75rem, env(safe-area-inset-right))
       calc(0.375rem + env(safe-area-inset-bottom))
       max(0.75rem, env(safe-area-inset-left));
     border: 0;
-    border-top: 1px solid rgb(210 210 215 / 88%);
+    border-top: 1px solid var(--app-border);
     border-radius: 0;
-    background: rgb(245 245 247 / 92%);
-    box-shadow: 0 -0.5rem 2rem rgb(0 0 0 / 7%);
-    backdrop-filter: saturate(180%) blur(18px);
+    background: var(--app-surface);
+    box-shadow: none;
   }
 
   .section-trigger {
@@ -228,7 +265,8 @@
   }
 
   .section-trigger[aria-current="page"] {
-    background: var(--app-surface);
+    border-bottom-color: transparent;
+    background: transparent;
     color: var(--app-accent);
   }
 
@@ -243,9 +281,20 @@
     stroke-linejoin: round;
   }
 
+  .main .section-panel-content {
+    padding-bottom: calc(6.25rem + env(safe-area-inset-bottom));
+  }
+}
+
+@media (max-width: 768px) {
+  .main {
+    --signed-in-header-height: calc(max(66px, 2.125rem) + env(safe-area-inset-top));
+  }
+
   .section-panel-content {
-    padding: 1.5rem 1rem
-      calc(6.25rem + env(safe-area-inset-bottom));
+    padding-top: 1.5rem;
+    padding-right: 1rem;
+    padding-left: 1rem;
   }
 
   .title {
