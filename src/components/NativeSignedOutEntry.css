@@ -24,8 +24,8 @@
     calc(1rem + var(--native-entry-safe-right))
     calc(0.85rem + var(--native-entry-safe-bottom))
     calc(1rem + var(--native-entry-safe-left));
-  background: #101827;
-  color: #fff;
+  background: var(--app-canvas);
+  color: var(--app-ink);
   text-align: left;
 }
 
@@ -44,7 +44,7 @@
 .native-entry__media {
   z-index: -2;
   overflow: hidden;
-  background: #354052;
+  background: var(--app-subtle-surface);
 }
 
 .native-entry__media::after {
@@ -154,7 +154,7 @@
 .native-entry__primary {
   border: 1px solid var(--app-ink);
   background: var(--app-ink);
-  color: #fff;
+  color: var(--app-canvas);
 }
 
 .native-entry__primary:hover {

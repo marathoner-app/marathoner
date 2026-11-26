@@ -632,7 +632,9 @@ test("edits, restores, saves, and reloads the desktop dashboard", async ({
 });
 
 test("keeps the desktop dashboard scrollable with 200% text", async ({ page }) => {
-  await page.setViewportSize({ width: 1024, height: 900 });
+  // The title-only header lets the grid fit at 900px. A shorter desktop
+  // still exercises scrolling when the grid reaches its minimum row height.
+  await page.setViewportSize({ width: 1024, height: 800 });
   await page.goto("tests/viewport/analyze.html?mode=dashboard&shell=1");
   await page.addStyleTag({ content: ":root { font-size: 200%; }" });
 

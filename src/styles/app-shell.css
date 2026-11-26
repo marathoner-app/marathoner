@@ -73,14 +73,6 @@
   font-size: clamp(3rem, 7vw, 4.75rem);
 }
 
-.subtitle {
-  margin: 1rem 0 0;
-  color: var(--app-muted);
-  font-size: clamp(1.05rem, 2vw, 1.35rem);
-  letter-spacing: -0.015em;
-  line-height: 1.4;
-}
-
 .section-navigation {
   position: fixed;
   top: env(safe-area-inset-top);
@@ -161,6 +153,11 @@
   text-align: center;
 }
 
+/* Workout details must cover the fixed app navigation, including at large text. */
+.section-panel:has(.plan-modal-overlay) {
+  z-index: 20;
+}
+
 .section-panel-content {
   position: relative;
   z-index: 1;
@@ -171,8 +168,12 @@
   padding: 2rem clamp(1rem, 3vw, 2.5rem) 2.5rem;
 }
 
+.section-panel-content > .training-page {
+  padding-inline: 0;
+}
+
 .training-stale {
-  color: #7c4a03;
+  color: var(--app-warning);
 }
 
 .training-read-only {
@@ -293,20 +294,13 @@
 
   .section-panel-content {
     padding-top: 1.5rem;
-    padding-right: 1rem;
-    padding-left: 1rem;
+    padding-right: 1.25rem;
+    padding-left: 1.25rem;
   }
 
   .title {
     margin-bottom: 0;
     font-size: clamp(44px, 13vw, 56px);
-  }
-
-  .subtitle {
-    margin-top: 0.75rem;
-    margin-bottom: 1.75rem;
-    font-size: 1.1rem;
-    line-height: 1.5em;
   }
 
   .section-heading {

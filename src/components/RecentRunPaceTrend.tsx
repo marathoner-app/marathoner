@@ -107,6 +107,8 @@ export default function RecentRunPaceTrend({
     const accentColor = styles.getPropertyValue("--app-accent").trim();
     const borderColor = styles.getPropertyValue("--app-border").trim();
     const mutedColor = styles.getPropertyValue("--app-muted").trim();
+    const surfaceColor = styles.getPropertyValue("--app-surface").trim();
+    const inkColor = styles.getPropertyValue("--app-ink").trim();
     const unitLabel = distanceUnit === "mile" ? "Pace per mile" : "Pace per kilometer";
     const option: RecentRunPaceChartOption = {
       animation: !reduceMotion,
@@ -124,6 +126,10 @@ export default function RecentRunPaceTrend({
       },
       tooltip: {
         trigger: "axis",
+        backgroundColor: surfaceColor,
+        borderColor,
+        textStyle: { color: inkColor },
+        axisPointer: { lineStyle: { color: mutedColor } },
         valueFormatter: (value) =>
           formatPace(Number(value), distanceUnit),
       },
@@ -136,6 +142,7 @@ export default function RecentRunPaceTrend({
           rotate: displayPoints.length > 6 ? 35 : 0,
         },
         axisLine: { lineStyle: { color: borderColor } },
+        axisTick: { lineStyle: { color: borderColor } },
       },
       yAxis: {
         type: "value",

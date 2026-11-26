@@ -181,7 +181,6 @@ export default function Calendar({
       <div className="plan-container training-page">
         <div className="training-page-header">
           <h1>Plan</h1>
-          <p>Your training, one week at a time.</p>
         </div>
         <p className="training-empty-state">
           No training plan yet. Your plan will appear here once it has been created.
@@ -238,7 +237,7 @@ export default function Calendar({
       <div className="plan-header">
         <div className="plan-heading">
           <h2 className="section-heading">
-            Week {selectedWeek} of {weekCount}
+            Week {selectedWeek} <span className="plan-week-count">of {weekCount}</span>
           </h2>
           <p className="plan-week-dates">
             <time dateTime={weekStart}>{formatShortDate(weekStart)}</time>
@@ -250,13 +249,16 @@ export default function Calendar({
         <nav className="plan-week-controls" aria-label="Training week navigation">
           <button
             type="button"
+            aria-label="Previous week"
             onClick={() => setSelectedWeek((week) => week - 1)}
             disabled={selectedWeek === 1}
           >
-            Previous week
+            <svg className="plan-chevron" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <path d="m15 18-6-6 6-6" />
+            </svg>
           </button>
           <label>
-            Jump to week
+            <span className="plan-visually-hidden">Jump to week</span>
             <select
               aria-label="Training week"
               className="week-selector"
@@ -265,19 +267,23 @@ export default function Calendar({
             >
               {Array.from({ length: weekCount }, (_, index) => (
                 <option key={index + 1} value={index + 1}>
-                  {index + 1}
+                  Week {index + 1}
                 </option>
               ))}
             </select>
           </label>
           <button
             type="button"
+            aria-label="Next week"
             onClick={() => setSelectedWeek((week) => week + 1)}
             disabled={selectedWeek === weekCount}
           >
-            Next week
+            <svg className="plan-chevron" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <path d="m9 18 6-6-6-6" />
+            </svg>
           </button>
         </nav>
+      </div>
 
         <dl className="plan-week-summary" aria-label="Selected week summary">
           <div>
@@ -295,7 +301,6 @@ export default function Calendar({
             <dd>{progressSummary}</dd>
           </div>
         </dl>
-      </div>
 
       {weekWorkouts.length === 0 ? (
         <p className="training-empty-state">No workouts are scheduled this week.</p>
@@ -316,7 +321,10 @@ export default function Calendar({
                     <span className="plan-day-weekday">
                       {formatWeekday(workout.scheduledDate)}
                     </span>
-                    <span className="plan-day-month-day">
+                    <span className="plan-day-month-day" aria-hidden="true">
+                      {workout.scheduledDate.slice(-2)}
+                    </span>
+                    <span className="plan-visually-hidden">
                       {formatShortDate(workout.scheduledDate)}
                     </span>
                   </time>
@@ -334,7 +342,9 @@ export default function Calendar({
                   <span>{workoutStatusLabel(workout)}</span>
                 </span>
                 <span className="plan-day-open" aria-hidden="true">
-                  ›
+                  <svg className="plan-chevron" viewBox="0 0 24 24" focusable="false">
+                    <path d="m9 18 6-6-6-6" />
+                  </svg>
                 </span>
               </button>
             </li>

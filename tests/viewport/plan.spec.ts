@@ -222,6 +222,27 @@ test("keeps Plan browsing usable with 200% text", async ({ page }) => {
   await exercisePlan(page, "200% text");
 });
 
+for (const textScale of [100, 200]) {
+  test(`keeps the complete phone Plan usable at ${textScale}% text`, async ({ page }) => {
+    await page.goto("tests/viewport/plan.html?shell=1");
+    await page.addStyleTag({ content: `:root { font-size: ${textScale}%; }` });
+    await expect(page.getByRole("button", { name: "Account settings" })).toBeVisible();
+    const navigation = page.getByRole("navigation", { name: "Training sections" });
+    await expect(navigation).toBeVisible();
+    await exercisePlan(page, `${textScale}% text inside the app shell`);
+
+    const lastWorkout = page.locator(".plan-day").last();
+    await lastWorkout.scrollIntoViewIfNeeded();
+    const workoutBounds = await lastWorkout.boundingBox();
+    const navigationBounds = await navigation.boundingBox();
+    expect(workoutBounds).not.toBeNull();
+    expect(navigationBounds).not.toBeNull();
+    if (workoutBounds && navigationBounds) {
+      expect(workoutBounds.y + workoutBounds.height).toBeLessThanOrEqual(navigationBounds.y);
+    }
+  });
+}
+
 test("keeps training tickets static when reduced motion is requested", async ({
   page,
 }) => {

@@ -3,10 +3,10 @@
   width: min(100%, 72rem);
   margin: 2rem auto 0;
   padding: clamp(1.25rem, 3vw, 2rem);
-  border: 2px solid #764c1a;
+  border: 2px solid var(--app-warning-border);
   border-radius: 1rem;
-  background: #fff8e8;
-  color: #17202a;
+  background: var(--app-warning-surface);
+  color: var(--app-ink);
   text-align: left;
 }
 
@@ -24,7 +24,7 @@
 .internal-safety-rehearsal-eyebrow,
 .internal-safety-result-status {
   margin-bottom: 0.35rem;
-  color: #764c1a;
+  color: var(--app-warning);
   font-size: 0.78rem;
   font-weight: 800;
   letter-spacing: 0.08em;
@@ -42,30 +42,30 @@
   min-height: 2.75rem;
   margin-top: 0.4rem;
   padding: 0.55rem 0.7rem;
-  border: 1px solid #764c1a;
+  border: 1px solid var(--app-border-strong);
   border-radius: 0.55rem;
-  background: #ffffff;
-  color: #17202a;
+  background: var(--app-surface);
+  color: var(--app-ink);
   font: inherit;
 }
 
 .internal-safety-result {
   margin-top: 1.5rem;
   padding: clamp(1rem, 2vw, 1.5rem);
-  border: 1px solid #a8793a;
+  border: 1px solid var(--app-warning-border);
   border-radius: 0.75rem;
-  background: #ffffff;
+  background: var(--app-surface);
 }
 
 .internal-safety-result--emergency {
   border-width: 2px;
-  border-color: #9f2525;
-  background: #fff3f3;
+  border-color: var(--app-danger-border);
+  background: var(--app-danger-surface);
 }
 
 .internal-safety-result--qualified_help,
 .internal-safety-result--insufficient_information {
-  border-color: #9b641c;
+  border-color: var(--app-warning-border);
 }
 
 .internal-safety-result-message {
@@ -84,7 +84,7 @@
 .internal-safety-result dl > div {
   padding: 0.75rem;
   border-radius: 0.5rem;
-  background: #f5f3ee;
+  background: var(--app-subtle-surface);
 }
 
 .internal-safety-result dt {

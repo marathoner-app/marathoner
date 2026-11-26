@@ -5,30 +5,30 @@
 
 .internal-plan-activation-boundary {
   padding: 0.85rem 1rem;
-  border: 1px solid #9a7000;
+  border: 1px solid var(--app-warning-border);
   border-radius: 0.75rem;
-  background: #fff7dc;
-  color: #4d3800;
+  background: var(--app-warning-surface);
+  color: var(--app-warning);
   font-weight: 650;
 }
 
 .internal-plan-activation-confirmation,
 .internal-plan-activation-active {
   padding: 1.25rem;
-  border: 2px solid #24364b;
+  border: 2px solid var(--app-border);
   border-radius: 1rem;
-  background: #ffffff;
-  color: #17202a;
+  background: var(--app-surface);
+  color: var(--app-ink);
 }
 
 .internal-plan-activation-active {
-  border-color: #2d6447;
-  background: #f4fbf7;
+  border-color: var(--app-success-border);
+  background: var(--app-success-surface);
 }
 
 .internal-plan-activation-eyebrow {
   margin: 0 0 0.35rem;
-  color: #45556a;
+  color: var(--app-muted);
   font-size: 0.78rem;
   font-weight: 800;
   letter-spacing: 0.08em;
@@ -50,9 +50,9 @@
 .internal-plan-activation-rehearsal dl div {
   min-width: 0;
   padding: 0.75rem;
-  border: 1px solid #d7dde4;
+  border: 1px solid var(--app-border);
   border-radius: 0.5rem;
-  background: #ffffff;
+  background: var(--app-surface);
 }
 
 .internal-plan-activation-rehearsal dt {
@@ -79,9 +79,9 @@
 }
 
 .internal-plan-activation-actions .secondary {
-  border: 1px solid #17202a;
-  background: #ffffff;
-  color: #17202a;
+  border: 1px solid var(--app-border-strong);
+  background: var(--app-surface);
+  color: var(--app-ink);
 }
 
 @media (max-width: 600px) {

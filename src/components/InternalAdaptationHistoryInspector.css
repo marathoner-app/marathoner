@@ -2,10 +2,10 @@
   width: min(100%, 72rem);
   margin: 2rem auto 0;
   padding: clamp(1.25rem, 3vw, 2rem);
-  border: 2px solid #3d6154;
+  border: 2px solid var(--app-border);
   border-radius: 1rem;
-  background: #f1faf6;
-  color: #1c2c26;
+  background: var(--app-surface);
+  color: var(--app-ink);
 }
 
 .internal-adaptation-history > header {
@@ -14,7 +14,7 @@
 
 .internal-adaptation-history-eyebrow {
   margin: 0 0 0.35rem;
-  color: #315447;
+  color: var(--app-muted);
   font-size: 0.78rem;
   font-weight: 800;
   letter-spacing: 0.08em;
@@ -43,6 +43,14 @@
   width: min(100%, 28rem);
 }
 
+.internal-adaptation-history input[type="date"],
+.internal-adaptation-history input[type="number"],
+.internal-adaptation-history select {
+  border: 1px solid var(--app-border-strong);
+  background: var(--app-surface);
+  color: var(--app-ink);
+}
+
 .internal-adaptation-history input[type="number"] {
   width: 8rem;
 }
@@ -51,14 +59,14 @@
   display: grid;
   width: min(100%, 28rem);
   padding: 0.75rem;
-  border: 1px solid #84a599;
+  border: 1px solid var(--app-border);
   border-radius: 0.6rem;
-  background: #fff;
+  background: var(--app-surface);
   gap: 0.2rem;
 }
 
 .internal-adaptation-history-week span {
-  color: #46665b;
+  color: var(--app-muted);
   font-size: 0.82rem;
   font-weight: 750;
   text-transform: uppercase;
@@ -66,7 +74,7 @@
 
 .internal-adaptation-history-help {
   margin: -0.35rem 0 0.35rem;
-  color: #46665b;
+  color: var(--app-muted);
   font-size: 0.92rem;
 }
 
@@ -79,7 +87,7 @@
   margin-top: 1.5rem;
   padding: 1rem;
   border-radius: 0.65rem;
-  background: #dceee7;
+  background: var(--app-subtle-surface);
   font-weight: 700;
 }
 
@@ -91,9 +99,9 @@
   max-width: 42rem;
   margin-top: 1.5rem;
   padding: 1rem;
-  border: 1px solid #84a599;
+  border: 1px solid var(--app-border);
   border-radius: 0.75rem;
-  background: #fff;
+  background: var(--app-surface);
 }
 
 .internal-session-draft-feedback-confirmed h3 {
@@ -114,7 +122,7 @@
   align-items: center;
   justify-content: space-between;
   padding-top: 0.75rem;
-  border-top: 1px solid #dceee7;
+  border-top: 1px solid var(--app-border);
   gap: 1rem;
 }
 
@@ -126,7 +134,7 @@
   margin-top: 1.5rem;
   padding: 1rem;
   border-radius: 0.75rem;
-  background: #dceee7;
+  background: var(--app-subtle-surface);
 }
 
 .internal-adaptation-history-result h3 {
@@ -142,11 +150,11 @@
 .internal-adaptation-history-result dl > div {
   padding: 0.7rem;
   border-radius: 0.55rem;
-  background: #fff;
+  background: var(--app-surface);
 }
 
 .internal-adaptation-history-result dt {
-  color: #46665b;
+  color: var(--app-muted);
   font-size: 0.8rem;
   font-weight: 750;
   text-transform: uppercase;
@@ -160,17 +168,17 @@
 .internal-adaptation-history-boundary {
   margin-bottom: 0;
   padding-top: 0.75rem;
-  border-top: 1px solid #84a599;
+  border-top: 1px solid var(--app-border);
   font-weight: 750;
 }
 
 .internal-live-adaptation-evaluation {
   margin-top: 1.25rem;
   padding: 1rem;
-  border: 2px solid #6f5947;
+  border: 2px solid var(--app-border);
   border-radius: 0.75rem;
-  background: #fff9ef;
-  color: #30271f;
+  background: var(--app-subtle-surface);
+  color: var(--app-ink);
 }
 
 .internal-live-adaptation-evaluation > header {
@@ -189,13 +197,13 @@
 
 .internal-live-adaptation-artifacts > div {
   padding: 0.7rem;
-  border: 1px solid #c7ad91;
+  border: 1px solid var(--app-border);
   border-radius: 0.55rem;
-  background: #fff;
+  background: var(--app-surface);
 }
 
 .internal-live-adaptation-artifacts dt {
-  color: #674f3a;
+  color: var(--app-muted);
   font-size: 0.8rem;
   font-weight: 750;
   text-transform: uppercase;
@@ -212,7 +220,7 @@
   min-width: 0;
   margin: 0.5rem 0;
   padding: 1rem;
-  border: 1px solid #c7ad91;
+  border: 1px solid var(--app-border);
   border-radius: 0.65rem;
   gap: 0.75rem;
 }
@@ -245,7 +253,7 @@
 .internal-live-adaptation-result {
   margin-top: 1rem;
   padding-top: 1rem;
-  border-top: 1px solid #c7ad91;
+  border-top: 1px solid var(--app-border);
 }
 
 .internal-live-adaptation-result > h4 {
@@ -255,9 +263,9 @@
 .internal-live-adaptation-projection {
   margin-top: 1rem;
   padding: 1rem;
-  border: 1px solid #8d6d50;
+  border: 1px solid var(--app-border);
   border-radius: 0.65rem;
-  background: #fff;
+  background: var(--app-surface);
 }
 
 .internal-live-adaptation-projection > h4 {
@@ -274,9 +282,9 @@
 .internal-live-adaptation-changes li {
   display: grid;
   padding: 0.75rem;
-  border: 1px solid #d8c3ac;
+  border: 1px solid var(--app-border);
   border-radius: 0.55rem;
-  background: #fff9ef;
+  background: var(--app-subtle-surface);
   gap: 0.25rem;
 }
 
@@ -285,9 +293,9 @@
   gap: 0.75rem;
   margin-top: 1rem;
   padding: clamp(1rem, 3vw, 1.5rem);
-  border: 2px solid #8a5d00;
+  border: 2px solid var(--app-warning-border);
   border-radius: 1rem;
-  background: #fff9e8;
+  background: var(--app-warning-surface);
 }
 
 .internal-live-adaptation-calendar-preview > p {
@@ -295,7 +303,7 @@
 }
 
 .internal-live-adaptation-calendar-title {
-  color: #172033;
+  color: var(--app-ink);
   font-size: 1.15rem;
 }
 

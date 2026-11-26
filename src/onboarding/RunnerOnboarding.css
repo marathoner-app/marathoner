@@ -362,6 +362,14 @@
   color: var(--app-ink);
 }
 
+.onboarding-close:hover,
+.onboarding-secondary-action:hover,
+.runner-profile-entry button:hover {
+  border-color: var(--app-accent);
+  background: var(--app-accent-surface);
+  color: var(--app-ink);
+}
+
 .onboarding-actions button:disabled,
 .onboarding-close:disabled {
   cursor: wait;

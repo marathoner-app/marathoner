@@ -364,7 +364,6 @@ export default function Analyze({
       <div className="analyze-container analyze-container--desktop">
         <div className="training-page-header analyze-page-header">
           <h1>Analyze</h1>
-          <p>A clear view of your recorded training.</p>
         </div>
         <section className="analyze-carousel" aria-label="Training analysis">
           <div
@@ -464,7 +463,6 @@ export default function Analyze({
     <div className="analyze-container">
       <div className="training-page-header analyze-page-header">
         <h1>Analyze</h1>
-        <p>A clear view of your recorded training.</p>
       </div>
       <section className="analyze-carousel" aria-label="Training analysis">
         <div

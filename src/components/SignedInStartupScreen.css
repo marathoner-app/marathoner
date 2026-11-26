@@ -13,8 +13,8 @@
     max(1.5rem, env(safe-area-inset-left));
   place-items: center;
   overflow: auto;
-  background: var(--app-accent);
-  color: #fff;
+  background: var(--app-canvas);
+  color: var(--app-ink);
   text-align: center;
 }
 
@@ -37,8 +37,8 @@
   width: 2rem;
   height: 2rem;
   margin-top: 2.25rem;
-  border: 3px solid rgb(255 255 255 / 35%);
-  border-top-color: #fff;
+  border: 3px solid var(--app-border);
+  border-top-color: var(--app-accent);
   border-radius: 50%;
   animation: signed-in-startup-spin 0.8s linear infinite;
 }
@@ -46,7 +46,7 @@
 .signed-in-startup-status {
   max-width: 100%;
   margin: 1rem 0 0;
-  color: rgb(255 255 255 / 90%);
+  color: var(--app-muted);
   font-size: 1rem;
   font-weight: 600;
   overflow-wrap: anywhere;
@@ -61,26 +61,26 @@
 
 .signed-in-startup-delay p {
   margin: 0;
-  color: rgb(255 255 255 / 90%);
+  color: var(--app-muted);
   line-height: 1.5;
 }
 
 .signed-in-startup-delay button {
   min-height: 2.75rem;
   padding: 0.65rem 1.2rem;
-  border: 1px solid rgb(255 255 255 / 70%);
-  background: #fff;
+  border: 1px solid var(--app-border-strong);
+  background: var(--app-surface);
   box-shadow: none;
-  color: var(--app-accent-hover);
+  color: var(--app-ink);
 }
 
 .signed-in-startup-delay button:hover {
-  border-color: #fff;
-  background: rgb(255 255 255 / 92%);
+  border-color: var(--app-accent);
+  background: var(--app-accent-surface);
 }
 
 .signed-in-startup-delay button:focus-visible {
-  outline-color: #fff;
+  outline-color: var(--app-accent);
   outline-offset: 4px;
 }
 

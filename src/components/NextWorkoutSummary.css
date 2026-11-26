@@ -3,9 +3,9 @@
   box-sizing: border-box;
   margin: 0 auto 1.75rem;
   padding: clamp(1.5rem, 3vw, 2rem);
-  border: 1px solid var(--app-accent);
+  border: 1px solid var(--app-workout-surface);
   border-radius: var(--app-radius-large);
-  background: var(--app-accent);
+  background: var(--app-workout-surface);
   box-shadow: none;
   color: white;
   line-height: 1.5;
@@ -23,8 +23,8 @@
 }
 
 .next-workout-summary h2 {
-  margin-top: 1.25rem;
-  font-size: clamp(1.5rem, 3vw, 1.875rem);
+  margin-top: 1.375rem;
+  font-size: 1.8125rem;
   font-weight: 680;
   letter-spacing: -0.035em;
   line-height: 1.2;
@@ -59,26 +59,33 @@
 }
 
 .next-workout-target-part:first-child .next-workout-target-value {
-  font-size: clamp(3.5rem, 7vw, 5.5rem);
+  font-size: clamp(4.25rem, 20vw, 5rem);
   font-weight: 650;
   letter-spacing: -0.065em;
   line-height: 1;
 }
 
 .next-workout-target-unit {
-  font-size: 1.25rem;
+  font-size: 1.5625rem;
   font-weight: 450;
 }
 
 .next-workout-target-separator {
-  margin-left: auto;
-  color: #dbe5ff;
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
 }
 
 .next-workout-summary button {
   width: 100%;
   min-height: 2.75rem;
-  margin-top: 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-top: 1.5rem;
   padding: 0.75rem 1rem;
   background: white;
   color: #17243f;
@@ -87,7 +94,7 @@
 }
 
 .next-workout-summary button:hover {
-  background: var(--app-accent-surface);
+  background: #edf2ff;
 }
 
 .next-workout-summary button:focus-visible {
@@ -118,4 +125,34 @@
 .next-workout-summary.empty button:focus-visible {
   outline-color: var(--app-accent);
   box-shadow: 0 0 0 5px var(--app-focus-ring);
+}
+
+.next-workout-summary:not(.empty) h2 + p {
+  color: #d3dfff;
+}
+
+.next-workout-target-part + .next-workout-target-separator + .next-workout-target-part {
+  margin-left: auto;
+}
+
+.next-workout-target-caption {
+  display: block;
+  margin-top: 0.25rem;
+  color: #d3dfff;
+  font-size: 0.6875rem;
+}
+
+.next-workout-summary button svg {
+  width: 1rem;
+  height: 1rem;
+  flex: 0 0 auto;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.next-workout-summary .next-workout-target + button {
+  margin-top: 0;
 }

@@ -311,8 +311,8 @@
 
   .analyze-desktop-grid-frame--editing {
     background-image:
-      linear-gradient(rgb(36 88 177 / 7%) 1px, transparent 1px),
-      linear-gradient(90deg, rgb(36 88 177 / 7%) 1px, transparent 1px);
+      linear-gradient(var(--app-border) 1px, transparent 1px),
+      linear-gradient(90deg, var(--app-border) 1px, transparent 1px);
     background-size: calc(100% / 12) calc(100% / 12);
   }
 
@@ -612,6 +612,10 @@
   font-size: 1.5rem;
 }
 
+.analyze-widget-drawer-header button:hover {
+  background: var(--app-subtle-surface);
+}
+
 .analyze-widget-drawer-list {
   display: grid;
   gap: 0.75rem;
@@ -673,7 +677,7 @@
   display: grid;
   place-items: center;
   padding: 1rem;
-  background: rgb(8 16 31 / 42%);
+  background: var(--app-overlay);
   backdrop-filter: blur(4px);
 }
 
@@ -683,7 +687,7 @@
   border: 1px solid var(--app-border);
   border-radius: var(--app-radius-large);
   background: var(--app-surface);
-  box-shadow: 0 1.5rem 4rem rgb(0 0 0 / 22%);
+  box-shadow: var(--app-shadow-dialog);
   color: var(--app-ink);
   text-align: left;
 }
@@ -729,7 +733,12 @@
 .analyze-editor-dialog-confirm {
   border-color: var(--app-danger);
   background: var(--app-danger);
-  color: white;
+  color: var(--app-canvas);
+}
+
+.analyze-editor-dialog-confirm:hover {
+  border-color: var(--app-danger-hover);
+  background: var(--app-danger-hover);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -868,6 +877,7 @@
 
   .analyze-carousel-arrow:disabled {
     border-color: var(--app-border);
+    background: transparent;
     box-shadow: none;
     color: var(--app-muted);
     cursor: default;
@@ -904,6 +914,11 @@
     border: 0;
     background: transparent;
     box-shadow: none;
+  }
+
+  .analyze-carousel-arrow:hover:not(:disabled),
+  .analyze-carousel-dot:hover {
+    background: var(--app-subtle-surface);
   }
 
   .analyze-carousel-dot::after {

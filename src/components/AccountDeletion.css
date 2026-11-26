@@ -235,6 +235,13 @@
   color: var(--app-ink);
 }
 
+.garmin-disconnect:hover,
+.apple-health-disconnect:hover {
+  border-color: var(--app-accent);
+  background: var(--app-accent-surface);
+  color: var(--app-ink);
+}
+
 .apple-health-error {
   color: var(--app-danger);
   font-weight: 650;

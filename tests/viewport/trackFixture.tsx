@@ -3,6 +3,7 @@ import { useState } from "react";
 import { createRoot } from "react-dom/client";
 import "../../src/index.css";
 import ShoeTracker from "../../src/components/ShoeTracker";
+import TrainingFixtureShell from "./TrainingFixtureShell";
 import {
   createCompletedRunId,
   createDistanceMeters,
@@ -206,4 +207,8 @@ function TrackViewportFixture() {
 
 const root = document.querySelector("#root");
 if (root === null) throw new Error("Track viewport fixture root was not found.");
-createRoot(root).render(<TrackViewportFixture />);
+createRoot(root).render(
+  new URLSearchParams(window.location.search).get("shell") === "1" ? (
+    <TrainingFixtureShell activeSection="track"><TrackViewportFixture /></TrainingFixtureShell>
+  ) : <TrackViewportFixture />,
+);

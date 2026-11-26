@@ -11,9 +11,9 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         }
 
         sceneWindow.backgroundColor = UIColor(
-            red: 20.0 / 255.0,
-            green: 104.0 / 255.0,
-            blue: 204.0 / 255.0,
+            red: 16.0 / 255.0,
+            green: 17.0 / 255.0,
+            blue: 20.0 / 255.0,
             alpha: 1.0
         )
         sceneWindow.makeKeyAndVisible()

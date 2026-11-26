@@ -2,10 +2,10 @@
   width: min(100%, 72rem);
   margin: 2rem auto 0;
   padding: clamp(1.25rem, 3vw, 2rem);
-  border: 2px solid #345d67;
+  border: 2px solid var(--app-border);
   border-radius: 1rem;
-  background: #edf8f8;
-  color: #16282d;
+  background: var(--app-surface);
+  color: var(--app-ink);
 }
 
 .internal-adaptation-rehearsal > header {
@@ -14,7 +14,7 @@
 
 .internal-adaptation-rehearsal-eyebrow {
   margin: 0 0 0.35rem;
-  color: #28515a;
+  color: var(--app-muted);
   font-size: 0.78rem;
   font-weight: 800;
   letter-spacing: 0.08em;
@@ -39,6 +39,9 @@
 
 .internal-adaptation-rehearsal form select {
   width: min(100%, 32rem);
+  border: 1px solid var(--app-border-strong);
+  background: var(--app-surface);
+  color: var(--app-ink);
 }
 
 .internal-adaptation-rehearsal form button {
@@ -50,7 +53,7 @@
   margin-top: 1.5rem;
   padding: 1rem;
   border-radius: 0.75rem;
-  background: #dceced;
+  background: var(--app-subtle-surface);
 }
 
 .internal-adaptation-rehearsal-match,
@@ -62,14 +65,14 @@
 }
 
 .internal-adaptation-rehearsal-match {
-  background: #d8eedf;
-  color: #1f5130;
+  background: var(--app-success-surface);
+  color: var(--app-success);
 }
 
 .internal-adaptation-rehearsal-mismatch,
 .internal-adaptation-rehearsal-error {
-  background: #f9d8d5;
-  color: #7a201a;
+  background: var(--app-danger-surface);
+  color: var(--app-danger);
 }
 
 .internal-adaptation-rehearsal-result dl {
@@ -82,7 +85,7 @@
   min-width: 0;
   padding: 0.75rem;
   border-radius: 0.6rem;
-  background: #f8ffff;
+  background: var(--app-surface);
 }
 
 .internal-adaptation-rehearsal-result dt {
@@ -111,8 +114,8 @@
   overflow: auto;
   padding: 1rem;
   border-radius: 0.6rem;
-  background: #16282d;
-  color: #f8ffff;
+  background: var(--app-canvas);
+  color: var(--app-ink);
   font-size: 0.8rem;
 }
 
@@ -124,9 +127,9 @@
 .internal-adaptation-session-decision {
   margin-top: 1.5rem;
   padding: 1rem;
-  border: 2px solid #4c4567;
+  border: 2px solid var(--app-border);
   border-radius: 0.85rem;
-  background: #f7f4ff;
+  background: var(--app-subtle-surface);
 }
 
 .internal-adaptation-session-decision h3 {
@@ -143,9 +146,9 @@
 .internal-adaptation-session-decision dl div {
   min-width: 0;
   padding: 0.75rem;
-  border: 1px solid #c8c1dc;
+  border: 1px solid var(--app-border);
   border-radius: 0.5rem;
-  background: #ffffff;
+  background: var(--app-surface);
 }
 
 .internal-adaptation-session-decision dt {

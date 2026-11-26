@@ -2,7 +2,6 @@ import { useState } from "react";
 import { createRoot } from "react-dom/client";
 import "../../src/index.css";
 import NextWorkoutSummary from "../../src/components/NextWorkoutSummary";
-import Subtitle from "../../src/components/Subtitle";
 import TrainingSectionNavigation from "../../src/components/TrainingSectionNavigation";
 import SignedInAppHeader from "../../src/components/SignedInAppHeader";
 import SignedInStartupScreen from "../../src/components/SignedInStartupScreen";
@@ -80,9 +79,14 @@ export function SignedInHomeFixture() {
   const [retryCount, setRetryCount] = useState(0);
   const activeDetails = trainingSections.find(({ id }) => id === activeSection);
   const search = new URLSearchParams(window.location.search);
+  const preview = search.get("preview") === "1";
   const setupComplete = search.get("setup") !== "incomplete";
   const startupMode = search.get("startup");
   const openSection = (section: TrainingSection) => {
+    if (preview) {
+      window.location.href = `${section}.html?shell=1&mode=dashboard`;
+      return;
+    }
     document.documentElement.scrollTop = 0;
     document.body.scrollTop = 0;
     setActiveSection(section);
@@ -115,8 +119,7 @@ export function SignedInHomeFixture() {
       {activeSection === null && (
         <>
           <div className="training-page-header signed-in-home-heading">
-            <h1 className="title">Ready for your next run.</h1>
-            <Subtitle />
+            <h1 className="title">Home</h1>
           </div>
           <div className="home-training-overview">
           <NextWorkoutSummary
@@ -151,7 +154,7 @@ export function SignedInHomeFixture() {
         />
       )}
 
-      {activeSection === null && (
+      {activeSection === null && !preview && (
         <section
           aria-label="Additional signed-in content"
           style={{

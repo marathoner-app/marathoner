@@ -314,23 +314,23 @@ for (const viewport of viewports) {
       name: "Existing account login",
     });
     await expect(loginDialog).toBeVisible();
-    await expect(loginDialog).toHaveCSS("background-color", "rgb(255, 255, 255)");
-    await expect(loginDialog).toHaveCSS("border-color", "rgb(225, 228, 233)");
+    await expect(loginDialog).toHaveCSS("background-color", "rgb(25, 27, 32)");
+    await expect(loginDialog).toHaveCSS("border-color", "rgb(50, 54, 64)");
     await expect(loginDialog).toHaveCSS("border-radius", "12px");
     await expect(loginDialog.getByRole("heading")).toHaveCSS(
       "color",
-      "rgb(22, 25, 31)",
+      "rgb(243, 244, 247)",
     );
     await expect(loginDialog.getByLabel("Email")).toHaveCSS(
       "border-color",
-      "rgb(163, 170, 182)",
+      "rgb(110, 118, 133)",
     );
     await expect(
       loginDialog.getByRole("button", { name: "Log in", exact: true }),
-    ).toHaveCSS("background-color", "rgb(22, 25, 31)");
+    ).toHaveCSS("background-color", "rgb(243, 244, 247)");
     await expect(
       loginDialog.getByRole("button", { name: "Forgot password?" }),
-    ).toHaveCSS("color", "rgb(33, 85, 216)");
+    ).toHaveCSS("color", "rgb(143, 172, 255)");
     const dialogBounds = await loginDialog.boundingBox();
     expect(dialogBounds, "login dialog should have visible bounds").not.toBeNull();
     if (dialogBounds) {
@@ -401,9 +401,9 @@ test("uses semantic authentication feedback and keeps password reset in the same
 
   const error = loginDialog.getByRole("alert");
   await expect(error).toHaveText("Enter a valid email address.");
-  await expect(error).toHaveCSS("background-color", "rgb(255, 242, 241)");
-  await expect(error).toHaveCSS("border-color", "rgb(228, 170, 166)");
-  await expect(error).toHaveCSS("color", "rgb(161, 38, 32)");
+  await expect(error).toHaveCSS("background-color", "rgb(53, 32, 35)");
+  await expect(error).toHaveCSS("border-color", "rgb(133, 83, 81)");
+  await expect(error).toHaveCSS("color", "rgb(255, 166, 160)");
 
   await loginDialog.getByRole("button", { name: "Forgot password?" }).click();
   const resetDialog = page.getByRole("dialog", {

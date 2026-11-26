@@ -625,7 +625,6 @@ export default function ShoeTracker({
     <div className="track-page training-page">
       <div className="training-page-header">
         <h1>Track</h1>
-        <p>Record your runs. Keep your shoes up to date.</p>
       </div>
       <div className="tracker">
       {error && <p role="alert" className="training-error">{error}</p>}

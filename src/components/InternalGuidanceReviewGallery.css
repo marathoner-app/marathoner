@@ -3,10 +3,10 @@
   width: min(100%, 72rem);
   margin: 2rem auto 0;
   padding: clamp(1.25rem, 3vw, 2rem);
-  border: 2px solid #315866;
+  border: 2px solid var(--app-border);
   border-radius: 1rem;
-  background: #eef7f8;
-  color: #17202a;
+  background: var(--app-surface);
+  color: var(--app-ink);
   text-align: left;
 }
 
@@ -21,7 +21,7 @@
 
 .internal-guidance-gallery-eyebrow {
   margin-bottom: 0.35rem;
-  color: #315866;
+  color: var(--app-muted);
   font-size: 0.78rem;
   font-weight: 800;
   letter-spacing: 0.08em;
@@ -39,10 +39,10 @@
   min-height: 2.75rem;
   margin-top: 0.4rem;
   padding: 0.55rem 0.7rem;
-  border: 1px solid #315866;
+  border: 1px solid var(--app-border-strong);
   border-radius: 0.55rem;
-  background: #ffffff;
-  color: #17202a;
+  background: var(--app-surface);
+  color: var(--app-ink);
   font: inherit;
 }
 

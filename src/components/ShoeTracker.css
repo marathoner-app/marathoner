@@ -186,7 +186,7 @@
 
 .run-save-recovery button {
   background: var(--app-ink);
-  color: #fff;
+  color: var(--app-surface);
 }
 
 .run-save-confirmation {
@@ -622,13 +622,13 @@
 .confirmation-dialog .confirmation-confirm--danger {
   border: 1px solid var(--app-danger);
   background: var(--app-danger);
-  color: #fff;
+  color: var(--app-surface);
 }
 
 .confirmation-dialog .confirmation-confirm--caution {
   border: 1px solid var(--app-warning);
   background: var(--app-warning);
-  color: #fff;
+  color: var(--app-surface);
 }
 
 .confirmation-dialog .confirmation-cancel:hover {
@@ -639,12 +639,12 @@
 
 .confirmation-dialog .confirmation-confirm--danger:hover {
   background: var(--app-danger-hover);
-  color: #fff;
+  color: var(--app-surface);
 }
 
 .confirmation-dialog .confirmation-confirm--caution:hover {
   box-shadow: 0 0 0 3px var(--app-warning-surface);
-  color: #fff;
+  color: var(--app-surface);
 }
 
 @media (max-width: 420px) {

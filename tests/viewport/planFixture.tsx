@@ -1,6 +1,7 @@
 import { createRoot } from "react-dom/client";
 import "../../src/index.css";
 import Calendar from "../../src/components/Calendar";
+import TrainingFixtureShell from "./TrainingFixtureShell";
 import {
   createDateOnly,
   createDistanceMeters,
@@ -85,6 +86,9 @@ const workouts: PlannedWorkout[] = [
 
 const root = document.querySelector("#root");
 if (root === null) throw new Error("Plan viewport fixture root was not found.");
+const calendar = <Calendar plan={plan} workouts={workouts} distanceUnit="mile" />;
 createRoot(root).render(
-  <Calendar plan={plan} workouts={workouts} distanceUnit="mile" />,
+  new URLSearchParams(window.location.search).get("shell") === "1" ? (
+    <TrainingFixtureShell activeSection="plan">{calendar}</TrainingFixtureShell>
+  ) : calendar,
 );

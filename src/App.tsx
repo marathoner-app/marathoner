@@ -8,7 +8,6 @@ import {
   type ReactNode,
 } from "react";
 import Title from "./components/Title";
-import Subtitle from "./components/Subtitle";
 import Calendar from "./components/Calendar";
 import PublicLandingPage from "./components/PublicLandingPage";
 import NativeSignedOutEntry from "./components/NativeSignedOutEntry";
@@ -369,8 +368,7 @@ function App() {
         )}
         {!activeSection && (
           <div className="training-page-header signed-in-home-heading">
-            <h1 className="title">Ready for your next run.</h1>
-            <Subtitle />
+            <h1 className="title">Home</h1>
           </div>
         )}
       </>

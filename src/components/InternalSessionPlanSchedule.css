@@ -2,10 +2,10 @@
   width: min(100%, 72rem);
   margin: 2rem auto 0;
   padding: clamp(1.25rem, 3vw, 2rem);
-  border: 2px solid #315d7a;
+  border: 2px solid var(--app-border);
   border-radius: 1rem;
-  background: #f2f7fb;
-  color: #172b3a;
+  background: var(--app-surface);
+  color: var(--app-ink);
 }
 
 .internal-session-plan-schedule > header {
@@ -15,7 +15,7 @@
 
 .internal-session-plan-schedule-eyebrow {
   margin: 0 0 0.35rem;
-  color: #315d7a;
+  color: var(--app-muted);
   font-size: 0.78rem;
   font-weight: 800;
   letter-spacing: 0.08em;

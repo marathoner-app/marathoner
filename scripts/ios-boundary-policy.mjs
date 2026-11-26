@@ -10,8 +10,8 @@ export const expectedIosBoundary = {
   splashScreenVersion: '8.0.2',
   developmentProjectId: 'marathoner-d9bf9',
   betaProjectId: 'marathonerapp-beta',
-  launchBackgroundColor: '#1468cc',
-  launchBackgroundColorWithAlpha: '#1468ccff',
+  launchBackgroundColor: '#101114',
+  launchBackgroundColorWithAlpha: '#101114ff',
   startupErrorPath: 'startup-error.html',
   webDir: 'dist-ios',
 }
@@ -270,7 +270,7 @@ export function findIosProjectViolations({
   requireText(
     violations,
     infoPlist,
-    '<string>Light</string>',
+    '<string>Dark</string>',
     'Info.plist',
   )
   requireText(
@@ -309,7 +309,7 @@ export function findIosProjectViolations({
   requireText(
     violations,
     launchStoryboard,
-    '<color key="backgroundColor" red="0.07843137255" green="0.4078431373" blue="0.8"',
+    '<color key="backgroundColor" red="0.06274509804" green="0.06666666667" blue="0.07843137255"',
     'LaunchScreen.storyboard',
   )
 
@@ -389,9 +389,9 @@ export function findIosProjectViolations({
     'SceneDelegate.swift',
   )
   for (const launchColorComponent of [
-    'red: 20.0 / 255.0',
-    'green: 104.0 / 255.0',
-    'blue: 204.0 / 255.0',
+    'red: 16.0 / 255.0',
+    'green: 17.0 / 255.0',
+    'blue: 20.0 / 255.0',
   ]) {
     requireText(
       violations,
