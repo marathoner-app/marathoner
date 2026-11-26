@@ -141,12 +141,26 @@ async function dragTouchHorizontally(
   });
 
   try {
-    await session.send("Input.synthesizeScrollGesture", {
-      x: startX,
-      y,
-      xDistance: endX - startX,
-      gestureSourceType: "touch",
-      preventFling: true,
+    await session.send("Input.dispatchTouchEvent", {
+      type: "touchStart",
+      touchPoints: [{ x: startX, y, id: 0 }],
+    });
+    // Deliver each native move on a separate render frame instead of relying
+    // on synthesized scroll timing across platforms.
+    const steps = 16;
+    for (let step = 1; step <= steps; step += 1) {
+      await page.evaluate(() => new Promise<void>((resolve) =>
+        requestAnimationFrame(() => resolve())));
+      await session.send("Input.dispatchTouchEvent", {
+        type: "touchMove",
+        touchPoints: [{ x: startX + (endX - startX) * step / steps, y, id: 0 }],
+      });
+    }
+    await page.evaluate(() => new Promise<void>((resolve) =>
+      requestAnimationFrame(() => resolve())));
+    await session.send("Input.dispatchTouchEvent", {
+      type: "touchEnd",
+      touchPoints: [],
     });
     const events = await input.evaluate((state) => state.events);
     return { bounds, startX, endX, y, hit, events };
